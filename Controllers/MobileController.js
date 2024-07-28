@@ -140,6 +140,12 @@ export const clientLogin = async (req, res) => {
             });
         }
 
+        if (candidate.status !== "active") {
+            return res.status(404).json({
+                message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
+            });
+        }
+
         const token = jwt.sign({ _id: candidate._id }, process.env.SecretKey, {
             expiresIn: "30d",
         });
@@ -171,6 +177,51 @@ export const updateForgottenPassword = async (req, res) => {
         });
 
         res.json({ token });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Не удалось авторизоваться",
+        });
+    }
+};
+
+export const addClientAddress = async (req, res) => {
+    try {
+        const { mail, city, street, house, link } = req.body;
+
+        const client = await Client.findOne({ mail });
+
+        const address = {
+            street,
+            link,
+            house,
+        };
+
+        client.addresses.push(address);
+
+        await client.save();
+
+        res.json({
+            success: true,
+            message: "Адресс успешно добавлен",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Не удалось авторизоваться",
+        });
+    }
+};
+
+export const getClientAddresses = async (req, res) => {
+    try {
+        const { mail } = req.body;
+
+        const client = await Client.findOne({ mail });
+
+        const addresses = client.addresses;
+
+        res.json({ addresses });
     } catch (error) {
         console.log(error);
         res.status(500).json({

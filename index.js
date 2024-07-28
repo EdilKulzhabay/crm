@@ -154,6 +154,8 @@ app.post("/codeConfirm", MobileController.codeConfirm);
 app.post("/clientRegister", MobileController.clientRegister);
 app.post("/clientLogin", MobileController.clientLogin);
 app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
+app.post("/addClientAddress", MobileController.addClientAddress);
+app.post("/getClientAddresses", MobileController.getClientAddresses);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
