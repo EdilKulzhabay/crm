@@ -117,7 +117,7 @@ export default function AddClient() {
     };
 
     return (
-        <Container role={userData.role}>
+        <Container role={userData.role || "admin"}>
             <Div>
                 <div>Добавление нового клиента</div>
             </Div>

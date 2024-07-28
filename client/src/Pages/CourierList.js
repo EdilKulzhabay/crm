@@ -151,85 +151,87 @@ export default function CourierList() {
             <Div />
             <Div>Список курьеров:</Div>
             <div className="max-h-[100px] overflow-scroll">
-                {couriers.map((item, index) => {
-                    if (couriers.length === index + 1) {
-                        return (
-                            <div key={item._id} ref={lastCourierElementRef}>
-                                <Li>
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>Имя:</div>
-                                        <div>{item.fullName}</div>
-                                        <div>|</div>
-                                        <div>Статус:</div>
-                                        <div>
-                                            {item.status === "active"
-                                                ? "Активен"
-                                                : "Неактивен"}
+                {couriers &&
+                    couriers.length > 0 &&
+                    couriers.map((item, index) => {
+                        if (couriers.length === index + 1) {
+                            return (
+                                <div key={item._id} ref={lastCourierElementRef}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-2 flex-wrap">
+                                            <div>Имя:</div>
+                                            <div>{item.fullName}</div>
+                                            <div>|</div>
+                                            <div>Статус:</div>
+                                            <div>
+                                                {item.status === "active"
+                                                    ? "Активен"
+                                                    : "Неактивен"}
+                                            </div>
+                                            <LinkButton
+                                                href={`/CourierPage/${item._id}`}
+                                            >
+                                                Редакитровать
+                                            </LinkButton>
+                                            <MyButton click={() => {}}>
+                                                {item.status === "active"
+                                                    ? "Блокировать"
+                                                    : "Разблокировать"}
+                                            </MyButton>
                                         </div>
-                                        <LinkButton
-                                            href={`/CourierPage/${item._id}`}
-                                        >
-                                            Редакитровать
-                                        </LinkButton>
-                                        <MyButton click={() => {}}>
-                                            {item.status === "active"
-                                                ? "Блокировать"
-                                                : "Разблокировать"}
-                                        </MyButton>
-                                    </div>
-                                </Li>
-                                <Li2>
-                                    <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>
-                                            Количество выполненных заказов:
+                                    </Li>
+                                    <Li2>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div>
+                                                Количество выполненных заказов:
+                                            </div>
+                                            <div className="text-red">
+                                                {item.completedOrders}
+                                            </div>
                                         </div>
-                                        <div className="text-red">
-                                            {item.completedOrders}
+                                    </Li2>
+                                </div>
+                            );
+                        } else {
+                            return (
+                                <div key={item._id}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-2 flex-wrap">
+                                            <div>Имя:</div>
+                                            <div>{item.fullName}</div>
+                                            <div>|</div>
+                                            <div>Статус:</div>
+                                            <div>
+                                                {item.status === "active"
+                                                    ? "Активен"
+                                                    : "Неактивен"}
+                                            </div>
+                                            <LinkButton
+                                                href={`/CourierPage/${item._id}`}
+                                            >
+                                                Редакитровать
+                                            </LinkButton>
+                                            <MyButton click={() => {}}>
+                                                {item.status === "active"
+                                                    ? "Блокировать"
+                                                    : "Разблокировать"}
+                                            </MyButton>
                                         </div>
-                                    </div>
-                                </Li2>
-                            </div>
-                        );
-                    } else {
-                        return (
-                            <div key={item._id}>
-                                <Li>
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>Имя:</div>
-                                        <div>{item.fullName}</div>
-                                        <div>|</div>
-                                        <div>Статус:</div>
-                                        <div>
-                                            {item.status === "active"
-                                                ? "Активен"
-                                                : "Неактивен"}
+                                    </Li>
+                                    <Li2>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div>
+                                                Количество выполненных заказов:
+                                            </div>
+                                            <div className="text-red">
+                                                {item.completedOrders}
+                                            </div>
                                         </div>
-                                        <LinkButton
-                                            href={`/CourierPage/${item._id}`}
-                                        >
-                                            Редакитровать
-                                        </LinkButton>
-                                        <MyButton click={() => {}}>
-                                            {item.status === "active"
-                                                ? "Блокировать"
-                                                : "Разблокировать"}
-                                        </MyButton>
-                                    </div>
-                                </Li>
-                                <Li2>
-                                    <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>
-                                            Количество выполненных заказов:
-                                        </div>
-                                        <div className="text-red">
-                                            {item.completedOrders}
-                                        </div>
-                                    </div>
-                                </Li2>
-                            </div>
-                        );
-                    }
-                })}
+                                    </Li2>
+                                </div>
+                            );
+                        }
+                    })}
                 {loading && <div>Загрузка...</div>}
             </div>
 

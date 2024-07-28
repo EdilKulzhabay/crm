@@ -23,7 +23,7 @@ export const register = async (req, res) => {
             password: hash,
             phone,
             mail,
-            role: role || "client",
+            role: role || "admin",
         });
 
         const user = await doc.save();
@@ -208,6 +208,47 @@ export const searchFrinchisee = async (req, res) => {
         });
 
         res.json({ franchisees });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const id = req.userId;
+        const { password, newPassword } = req.body;
+
+        const candidate = await User.findById(id);
+
+        if (!candidate) {
+            return res.json({
+                success: false,
+                message: "Не удалось найти пользователя",
+            });
+        }
+
+        const isValidPass = await bcrypt.compare(password, candidate.password);
+
+        if (!isValidPass) {
+            return res.json({
+                success: false,
+                message: "Пароль введен не правильно",
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
+
+        candidate.password = hash;
+
+        await candidate.save();
+
+        res.json({
+            success: true,
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({

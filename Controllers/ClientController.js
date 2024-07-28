@@ -70,6 +70,7 @@ export const getClients = async (req, res) => {
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const clients = await Client.find(filter)
+            .populate("franchisee")
             .sort({ createdAt: 1 })
             .skip(skip)
             .limit(limit);
@@ -143,7 +144,7 @@ export const searchClient = async (req, res) => {
         const clients = await Client.find({
             ...franch,
             $or: filter,
-        });
+        }).populate("franchisee");
 
         res.json(clients);
     } catch (error) {
@@ -240,6 +241,35 @@ export const updateClientData = async (req, res) => {
         await client.save();
 
         res.json({ success: true, message: "Данные успешно изменены" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const updateClientFranchisee = async (req, res) => {
+    try {
+        const { clientId, franchiseeId } = req.body;
+
+        const client = await Client.findById(clientId);
+
+        if (!client) {
+            res.json({
+                success: false,
+                message: "Не удалось найти клиента",
+            });
+        }
+
+        client.franchisee = franchiseeId;
+
+        await client.save();
+
+        res.json({
+            success: true,
+            message: "Клиент успешно перенесен",
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({

@@ -57,8 +57,16 @@ export default function SuperAdminUpdateFranchisee() {
         getFranchiseeById();
     });
 
+    const toggleStatus = () => {
+        if (franchisee.status === "active") {
+            return "inActive";
+        } else {
+            return "active";
+        }
+    };
+
     const updateFranchiseeStatus = () => {
-        franchisee.status = !franchisee.status;
+        franchisee.status = toggleStatus();
         api.post(
             "/updateFranchisee",
             { ...franchisee },
@@ -161,7 +169,9 @@ export default function SuperAdminUpdateFranchisee() {
                 <div className="flex items-center flex-wrap">
                     <div>Статус заказа:</div>
                     <Info>
-                        {franchisee.status ? "Активен" : "Заблокирован"}
+                        {franchisee.status === "active"
+                            ? "Активен"
+                            : "Заблокирован"}
                     </Info>
                     <div className="ml-3">
                         <MyButton click={updateFranchiseeStatus}>

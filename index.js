@@ -11,6 +11,10 @@ import {
     SubscriptionController,
     ClientController,
     CourierController,
+    OtherController,
+    PromoCodeController,
+    OrderController,
+    MobileController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -85,6 +89,14 @@ io.on("connection", (socket) => {
     });
 });
 
+//////OTHER
+
+app.get("/getAllUsersNCouriers", OtherController.getAllUsersNCouriers);
+app.post("/deleteUser", checkAuth, OtherController.deleteUser);
+app.post("/deleteCourier", checkAuth, OtherController.deleteCourier);
+////MAIN
+
+/////USER
 app.get("/getMe", checkAuth, UserController.getMe);
 app.get("/getAllFranchisee", UserController.getAllFranchisee);
 app.post("/register", UserController.register);
@@ -93,12 +105,15 @@ app.post("/getFranchiseeById", UserController.getFranchiseeById);
 app.post("/updateFranchisee", UserController.updateFranchisee);
 app.post("/deleteFranchisee", UserController.deleteFranchisee);
 app.post("/searchFrinchisee", UserController.searchFrinchisee);
+app.post("/changePassword", checkAuth, UserController.changePassword);
 
+//////Subscriptions
 app.get("/getAllSubscriptions", SubscriptionController.getAllSubscriptions);
 app.post("/addSubscription", SubscriptionController.addSubscription);
 app.post("/getSubscriptionById", SubscriptionController.getSubscriptionById);
 app.post("/deleteSubscription", SubscriptionController.deleteSubscription);
 
+///////CLIENT
 app.get("/getFreeInfo", checkAuth, ClientController.getFreeInfo);
 app.post("/addClient", ClientController.addClient);
 app.post("/getClients", checkAuth, ClientController.getClients);
@@ -107,7 +122,9 @@ app.post("/deleteClient", ClientController.deleteClient);
 app.post("/getClientDataForId", ClientController.getClientDataForId);
 app.post("/deleteClientAdress", ClientController.deleteClientAdress);
 app.post("/updateClientData", ClientController.updateClientData);
+app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
 
+///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
 app.post("/addCourier", CourierController.addCourier);
 app.post("/getCouriers", checkAuth, CourierController.getCouriers);
@@ -119,6 +136,24 @@ app.post(
 );
 app.post("/updateCourierData", CourierController.updateCourierData);
 app.post("/deleteCourier", CourierController.deleteCourier);
+
+///////PROMOCODE
+app.post("/addPromoCode", PromoCodeController.addPromoCode);
+app.post("/getPromoCodes", PromoCodeController.getPromoCodes);
+app.post("/searchPromoCode", PromoCodeController.searchPromoCode);
+app.post("/deletePromoCode", PromoCodeController.deletePromoCode);
+
+///////ORDER
+app.post("/addOrder", OrderController.addOrder);
+app.post("/getOrders", checkAuth, OrderController.getOrders);
+app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
+
+//////MOBILE
+app.post("/sendMail", MobileController.sendMail);
+app.post("/codeConfirm", MobileController.codeConfirm);
+app.post("/clientRegister", MobileController.clientRegister);
+app.post("/clientLogin", MobileController.clientLogin);
+app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);

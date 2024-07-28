@@ -71,7 +71,7 @@ export default function SuperAdmin() {
             <div className="lg:hidden">
                 <>
                     <Li>
-                        <LinkButton href="/">Добавить заказ</LinkButton>
+                        <LinkButton href="/addOrder">Добавить заказ</LinkButton>
                     </Li>
                     <Li>
                         <LinkButton href="/addClinet">
@@ -79,18 +79,24 @@ export default function SuperAdmin() {
                         </LinkButton>
                     </Li>
                     <Li>
-                        <LinkButton href="/">Создать промокод</LinkButton>
+                        <LinkButton href="/addPromoCode">
+                            Создать промокод
+                        </LinkButton>
                     </Li>
                     <Li>
-                        <LinkButton href="/">Добавить курьера</LinkButton>
+                        <LinkButton href="/addCourier">
+                            Добавить курьера
+                        </LinkButton>
                     </Li>
                 </>
             </div>
             <Div styles="hidden lg:flex">
                 <div className="flex items-center gap-x-3">
-                    <LinkButton href="/">Добавить заказ</LinkButton>
+                    <LinkButton href="/addOrder">Добавить заказ</LinkButton>
                     <LinkButton href="/addClinet">Добавить клиента</LinkButton>
-                    <LinkButton href="/">Создать промокод</LinkButton>
+                    <LinkButton href="/addPromoCode">
+                        Создать промокод
+                    </LinkButton>
                     <LinkButton href="/addCourier">Добавить курьера</LinkButton>
                 </div>
             </Div>

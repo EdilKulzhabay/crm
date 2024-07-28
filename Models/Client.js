@@ -14,29 +14,27 @@ const ClientSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        password: {
+            type: String,
+        },
         addresses: [
             {
                 street: {
                     type: String,
-                    required: true,
                 },
                 link: {
                     type: String,
-                    required: true,
                 },
                 house: {
                     type: String,
-                    required: true,
                 },
             },
         ],
         price19: {
-            type: String,
-            required: true,
+            type: Number,
         },
         price12: {
-            type: String,
-            required: true,
+            type: Number,
         },
         status: {
             type: String,
@@ -45,6 +43,10 @@ const ClientSchema = new mongoose.Schema(
         franchisee: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
+        },
+        bonus: {
+            type: Number,
+            default: 0,
         },
     },
     {

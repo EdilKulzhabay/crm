@@ -1,18 +1,23 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
-import Container from "../Components/Container";
-import Div from "../Components/Div";
-import Li from "../Components/Li";
-import MyButton from "../Components/MyButton";
-import MyInput from "../Components/MyInput";
-import MySnackBar from "../Components/MySnackBar";
+import api from "../../api";
+import Container from "../../Components/Container";
+import Div from "../../Components/Div";
+import Li from "../../Components/Li";
+import MyButton from "../../Components/MyButton";
+import MyInput from "../../Components/MyInput";
+import MySnackBar from "../../Components/MySnackBar";
 
-export default function AddCourier() {
+export default function SuperAdminAddFranchizer() {
     const navigate = useNavigate();
 
-    const [userData, setUserData] = useState({});
-
+    const [form, setForm] = useState({
+        userName: "",
+        password: "",
+        fullName: "",
+        phone: "",
+        mail: "",
+    });
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
@@ -21,56 +26,49 @@ export default function AddCourier() {
         setOpen(false);
     };
 
-    const [form, setForm] = useState({
-        fullName: "",
-        phone: "",
-        mail: "",
-        password: "",
-    });
-
     const changeHandler = (event) => {
         setForm({ ...form, [event.target.name]: event.target.value });
     };
 
-    useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
-    }, []);
-
-    const addCourier = () => {
-        const formComplete = Object.values(form).every(
-            (value) => value.trim() !== ""
-        );
-
-        if (!formComplete) {
+    const addFranchisee = () => {
+        if (
+            form.userName === "" ||
+            form.fullName === "" ||
+            form.mail === "" ||
+            form.password === "" ||
+            form.phone === ""
+        ) {
             setOpen(true);
-            setStatus("error");
             setMessage("Заполните все поля");
+            setStatus("error");
             return;
         }
-
         api.post(
-            "/addCourier",
-            { ...form, franchisee: userData._id },
+            "/register",
+            { ...form, role: "superAdmin" },
             {
                 headers: { "Content-Type": "application/json" },
             }
-        ).then(({ data }) => {
-            if (data.success) {
+        )
+            .then(({ data }) => {
+                console.log(data);
                 setOpen(true);
+                setMessage(`Фрачайзи ${form.userName} был добавлен`);
                 setStatus("success");
-                setMessage("Вы успешно добавили курьера");
                 setForm({
+                    userName: "",
+                    password: "",
                     fullName: "",
                     phone: "",
                     mail: "",
-                    password: "",
                 });
-            }
-        });
+            })
+            .catch((e) => {
+                console.log(e);
+                setOpen(true);
+                setMessage(e.response.data.message);
+                setStatus("error");
+            });
     };
 
     const cancel = () => {
@@ -78,11 +76,45 @@ export default function AddCourier() {
     };
 
     return (
-        <Container role={userData.role}>
-            <Div>Добавление нового курьера</Div>
+        <Container role="superAdmin">
+            <Div>
+                <div>Добавление нового франчайзера</div>
+            </Div>
             <Div />
-            <Div>Личные данные:</Div>
+            <Div>
+                <div>Личные данные:</div>
+            </Div>
             <>
+                <Li>
+                    <div className="flex items-center gap-x-3">
+                        <div>Имя:</div>
+                        <div>
+                            [{" "}
+                            <MyInput
+                                name="userName"
+                                value={form.userName}
+                                change={changeHandler}
+                                color="white"
+                            />{" "}
+                            ]
+                        </div>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center gap-x-3">
+                        <div>Пароль:</div>
+                        <div>
+                            [{" "}
+                            <MyInput
+                                name="password"
+                                value={form.password}
+                                change={changeHandler}
+                                color="white"
+                            />{" "}
+                            ]
+                        </div>
+                    </div>
+                </Li>
                 <Li>
                     <div className="flex items-center gap-x-3">
                         <div>ФИО:</div>
@@ -128,57 +160,24 @@ export default function AddCourier() {
                         </div>
                     </div>
                 </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3">
-                        <div>Пароль:</div>
-                        <div>
-                            [{" "}
-                            <MyInput
-                                name="password"
-                                value={form.password}
-                                change={changeHandler}
-                                color="white"
-                            />{" "}
-                            ]
-                        </div>
-                    </div>
-                </Li>
             </>
+
             <Div />
-            <Div>Статус:</Div>
-            <Li>
-                <div className="flex items-center gap-x-2 flex-wrap text-red">
-                    [
-                    <button
-                        className="text-red hover:text-blue-900"
-                        onClick={() => {}}
-                    >
-                        Активен
-                    </button>
-                    <div>/</div>
-                    <button
-                        className="text-red hover:text-blue-900"
-                        onClick={() => {}}
-                    >
-                        Неактивен
-                    </button>
-                    ]
-                </div>
-            </Li>
-            <Div />
-            <Div>Действия:</Div>
+            <Div>
+                <div>Действия:</div>
+            </Div>
             <Div>
                 <div className="flex items-center gap-x-3">
-                    <MyButton click={addCourier}>Сохранить</MyButton>
+                    <MyButton click={addFranchisee}>Сохранить</MyButton>
                     <MyButton click={cancel}>Отменить</MyButton>
                 </div>
             </Div>
             <Div />
             <MySnackBar
                 open={open}
+                close={closeSnack}
                 text={message}
                 status={status}
-                close={closeSnack}
             />
         </Container>
     );
