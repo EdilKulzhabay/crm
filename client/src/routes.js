@@ -14,6 +14,13 @@ import CourierPage from "./Pages/CourierPage";
 import AddCourier from "./Pages/AddCourier";
 import ClientList from "./Pages/ClientList";
 import CourierList from "./Pages/CourierList";
+import SuperAdminSettings from "./Pages/SuperAdmin/SuperAdminSettings";
+import SuperAdminAddFranchizer from "./Pages/SuperAdmin/SuperAdminAddFranchizer";
+import SuperAdminClientManagment from "./Pages/SuperAdmin/SuperAdminClientManagment";
+import AddPromoCode from "./Pages/AddPromoCode";
+import PromoCodeList from "./Pages/PromoCodeList";
+import AddOrder from "./Pages/AddOrder";
+import OrderList from "./Pages/OrderList";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -24,6 +31,10 @@ export const router = createBrowserRouter([
     { path: "/addCourier", element: <AddCourier /> },
     { path: "/clients", element: <ClientList /> },
     { path: "/couriers", element: <CourierList /> },
+    { path: "/addPromoCode", element: <AddPromoCode /> },
+    { path: "/promoCodeList", element: <PromoCodeList /> },
+    { path: "/addOrder", element: <AddOrder /> },
+    { path: "/orderList", element: <OrderList /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },
@@ -31,6 +42,12 @@ export const router = createBrowserRouter([
     { path: "/addFranchisee", element: <SuperAdminAddFranchisee /> },
     { path: "/updateFranchisee/:id", element: <SuperAdminUpdateFranchisee /> },
     { path: "/subsciption", element: <SuperAdminSubscription /> },
+    { path: "/superAdminSettings", element: <SuperAdminSettings /> },
+    { path: "/superAdminAddFranchizer", element: <SuperAdminAddFranchizer /> },
+    {
+        path: "/superAdminClientManagment",
+        element: <SuperAdminClientManagment />,
+    },
 
     { path: "/import", element: <TestImport /> },
 

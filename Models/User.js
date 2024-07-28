@@ -25,11 +25,11 @@ const UserSchema = new mongoose.Schema(
         role: {
             type: String,
             required: true,
-            default: "client",
+            default: "admin",
         },
         status: {
-            type: Boolean,
-            default: true,
+            type: String,
+            default: "active",
         },
     },
     {

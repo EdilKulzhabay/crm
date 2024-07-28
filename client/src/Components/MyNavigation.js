@@ -8,7 +8,7 @@ const SAButtons = [
         title: "Главная страница",
     },
     {
-        href: "/orders",
+        href: "/orderList",
         title: "Заказы",
     },
     {
@@ -16,7 +16,7 @@ const SAButtons = [
         title: "Клиенты",
     },
     {
-        href: "/promoCode",
+        href: "/promoCodeList",
         title: "Промокоды",
     },
     {
@@ -28,7 +28,7 @@ const SAButtons = [
         title: "Аналитика",
     },
     {
-        href: "/settings",
+        href: "/superAdminSettings",
         title: "Настройки",
     },
 ];

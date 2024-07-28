@@ -63,12 +63,19 @@ export default function SuperAdminFranchiseeList() {
         getAllFranchisee();
     }, []);
 
+    const toggleStatus = (franchisee) => {
+        if (franchisee.status === "active") {
+            return "inActive";
+        } else {
+            return "active";
+        }
+    };
+
     const updateStatus = (franchisee) => {
-        const updateFranchisee = franchisee;
-        updateFranchisee.status = !franchisee.status;
+        franchisee.status = toggleStatus(franchisee);
         api.post(
             "/updateFranchisee",
-            { ...updateFranchisee },
+            { ...franchisee },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -131,7 +138,9 @@ export default function SuperAdminFranchiseeList() {
                                 <div>|</div>
                                 <div>Статус:{"    "}</div>
                                 <div>
-                                    {item.status ? "Активен" : "Заблокирован"}
+                                    {item.status === "active"
+                                        ? "Активен"
+                                        : "Заблокирован"}
                                 </div>
                                 <div>
                                     <LinkButton
@@ -147,7 +156,7 @@ export default function SuperAdminFranchiseeList() {
                                             updateStatus(item);
                                         }}
                                     >
-                                        {item.status
+                                        {item.status === "active"
                                             ? "Блокировать"
                                             : "Разблокировать"}
                                     </MyButton>
