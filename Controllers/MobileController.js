@@ -180,7 +180,7 @@ export const updateForgottenPassword = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
-            message: "Не удалось авторизоваться",
+            message: "Что-то пошло не так",
         });
     }
 };
@@ -208,7 +208,7 @@ export const addClientAddress = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
-            message: "Не удалось авторизоваться",
+            message: "Что-то пошло не так",
         });
     }
 };
@@ -225,7 +225,7 @@ export const getClientAddresses = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
-            message: "Не удалось авторизоваться",
+            message: "Что-то пошло не так",
         });
     }
 };
