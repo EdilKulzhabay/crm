@@ -21,6 +21,7 @@ import AddPromoCode from "./Pages/AddPromoCode";
 import PromoCodeList from "./Pages/PromoCodeList";
 import AddOrder from "./Pages/AddOrder";
 import OrderList from "./Pages/OrderList";
+import OrderPage from "./Pages/OrderPage";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
     { path: "/promoCodeList", element: <PromoCodeList /> },
     { path: "/addOrder", element: <AddOrder /> },
     { path: "/orderList", element: <OrderList /> },
+    { path: "/orderPage/:id", element: <OrderPage /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },

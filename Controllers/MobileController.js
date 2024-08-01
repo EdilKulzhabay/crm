@@ -229,3 +229,60 @@ export const getClientAddresses = async (req, res) => {
         });
     }
 };
+
+export const updateCart = async (req, res) => {
+    try {
+        const { mail, product, method } = req.body;
+
+        const client = await Client.findOne({ mail });
+
+        if (product === "b12") {
+            if (method === "add") {
+                client.cart.b12 = client.cart.b12 + 1;
+            } else {
+                client.cart.b12 = client.cart.b12 - 1;
+            }
+        } else {
+            if (method === "add") {
+                client.cart.b19 = client.cart.b19 + 1;
+            } else {
+                client.cart.b19 = client.cart.b19 - 1;
+            }
+        }
+
+        await client.save();
+
+        res.json({
+            success: true,
+            client,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const cleanCart = async (req, res) => {
+    try {
+        const { mail } = req.body;
+
+        const client = await Client.findOne({ mail });
+
+        client.cart.b12 = 0;
+        client.cart.b19 = 0;
+
+        await client.save();
+
+        res.json({
+            success: true,
+            client,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};

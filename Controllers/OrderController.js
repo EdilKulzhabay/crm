@@ -162,3 +162,23 @@ export const getFreeInfoOrder = async (req, res) => {
         });
     }
 };
+
+export const getOrderDataForId = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        const order = await Order.findById(id)
+            .populate("franchisee")
+            .populate("courier")
+            .populate("client");
+
+        res.json({
+            order,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};

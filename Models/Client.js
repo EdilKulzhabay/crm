@@ -47,6 +47,16 @@ const ClientSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        cart: {
+            b12: {
+                type: Number,
+                default: 0,
+            },
+            b19: {
+                type: Number,
+                default: 0,
+            },
+        },
     },
     {
         timestamps: true,
