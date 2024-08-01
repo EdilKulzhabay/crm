@@ -144,9 +144,10 @@ app.post("/searchPromoCode", PromoCodeController.searchPromoCode);
 app.post("/deletePromoCode", PromoCodeController.deletePromoCode);
 
 ///////ORDER
+app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
 app.post("/addOrder", OrderController.addOrder);
 app.post("/getOrders", checkAuth, OrderController.getOrders);
-app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
+app.post("/getOrderDataForId", OrderController.getOrderDataForId);
 
 //////MOBILE
 app.post("/sendMail", MobileController.sendMail);
@@ -156,6 +157,8 @@ app.post("/clientLogin", MobileController.clientLogin);
 app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
 app.post("/addClientAddress", MobileController.addClientAddress);
 app.post("/getClientAddresses", MobileController.getClientAddresses);
+app.post("/updateCart", MobileController.updateCart);
+app.post("/cleanCart", MobileController.cleanCart);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);

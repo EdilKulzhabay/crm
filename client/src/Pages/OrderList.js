@@ -436,13 +436,52 @@ export default function OrderList() {
                     if (orders.length === index + 1) {
                         return (
                             <div key={item._id} ref={lastOrderElementRef}>
-                                <Li>{item.client.fullName}</Li>
+                                <Li>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Заказ:</div>
+                                        <div>{item.client.fullName}</div>
+                                    </div>
+                                </Li>
                             </div>
                         );
                     } else {
                         return (
                             <div key={item._id}>
-                                <Li>{item.client.fullName}</Li>
+                                <Li>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>
+                                            Заказ: (
+                                            {item.createdAt.slice(0, 10)})
+                                        </div>
+                                        <div>{item.client.fullName}</div>
+                                        <div>
+                                            {item.products.b12 && (
+                                                <span>
+                                                    12,5л - {item.products.b12}
+                                                    шт{" "}
+                                                </span>
+                                            )}
+                                            {item.products.b19 && (
+                                                <span>
+                                                    19,8л - {item.products.b19}
+                                                    шт
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="text-red">
+                                            ({item.date.d.slice(0, 10)}){" "}
+                                            {item.date.time && item.date.time}
+                                        </div>
+                                        <LinkButton
+                                            href={`/orderPage/${item._id}`}
+                                        >
+                                            Просмотр
+                                        </LinkButton>
+                                        <MyButton click={() => {}}>
+                                            Назначить крьера
+                                        </MyButton>
+                                    </div>
+                                </Li>
                             </div>
                         );
                     }
