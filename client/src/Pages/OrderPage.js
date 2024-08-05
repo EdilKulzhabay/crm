@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api";
+import ChooseCourierModal from "../Components/ChooseCourierModal";
 import Container from "../Components/Container";
 import Div from "../Components/Div";
 import Li from "../Components/Li";
+import LinkButton from "../Components/LinkButton";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 
@@ -11,6 +13,9 @@ export default function OrderPage() {
     const { id } = useParams();
     const [role, setRole] = useState("");
     const [order, setOrder] = useState(null);
+    const [orderStatus, setOrderStatus] = useState("");
+    const [orderCourier, setOrderCourier] = useState(null);
+    const [couriersModal, setCouriersModal] = useState(false);
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -20,6 +25,15 @@ export default function OrderPage() {
         setOpen(false);
     };
 
+    const closeCouriersModal = () => {
+        setCouriersModal(false);
+    };
+
+    const chooseCourier = (chCourier) => {
+        setOrderCourier(chCourier);
+        setCouriersModal(false);
+    };
+
     const getOrderData = () => {
         api.post(
             "/getOrderDataForId",
@@ -27,8 +41,9 @@ export default function OrderPage() {
             { headers: { "Content-Type": "application/json" } }
         )
             .then(({ data }) => {
-                console.log(data);
                 setOrder(data.order);
+                setOrderStatus(data.order.status);
+                setOrderCourier(data.order.courier);
             })
             .catch((e) => {
                 console.log(e);
@@ -49,8 +64,33 @@ export default function OrderPage() {
         getOrderData();
     }, []);
 
+    const updateOrder = (change, changeData) => {
+        api.post(
+            "/updateOrder",
+            { orderId: order._id, change, changeData },
+            { headers: { "Content-Type": "application/json" } }
+        )
+            .then(({ data }) => {
+                if (data.success) {
+                    setMessage(data.message);
+                    setStatus("success");
+                    setOpen(true);
+                }
+                getOrderData();
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
+
     return (
         <Container role={role}>
+            {couriersModal && (
+                <ChooseCourierModal
+                    closeCouriersModal={closeCouriersModal}
+                    chooseCourier={chooseCourier}
+                />
+            )}
             <Div>Детали заказа</Div>
             <Div />
             <Div>Клиент:</Div>
@@ -101,27 +141,154 @@ export default function OrderPage() {
             </>
 
             <Div />
-            <Div>Цены товаров:</Div>
+            <Div>Дата и время заказа:</Div>
+            <>
+                <Li>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <div>Дата:</div>
+                        <div className="text-red">{order?.date?.d}</div>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <div>Время:</div>
+                        <div className="text-red">{order?.date?.time}</div>
+                    </div>
+                </Li>
+            </>
 
             <Div />
-            <Div>Сводная информация:</Div>
+            <Div>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                    <div>Статус заказа:</div>
+                    <div className="flex items-center gap-x-2 flex-wrap text-red">
+                        [
+                        <button
+                            className="text-red hover:text-blue-900"
+                            onClick={() => {
+                                setOrderStatus("awaitingOrder");
+                            }}
+                        >
+                            Ожидает заказ
+                        </button>
+                        <div>/</div>
+                        <button
+                            className="text-red hover:text-blue-900"
+                            onClick={() => {
+                                setOrderStatus("onTheWay");
+                            }}
+                        >
+                            В пути
+                        </button>
+                        <div>/</div>
+                        <button
+                            className="text-red hover:text-blue-900"
+                            onClick={() => {
+                                setOrderStatus("delivered");
+                            }}
+                        >
+                            Доставлен
+                        </button>
+                        <div>/</div>
+                        <button
+                            className="text-red hover:text-blue-900"
+                            onClick={() => {
+                                setOrderStatus("cancelled");
+                            }}
+                        >
+                            Отменен
+                        </button>
+                        ]
+                        <MyButton
+                            click={() => {
+                                updateOrder("status", orderStatus);
+                            }}
+                        >
+                            Применить
+                        </MyButton>
+                    </div>
+                </div>
+            </Div>
+            <Li>
+                {order?.status === "awaitingOrder"
+                    ? "Ожидает заказ"
+                    : order?.status === "onTheWay"
+                    ? "В пути"
+                    : order?.status === "delivered"
+                    ? "Доставлен"
+                    : "Отменен"}
+            </Li>
 
             <Div />
-            <Div>Настройки клиента:</Div>
+            <Div>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                    <div>Курьер:</div>
+                    <div>{order?.courier?.fullName}</div>
+                </div>
+            </Div>
+            <Li>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                    <LinkButton href={`/CourierPage/${order?.courier?._id}`}>
+                        Просмотр
+                    </LinkButton>
+                    <MyButton
+                        click={() => {
+                            setCouriersModal(true);
+                        }}
+                    >
+                        Изменить курьера
+                    </MyButton>
+
+                    {orderCourier &&
+                        orderCourier._id !== order?.courier._id && (
+                            <MyButton
+                                click={() => {
+                                    updateOrder("courier", orderCourier);
+                                }}
+                            >
+                                Применить
+                            </MyButton>
+                        )}
+                    {orderCourier &&
+                        orderCourier._id !== order?.courier._id && (
+                            <div className="flex items-center gap-x-3 flex-wrap">
+                                <div>|</div> <div>{orderCourier.fullName}</div>{" "}
+                            </div>
+                        )}
+                </div>
+            </Li>
 
             <Div />
-            <Div>История заказов:</Div>
-            <Div>---------------------</Div>
+            <Div>История изменений:</Div>
+            {order?.history &&
+                order?.history.length > 0 &&
+                order?.history.map((item, index) => {
+                    return (
+                        <div key={index}>
+                            <Li>{item}</Li>
+                        </div>
+                    );
+                })}
+
+            <Div />
+            <Div>Отзыв клиента:</Div>
+            <Li>
+                Отзыв:{" "}
+                {order?.clientNotes
+                    ? order.clientNotes
+                    : "Клиент не оставил отзыва"}
+            </Li>
 
             <Div />
             <Div>Действия:</Div>
             <Div>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={() => {}}>Создать заказ</MyButton>
                     <MyButton click={() => {}}>
-                        Выгрузить заказы в excel
+                        Отправить уведомление клиенту
                     </MyButton>
-                    <MyButton click={() => {}}>Удлаить клиента</MyButton>
+                    <MyButton click={() => {}}>
+                        Отправить уведомление курьеру
+                    </MyButton>
                 </div>
             </Div>
             <Div />

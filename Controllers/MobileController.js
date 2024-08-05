@@ -286,3 +286,62 @@ export const cleanCart = async (req, res) => {
         });
     }
 };
+
+export const getCart = async (req, res) => {
+    try {
+        const { mail } = req.body;
+        const client = Client.findOne({ mail });
+
+        const cart = client.cart;
+
+        res.json({
+            success: true,
+            cart,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getClientDataMobile = async (req, res) => {
+    try {
+        const { mail } = req.body;
+        const client = Client.findOne({ mail });
+
+        res.json({
+            success: true,
+            client,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const updateClientDataMobile = async (req, res) => {
+    try {
+        const { mail, field, value } = req.body;
+
+        const client = await Client.findOne({ mail });
+        if (!client) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Client not found" });
+        }
+
+        client[field] = value;
+        await client.save();
+
+        res.json({ success: true, message: "Данные успешно изменены" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};

@@ -182,3 +182,70 @@ export const getOrderDataForId = async (req, res) => {
         });
     }
 };
+
+export const updateOrder = async (req, res) => {
+    try {
+        const id = req.userId;
+        const { orderId, change, changeData } = req.body;
+
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "Не удалось найти пользователя",
+            });
+        }
+
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.json({
+                success: false,
+                message: "Не удалось найти заказ",
+            });
+        }
+
+        if (change === "status") {
+            order.status = changeData;
+            let changeStatus = "Ожидает заказ";
+            switch (changeData) {
+                case "awaitingOrder":
+                    changeStatus = "Ожидает заказ";
+                    break;
+                case "onTheWay":
+                    changeStatus = "В пути";
+                    break;
+                case "delivered":
+                    changeStatus = "Доставлен";
+                    break;
+                case "cancelled":
+                    changeStatus = "Отменен";
+                    break;
+                default:
+                    changeStatus = "Ожидает заказ";
+                    break;
+            }
+            order.history.push(
+                `Пользователь ${user.fullName} изменил статус на "${changeStatus}"`
+            );
+            await order.save();
+        } else {
+            order.courier = changeData._id;
+            order.history.push(
+                `Пользователь ${user.fullName} изменил курьера на "${changeData.fullName}"`
+            );
+            await order.save();
+        }
+
+        res.json({
+            success: true,
+            message: "Заказ успешно изменен",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
