@@ -148,6 +148,7 @@ app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
 app.post("/addOrder", OrderController.addOrder);
 app.post("/getOrders", checkAuth, OrderController.getOrders);
 app.post("/getOrderDataForId", OrderController.getOrderDataForId);
+app.post("/updateOrder", checkAuth, OrderController.updateOrder);
 
 //////MOBILE
 app.post("/sendMail", MobileController.sendMail);
@@ -159,6 +160,9 @@ app.post("/addClientAddress", MobileController.addClientAddress);
 app.post("/getClientAddresses", MobileController.getClientAddresses);
 app.post("/updateCart", MobileController.updateCart);
 app.post("/cleanCart", MobileController.cleanCart);
+app.post("/getCart", MobileController.getCart);
+app.post("/getClientDataMobile", MobileController.getClientDataMobile);
+app.post("/updateClientDataMobile", MobileController.updateClientDataMobile);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
