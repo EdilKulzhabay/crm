@@ -27,6 +27,8 @@ export default function ClientList() {
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const fileInputRef = useRef(null);
+    const [selectedFile, setSelectedFile] = useState(null);
 
     const [dates, setDates] = useState({
         startDate: "",
@@ -56,6 +58,11 @@ export default function ClientList() {
         }
 
         setDates({ ...dates, [e.target.name]: formattedValue });
+    };
+
+    const handleFileChange = (event) => {
+        setSelectedFile(event.target.files[0]);
+        console.log(event.target.files[0]);
     };
 
     const handleSearch = (e) => {
@@ -185,6 +192,33 @@ export default function ClientList() {
                 console.log(e);
             });
     };
+
+    useEffect(() => {
+        if (!selectedFile) {
+            return;
+        }
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        api.post("/api/upload-excel", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        })
+            .then(({ data }) => {
+                if (data.success) {
+                    setOpen(true);
+                    setMessage("Клиенты успешно добавлены");
+                    setStatus("success");
+                    setClients([]);
+                    setPage(1);
+                    setHasMore(true);
+                    getFreeInfo();
+                }
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    }, [selectedFile]);
 
     return (
         <Container role={role}>
@@ -405,10 +439,22 @@ export default function ClientList() {
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <LinkButton href="/addClinet">Добавить клиента</LinkButton>
                     <MyButton click={() => {}}>Экспорт в excel</MyButton>
-                    <LinkButton href="/import">
+                    <input
+                        type="file"
+                        onChange={handleFileChange}
+                        ref={fileInputRef}
+                        className="hidden"
+                    />
+                    <MyButton
+                        click={() => {
+                            fileInputRef.current.click();
+                        }}
+                    >
                         Импортировать с excel
-                    </LinkButton>
-                    {/* <MyButton click={() => {}}>Импортировать с excel</MyButton> */}
+                    </MyButton>
+                    {selectedFile && (
+                        <div className="text-red">{selectedFile.name}</div>
+                    )}
                 </div>
             </Div>
 

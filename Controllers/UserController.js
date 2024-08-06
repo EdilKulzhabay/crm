@@ -67,6 +67,12 @@ export const login = async (req, res) => {
             });
         }
 
+        if (candidate.status !== "active") {
+            return res.status(404).json({
+                message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
+            });
+        }
+
         const token = jwt.sign({ _id: candidate._id }, process.env.SecretKey, {
             expiresIn: "30d",
         });
