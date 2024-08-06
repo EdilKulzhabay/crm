@@ -146,7 +146,7 @@ export const clientLogin = async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ _id: candidate._id }, process.env.SecretKey, {
+        const token = jwt.sign({ client: candidate }, process.env.SecretKey, {
             expiresIn: "30d",
         });
 

@@ -41,12 +41,14 @@ const upload = multer({ dest: "uploads/" });
 
 app.post("/api/upload-excel", upload.single("file"), async (req, res) => {
     try {
-        console.log("WEHERE");
         const filePath = req.file.path;
         await processExcelFile(filePath);
-        res.status(200).json({ message: "File processed successfully" });
+        res.json({ success: true, message: "File processed successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Error processing file" });
+        res.status(500).json({
+            success: false,
+            message: "Error processing file",
+        });
     }
 });
 
