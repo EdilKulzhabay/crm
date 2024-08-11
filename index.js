@@ -163,7 +163,7 @@ app.post("/addClientAddress", MobileController.addClientAddress);
 app.post("/getClientAddresses", MobileController.getClientAddresses);
 app.post("/updateCart", MobileController.updateCart);
 app.post("/cleanCart", MobileController.cleanCart);
-app.post("/getCart", MobileController.getCart);
+app.post("/getCart", checkAuth, MobileController.getCart);
 app.post("/getClientDataMobile", MobileController.getClientDataMobile);
 app.post("/updateClientDataMobile", MobileController.updateClientDataMobile);
 
