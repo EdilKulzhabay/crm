@@ -370,13 +370,15 @@ export const updateCart = async (req, res) => {
             if (method === "add") {
                 client.cart.b12 = client.cart.b12 + 1;
             } else {
-                client.cart.b12 = client.cart.b12 - 1;
+                client.cart.b12 =
+                    client.cart.b12 - 1 >= 0 ? client.cart.b12 - 1 : 0;
             }
         } else {
             if (method === "add") {
                 client.cart.b19 = client.cart.b19 + 1;
             } else {
-                client.cart.b19 = client.cart.b19 - 1;
+                client.cart.b19 =
+                    client.cart.b19 - 1 >= 0 ? client.cart.b19 - 1 : 0;
             }
         }
 
