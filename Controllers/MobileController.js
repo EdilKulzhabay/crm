@@ -105,6 +105,8 @@ export const clientRegister = async (req, res) => {
 
         const client = await doc.save();
 
+        console.log(client);
+
         const accessToken = jwt.sign(
             { client: client },
             process.env.SecretKey,
@@ -125,7 +127,7 @@ export const clientRegister = async (req, res) => {
             refreshToken: refreshToken,
         });
 
-        res.json({ accessToken, refreshToken });
+        res.json({ accessToken, refreshToken: refreshToken });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -136,7 +138,7 @@ export const clientRegister = async (req, res) => {
 
 export const clientLogin = async (req, res) => {
     try {
-        const { mail, password } = req.body;
+        const { mail } = req.body;
 
         const candidate = await Client.findOne({ mail });
 
@@ -146,7 +148,10 @@ export const clientLogin = async (req, res) => {
             });
         }
 
-        const isValidPass = await bcrypt.compare(password, candidate.password);
+        const isValidPass = await bcrypt.compare(
+            req.body.password,
+            candidate.password
+        );
 
         if (!isValidPass) {
             return res.status(404).json({
@@ -160,16 +165,27 @@ export const clientLogin = async (req, res) => {
             });
         }
 
+        const {
+            password,
+            franchisee,
+            addresses,
+            status,
+            refreshToken,
+            ...clientData
+        } = candidate._doc;
+
+        console.log(clientData);
+
         const accessToken = jwt.sign(
-            { client: candidate },
+            { client: clientData },
             process.env.SecretKey,
             {
                 expiresIn: "15m", // Время жизни access токена (например, 15 минут)
             }
         );
 
-        const refreshToken = jwt.sign(
-            { client: candidate },
+        const refreshToken2 = jwt.sign(
+            { client: clientData },
             process.env.SecretKeyRefresh,
             {
                 expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
@@ -177,10 +193,10 @@ export const clientLogin = async (req, res) => {
         );
 
         await Client.findByIdAndUpdate(candidate._id, {
-            refreshToken: refreshToken,
+            refreshToken: refreshToken2,
         });
 
-        res.json({ accessToken, refreshToken });
+        res.json({ accessToken, refreshToken: refreshToken2 });
     } catch (error) {
         console.log(error);
         res.status(500).json({
