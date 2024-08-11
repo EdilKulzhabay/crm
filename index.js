@@ -161,7 +161,7 @@ app.post("/clientLogin", MobileController.clientLogin);
 app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
 app.post("/addClientAddress", MobileController.addClientAddress);
 app.post("/getClientAddresses", MobileController.getClientAddresses);
-app.post("/updateCart", MobileController.updateCart);
+app.post("/updateCart", checkAuth, MobileController.updateCart);
 app.post("/cleanCart", MobileController.cleanCart);
 app.post("/getCart", checkAuth, MobileController.getCart);
 app.post("/getClientDataMobile", MobileController.getClientDataMobile);

@@ -180,7 +180,7 @@ export const clientLogin = async (req, res) => {
             { client: clientData },
             process.env.SecretKey,
             {
-                expiresIn: "15m", // Время жизни access токена (например, 15 минут)
+                expiresIn: "1m", // Время жизни access токена (например, 15 минут)
             }
         );
 
