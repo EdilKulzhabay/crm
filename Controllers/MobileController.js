@@ -277,11 +277,36 @@ export const updateForgottenPassword = async (req, res) => {
 
         await client.save();
 
-        const token = jwt.sign({ _id: client._id }, process.env.SecretKey, {
-            expiresIn: "30d",
+        const {
+            password,
+            franchisee,
+            addresses,
+            status,
+            refreshToken,
+            ...clientData
+        } = client._doc;
+
+        const accessToken = jwt.sign(
+            { client: clientData },
+            process.env.SecretKey,
+            {
+                expiresIn: "15m", // Время жизни access токена (например, 15 минут)
+            }
+        );
+
+        const refreshToken2 = jwt.sign(
+            { client: clientData },
+            process.env.SecretKeyRefresh,
+            {
+                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
+            }
+        );
+
+        await Client.findByIdAndUpdate(client._id, {
+            refreshToken: refreshToken2,
         });
 
-        res.json({ token });
+        res.json({ accessToken, refreshToken: refreshToken2 });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -381,7 +406,6 @@ export const cleanCart = async (req, res) => {
 
         res.json({
             success: true,
-            client,
         });
     } catch (error) {
         console.log(error);
@@ -397,8 +421,6 @@ export const getCart = async (req, res) => {
         const client = await Client.findOne({ mail });
 
         const cart = client.cart;
-
-        console.log(client);
 
         res.json({
             success: true,
@@ -417,9 +439,11 @@ export const getClientDataMobile = async (req, res) => {
         const { mail } = req.body;
         const client = await Client.findOne({ mail });
 
+        const { refreshToken, ...clientData } = client;
+
         res.json({
             success: true,
-            client,
+            clientData,
         });
     } catch (error) {
         console.log(error);
