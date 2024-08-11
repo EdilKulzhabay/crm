@@ -227,7 +227,7 @@ export const refreshToken = async (req, res) => {
             { client: decoded.client },
             process.env.SecretKey,
             {
-                expiresIn: "15m",
+                expiresIn: "1m",
             }
         );
 
