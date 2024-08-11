@@ -359,7 +359,6 @@ export const updateCart = async (req, res) => {
 
         res.json({
             success: true,
-            client,
         });
     } catch (error) {
         console.log(error);
