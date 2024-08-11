@@ -379,9 +379,11 @@ export const cleanCart = async (req, res) => {
 export const getCart = async (req, res) => {
     try {
         const { mail } = req.body;
-        const client = Client.findOne({ mail });
+        const client = await Client.findOne({ mail });
 
         const cart = client.cart;
+
+        console.log(client);
 
         res.json({
             success: true,
@@ -398,7 +400,7 @@ export const getCart = async (req, res) => {
 export const getClientDataMobile = async (req, res) => {
     try {
         const { mail } = req.body;
-        const client = Client.findOne({ mail });
+        const client = await Client.findOne({ mail });
 
         res.json({
             success: true,
