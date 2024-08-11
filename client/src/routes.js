@@ -9,7 +9,6 @@ import SuperAdminFranchiseeList from "./Pages/SuperAdmin/SuperAdminFranchiseeLis
 import SuperAdminSubscription from "./Pages/SuperAdmin/SuperAdminSubscription";
 import SuperAdminUpdateFranchisee from "./Pages/SuperAdmin/SuperAdminUpdateFranchisee";
 import ClientPage from "./Pages/ClientPage";
-import TestImport from "./Pages/SuperAdmin/TestImport";
 import CourierPage from "./Pages/CourierPage";
 import AddCourier from "./Pages/AddCourier";
 import ClientList from "./Pages/ClientList";
@@ -50,8 +49,6 @@ export const router = createBrowserRouter([
         path: "/superAdminClientManagment",
         element: <SuperAdminClientManagment />,
     },
-
-    { path: "/import", element: <TestImport /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },

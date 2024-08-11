@@ -101,15 +101,9 @@ export const clientRegister = async (req, res) => {
 
         const client = await doc.save();
 
-        const token = jwt.sign(
-            {
-                _id: client._id,
-            },
-            process.env.SecretKey,
-            {
-                expiresIn: "30d",
-            }
-        );
+        const token = jwt.sign({ client: candidate }, process.env.SecretKey, {
+            expiresIn: "30d",
+        });
 
         res.json({ token });
     } catch (error) {
