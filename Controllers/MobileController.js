@@ -111,7 +111,7 @@ export const clientRegister = async (req, res) => {
             { client: client },
             process.env.SecretKey,
             {
-                expiresIn: "15m", // Время жизни access токена (например, 15 минут)
+                expiresIn: "1d", // Время жизни access токена (например, 15 минут)
             }
         );
 
@@ -180,7 +180,7 @@ export const clientLogin = async (req, res) => {
             { client: clientData },
             process.env.SecretKey,
             {
-                expiresIn: "1m", // Время жизни access токена (например, 15 минут)
+                expiresIn: "1d", // Время жизни access токена (например, 15 минут)
             }
         );
 
@@ -227,7 +227,7 @@ export const refreshToken = async (req, res) => {
             { client: decoded.client },
             process.env.SecretKey,
             {
-                expiresIn: "1m",
+                expiresIn: "1d",
             }
         );
 
