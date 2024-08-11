@@ -9,6 +9,7 @@ import Info from "../Components/Info";
 import LinkButton from "../Components/LinkButton";
 import MySnackBar from "../Components/MySnackBar";
 import Container from "../Components/Container";
+import * as XLSX from "xlsx";
 
 export default function ClientList() {
     const [search, setSearch] = useState("");
@@ -219,6 +220,64 @@ export default function ClientList() {
                 console.log(e);
             });
     }, [selectedFile]);
+
+    const getClientsForExcel = () => {
+        api.post(
+            "/getClientsForExcel",
+            { ...dates, status: filterClientStatus },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                const type = "clients";
+                const clients = data.clients;
+
+                const mappedData = clients.map((item) => {
+                    let addresses = "";
+                    item.addresses.map((item, index) => {
+                        const address = `Адрес${index + 1} ${item.street} ${
+                            item.house
+                        }\n`;
+                        addresses += address;
+                    });
+                    return {
+                        "Имя Клиента": item.fullName,
+                        Адрес: addresses,
+                        Номер: item.phone,
+                        Почта: item.mail,
+                        Цена19: item.price19,
+                        Цена12: item.price12,
+                        Франчайзи: item?.franchisee?.fullName || "Не назначен",
+                        "Статус клиента":
+                            item.status === "active" ? "Раб." : "Не раб.",
+                        "Дата добавления": item.createdAt.slice(0, 10),
+                        Бонусы: item.bonus,
+                    };
+                });
+
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(mappedData);
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    type === "clients" ? "Clients" : "Orders"
+                );
+                const nowDate = new Date();
+                const fileDate =
+                    dates.startDate !== ""
+                        ? `${dates.startDate} - ${dates.endData}`
+                        : `${nowDate.getFullYear()}:${
+                              nowDate.getMonth() + 1
+                          }:${nowDate.getDate()}`;
+                const fileName = `${fileDate}.xlsx`; // Убедитесь, что функция formatDate определена и возвращает строку
+
+                XLSX.writeFile(workbook, fileName);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
 
     return (
         <Container role={role}>
@@ -438,7 +497,9 @@ export default function ClientList() {
             <Div>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <LinkButton href="/addClinet">Добавить клиента</LinkButton>
-                    <MyButton click={() => {}}>Экспорт в excel</MyButton>
+                    <MyButton click={getClientsForExcel}>
+                        Экспорт в excel
+                    </MyButton>
                     <input
                         type="file"
                         onChange={handleFileChange}

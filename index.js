@@ -125,6 +125,7 @@ app.post("/getClientDataForId", ClientController.getClientDataForId);
 app.post("/deleteClientAdress", ClientController.deleteClientAdress);
 app.post("/updateClientData", ClientController.updateClientData);
 app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
+app.post("/getClientsForExcel", checkAuth, ClientController.getClientsForExcel);
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);

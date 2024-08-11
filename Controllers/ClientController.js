@@ -277,3 +277,46 @@ export const updateClientFranchisee = async (req, res) => {
         });
     }
 };
+
+export const getClientsForExcel = async (req, res) => {
+    try {
+        const id = req.userId;
+        const { startDate, endDate, status } = req.body;
+
+        const sDate = startDate
+            ? new Date(startDate + "T00:00:00.000Z")
+            : new Date("2024-01-01T00:00:00.000Z");
+        const eDate = endDate
+            ? new Date(endDate + "T00:00:00.000Z")
+            : new Date("2026-01-01T00:00:00.000Z");
+
+        const user = await User.findById(id);
+
+        // Строим базовый фильтр
+        const filter = {
+            createdAt: { $gte: sDate, $lte: eDate },
+        };
+
+        // Добавляем фильтр по статусу, если он не "all"
+        if (status !== "all") {
+            filter.status = status;
+        }
+
+        // Добавляем фильтр по франчайзи для админа
+        if (user.role === "admin") {
+            filter.franchisee = id;
+        }
+
+        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
+        const clients = await Client.find(filter)
+            .populate("franchisee", "fullName")
+            .sort({ createdAt: 1 });
+
+        res.json({ clients });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
