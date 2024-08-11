@@ -166,6 +166,8 @@ app.post("/cleanCart", MobileController.cleanCart);
 app.post("/getCart", checkAuth, MobileController.getCart);
 app.post("/getClientDataMobile", MobileController.getClientDataMobile);
 app.post("/updateClientDataMobile", MobileController.updateClientDataMobile);
+app.post("/refreshToken", MobileController.refreshToken);
+app.post("/logOutClient", MobileController.logOutClient);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);

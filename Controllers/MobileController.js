@@ -97,15 +97,35 @@ export const clientRegister = async (req, res) => {
             password: hash,
             phone,
             mail,
+            cart: {
+                b12: 0,
+                b19: 0,
+            },
         });
 
         const client = await doc.save();
 
-        const token = jwt.sign({ client: candidate }, process.env.SecretKey, {
-            expiresIn: "30d",
+        const accessToken = jwt.sign(
+            { client: client },
+            process.env.SecretKey,
+            {
+                expiresIn: "15m", // Время жизни access токена (например, 15 минут)
+            }
+        );
+
+        const refreshToken = jwt.sign(
+            { client: client },
+            process.env.SecretKeyRefresh,
+            {
+                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
+            }
+        );
+
+        await Client.findByIdAndUpdate(client._id, {
+            refreshToken: refreshToken,
         });
 
-        res.json({ token });
+        res.json({ accessToken, refreshToken });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -140,16 +160,91 @@ export const clientLogin = async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ client: candidate }, process.env.SecretKey, {
-            expiresIn: "30d",
+        const accessToken = jwt.sign(
+            { client: candidate },
+            process.env.SecretKey,
+            {
+                expiresIn: "15m", // Время жизни access токена (например, 15 минут)
+            }
+        );
+
+        const refreshToken = jwt.sign(
+            { client: candidate },
+            process.env.SecretKeyRefresh,
+            {
+                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
+            }
+        );
+
+        await Client.findByIdAndUpdate(candidate._id, {
+            refreshToken: refreshToken,
         });
 
-        res.json({ token });
+        res.json({ accessToken, refreshToken });
     } catch (error) {
         console.log(error);
         res.status(500).json({
             message: "Не удалось авторизоваться",
         });
+    }
+};
+
+export const refreshToken = async (req, res) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return res.status(403).json({ message: "Требуется refresh токен" });
+    }
+
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.SecretKeyRefresh);
+
+        // Проверка, что refresh токен совпадает с хранимым в базе данных
+        const candidate = await Client.findById(decoded.client._id);
+
+        if (!candidate || candidate.refreshToken !== refreshToken) {
+            return res.status(403).json({ message: "Неверный refresh токен" });
+        }
+
+        // Генерация нового access токена
+        const newAccessToken = jwt.sign(
+            { client: decoded.client },
+            process.env.SecretKey,
+            {
+                expiresIn: "15m",
+            }
+        );
+
+        const newRefreshToken = jwt.sign(
+            { client: decoded.client },
+            process.env.SecretKeyRefresh,
+            {
+                expiresIn: "30d",
+            }
+        );
+
+        await Client.findByIdAndUpdate(decoded.client._id, {
+            refreshToken: newRefreshToken,
+        });
+
+        res.json({
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+        });
+    } catch (error) {
+        return res.status(403).json({ message: "Неверный refresh токен" });
+    }
+};
+
+export const logOutClient = async (req, res) => {
+    const { refreshToken } = req.body;
+
+    try {
+        await Client.findOneAndDelete({ refreshToken }, { refreshToken: null });
+
+        res.status(200).json({ message: "Вы вышли из системы" });
+    } catch (error) {
+        return res.status(403).json({ message: "Неверный refresh токен" });
     }
 };
 
