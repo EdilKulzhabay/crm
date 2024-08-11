@@ -2,10 +2,13 @@ import jwt from "jsonwebtoken";
 
 export default (req, res, next) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+    console.log(req.headers);
+    console.log(token);
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.SecretKey);
             const userId = decoded._id;
+            console.log(userId);
             req.userId = userId;
             next();
         } catch (e) {
