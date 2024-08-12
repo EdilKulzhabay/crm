@@ -1,4 +1,5 @@
 import Client from "../Models/Client.js";
+import Notification from "../Models/Notification.js";
 import User from "../Models/User.js";
 
 export const addClient = async (req, res) => {
@@ -24,6 +25,67 @@ export const addClient = async (req, res) => {
         });
 
         await client.save();
+
+        let orConditions = [
+            { fullName: fullName, franchisee: { $ne: franchisee } },
+            { phone: phone, franchisee: { $ne: franchisee } },
+            { mail: mail, franchisee: { $ne: franchisee } },
+        ];
+
+        if (addresses && addresses.length > 0) {
+            addresses.forEach((address) => {
+                orConditions.push({
+                    addresses: {
+                        $elemMatch: {
+                            street: address.street,
+                            house: address.house,
+                            link: address.link,
+                        },
+                    },
+                    franchisee: { $ne: franchisee },
+                });
+            });
+        }
+
+        const existingClients = await Client.findOne({ $or: orConditions });
+
+        if (existingClients) {
+            let matchedField;
+            if (existingClients.mail === mail && mail !== "")
+                matchedField = "mail";
+            else if (existingClients.fullName === fullName)
+                matchedField = "fullName";
+            else if (existingClients.phone === phone) matchedField = "phone";
+            else if (
+                existingClients.addresses.some((addr) =>
+                    addresses.some(
+                        (newAddr) =>
+                            addr.street === newAddr.street &&
+                            addr.house === newAddr.house &&
+                            addr.link === newAddr.link
+                    )
+                )
+            ) {
+                matchedField = "addresses";
+            }
+
+            const notDoc = new Notification({
+                first: existingClients.franchisee,
+                second: franchisee,
+                matchesType: "client",
+                matchedField,
+                firstObject: existingClients._id,
+                secondObject: client._doc._id,
+            });
+
+            await notDoc.save();
+
+            const notification = {
+                message: "Есть совпадение клиентов",
+            };
+
+            global.io.emit("clientMatch", notification);
+        }
 
         res.json({
             success: true,

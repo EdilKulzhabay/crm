@@ -94,8 +94,10 @@ io.on("connection", (socket) => {
 //////OTHER
 
 app.get("/getAllUsersNCouriers", OtherController.getAllUsersNCouriers);
+app.get("/getMainPageInfo", checkAuth, OtherController.getMainPageInfo);
 app.post("/deleteUser", checkAuth, OtherController.deleteUser);
 app.post("/deleteCourier", checkAuth, OtherController.deleteCourier);
+
 ////MAIN
 
 /////USER
@@ -108,6 +110,16 @@ app.post("/updateFranchisee", UserController.updateFranchisee);
 app.post("/deleteFranchisee", UserController.deleteFranchisee);
 app.post("/searchFrinchisee", UserController.searchFrinchisee);
 app.post("/changePassword", checkAuth, UserController.changePassword);
+app.post(
+    "/updateNotificationStatus",
+    checkAuth,
+    UserController.updateNotificationStatus
+);
+app.post(
+    "/updateNotificationTypes",
+    checkAuth,
+    UserController.updateNotificationTypes
+);
 
 //////Subscriptions
 app.get("/getAllSubscriptions", SubscriptionController.getAllSubscriptions);
@@ -150,6 +162,7 @@ app.post("/deletePromoCode", PromoCodeController.deletePromoCode);
 app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
 app.post("/addOrder", OrderController.addOrder);
 app.post("/getOrders", checkAuth, OrderController.getOrders);
+app.post("/getOrdersForExcel", checkAuth, OrderController.getOrdersForExcel);
 app.post("/getOrderDataForId", OrderController.getOrderDataForId);
 app.post("/updateOrder", checkAuth, OrderController.updateOrder);
 
@@ -159,13 +172,21 @@ app.post("/codeConfirm", MobileController.codeConfirm);
 app.post("/clientRegister", MobileController.clientRegister);
 app.post("/clientLogin", MobileController.clientLogin);
 app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
-app.post("/addClientAddress", MobileController.addClientAddress);
-app.post("/getClientAddresses", MobileController.getClientAddresses);
+app.post("/addClientAddress", checkAuth, MobileController.addClientAddress);
+app.post("/getClientAddresses", checkAuth, MobileController.getClientAddresses);
 app.post("/updateCart", checkAuth, MobileController.updateCart);
-app.post("/cleanCart", MobileController.cleanCart);
+app.post("/cleanCart", checkAuth, MobileController.cleanCart);
 app.post("/getCart", checkAuth, MobileController.getCart);
-app.post("/getClientDataMobile", MobileController.getClientDataMobile);
-app.post("/updateClientDataMobile", MobileController.updateClientDataMobile);
+app.post(
+    "/getClientDataMobile",
+    checkAuth,
+    MobileController.getClientDataMobile
+);
+app.post(
+    "/updateClientDataMobile",
+    checkAuth,
+    MobileController.updateClientDataMobile
+);
 app.post("/refreshToken", MobileController.refreshToken);
 app.post("/logOutClient", MobileController.logOutClient);
 

@@ -17,15 +17,16 @@ export default function SuperAdminSettings() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+    const [info, setInfo] = useState({});
 
     const closeSnack = () => {
         setOpen(false);
     };
 
-    const [notificationTypes, setNotificationTypes] = useState({
-        order: false,
-        client: true,
-    });
+    // const [notificationTypes, setNotificationTypes] = useState({
+    //     order: false,
+    //     client: true,
+    // });
 
     const [users, setUsers] = useState([]);
 
@@ -41,8 +42,21 @@ export default function SuperAdminSettings() {
             });
     };
 
+    const getMe = () => {
+        api.get("/getMe", {
+            headers: { "Content-Type": "application/json" },
+        })
+            .then(({ data }) => {
+                setInfo(data);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
+
     useEffect(() => {
         getAllUsersNCouriers();
+        getMe();
     }, []);
 
     const deleteUserOrCourier = (role, id) => {
@@ -74,6 +88,25 @@ export default function SuperAdminSettings() {
         setOpen(true);
         setStatus(resStatus ? "success" : "error");
         setMessage(resStatus ? "Пароль успешно изменен" : resMessage);
+    };
+
+    const updateNotificationStatus = (status) => {
+        api.post(
+            "/updateNotificationStatus",
+            { status },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                setOpen(true);
+                setMessage(data.message);
+                setStatus("success");
+                getMe();
+            })
+            .catch((e) => {
+                console.log(e);
+            });
     };
 
     return (
@@ -129,19 +162,27 @@ export default function SuperAdminSettings() {
             <Li>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <div>Статус уведомления:</div>
-                    <div>Включено</div>
+                    <div>
+                        {info.notificationStatus === "active"
+                            ? "Включено"
+                            : "Отключено"}
+                    </div>
                     <div className="flex items-center gap-x-2 flex-wrap text-red">
                         [
                         <button
                             className="text-red hover:text-blue-900"
-                            onClick={() => {}}
+                            onClick={() => {
+                                updateNotificationStatus("active");
+                            }}
                         >
                             Включить
                         </button>
                         <div>/</div>
                         <button
                             className="text-red hover:text-blue-900"
-                            onClick={() => {}}
+                            onClick={() => {
+                                updateNotificationStatus("inActive");
+                            }}
                         >
                             Отключить
                         </button>
@@ -149,7 +190,7 @@ export default function SuperAdminSettings() {
                     </div>
                 </div>
             </Li>
-            <Li>Типы уведомления:</Li>
+            {/* <Li>Типы уведомления:</Li>
             <Li2>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <MyButton click={() => {}}>
@@ -165,7 +206,7 @@ export default function SuperAdminSettings() {
                     </MyButton>
                     <div>Изменение статуса клиентов</div>
                 </div>
-            </Li2>
+            </Li2> */}
             <Div />
             <ChangePassword
                 responce={(resStatus, resMessage) => {

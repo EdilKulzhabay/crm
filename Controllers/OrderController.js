@@ -1,3 +1,4 @@
+import Notification from "../Models/Notification.js";
 import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 
@@ -22,6 +23,43 @@ export const addOrder = async (req, res) => {
         });
 
         await order.save();
+
+        let orConditions = [
+            {
+                fullName: client.fullName,
+                franchisee: { $ne: client.franchisee },
+            },
+            { phone: client.phone, franchisee: { $ne: client.franchisee } },
+            { mail: client.mail, franchisee: { $ne: client.franchisee } },
+        ];
+
+        const existingOrders = await Order.findOne({ $or: orConditions });
+
+        if (existingOrders) {
+            let matchedField;
+            if (existingOrders.mail === mail && mail !== "")
+                matchedField = "mail";
+            else if (existingOrders.fullName === fullName)
+                matchedField = "fullName";
+            else if (existingOrders.phone === phone) matchedField = "phone";
+
+            const notDoc = new Notification({
+                first: existingOrders.franchisee,
+                second: franchisee,
+                matchesType: "order",
+                matchedField,
+                firstObject: existingOrders._id,
+                secondObject: order._doc._id,
+            });
+
+            await notDoc.save();
+
+            const notification = {
+                message: "Есть совпадение заказов",
+            };
+
+            global.io.emit("orderMatch", notification);
+        }
 
         res.json({
             success: true,
@@ -242,6 +280,84 @@ export const updateOrder = async (req, res) => {
             success: true,
             message: "Заказ успешно изменен",
         });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getOrdersForExcel = async (req, res) => {
+    try {
+        const id = req.userId;
+        const { startDate, endDate, status, product, sort, courier } = req.body;
+
+        const sDate = startDate
+            ? new Date(`${startDate}T00:00:00.000Z`)
+            : new Date("2024-01-01T00:00:00.000Z");
+        const eDate = endDate
+            ? new Date(`${endDate}T23:59:59.999Z`)
+            : new Date("2026-01-01T23:59:59.999Z");
+
+        const user = await User.findById(id);
+
+        // Строим базовый фильтр
+        const filter = {
+            createdAt: { $gte: sDate, $lte: eDate },
+        };
+
+        // Добавляем фильтр по статусу, если он не "all"
+        if (status !== "all") {
+            filter.status = status;
+        }
+
+        // Добавляем фильтр по франчайзи для админа
+        if (user.role === "admin") {
+            filter.franchisee = id;
+        }
+
+        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
+        // Добавляем фильтр по продукту, если он указан
+        if (product !== "all") {
+            const productFilter = {};
+            productFilter[`products.${product}`] = { $gt: 0 };
+            Object.assign(filter, productFilter);
+        }
+
+        // Добавляем фильтр по курьеру, если он указан
+        if (courier) {
+            filter.courier = courier;
+        }
+
+        // Обрабатываем параметры сортировки
+        const sortOptions = {};
+        switch (sort) {
+            case "new":
+                sortOptions.createdAt = -1; // Сортировка по убыванию даты создания (новые)
+                break;
+            case "old":
+                sortOptions.createdAt = 1; // Сортировка по возрастанию даты создания (старые)
+                break;
+            case "expensive":
+                sortOptions.sum = -1; // Сортировка по убыванию суммы (дорогие)
+                break;
+            case "cheap":
+                sortOptions.sum = 1; // Сортировка по возрастанию суммы (дешевые)
+                break;
+            default:
+                sortOptions.createdAt = 1; // Сортировка по умолчанию по дате создания
+                break;
+        }
+
+        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
+        const orders = await Order.find(filter)
+            .populate("franchisee", "fullName")
+            .populate("courier", "fullName")
+            .populate("client", "fullName")
+            .sort(sortOptions);
+
+        res.json({ orders });
     } catch (error) {
         console.log(error);
         res.status(500).json({

@@ -31,6 +31,11 @@ const UserSchema = new mongoose.Schema(
             type: String,
             default: "active",
         },
+        notificationStatus: {
+            type: String,
+            default: "active",
+        },
+        notificationTypes: [],
     },
     {
         timestamps: true,

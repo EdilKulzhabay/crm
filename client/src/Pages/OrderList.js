@@ -10,6 +10,7 @@ import LinkButton from "../Components/LinkButton";
 import MySnackBar from "../Components/MySnackBar";
 import Container from "../Components/Container";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
+import * as XLSX from "xlsx";
 
 export default function OrderList() {
     const [orders, setOrders] = useState([]);
@@ -81,22 +82,6 @@ export default function OrderList() {
         }
     };
 
-    // const getFreeInfo = () => {
-    //     api.get("/getFreeInfo", {
-    //         headers: { "Content-Type": "application/json" },
-    //     })
-    //         .then(({ data }) => {
-    //             setFreeInfo({
-    //                 activeTotal: data.activeTotal,
-    //                 inActiveTotal: data.inActiveTotal,
-    //                 total: data.total,
-    //             });
-    //         })
-    //         .catch((e) => {
-    //             console.log(e);
-    //         });
-    // };
-
     useEffect(() => {
         api.get("/getMe", {
             headers: { "Content-Type": "application/json" },
@@ -107,7 +92,6 @@ export default function OrderList() {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             setFreeInfo(data);
-            //console.log(data);
         });
     }, []);
 
@@ -170,6 +154,68 @@ export default function OrderList() {
         },
         [loading, hasMore, loadMoreOrders]
     );
+
+    const getOrdersForExcel = () => {
+        api.post(
+            "/getOrdersForExcel",
+            {
+                ...dates,
+                status: filterStatus,
+                product: filterProduct,
+                sort: filterSort,
+                courier: courier ? courier._id : "",
+            },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                const type = "orders";
+                const orders = data.orders;
+
+                const mappedData = orders.map((item) => {
+                    return {
+                        "Имя Клиента": item?.client?.fullName,
+                        Франчайзи: item?.franchisee?.fullName || "Не назначен",
+                        Адрес: item.address.actual,
+                        Кол19: item.products.b19,
+                        Кол12: item.products.b12,
+                        Сумма: item.sum,
+                        Курьер: item?.courier?.fullName,
+                        Статус:
+                            item?.status === "awaitingOrder"
+                                ? "Ожидает заказ"
+                                : item?.status === "onTheWay"
+                                ? "В пути"
+                                : item?.status === "delivered"
+                                ? "Доставлен"
+                                : "Отменен",
+                        "Дата добавления": item.createdAt.slice(0, 10),
+                    };
+                });
+
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(mappedData);
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    type === "clients" ? "Clients" : "Orders"
+                );
+                const nowDate = new Date();
+                const fileDate =
+                    dates.startDate !== ""
+                        ? `${dates.startDate} - ${dates.endData}`
+                        : `${nowDate.getFullYear()}:${
+                              nowDate.getMonth() + 1
+                          }:${nowDate.getDate()}`;
+                const fileName = `${fileDate}.xlsx`; // Убедитесь, что функция formatDate определена и возвращает строку
+
+                XLSX.writeFile(workbook, fileName);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
 
     return (
         <Container role={userData.role || "admin"}>
@@ -489,6 +535,16 @@ export default function OrderList() {
                 {loading && <div>Загрузка...</div>}
             </div>
 
+            <Div />
+            <Div>Действия:</Div>
+            <Div>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                    <LinkButton href="/addOrder">Создать заказ</LinkButton>
+                    <MyButton click={getOrdersForExcel}>
+                        Экспорт в excel
+                    </MyButton>
+                </div>
+            </Div>
             <Div />
         </Container>
     );

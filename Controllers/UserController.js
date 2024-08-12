@@ -262,3 +262,56 @@ export const changePassword = async (req, res) => {
         });
     }
 };
+
+export const updateNotificationStatus = async (req, res) => {
+    try {
+        const id = req.userId;
+        const { status } = req.body;
+        const candidate = await User.findById(id);
+
+        candidate.notificationStatus = status;
+
+        await candidate.save();
+
+        res.json({
+            success: true,
+            message: "Статус уведомления изменен",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const updateNotificationTypes = async (req, res) => {
+    try {
+        const id = req.userId;
+        const { type } = req.body;
+
+        const candidate = await User.findById(id);
+
+        const index = candidate.notificationTypes.indexOf(type);
+        let criterion = false;
+
+        if (index !== -1) {
+            candidate.notificationTypes.splice(index, 1);
+        } else {
+            candidate.notificationTypes.push(type);
+            criterion = true;
+        }
+
+        await candidate.save();
+
+        res.json({
+            succes: true,
+            message: criterion ? "Критерий добавлен" : "Критерий убран",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
