@@ -2,6 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 import { AuthContext } from "./AuthContext";
 import { useAuth } from "./auth.hook";
+import NotificationComponent from "./Components/NotificationComponent";
 
 function App() {
     const { token, login, logout } = useAuth();
@@ -17,6 +18,7 @@ function App() {
                     isAuthenticated,
                 }}
             >
+                <NotificationComponent />
                 <RouterProvider router={router} />
             </AuthContext.Provider>
         </>

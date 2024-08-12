@@ -19,13 +19,7 @@ export default function SuperAdminClientManagment() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-
-    const [notificationTypes, setNotificationTypes] = useState({
-        phone: false,
-        address: true,
-        mail: false,
-        fullName: true,
-    });
+    const [info, setInfo] = useState({});
 
     const closeSnack = () => {
         setOpen(false);
@@ -34,8 +28,20 @@ export default function SuperAdminClientManagment() {
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const getMe = () => {
+        api.get("/getMe", {
+            headers: { "Content-Type": "application/json" },
+        })
+            .then(({ data }) => {
+                setInfo(data);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
 
     useEffect(() => {
+        getMe();
         api.get("/getAllFranchisee", {
             headers: { "Content-Type": "application/json" },
         })
@@ -145,6 +151,25 @@ export default function SuperAdminClientManagment() {
             });
     };
 
+    const updateNotificationTypes = (type) => {
+        api.post(
+            "/updateNotificationTypes",
+            { type },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                setOpen(true);
+                setMessage(data.message);
+                setStatus("success");
+                getMe();
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
+
     return (
         <Container role="superAdmin">
             {modal && (
@@ -222,7 +247,9 @@ export default function SuperAdminClientManagment() {
                                         <div>{client.fullName}</div>
                                         <div>|</div>
                                         <div>Текущий франчайзи:</div>
-                                        <div>{client.franchisee.fullName}</div>
+                                        <div>
+                                            {client?.franchisee?.fullName}
+                                        </div>
                                         <MyButton
                                             click={() => {
                                                 setModal(true);
@@ -244,7 +271,9 @@ export default function SuperAdminClientManagment() {
                                         <div>{client.fullName}</div>
                                         <div>|</div>
                                         <div>Текущий франчайзи:</div>
-                                        <div>{client.franchisee.fullName}</div>
+                                        <div>
+                                            {client?.franchisee?.fullName}
+                                        </div>
                                         <MyButton
                                             click={() => {
                                                 setModal(true);
@@ -264,7 +293,7 @@ export default function SuperAdminClientManagment() {
 
             <Div />
             <Div>Уведомлений:</Div>
-            <Li>
+            {/* <Li>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <div>
                         Получать уведомления о заказах, сделанных не своему
@@ -289,36 +318,60 @@ export default function SuperAdminClientManagment() {
                         ]
                     </div>
                 </div>
-            </Li>
-            <Li>Критерий для уведомлений:</Li>
+            </Li> */}
+            <Li>Критерий для уведомления:</Li>
             <Li2>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={() => {}}>
-                        {notificationTypes.phone ? "✓" : "x"}
+                    <MyButton
+                        click={() => {
+                            updateNotificationTypes("phone");
+                        }}
+                    >
+                        {(info.notificationTypes || []).includes("phone")
+                            ? "✓"
+                            : "x"}
                     </MyButton>
                     <div>Телефонный номер клиента</div>
                 </div>
             </Li2>
             <Li2>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={() => {}}>
-                        {notificationTypes.address ? "✓" : "x"}
+                    <MyButton
+                        click={() => {
+                            updateNotificationTypes("address");
+                        }}
+                    >
+                        {(info.notificationTypes || []).includes("address")
+                            ? "✓"
+                            : "x"}
                     </MyButton>
                     <div>Адрес доставки</div>
                 </div>
             </Li2>
             <Li2>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={() => {}}>
-                        {notificationTypes.mail ? "✓" : "x"}
+                    <MyButton
+                        click={() => {
+                            updateNotificationTypes("mail");
+                        }}
+                    >
+                        {(info.notificationTypes || []).includes("mail")
+                            ? "✓"
+                            : "x"}
                     </MyButton>
                     <div>Email клиента</div>
                 </div>
             </Li2>
             <Li2>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={() => {}}>
-                        {notificationTypes.fullName ? "✓" : "x"}
+                    <MyButton
+                        click={() => {
+                            updateNotificationTypes("fullName");
+                        }}
+                    >
+                        {(info.notificationTypes || []).includes("fullName")
+                            ? "✓"
+                            : "x"}
                     </MyButton>
                     <div>ФИО клиента</div>
                 </div>

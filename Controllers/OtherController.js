@@ -1,5 +1,7 @@
 import User from "../Models/User.js";
 import Courier from "../Models/Courier.js";
+import Client from "../Models/Client.js";
+import Order from "../Models/Order.js";
 
 export const getAllUsersNCouriers = async (req, res) => {
     try {
@@ -87,6 +89,42 @@ export const deleteCourier = async (req, res) => {
         }
         res.json({
             success: true,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getMainPageInfo = async (req, res) => {
+    try {
+        const id = req.userId;
+        const user = await User.findById(id);
+
+        // Строим базовый фильтр
+        const filter = {};
+
+        // Добавляем фильтр по франчайзи для админа
+        if (user.role === "admin") {
+            filter.franchisee = id;
+        }
+
+        const clients = await Client.countDocuments({ ...filter });
+        const activeOrders = await Order.countDocuments({
+            ...filter,
+            status: "awaitingOrder" || "onTheWay",
+        });
+        const deliveredOrders = await Order.countDocuments({
+            ...filter,
+            status: "delivered",
+        });
+
+        res.json({
+            clients,
+            activeOrders,
+            deliveredOrders,
         });
     } catch (error) {
         console.log(error);

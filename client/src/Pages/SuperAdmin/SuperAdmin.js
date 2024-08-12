@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import api from "../../api";
 import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import Info from "../../Components/Info";
@@ -5,6 +7,20 @@ import Li from "../../Components/Li";
 import LinkButton from "../../Components/LinkButton";
 
 export default function SuperAdmin() {
+    const [info, setInfo] = useState({});
+
+    useEffect(() => {
+        api.get("/getMainPageInfo", {
+            headers: { "Content-Type": "application/json" },
+        })
+            .then(({ data }) => {
+                setInfo(data);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    }, []);
+
     return (
         <Container role="superAdmin">
             <Div>
@@ -18,19 +34,19 @@ export default function SuperAdmin() {
                 <Li>
                     <div className="">
                         Активные заказы:
-                        <Info>20</Info>
+                        <Info>{info?.activeOrders}</Info>
                     </div>
                 </Li>
                 <Li>
                     <div className="">
                         Завершенные заказы:
-                        <Info>150</Info>
+                        <Info>{info?.deliveredOrders}</Info>
                     </div>
                 </Li>
                 <Li>
                     <div className="">
                         Клиенты:
-                        <Info>100</Info>
+                        <Info>{info?.clients}</Info>
                     </div>
                 </Li>
                 <Li>
