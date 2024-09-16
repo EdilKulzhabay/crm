@@ -56,13 +56,19 @@ export default function Login() {
 
     useEffect(() => {
         if (localStorage.getItem("token") !== null) {
-            api.get("getMe", {
+            const token = localStorage.getItem("token");
+            console.log(token);
+            api.get("/getMe", {
                 headers: { "Content-Type": "application/json" },
-            }).then(({ data }) => {
-                if (data._id) {
-                    setIsAuth(data);
-                }
-            });
+            })
+                .then(({ data }) => {
+                    if (data._id) {
+                        setIsAuth(data);
+                    }
+                })
+                .catch((e) => {
+                    console.log("slkdfmsldkfmlsd");
+                });
         }
     }, []);
 
