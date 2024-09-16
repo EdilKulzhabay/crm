@@ -18,7 +18,7 @@ function App() {
                     isAuthenticated,
                 }}
             >
-                <NotificationComponent />
+                {token && <NotificationComponent />}
                 <RouterProvider router={router} />
             </AuthContext.Provider>
         </>

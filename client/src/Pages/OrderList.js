@@ -486,6 +486,9 @@ export default function OrderList() {
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                         <div>Заказ:</div>
                                         <div>{item.client.fullName}</div>
+                                        <a target="_blank" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
+                                        <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
                                     </div>
                                 </Li>
                             </div>
