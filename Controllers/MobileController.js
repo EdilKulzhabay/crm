@@ -477,3 +477,26 @@ export const updateClientDataMobile = async (req, res) => {
         });
     }
 };
+
+export const addBonus = async (req, res) => {
+    try {
+        const { mail } = req.body;
+
+        const client = await Client.findOne({ mail });
+        if (!client) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Client not found" });
+        }
+
+        client.bonus = client.bonus + 100;
+        await client.save();
+
+        res.json({ success: true, message: "Бонусы были добавлены" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
