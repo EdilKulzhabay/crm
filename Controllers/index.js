@@ -6,3 +6,4 @@ export * as OtherController from "./OtherController.js";
 export * as PromoCodeController from "./PromoCodeController.js";
 export * as OrderController from "./OrderController.js";
 export * as MobileController from "./MobileController.js";
+export * as NotificationController from "./NotificationController.js";

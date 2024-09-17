@@ -484,11 +484,19 @@ export default function OrderList() {
                             <div key={item._id} ref={lastOrderElementRef}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>Заказ:</div>
+                                    <div>
+                                            Заказ: (
+                                            {item.createdAt.slice(0, 10)})
+                                        </div>
                                         <div>{item.client.fullName}</div>
                                         <a target="_blank" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
                                         <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
                                         <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
+                                        <LinkButton
+                                            href={`/orderPage/${item._id}`}
+                                        >
+                                            Просмотр
+                                        </LinkButton>
                                     </div>
                                 </Li>
                             </div>
@@ -503,32 +511,15 @@ export default function OrderList() {
                                             {item.createdAt.slice(0, 10)})
                                         </div>
                                         <div>{item.client.fullName}</div>
-                                        <div>
-                                            {item.products.b12 && (
-                                                <span>
-                                                    12,5л - {item.products.b12}
-                                                    шт{" "}
-                                                </span>
-                                            )}
-                                            {item.products.b19 && (
-                                                <span>
-                                                    19,8л - {item.products.b19}
-                                                    шт
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="text-red">
-                                            ({item.date.d.slice(0, 10)}){" "}
-                                            {item.date.time && item.date.time}
-                                        </div>
+                                        <a target="_blank" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
+                                        <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
+                                        
                                         <LinkButton
                                             href={`/orderPage/${item._id}`}
                                         >
                                             Просмотр
                                         </LinkButton>
-                                        <MyButton click={() => {}}>
-                                            Назначить крьера
-                                        </MyButton>
                                     </div>
                                 </Li>
                             </div>

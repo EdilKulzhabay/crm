@@ -8,6 +8,7 @@ import Li from "../Components/Li";
 import LinkButton from "../Components/LinkButton";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
+import clsx from "clsx"
 
 export default function OrderPage() {
     const { id } = useParams();
@@ -30,6 +31,8 @@ export default function OrderPage() {
     };
 
     const chooseCourier = (chCourier) => {
+        console.log(chCourier);
+        
         setOrderCourier(chCourier);
         setCouriersModal(false);
     };
@@ -164,7 +167,10 @@ export default function OrderPage() {
                     <div className="flex items-center gap-x-2 flex-wrap text-red">
                         [
                         <button
-                            className="text-red hover:text-blue-900"
+                            className={clsx("hover:text-blue-900", {
+                                "text-red-500": orderStatus !== "awaitingOrder",
+                                "text-blue-800": orderStatus === "awaitingOrder"
+                            })}
                             onClick={() => {
                                 setOrderStatus("awaitingOrder");
                             }}
@@ -173,7 +179,10 @@ export default function OrderPage() {
                         </button>
                         <div>/</div>
                         <button
-                            className="text-red hover:text-blue-900"
+                            className={clsx("hover:text-blue-900", {
+                                "text-red-500": orderStatus !== "onTheWay",
+                                "text-blue-800": orderStatus === "onTheWay"
+                            })}
                             onClick={() => {
                                 setOrderStatus("onTheWay");
                             }}
@@ -182,7 +191,10 @@ export default function OrderPage() {
                         </button>
                         <div>/</div>
                         <button
-                            className="text-red hover:text-blue-900"
+                            className={clsx("hover:text-blue-900", {
+                                "text-red-500": orderStatus !== "delivered",
+                                "text-blue-800": orderStatus === "delivered"
+                            })}
                             onClick={() => {
                                 setOrderStatus("delivered");
                             }}
@@ -191,7 +203,10 @@ export default function OrderPage() {
                         </button>
                         <div>/</div>
                         <button
-                            className="text-red hover:text-blue-900"
+                            className={clsx("hover:text-blue-900", {
+                                "text-red-500": orderStatus !== "cancelled",
+                                "text-blue-800": orderStatus === "cancelled"
+                            })}
                             onClick={() => {
                                 setOrderStatus("cancelled");
                             }}
@@ -240,7 +255,7 @@ export default function OrderPage() {
                     </MyButton>
 
                     {orderCourier &&
-                        orderCourier._id !== order?.courier._id && (
+                        orderCourier?._id !== order?.courier?._id && (
                             <MyButton
                                 click={() => {
                                     updateOrder("courier", orderCourier);
@@ -250,7 +265,7 @@ export default function OrderPage() {
                             </MyButton>
                         )}
                     {orderCourier &&
-                        orderCourier._id !== order?.courier._id && (
+                        orderCourier?._id !== order?.courier?._id && (
                             <div className="flex items-center gap-x-3 flex-wrap">
                                 <div>|</div> <div>{orderCourier.fullName}</div>{" "}
                             </div>
