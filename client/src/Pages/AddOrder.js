@@ -11,6 +11,15 @@ import Li2 from "../Components/Li2";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 
+const getCurrentDate = () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0'); 
+    const year = today.getFullYear();
+    
+    return `${year}-${month}-${day}`; 
+};
+
 export default function AddOrder() {
     const navigate = useNavigate();
 
@@ -24,7 +33,7 @@ export default function AddOrder() {
         b19: "",
     });
     const [date, setDate] = useState({
-        d: "",
+        d: getCurrentDate(),
         time: "",
     });
     const [couriersModal, setCouriersModal] = useState(false);

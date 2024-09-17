@@ -21,6 +21,9 @@ import PromoCodeList from "./Pages/PromoCodeList";
 import AddOrder from "./Pages/AddOrder";
 import OrderList from "./Pages/OrderList";
 import OrderPage from "./Pages/OrderPage";
+import AdminSettings from "./Pages/Admin/AdminSettings";
+import SuperAdminCoincidence from "./Pages/SuperAdmin/SuperAdminCoincidence";
+import SuperAdminCoincidencePage from "./Pages/SuperAdmin/SuperAdminCoincidencePage";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -49,9 +52,12 @@ export const router = createBrowserRouter([
         path: "/superAdminClientManagment",
         element: <SuperAdminClientManagment />,
     },
+    { path: "/superAdminCoincidence", element: <SuperAdminCoincidence /> },
+    { path: "/superAdminCoincidencePage/:id", element: <SuperAdminCoincidencePage /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
+    { path: "/adminSettings", element: <AdminSettings /> },
 
     ////COURIERLINKS
     { path: "/courier", element: <CourierMain /> },

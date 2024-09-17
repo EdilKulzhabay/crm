@@ -15,6 +15,7 @@ import {
     PromoCodeController,
     OrderController,
     MobileController,
+    NotificationController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -165,6 +166,12 @@ app.post("/getOrders", checkAuth, OrderController.getOrders);
 app.post("/getOrdersForExcel", checkAuth, OrderController.getOrdersForExcel);
 app.post("/getOrderDataForId", OrderController.getOrderDataForId);
 app.post("/updateOrder", checkAuth, OrderController.updateOrder);
+
+////////NOTIFICATION
+app.post("/getNotifications", NotificationController.getNotifications);
+app.post("/getNotificationDataForId", NotificationController.getNotificationDataForId);
+app.post("/deleteNotification", NotificationController.deleteNotification);
+
 
 //////MOBILE
 app.post("/sendMail", MobileController.sendMail);

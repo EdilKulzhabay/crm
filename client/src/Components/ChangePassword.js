@@ -13,11 +13,17 @@ export default function ChangePassword(props) {
         newRepeat: "",
     });
 
+    const [erNewPass, setErNewPass] = useState(false)
+
     const changeHandler = (event) => {
         setPassword({ ...password, [event.target.name]: event.target.value });
     };
 
     const changePassword = () => {
+        if (password.new !== password.newRepeat) {
+            setErNewPass(true)
+            return
+        }
         api.post(
             "/changePassword",
             { password: password.now, newPassword: password.new },
@@ -28,6 +34,7 @@ export default function ChangePassword(props) {
             .then(({ data }) => {
                 props.responce(data.success, data.message);
                 if (data.success) {
+                    setErNewPass(false)
                     setPassword({
                         now: "",
                         new: "",
@@ -86,7 +93,9 @@ export default function ChangePassword(props) {
                             color="red"
                         />
                         ]
+                        
                     </div>
+                    {erNewPass && <p className="text-red">Не совпадает</p>}
                 </div>
             </Li2>
             <Div>

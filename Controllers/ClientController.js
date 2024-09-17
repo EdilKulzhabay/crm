@@ -52,11 +52,11 @@ export const addClient = async (req, res) => {
         if (existingClients) {
             let matchedField;
             if (existingClients.mail === mail && mail !== "")
-                matchedField = "mail";
-            else if (existingClients.fullName === fullName)
-                matchedField = "fullName";
-            else if (existingClients.phone === phone) matchedField = "phone";
-            else if (
+                matchedField = "mail ";
+            if (existingClients.fullName === fullName)
+                matchedField += "fullName ";
+            if (existingClients.phone === phone) matchedField += "phone ";
+            if (
                 existingClients.addresses.some((addr) =>
                     addresses.some(
                         (newAddr) =>
@@ -66,7 +66,7 @@ export const addClient = async (req, res) => {
                     )
                 )
             ) {
-                matchedField = "addresses";
+                matchedField += "addresses ";
             }
 
             const notDoc = new Notification({
