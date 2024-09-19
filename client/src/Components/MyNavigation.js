@@ -59,6 +59,10 @@ const AButtons = [
         title: "Курьеры",
     },
     {
+        href: "/additionalOrders",
+        title: "Доп. заказы",
+    },
+    {
         href: "/analytics",
         title: "Аналитика",
     },

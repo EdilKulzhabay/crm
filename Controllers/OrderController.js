@@ -1,6 +1,7 @@
 import Notification from "../Models/Notification.js";
 import Order from "../Models/Order.js";
 import User from "../Models/User.js";
+import Client from "../Models/Client.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -75,7 +76,7 @@ export const addOrder = async (req, res) => {
 export const getOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const { page, startDate, endDate, status, product, sort, courier } =
+        const { page, startDate, endDate, status, product, sort, courier, search, searchStatus } =
             req.body;
 
         const sDate = startDate
@@ -138,7 +139,27 @@ export const getOrders = async (req, res) => {
                 break;
         }
 
-        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
+        
+
+        if (searchStatus && search) {
+            // Find clients that match the search criteria
+            const clients = await Client.find({
+                $or: [
+                    { fullName: { $regex: search, $options: "i" } },
+                    { phone: { $regex: search, $options: "i" } },
+                ]
+            }).select('_id');
+
+            const clientIds = clients.map(client => client._id);
+
+            // Update the filter to include orders with matching clients or addresses
+            filter.$or = [
+                { client: { $in: clientIds } },
+                { "address.actual": { $regex: search, $options: "i" } }
+            ];
+        }
+
+        // Execute the query with the updated filter
         const orders = await Order.find(filter)
             .populate("franchisee")
             .populate("courier")
@@ -155,6 +176,33 @@ export const getOrders = async (req, res) => {
         });
     }
 };
+
+export const getClientOrders = async (req, res) => {
+    try {
+        const { page, clientId } = req.body;
+        console.log(clientId);
+        
+
+        const limit = 3;
+        const skip = (page - 1) * limit;
+
+        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
+        const orders = await Order.find({client: clientId})
+            .populate("franchisee")
+            .populate("courier")
+            .populate("client")
+            .sort({ createdAt: 1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({ orders });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
 
 export const getFreeInfoOrder = async (req, res) => {
     try {
@@ -288,6 +336,35 @@ export const updateOrder = async (req, res) => {
     }
 };
 
+export const updateOrderTransfer = async (req, res) => {
+    try {
+        const { orderId, change, changeData } = req.body;
+
+        const order = await Order.findById(orderId)
+
+        if (!order) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Order not found" });
+        }
+
+        order[change] = changeData
+        if (changeData === "") {
+            order.transferred = false
+        } else {
+            order.transferred = true
+        }
+        await order.save()
+
+        res.json({ success: true, message: "Данные успешно изменены" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const getOrdersForExcel = async (req, res) => {
     try {
         const id = req.userId;
@@ -365,3 +442,46 @@ export const getOrdersForExcel = async (req, res) => {
         });
     }
 };
+
+export const getClientOrdersForExcel = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+
+        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
+        const orders = await Order.find({client: clientId})
+            .populate("franchisee", "fullName")
+            .populate("courier", "fullName")
+            .populate("client", "fullName")
+            .sort({createdAt: 1});
+
+        res.json({ orders });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getAdditionalOrders = async (req, res) => {
+    try {
+        const id = req.userId;
+        const user = await User.findById(id)
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            })
+        }
+        const userName = user.fullName
+        const orders = await Order.find({transferredFranchise: userName})
+        
+        res.json({orders})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

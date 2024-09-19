@@ -63,7 +63,6 @@ export default function ClientList() {
 
     const handleFileChange = (event) => {
         setSelectedFile(event.target.files[0]);
-        console.log(event.target.files[0]);
     };
 
     const handleSearch = (e) => {
@@ -444,9 +443,6 @@ export default function ClientList() {
                                         >
                                             Удалить
                                         </MyButton>
-                                        <MyButton click={() => {}}>
-                                            Подключить подписку
-                                        </MyButton>
                                     </div>
                                 </Li>
                             </div>
@@ -478,9 +474,6 @@ export default function ClientList() {
                                             }}
                                         >
                                             Удалить
-                                        </MyButton>
-                                        <MyButton click={() => {}}>
-                                            Подключить подписку
                                         </MyButton>
                                     </div>
                                 </Li>

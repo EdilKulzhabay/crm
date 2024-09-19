@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import ChooseClientModal from "../Components/ChooseClientModal";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
@@ -22,7 +22,7 @@ const getCurrentDate = () => {
 
 export default function AddOrder() {
     const navigate = useNavigate();
-
+    const {id} = useParams()
     const [userData, setUserData] = useState({});
     const [clientsModal, setClientsModal] = useState(false);
     const [client, setClient] = useState(null);
@@ -99,6 +99,19 @@ export default function AddOrder() {
         }).then(({ data }) => {
             setUserData(data);
         });
+        if (id && id !== "") {
+            api.post(
+                "/getClientDataForId",
+                { id },
+                { headers: { "Content-Type": "application/json" } }
+            )
+                .then(({ data }) => {
+                    setClient(data);
+                })
+                .catch((e) => {
+                    console.log(e);
+                });
+        }
     }, []);
 
     const closeClientsModal = () => {
@@ -220,7 +233,7 @@ export default function AddOrder() {
                                     </div>
                                     <a
                                         href={adress.link}
-                                        target="_blank"
+                                        target="_blank" rel="noreferrer"
                                         className="text-blue-900 hover:text-blue-500"
                                     >
                                         link%%{adress.street}

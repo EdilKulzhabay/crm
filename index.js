@@ -40,10 +40,11 @@ app.use(
 
 const upload = multer({ dest: "uploads/" });
 
-app.post("/api/upload-excel", upload.single("file"), async (req, res) => {
+app.post("/api/upload-excel", upload.single("file"), checkAuth, async (req, res) => {
     try {
+        const id = req.userId;
         const filePath = req.file.path;
-        await processExcelFile(filePath);
+        await processExcelFile(filePath, id);
         res.json({ success: true, message: "File processed successfully" });
     } catch (error) {
         res.status(500).json({
@@ -161,11 +162,15 @@ app.post("/deletePromoCode", PromoCodeController.deletePromoCode);
 
 ///////ORDER
 app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
+app.get("/getAdditionalOrders", checkAuth, OrderController.getAdditionalOrders);
 app.post("/addOrder", OrderController.addOrder);
 app.post("/getOrders", checkAuth, OrderController.getOrders);
+app.post("/getClientOrders", OrderController.getClientOrders);
 app.post("/getOrdersForExcel", checkAuth, OrderController.getOrdersForExcel);
+app.post("/getClientOrdersForExcel", checkAuth, OrderController.getClientOrdersForExcel);
 app.post("/getOrderDataForId", OrderController.getOrderDataForId);
 app.post("/updateOrder", checkAuth, OrderController.updateOrder);
+app.post("/updateOrderTransfer", OrderController.updateOrderTransfer);
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);
