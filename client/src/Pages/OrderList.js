@@ -7,15 +7,17 @@ import MyButton from "../Components/MyButton";
 import MyInput from "../Components/MyInput";
 import Info from "../Components/Info";
 import LinkButton from "../Components/LinkButton";
-import MySnackBar from "../Components/MySnackBar";
 import Container from "../Components/Container";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
 import * as XLSX from "xlsx";
+import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
+import MySnackBar from "../Components/MySnackBar";
 
 export default function OrderList() {
     const [orders, setOrders] = useState([]);
     const [userData, setUserData] = useState({});
     const [search, setSearch] = useState("");
+    const [searchStatus, setSearchStatus] = useState(false);
     const [dates, setDates] = useState({
         startDate: "",
         endDate: "",
@@ -24,7 +26,10 @@ export default function OrderList() {
     const [filterProduct, setFilterProduct] = useState("all");
     const [filterSort, setFilterSort] = useState("new");
     const [couriersModal, setCouriersModal] = useState(false);
+    const [franchiseesModal, setFranchiseesModal] = useState(false);
     const [courier, setCourier] = useState(null);
+    const [franchisee, setFranchisee] = useState(null);
+    const [order, setOrder] = useState(null)
 
     const [freeInfo, setFreeInfo] = useState({
         totalB12: 0,
@@ -54,6 +59,15 @@ export default function OrderList() {
         setCouriersModal(false);
     };
 
+    const closeFranchiseeModal = () => {
+        setFranchiseesModal(false);
+    };
+
+    const chooseFranchisee = (chFranchisee) => {
+        setFranchisee(chFranchisee);
+        setFranchiseesModal(false);
+    };
+
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
         if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
@@ -76,9 +90,10 @@ export default function OrderList() {
     const handleSearch = (e) => {
         setSearch(e.target.value);
         if (e.target.value === "") {
-            // setClients([]);
-            // setPage(1);
-            // setHasMore(true);
+            setOrders([]);
+            setPage(1);
+            setHasMore(true);
+            setSearchStatus(false)
         }
     };
 
@@ -94,6 +109,52 @@ export default function OrderList() {
             setFreeInfo(data);
         });
     }, []);
+
+    const updateOrderTransfer = () => {
+        api.post("/updateOrderTransfer", {orderId: order, change: "transferredFranchise", changeData: franchisee?.fullName}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            if (data.success) {
+                setOpen(true)
+                setMessage(data.message)
+                setStatus("success")
+                const temporaryOrders = [...orders]
+                temporaryOrders.map((item) => {
+                    if (item._id === order) {
+                        item.transferred = true
+                        item.transferredFranchise = franchisee?.fullName
+                    }
+                })
+                setOrders(temporaryOrders)
+            }
+        }).catch((e) => {})
+    }
+
+    const closeOrderTransfer = (id) => {
+        api.post("/updateOrderTransfer", {orderId: id, change: "transferredFranchise", changeData: ""}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            if (data.success) {
+                setOpen(true)
+                setMessage(data.message)
+                setStatus("success")
+                const temporaryOrders = [...orders]
+                temporaryOrders.map((item) => {
+                    if (item._id === id) {
+                        item.transferred = false
+                        item.transferredFranchise = ""
+                    }
+                })
+                setOrders(temporaryOrders)
+            }
+        }).catch((e) => {})
+    }
+
+    useEffect(() => {
+        if (order && franchisee) {
+            updateOrderTransfer()
+        }
+    }, [franchisee])
 
     const getOrdersWithFilter = () => {
         setOrders([]);
@@ -114,6 +175,8 @@ export default function OrderList() {
                 product: filterProduct,
                 sort: filterSort,
                 courier: courier ? courier._id : "",
+                searchStatus,
+                search
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -132,7 +195,7 @@ export default function OrderList() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore]);
+    }, [page, loading, hasMore, search, searchStatus]);
 
     useEffect(() => {
         if (hasMore) {
@@ -225,6 +288,12 @@ export default function OrderList() {
                     chooseCourier={chooseCourier}
                 />
             )}
+            {franchiseesModal && (
+                <ChooseFranchiseeModal
+                    closeFranchiseeModal={closeFranchiseeModal}
+                    chooseFranchisee={chooseFranchisee}
+                />
+            )}
             <Div>Список заказов</Div>
             <Div />
 
@@ -238,7 +307,13 @@ export default function OrderList() {
                         change={handleSearch}
                         color="white"
                     />
-                    <MyButton click={() => {}}>Найти</MyButton>
+                    <MyButton click={() => {
+                        setOrders([]);
+                        setPage(1);
+                        setHasMore(true);
+                        setSearchStatus(true)
+                        setLoading(false)
+                    }}>Найти</MyButton>
                 </div>
             </Div>
             <Div />
@@ -489,7 +564,7 @@ export default function OrderList() {
                                             {item.createdAt.slice(0, 10)})
                                         </div>
                                         <div>{item.client.fullName}</div>
-                                        <a target="_blank" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
                                         <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
                                         <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
                                         <LinkButton
@@ -497,6 +572,9 @@ export default function OrderList() {
                                         >
                                             Просмотр
                                         </LinkButton>
+                                        {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                        {item?.franchisee?.role === "superAdmin" && !item?.transferred && <MyButton click={() => {setOrder(item._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                        {item?.franchisee?.role === "superAdmin" && item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item._id)}}>Отменить</MyButton>}
                                     </div>
                                 </Li>
                             </div>
@@ -511,7 +589,7 @@ export default function OrderList() {
                                             {item.createdAt.slice(0, 10)})
                                         </div>
                                         <div>{item.client.fullName}</div>
-                                        <a target="_blank" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
                                         <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
                                         <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
                                         
@@ -520,6 +598,9 @@ export default function OrderList() {
                                         >
                                             Просмотр
                                         </LinkButton>
+                                        {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                        {item?.franchisee?.role === "superAdmin" && !item?.transferred && <MyButton click={() => {setOrder(item._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                        {item?.franchisee?.role === "superAdmin" && item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item._id)}}>Отменить</MyButton>}
                                     </div>
                                 </Li>
                             </div>
@@ -540,6 +621,12 @@ export default function OrderList() {
                 </div>
             </Div>
             <Div />
+            <MySnackBar
+                open={open}
+                text={message}
+                status={status}
+                close={closeSnack}
+            />
         </Container>
     );
 }

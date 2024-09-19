@@ -52,6 +52,13 @@ const OrderSchema = new mongoose.Schema(
         clientNotes: {
             type: String,
         },
+        transferred: {
+            type: Boolean,
+            default: false
+        },
+        transferredFranchise: {
+            type: String,
+        },
         clientReview: {
             type: String,
         },

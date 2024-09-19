@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import Container from "../Components/Container";
 import Div from "../Components/Div";
@@ -8,15 +8,23 @@ import MyButton from "../Components/MyButton";
 import MyInput from "../Components/MyInput";
 import MySnackBar from "../Components/MySnackBar";
 import UpdateClientData from "../Components/UpdateClientData";
+import LinkButton from "../Components/LinkButton";
+import * as XLSX from "xlsx";
 
 export default function ClientPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [role, setRole] = useState("");
     const [client, setClient] = useState({});
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [orders, setOrders] = useState([])
 
     const closeSnack = () => {
         setOpen(false);
@@ -141,6 +149,125 @@ export default function ClientPage() {
             });
     };
 
+    const deleteClient = () => {
+        api.post(
+            "/deleteClient",
+            { id: client._id },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                if (data.success) {
+                    navigate(-1)
+                }
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
+
+    const loadMoreOrders = useCallback(async () => {
+        if (loading || !hasMore || Object.keys(client).length === 0) return;
+        setLoading(true);
+        api.post(
+            "/getClientOrders",
+            {
+                page,
+                clientId: client?._id
+            },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                console.log(data);
+                if (data.orders.length === 0) {
+                    setHasMore(false);
+                } else {
+                    setOrders((prevOrders) => [...prevOrders, ...data.orders]);
+                    setPage(page + 1);
+                }
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+        setLoading(false);
+    }, [page, loading, hasMore, client]);
+
+    useEffect(() => {
+        if (hasMore && Object.keys(client).length > 0) {
+            loadMoreOrders();
+        }
+    }, [client, hasMore]);
+
+    const observer = useRef();
+    const lastOrderElementRef = useCallback(
+        (node) => {
+            if (loading) return;
+            if (observer.current) observer.current.disconnect();
+            observer.current = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && hasMore) {
+                    loadMoreOrders();
+                }
+            });
+            if (node) observer.current.observe(node);
+        },
+        [loading, hasMore, loadMoreOrders]
+    );
+
+    const getClientOrdersForExcel = () => {
+        api.post(
+            "/getClientOrdersForExcel",
+            {
+                clientId: client._id
+            },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                const type = "orders";
+                const orders = data.orders;
+
+                const mappedData = orders.map((item) => {
+                    return {
+                        "Имя Клиента": item?.client?.fullName,
+                        Франчайзи: item?.franchisee?.fullName || "Не назначен",
+                        Адрес: item.address.actual,
+                        Кол19: item.products.b19,
+                        Кол12: item.products.b12,
+                        Сумма: item.sum,
+                        Курьер: item?.courier?.fullName,
+                        Статус:
+                            item?.status === "awaitingOrder"
+                                ? "Ожидает заказ"
+                                : item?.status === "onTheWay"
+                                ? "В пути"
+                                : item?.status === "delivered"
+                                ? "Доставлен"
+                                : "Отменен",
+                        "Дата добавления": item.createdAt.slice(0, 10),
+                    };
+                });
+
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(mappedData);
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    type === "clients" ? "Clients" : "Orders"
+                );
+                const clientName = client.fullName
+                const fileName = `${clientName}.xlsx`; // Убедитесь, что функция formatDate определена и возвращает строку
+
+                XLSX.writeFile(workbook, fileName);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
+
     return (
         <Container role={role}>
             <Div>Карточка клиента</Div>
@@ -196,7 +323,7 @@ export default function ClientPage() {
                                 </div>
                                 <a
                                     href={adress.link}
-                                    target="_blank"
+                                    target="_blank" rel="noreferrer"
                                     className="text-blue-900 hover:text-blue-500"
                                 >
                                     link%%{adress.street}
@@ -229,7 +356,7 @@ export default function ClientPage() {
                                     2GIS ссылка:{" "}
                                     <a
                                         className="text-blue-900 hover:text-blue-500"
-                                        target="_blank"
+                                        target="_blank" rel="noreferrer"
                                         href={newAdress.link}
                                     >
                                         link%%{newAdress.street}
@@ -341,19 +468,19 @@ export default function ClientPage() {
             <>
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Выбор времени доставки:</div>
+                        <div>Выбор времени доставки: {client?.chooseTime ? "Включено" : "Отключено"}</div>
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             [
                             <button
                                 className="text-red hover:text-blue-900"
-                                onClick={() => {}}
+                                onClick={() => {updateClientData("chooseTime", true)}}
                             >
                                 Включить
                             </button>
                             <div>/</div>
                             <button
                                 className="text-red hover:text-blue-900"
-                                onClick={() => {}}
+                                onClick={() => {updateClientData("chooseTime", false)}}
                             >
                                 Отключить
                             </button>
@@ -363,19 +490,19 @@ export default function ClientPage() {
                 </Li>
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Подписка:</div>
+                        <div>Подписка: {client?.subscription ? "Включено" : "Отключено"}</div>
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             [
                             <button
                                 className="text-red hover:text-blue-900"
-                                onClick={() => {}}
+                                onClick={() => {updateClientData("subscription", true)}}
                             >
                                 Включить
                             </button>
                             <div>/</div>
                             <button
                                 className="text-red hover:text-blue-900"
-                                onClick={() => {}}
+                                onClick={() => {updateClientData("subscription", false)}}
                             >
                                 Отключить
                             </button>
@@ -387,17 +514,67 @@ export default function ClientPage() {
 
             <Div />
             <Div>История заказов:</Div>
-            <Div>---------------------</Div>
+            <div className="max-h-[100px] overflow-scroll">
+                {orders.map((item, index) => {
+                    if (orders.length === index + 1) {
+                        return (
+                            <div key={item._id} ref={lastOrderElementRef}>
+                                <Li>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                    <div>
+                                            Заказ: (
+                                            {item.createdAt.slice(0, 10)})
+                                        </div>
+                                        <div>{item.client.fullName}</div>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
+                                        <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
+                                        <LinkButton
+                                            href={`/orderPage/${item._id}`}
+                                        >
+                                            Просмотр
+                                        </LinkButton>
+                                    </div>
+                                </Li>
+                            </div>
+                        );
+                    } else {
+                        return (
+                            <div key={item._id}>
+                                <Li>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>
+                                            Заказ: (
+                                            {item.createdAt.slice(0, 10)})
+                                        </div>
+                                        <div>{item.client.fullName}</div>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
+                                        <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
+                                        
+                                        <LinkButton
+                                            href={`/orderPage/${item._id}`}
+                                        >
+                                            Просмотр
+                                        </LinkButton>
+                                    </div>
+                                </Li>
+                            </div>
+                        );
+                    }
+                })}
+                {loading && <div>Загрузка...</div>}
+            </div>
 
             <Div />
             <Div>Действия:</Div>
             <Div>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={() => {}}>Создать заказ</MyButton>
-                    <MyButton click={() => {}}>
+                    <LinkButton href={`/addOrder/${client._id}`}>Создать заказ</LinkButton>
+                    <MyButton click={getClientOrdersForExcel}>
                         Выгрузить заказы в excel
                     </MyButton>
-                    <MyButton click={() => {}}>Удлаить клиента</MyButton>
+                    <MyButton click={deleteClient}>Удалить клиента</MyButton>
                 </div>
             </Div>
             <Div />

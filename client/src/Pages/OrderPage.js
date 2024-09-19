@@ -118,7 +118,7 @@ export default function OrderPage() {
                             <a
                                 href={order?.address?.link || "/"}
                                 className="text-blue-900 hover:text-blue-500"
-                                target="_blank"
+                                target="_blank" rel="noreferrer"
                             >
                                 %2gis%
                             </a>

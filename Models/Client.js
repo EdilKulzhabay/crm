@@ -57,6 +57,14 @@ const ClientSchema = new mongoose.Schema(
                 default: 0,
             },
         },
+        subscription: {
+            type: Boolean,
+            default: false
+        },
+        chooseTime: {
+            type: Boolean,
+            default: false
+        },
         refreshToken: {
             type: String,
         },
