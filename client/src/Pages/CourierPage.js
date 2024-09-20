@@ -6,6 +6,8 @@ import Div from "../Components/Div";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 import UpdateClientData from "../Components/UpdateClientData";
+import CourierActiveOrders from "../Components/CourierActiveOrders";
+import CourierDeliveredOrders from "../Components/CourierDeliveredOrders";
 
 export default function CourierPage() {
     const navigate = useNavigate();
@@ -44,6 +46,8 @@ export default function CourierPage() {
             { headers: { "Content-Type": "application/json" } }
         )
             .then(({ data }) => {
+                console.log(data);
+                
                 setCourier(data);
             })
             .catch((e) => {
@@ -104,6 +108,8 @@ export default function CourierPage() {
             });
     };
 
+    
+
     return (
         <Container role={role}>
             <Div>Карточка курьера</Div>
@@ -149,9 +155,19 @@ export default function CourierPage() {
             </Div>
 
             <Div />
+            <Div>Возможность видеть весь список: {courier?.wholeList ? "Включен" : "Отключен"}</Div>
+            <Div>
+                <MyButton click={() => {updateCourierData("wholeList", !courier?.wholeList)}}>{courier?.wholeList ? "Отключить" : "Включить"}</MyButton>
+            </Div>
 
+            <Div />
+            <Div>Очередь заказов:</Div>
+            <CourierActiveOrders id={id} />
+
+
+            <Div />
             <Div>История заказов:</Div>
-            <Div>---------------------</Div>
+            <CourierDeliveredOrders id={id} />
 
             <Div />
             <Div>Действия:</Div>

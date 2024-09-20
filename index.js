@@ -143,6 +143,8 @@ app.post("/getClientsForExcel", checkAuth, ClientController.getClientsForExcel);
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
+app.get("/getFirstOrderForToday", checkAuth, CourierController.getFirstOrderForToday);
+app.post("/updateOrderList", checkAuth, CourierController.updateOrderList);
 app.post("/addCourier", CourierController.addCourier);
 app.post("/getCouriers", checkAuth, CourierController.getCouriers);
 app.post("/searchCourier", checkAuth, CourierController.searchCourier);
@@ -153,6 +155,9 @@ app.post(
 );
 app.post("/updateCourierData", CourierController.updateCourierData);
 app.post("/deleteCourier", CourierController.deleteCourier);
+app.post("/getActiveOrdersCourier", CourierController.getActiveOrdersCourier)
+app.post("/getDeliveredOrdersCourier", CourierController.getDeliveredOrdersCourier)
+app.post("/updateCourierOrderStatus", checkAuth, CourierController.updateCourierOrderStatus)
 
 ///////PROMOCODE
 app.post("/addPromoCode", PromoCodeController.addPromoCode);

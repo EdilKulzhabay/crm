@@ -25,6 +25,7 @@ import AdminSettings from "./Pages/Admin/AdminSettings";
 import SuperAdminCoincidence from "./Pages/SuperAdmin/SuperAdminCoincidence";
 import SuperAdminCoincidencePage from "./Pages/SuperAdmin/SuperAdminCoincidencePage";
 import AdditionalOrders from "./Pages/Admin/AdditionalOrders";
+import CourierSettings from "./Pages/Courier/CourierSettings";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -64,5 +65,6 @@ export const router = createBrowserRouter([
 
     ////COURIERLINKS
     { path: "/courier", element: <CourierMain /> },
+    { path: "/courierSettings", element: <CourierSettings/> },
     { path: "*", element: <Navigate to="/login" replace /> },
 ]);

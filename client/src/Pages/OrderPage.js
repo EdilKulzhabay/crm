@@ -31,8 +31,6 @@ export default function OrderPage() {
     };
 
     const chooseCourier = (chCourier) => {
-        console.log(chCourier);
-        
         setOrderCourier(chCourier);
         setCouriersModal(false);
     };
@@ -243,15 +241,17 @@ export default function OrderPage() {
             </Div>
             <Li>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <LinkButton href={`/CourierPage/${order?.courier?._id}`}>
+                    {order?.courier?._id && <LinkButton href={`/CourierPage/${order?.courier?._id}`}>
                         Просмотр
                     </LinkButton>
+                    }
+                    
                     <MyButton
                         click={() => {
                             setCouriersModal(true);
                         }}
                     >
-                        Изменить курьера
+                        {order?.courier?._id ? "Изменить " : "Назначить " }курьера
                     </MyButton>
 
                     {orderCourier &&
@@ -294,7 +294,7 @@ export default function OrderPage() {
                     : "Клиент не оставил отзыва"}
             </Li>
 
-            <Div />
+            {/* <Div />
             <Div>Действия:</Div>
             <Div>
                 <div className="flex items-center gap-x-3 flex-wrap">
@@ -305,7 +305,7 @@ export default function OrderPage() {
                         Отправить уведомление курьеру
                     </MyButton>
                 </div>
-            </Div>
+            </Div> */}
             <Div />
             <MySnackBar
                 open={open}

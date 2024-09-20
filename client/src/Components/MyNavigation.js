@@ -72,6 +72,17 @@ const AButtons = [
     },
 ];
 
+const CButtons = [
+    {
+        href: "/courier",
+        title: "Главная страница",
+    },
+    {
+        href: "/courierSettings",
+        title: "Настройки",
+    },
+];
+
 export default function MyNavigation(props) {
     if (props.role === "superAdmin") {
         return (
@@ -116,6 +127,32 @@ export default function MyNavigation(props) {
                 </div>
                 <Div styles="hidden lg:flex">
                     {AButtons.map((item) => (
+                        <LinkButton key={item.href} href={item.href}>
+                            {item.title}
+                        </LinkButton>
+                    ))}
+                </Div>
+            </>
+        );
+    }
+
+    if (props.role === "courier") {
+        return (
+            <>
+                <Div>
+                    <div>Навигация:</div>
+                </Div>
+                <div className="lg:hidden">
+                    {CButtons.map((item) => (
+                        <Li key={item.href}>
+                            <LinkButton href={item.href}>
+                                {item.title}
+                            </LinkButton>
+                        </Li>
+                    ))}
+                </div>
+                <Div styles="hidden lg:flex">
+                    {CButtons.map((item) => (
                         <LinkButton key={item.href} href={item.href}>
                             {item.title}
                         </LinkButton>
