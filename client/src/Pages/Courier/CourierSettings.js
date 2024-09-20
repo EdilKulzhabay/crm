@@ -8,7 +8,8 @@ import ChangePassword from "../../Components/ChangePassword";
 import { AuthContext } from "../../AuthContext";
 import { useNavigate } from "react-router-dom";
 
-export default function AdminSettings() {
+export default function CourierSettings() {
+
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
@@ -43,7 +44,7 @@ export default function AdminSettings() {
     };
 
     return (
-        <Container role="admin">
+        <Container role="courier">
             <Div>Настройки</Div>
             <Div />
             <ChangePassword
@@ -71,5 +72,5 @@ export default function AdminSettings() {
                 close={closeSnack}
             />
         </Container>
-    );
+    )
 }

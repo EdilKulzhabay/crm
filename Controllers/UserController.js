@@ -1,6 +1,7 @@
 import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import Courier from "../Models/Courier.js";
 
 export const register = async (req, res) => {
     try {
@@ -54,6 +55,39 @@ export const login = async (req, res) => {
         const candidate = await User.findOne({ userName });
 
         if (!candidate) {
+
+            const courier = await Courier.findOne({phone: userName})
+
+            if (!courier) {
+                return res.status(404).json({
+                    message: "Неверный логин или пароль",
+                });
+            } 
+            
+            if (courier) {
+                const isValidPassC = await bcrypt.compare(password, courier.password);
+
+                if (!isValidPassC) {
+                    return res.status(404).json({
+                        message: "Неверный логин или пароль",
+                    });
+                }
+
+                if (courier.status !== "active") {
+                    return res.status(404).json({
+                        message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
+                    });
+                }
+
+                const token = jwt.sign({ _id: courier._id }, process.env.SecretKey, {
+                    expiresIn: "30d",
+                });
+
+                const role = "courier";
+
+                return res.json({ token, role });
+            }
+
             return res.status(404).json({
                 message: "Неверный логин или пароль",
             });
@@ -93,6 +127,15 @@ export const getMe = async (req, res) => {
         const id = req.userId;
 
         const user = await User.findById(id);
+
+        if (!user) {
+            const courier = await Courier.findById(id)
+
+            const {password, ...userData} = courier._doc
+            userData.role = "courier"
+
+            return res.json(userData)
+        }
 
         const { password, ...userData } = user._doc;
 
@@ -230,6 +273,38 @@ export const changePassword = async (req, res) => {
         const candidate = await User.findById(id);
 
         if (!candidate) {
+
+            const courier = await Courier.findById(id)
+
+            if (!courier) {
+                return res.json({
+                    success: false,
+                    message: "Не удалось найти пользователя",
+                });
+            }
+
+            if (courier) {
+                const isValidPass = await bcrypt.compare(password, courier.password);
+
+                if (!isValidPass) {
+                    return res.json({
+                        success: false,
+                        message: "Пароль введен не правильно",
+                    });
+                }
+
+                const salt = await bcrypt.genSalt(10);
+                const hash = await bcrypt.hash(newPassword, salt);
+
+                courier.password = hash;
+
+                await courier.save();
+
+                return res.json({
+                    success: true,
+                });
+            }
+
             return res.json({
                 success: false,
                 message: "Не удалось найти пользователя",

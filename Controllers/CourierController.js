@@ -2,6 +2,7 @@ import Courier from "../Models/Courier.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../Models/User.js";
+import Order from "../Models/Order.js"
 
 export const addCourier = async (req, res) => {
     try {
@@ -148,7 +149,7 @@ export const getCourierDataForId = async (req, res) => {
     try {
         const { id } = req.body;
 
-        const courier = await Courier.findById(id);
+        const courier = await Courier.findById(id).select('-orders');;
 
         if (!courier) {
             res.status(404).json({
@@ -210,3 +211,201 @@ export const deleteCourier = async (req, res) => {
         });
     }
 };
+
+export const getActiveOrdersCourier = async (req, res) => {
+    try {
+        const { id, page } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: "ID курьера не предоставлен" });
+        }
+
+        const limit = 3; // Количество заказов на странице
+        const skip = (page - 1) * limit;
+
+        // Находим курьера и пополняем поле orders.order
+        const courier = await Courier.findById(id)
+            .populate('orders.order'); // Пополняем поле order
+
+        if (!courier) {
+            return res.status(404).json({ message: "Курьер не найден" });
+        }
+
+        // Фильтруем заказы с нужным статусом
+        const activeOrders = courier.orders.filter(
+            (item) => item.orderStatus === "inLine" || item.orderStatus === "onTheWay"
+        );
+
+        // Убираем заказы, где поле order равно null
+        const filteredOrders = activeOrders.filter(item => item.order !== null);
+
+        // Применяем skip и limit на отфильтрованные заказы
+        const paginatedOrders = filteredOrders.slice(skip, skip + limit);
+
+        // Возвращаем только нужные заказы для текущей страницы
+        res.json({ activeOrders: paginatedOrders, totalOrders: filteredOrders.length });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getDeliveredOrdersCourier = async (req, res) => {
+    try {
+        const { id, page } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: "ID курьера не предоставлен" });
+        }
+
+        const limit = 3; // Количество заказов на странице
+        const skip = (page - 1) * limit;
+
+        // Находим курьера и пополняем поле orders.order
+        const courier = await Courier.findById(id)
+            .populate('orders.order'); // Пополняем поле order
+
+        if (!courier) {
+            return res.status(404).json({ message: "Курьер не найден" });
+        }
+
+        // Фильтруем заказы с нужным статусом
+        const deliveredOrders = courier.orders.filter(
+            (item) => item.orderStatus === "delivered"
+        );
+
+        // Убираем заказы, где поле order равно null
+        const filteredOrders = deliveredOrders.filter(item => item.order !== null);
+
+        // Применяем skip и limit на отфильтрованные заказы
+        const paginatedOrders = filteredOrders.slice(skip, skip + limit);
+
+        // Возвращаем только нужные заказы для текущей страницы
+        res.json({ deliveredOrders: paginatedOrders, totalOrders: filteredOrders.length });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getFirstOrderForToday = async (req, res) => {
+    try {
+        const id = req.userId
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0];
+
+        if (!id) {
+            return res.status(400).json({ message: "ID курьера не предоставлен" });
+        }
+
+        // Находим курьера и пополняем поле orders.order
+        const courier = await Courier.findById(id)
+            .populate({
+                path: 'orders.order', // Пополняем поле order
+                populate: {
+                    path: 'client', // Вложенный populate для клиента
+                    model: 'Client', // Указываем модель клиента
+                }
+            });
+
+        if (!courier) {
+            return res.status(404).json({ message: "Курьер не найден" });
+        }
+
+        // Фильтруем заказы на текущую дату
+        const activeOrders = courier.orders.filter(
+            (item) => item.order.date.d === todayString
+        );
+
+        // Ищем заказы со статусом 'onTheWay'
+        const onTheWayOrders = activeOrders.filter(
+            (item) => item.orderStatus === "onTheWay"
+        );
+
+        // Если есть заказы со статусом 'onTheWay', возвращаем первый из них
+        if (onTheWayOrders.length > 0) {
+            return res.json({ firstActiveOrder: onTheWayOrders[0] });
+        }
+
+        // Если нет заказов со статусом 'onTheWay', ищем самый первый заказ со статусом 'inLine'
+        const inLineOrders = activeOrders.filter(
+            (item) => item.orderStatus === "inLine"
+        );
+
+        const firstInLineOrder = inLineOrders.length > 0 ? inLineOrders[0] : null;
+
+        if (!firstInLineOrder) {
+            return res.status(404).json({ message: "Активные заказы не найдены" });
+        }
+
+        res.json({ firstActiveOrder: firstInLineOrder });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const updateOrderList = async (req, res) => {
+    try {
+        const id = req.userId
+        const {orders} = req.body
+
+        const courier = await Courier.findById(id)
+
+        courier.orders = orders
+
+        await courier.save()
+
+        res.json({
+            success: true
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const updateCourierOrderStatus = async (req, res) => {
+    try {
+        const id = req.userId
+        const {orderId, trueOrder, newStatus} = req.body
+
+        console.log("id", id);
+        console.log("orderId", orderId);
+        console.log("newStatus", newStatus);
+        
+
+        // Найдем курьера и обновим статус заказа в массиве orders
+        const updatedCourier = await Courier.findOneAndUpdate(
+            { _id: id, 'orders._id': orderId }, // Находим документ и нужный элемент в массиве orders по ID
+            { $set: { 'orders.$.orderStatus': newStatus } }, // Обновляем поле orderStatus в найденном элементе
+            { new: true } // Возвращаем обновленный документ
+        );
+
+        const order = await Order.findOne({_id: trueOrder})
+
+        order.status = newStatus
+
+        await order.save()
+
+        if (!updatedCourier) {
+            return res.status(404).json({ message: "Курьер или заказ не найдены" });
+        }
+
+        res.json({
+            success: true
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Не удалось обновить статус заказа" });
+    }
+};
+

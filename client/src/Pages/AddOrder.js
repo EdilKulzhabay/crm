@@ -142,7 +142,7 @@ export default function AddOrder() {
             b19: "",
         });
         setDate({
-            d: "",
+            d: getCurrentDate(),
             time: "",
         });
     };

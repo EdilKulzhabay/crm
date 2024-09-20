@@ -2,6 +2,7 @@ import Notification from "../Models/Notification.js";
 import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 import Client from "../Models/Client.js";
+import Courier from "../Models/Courier.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -24,6 +25,16 @@ export const addOrder = async (req, res) => {
         });
 
         await order.save();
+
+        if (courier) {
+            const cour = await Courier.findById(courier)
+
+            const courierOrder = {order: order._id, orderStatus: "inLine"}
+
+            cour.orders.push(courierOrder)
+
+            await cour.save()
+        }
 
         let orConditions = [
             {
@@ -322,6 +333,16 @@ export const updateOrder = async (req, res) => {
                 `Пользователь ${user.fullName} изменил курьера на "${changeData.fullName}"`
             );
             await order.save();
+        }
+
+        if (change === "courier") {
+            const courier = await Courier.findById(changeData._id)
+
+            const courierOrder = {order: order._id, orderStatus: "inLine"}
+
+            courier.orders.push(courierOrder)
+
+            await courier.save()
         }
 
         res.json({

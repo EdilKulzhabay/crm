@@ -30,6 +30,22 @@ const CourierSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         },
+        orders: [
+            {
+                order: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "Order"
+                },
+                orderStatus: {
+                    type: String,
+                    default: "inLine"
+                }
+            }
+        ],
+        wholeList: {
+            type: Boolean,
+            default: false
+        }
     },
     {
         timestamps: true,

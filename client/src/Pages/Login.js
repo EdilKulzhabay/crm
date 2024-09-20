@@ -56,8 +56,6 @@ export default function Login() {
 
     useEffect(() => {
         if (localStorage.getItem("token") !== null) {
-            const token = localStorage.getItem("token");
-            console.log(token);
             api.get("/getMe", {
                 headers: { "Content-Type": "application/json" },
             })
@@ -73,6 +71,8 @@ export default function Login() {
     }, []);
 
     useEffect(() => {
+        console.log(isAuth);
+        
         if (isAuth._id) {
             const { role } = isAuth;
             if (role === "superAdmin") {
