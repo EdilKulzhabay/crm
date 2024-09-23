@@ -234,7 +234,7 @@ export default function AddOrder() {
                                     <a
                                         href={adress.link}
                                         target="_blank" rel="noreferrer"
-                                        className="text-blue-900 hover:text-blue-500"
+                                        className="text-blue-500 hover:text-blue-500"
                                     >
                                         link%%{adress.street}
                                     </a>

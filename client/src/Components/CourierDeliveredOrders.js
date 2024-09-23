@@ -73,7 +73,7 @@ export default function CourierDeliveredOrders(props) {
                                 Заказ: (
                                 {item?.order?.createdAt?.slice(0, 10)})
                             </div>
-                            <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-800 hover:text-blue-600">{item?.order?.address?.actual}</a>
+                            <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                             <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                             <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
                             <LinkButton
@@ -94,7 +94,7 @@ export default function CourierDeliveredOrders(props) {
                                 Заказ: (
                                 {item?.order?.createdAt?.slice(0, 10)})
                             </div>
-                            <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-800 hover:text-blue-600">{item?.order?.address?.actual}</a>
+                            <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                             <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                             <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
                             

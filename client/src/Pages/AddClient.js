@@ -235,7 +235,7 @@ export default function AddClient() {
                                     <div>
                                         2GIS ссылка:{" "}
                                         <a
-                                            className="text-blue-900 hover:text-blue-500"
+                                            className="text-blue-500 hover:text-green-500"
                                             target="_blank" rel="noreferrer"
                                             href={addresses[index].link}
                                         >

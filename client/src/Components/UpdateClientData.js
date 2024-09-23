@@ -42,14 +42,14 @@ export default function UpdateClientData(props) {
                     <div className="flex items-center gap-x-2 flex-wrap text-red">
                         [
                         <button
-                            className="hover:text-blue-900"
+                            className="hover:text-blue-500"
                             onClick={handleSave}
                         >
                             Сохранить
                         </button>
                         <div>/</div>
                         <button
-                            className="hover:text-blue-900"
+                            className="hover:text-blue-500"
                             onClick={() => {
                                 handleChange(name + "Open", !open);
                             }}

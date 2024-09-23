@@ -115,7 +115,7 @@ export default function OrderPage() {
                             {order?.address?.actual || ""}{" "}
                             <a
                                 href={order?.address?.link || "/"}
-                                className="text-blue-900 hover:text-blue-500"
+                                className="text-blue-500 hover:text-blue-500"
                                 target="_blank" rel="noreferrer"
                             >
                                 %2gis%
@@ -165,7 +165,7 @@ export default function OrderPage() {
                     <div className="flex items-center gap-x-2 flex-wrap text-red">
                         [
                         <button
-                            className={clsx("hover:text-blue-900", {
+                            className={clsx("hover:text-blue-500", {
                                 "text-red-500": orderStatus !== "awaitingOrder",
                                 "text-blue-800": orderStatus === "awaitingOrder"
                             })}
@@ -177,7 +177,7 @@ export default function OrderPage() {
                         </button>
                         <div>/</div>
                         <button
-                            className={clsx("hover:text-blue-900", {
+                            className={clsx("hover:text-blue-500", {
                                 "text-red-500": orderStatus !== "onTheWay",
                                 "text-blue-800": orderStatus === "onTheWay"
                             })}
@@ -189,7 +189,7 @@ export default function OrderPage() {
                         </button>
                         <div>/</div>
                         <button
-                            className={clsx("hover:text-blue-900", {
+                            className={clsx("hover:text-blue-500", {
                                 "text-red-500": orderStatus !== "delivered",
                                 "text-blue-800": orderStatus === "delivered"
                             })}
@@ -201,7 +201,7 @@ export default function OrderPage() {
                         </button>
                         <div>/</div>
                         <button
-                            className={clsx("hover:text-blue-900", {
+                            className={clsx("hover:text-blue-500", {
                                 "text-red-500": orderStatus !== "cancelled",
                                 "text-blue-800": orderStatus === "cancelled"
                             })}

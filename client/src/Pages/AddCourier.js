@@ -150,14 +150,14 @@ export default function AddCourier() {
                 <div className="flex items-center gap-x-2 flex-wrap text-red">
                     [
                     <button
-                        className="text-red hover:text-blue-900"
+                        className="text-red hover:text-blue-500"
                         onClick={() => {}}
                     >
                         Активен
                     </button>
                     <div>/</div>
                     <button
-                        className="text-red hover:text-blue-900"
+                        className="text-red hover:text-blue-500"
                         onClick={() => {}}
                     >
                         Неактивен
