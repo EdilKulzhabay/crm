@@ -45,6 +45,25 @@ export default function CourierList() {
             });
     };
 
+    const updateCouriserStatus = (id, status) => {
+        let value = "active"
+        if (status === "active") {
+            value = "inActive"
+        }
+        api.post("/updateCourierData", {courierId: id, field: "status", value}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            if (data.success) {
+                const updatedCouriers = couriers.map(courier => 
+                    courier._id === id ? { ...courier, status: value } : courier
+                );
+                setCouriers(updatedCouriers);
+            }
+        }).catch((e) => {
+            console.log(e);
+        })
+    }
+
     const getFreeInfo = () => {
         api.get("/getFreeInfoCourier", {
             headers: { "Content-Type": "application/json" },
@@ -173,7 +192,7 @@ export default function CourierList() {
                                             >
                                                 Редакитровать
                                             </LinkButton>
-                                            <MyButton click={() => {}}>
+                                            <MyButton click={() => {updateCouriserStatus(item._id, item.status)}}>
                                                 {item.status === "active"
                                                     ? "Блокировать"
                                                     : "Разблокировать"}
