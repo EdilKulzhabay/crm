@@ -383,10 +383,19 @@ export const updateCourierOrderStatus = async (req, res) => {
         console.log("newStatus", newStatus);
         
 
-        // Найдем курьера и обновим статус заказа в массиве orders
+        const updateQuery = {
+            $set: { 'orders.$.orderStatus': newStatus } // Обновляем статус заказа в массиве orders
+        };
+
+        // Если статус заказа "delivered", увеличиваем completedOrders на 1
+        if (newStatus === "delivered") {
+            updateQuery.$inc = { completedOrders: 1 }; // Увеличиваем completedOrders на 1
+        }
+
+        // Найдем курьера и обновим статус заказа в массиве orders и при необходимости увеличим completedOrders
         const updatedCourier = await Courier.findOneAndUpdate(
             { _id: id, 'orders._id': orderId }, // Находим документ и нужный элемент в массиве orders по ID
-            { $set: { 'orders.$.orderStatus': newStatus } }, // Обновляем поле orderStatus в найденном элементе
+            updateQuery, // Выполняем нужные обновления
             { new: true } // Возвращаем обновленный документ
         );
 
