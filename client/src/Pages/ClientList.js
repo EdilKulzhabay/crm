@@ -307,7 +307,7 @@ export default function ClientList() {
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             [
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterClientStatus("all");
                                 }}
@@ -316,7 +316,7 @@ export default function ClientList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterClientStatus("active");
                                 }}
@@ -325,7 +325,7 @@ export default function ClientList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterClientStatus("inActive");
                                 }}

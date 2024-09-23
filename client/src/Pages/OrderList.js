@@ -354,7 +354,7 @@ export default function OrderList() {
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             <div>[</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterStatus("all");
                                 }}
@@ -363,7 +363,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterStatus("awaitingOrder");
                                 }}
@@ -372,7 +372,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterStatus("onTheWay");
                                 }}
@@ -381,7 +381,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterStatus("delivered");
                                 }}
@@ -390,7 +390,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterStatus("cancelled");
                                 }}
@@ -410,7 +410,7 @@ export default function OrderList() {
                         <div className="flex items-center gap-x-3 flex-wrap text-red">
                             <div>[</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterProduct("all");
                                 }}
@@ -419,7 +419,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterProduct("b12");
                                 }}
@@ -428,7 +428,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterProduct("b19");
                                 }}
@@ -448,7 +448,7 @@ export default function OrderList() {
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             <div>[</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setCourier(null);
                                 }}
@@ -457,7 +457,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setCouriersModal(true);
                                 }}
@@ -480,7 +480,7 @@ export default function OrderList() {
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             <div>[</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterSort("new");
                                 }}
@@ -489,7 +489,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterSort("old");
                                 }}
@@ -498,7 +498,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterSort("expensive");
                                 }}
@@ -507,7 +507,7 @@ export default function OrderList() {
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {
                                     setFilterSort("cheap");
                                 }}
@@ -564,7 +564,7 @@ export default function OrderList() {
                                             {item.createdAt.slice(0, 10)})
                                         </div>
                                         <div>{item.client.fullName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-500 hover:text-green-500">{item.address.actual}</a>
                                         <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
                                         <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
                                         <LinkButton
@@ -589,7 +589,7 @@ export default function OrderList() {
                                             {item.createdAt.slice(0, 10)})
                                         </div>
                                         <div>{item.client.fullName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-500 hover:text-green-500">{item.address.actual}</a>
                                         <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
                                         <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
                                         

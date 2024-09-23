@@ -170,7 +170,7 @@ export default function SuperAdminSettings() {
                     <div className="flex items-center gap-x-2 flex-wrap text-red">
                         [
                         <button
-                            className="text-red hover:text-blue-900"
+                            className="text-red hover:text-blue-500"
                             onClick={() => {
                                 updateNotificationStatus("active");
                             }}
@@ -179,7 +179,7 @@ export default function SuperAdminSettings() {
                         </button>
                         <div>/</div>
                         <button
-                            className="text-red hover:text-blue-900"
+                            className="text-red hover:text-blue-500"
                             onClick={() => {
                                 updateNotificationStatus("inActive");
                             }}

@@ -155,7 +155,7 @@ export default function AddPromoCode() {
                     <div className="flex items-center gap-x-2 flex-wrap text-red">
                         [
                         <button
-                            className="text-red hover:text-blue-900"
+                            className="text-red hover:text-blue-500"
                             onClick={() => {
                                 setPromoCode({ ...promoCode, addData: true });
                             }}
@@ -164,7 +164,7 @@ export default function AddPromoCode() {
                         </button>
                         <div>/</div>
                         <button
-                            className="text-red hover:text-blue-900"
+                            className="text-red hover:text-blue-500"
                             onClick={() => {
                                 setPromoCode({ ...promoCode, addData: false });
                             }}

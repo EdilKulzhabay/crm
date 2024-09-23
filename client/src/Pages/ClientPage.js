@@ -324,7 +324,7 @@ export default function ClientPage() {
                                 <a
                                     href={adress.link}
                                     target="_blank" rel="noreferrer"
-                                    className="text-blue-900 hover:text-blue-500"
+                                    className="text-blue-500 hover:text-blue-500"
                                 >
                                     link%%{adress.street}
                                 </a>
@@ -355,7 +355,7 @@ export default function ClientPage() {
                                 <div>
                                     2GIS ссылка:{" "}
                                     <a
-                                        className="text-blue-900 hover:text-blue-500"
+                                        className="text-blue-500 hover:text-blue-500"
                                         target="_blank" rel="noreferrer"
                                         href={newAdress.link}
                                     >
@@ -472,14 +472,14 @@ export default function ClientPage() {
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             [
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {updateClientData("chooseTime", true)}}
                             >
                                 Включить
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {updateClientData("chooseTime", false)}}
                             >
                                 Отключить
@@ -494,14 +494,14 @@ export default function ClientPage() {
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             [
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {updateClientData("subscription", true)}}
                             >
                                 Включить
                             </button>
                             <div>/</div>
                             <button
-                                className="text-red hover:text-blue-900"
+                                className="text-red hover:text-blue-500"
                                 onClick={() => {updateClientData("subscription", false)}}
                             >
                                 Отключить
@@ -526,7 +526,7 @@ export default function ClientPage() {
                                             {item.createdAt.slice(0, 10)})
                                         </div>
                                         <div>{item.client.fullName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-500 hover:text-green-500">{item.address.actual}</a>
                                         <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
                                         <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
                                         <LinkButton
@@ -548,7 +548,7 @@ export default function ClientPage() {
                                             {item.createdAt.slice(0, 10)})
                                         </div>
                                         <div>{item.client.fullName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-800 hover:text-blue-600">{item.address.actual}</a>
+                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-500 hover:text-green-500">{item.address.actual}</a>
                                         <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
                                         <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
                                         
