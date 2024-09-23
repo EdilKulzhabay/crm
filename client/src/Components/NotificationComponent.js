@@ -3,7 +3,7 @@ import io from "socket.io-client";
 import api from "../api";
 import MySnackBar from "./MySnackBar";
 
-const socket = io(`http://localhost:${process.env.REACT_APP_PORT}`); // Укажите URL вашего сервера
+const socket = io(`${process.env.REACT_APP_PORT}`); // Укажите URL вашего сервера
 
 const NotificationComponent = () => {
     const [canPlayAudio, setCanPlayAudio] = useState(false);
