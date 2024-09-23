@@ -7,6 +7,9 @@ export const register = async (req, res) => {
     try {
         const { userName, fullName, phone, mail, role } = req.body;
 
+        console.log(userName);
+        
+
         const candidate = await User.findOne({ userName });
 
         if (candidate) {
