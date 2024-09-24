@@ -389,11 +389,7 @@ export const updateOrderList = async (req, res) => {
 export const updateCourierOrderStatus = async (req, res) => {
     try {
         const id = req.userId
-        const {orderId, trueOrder, newStatus} = req.body
-
-        console.log("id", id);
-        console.log("orderId", orderId);
-        console.log("newStatus", newStatus);
+        const {orderId, trueOrder, newStatus, products, opForm} = req.body
         
 
         const updateQuery = {
@@ -415,6 +411,10 @@ export const updateCourierOrderStatus = async (req, res) => {
         const order = await Order.findOne({_id: trueOrder})
 
         order.status = newStatus
+        if (newStatus === "delivered") {
+            order.products = products
+            order.opForm = opForm
+        }
 
         await order.save()
 
