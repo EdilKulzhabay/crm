@@ -220,7 +220,7 @@ export const getActiveOrdersCourier = async (req, res) => {
             return res.status(400).json({ message: "ID курьера не предоставлен" });
         }
 
-        const limit = 3; // Количество заказов на странице
+        const limit = 5; // Количество заказов на странице
         const skip = (page - 1) * limit;
 
         // Находим курьера и пополняем поле orders.order
