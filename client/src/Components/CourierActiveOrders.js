@@ -66,6 +66,18 @@ export default function CourierActiveOrders(props) {
         [loading, hasMore, loadMoreActiveOrders]
     );
 
+    const touchStartHandler = (e, orderId) => {
+        setDraggingOrderId(orderId);
+    }
+    
+    const touchMoveHandler = (e) => {
+        e.preventDefault(); // Это нужно, чтобы предотвратить дефолтное поведение прокрутки на мобильных устройствах
+    }
+    
+    const touchEndHandler = (e, droppedOnOrderId) => {
+        onDropHandler(e, droppedOnOrderId);
+    }
+
     const dragStartHandler = (e, orderId) => {
         setDraggingOrderId(orderId);
     }
@@ -140,6 +152,9 @@ export default function CourierActiveOrders(props) {
                             onDragEnd={(e) => {dragEndHandler(e)}}
                             onDragOver={(e) => {dragOverHandler(e)}}
                             onDrop={(e) => {onDropHandler(e, item._id)}}
+                            onTouchStart={(e) => touchStartHandler(e, item._id)}
+                            onTouchMove={(e) => touchMoveHandler(e)}
+                            onTouchEnd={(e) => touchEndHandler(e, item._id)}
                             draggable={true}
                         >
                             <Li>
@@ -169,6 +184,9 @@ export default function CourierActiveOrders(props) {
                             onDragEnd={(e) => {dragEndHandler(e)}}
                             onDragOver={(e) => {dragOverHandler(e)}}
                             onDrop={(e) => {onDropHandler(e, item._id)}}
+                            onTouchStart={(e) => touchStartHandler(e, item._id)}
+                            onTouchMove={(e) => touchMoveHandler(e)}
+                            onTouchEnd={(e) => touchEndHandler(e, item._id)}
                             draggable={true}    
                         >
                             <Li>
