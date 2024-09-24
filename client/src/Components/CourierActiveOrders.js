@@ -151,12 +151,12 @@ export default function CourierActiveOrders(props) {
     }
 
     return <>
-        <div className="max-h-[200px] overflow-scroll mb-1">
+        <div className="max-h-[180px] overflow-scroll mb-1">
             {activeOrders.map((item, index) => {
                 if (activeOrders.length === index + 1) {
                     return (
                         <div 
-                            key={item?.order?._id} 
+                            key={item?._id} 
                             ref={lastOrderElementRef}
                             onDragStart={(e) => {dragStartHandler(e, item._id)}}
                             onDragLeave={(e) => {dragLeaveHandler(e)}}
@@ -196,7 +196,7 @@ export default function CourierActiveOrders(props) {
                 } else {
                     return (
                         <div 
-                            key={item?.order?._id} 
+                            key={item?._id} 
                             onDragStart={(e) => {dragStartHandler(e, item._id)}}
                             onDragLeave={(e) => {dragLeaveHandler(e)}}
                             onDragEnd={(e) => {dragEndHandler(e)}}
