@@ -9,11 +9,6 @@ function App() {
     const { token, login, logout } = useAuth();
     const isAuthenticated = !!token;
 
-    useEffect(() => {
-        console.log("HERE", token);
-        
-    }, [token])
-
     return (
         <>
             <AuthContext.Provider

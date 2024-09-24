@@ -227,7 +227,6 @@ export const deleteFranchisee = async (req, res) => {
                 message: "Не удалось удалить пользователя",
             });
         }
-        console.log("WE HERE");
         res.json({
             success: true,
         });

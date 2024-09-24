@@ -3,6 +3,8 @@ import Li from "./Li";
 import LinkButton from "./LinkButton";
 import api from "../api";
 import MyButton from "./MyButton";
+import UpIcon from "../icons/UpIcon";
+import DownIcon from "../icons/DownIcon";
 
 export default function CourierActiveOrders(props) {
     const id = props.id
@@ -31,7 +33,6 @@ export default function CourierActiveOrders(props) {
             }
         )
             .then(({ data }) => {
-                console.log(data);
                 if (data.activeOrders.length === 0) {
                     setHasMore(false);
                 } else {
@@ -65,18 +66,6 @@ export default function CourierActiveOrders(props) {
         },
         [loading, hasMore, loadMoreActiveOrders]
     );
-
-    const touchStartHandler = (e, orderId) => {
-        setDraggingOrderId(orderId);
-    }
-    
-    const touchMoveHandler = (e) => {
-        e.preventDefault(); // Это нужно, чтобы предотвратить дефолтное поведение прокрутки на мобильных устройствах
-    }
-    
-    const touchEndHandler = (e, droppedOnOrderId) => {
-        onDropHandler(e, droppedOnOrderId);
-    }
 
     const dragStartHandler = (e, orderId) => {
         setDraggingOrderId(orderId);
@@ -139,6 +128,28 @@ export default function CourierActiveOrders(props) {
         setIsUpdate(false)
     }
 
+    const mobileDrop = (index, where) => {
+        const temporaryOrders = [...activeOrders]
+
+        const qwe = temporaryOrders[index]
+
+        if (where === "up") {
+            if (index === 0) {
+                return
+            }
+            temporaryOrders[index] = temporaryOrders[index - 1]
+            temporaryOrders[index - 1] = qwe
+        } else {
+            if (index === activeOrders.length - 1) {
+                return
+            }
+            temporaryOrders[index] = temporaryOrders[index + 1]
+            temporaryOrders[index + 1] = qwe
+        }
+        setActiveOrders([...temporaryOrders])
+        setIsUpdate(true)
+    }
+
     return <>
         <div className="max-h-[200px] overflow-scroll mb-1">
             {activeOrders.map((item, index) => {
@@ -152,25 +163,32 @@ export default function CourierActiveOrders(props) {
                             onDragEnd={(e) => {dragEndHandler(e)}}
                             onDragOver={(e) => {dragOverHandler(e)}}
                             onDrop={(e) => {onDropHandler(e, item._id)}}
-                            onTouchStart={(e) => touchStartHandler(e, item._id)}
-                            onTouchMove={(e) => touchMoveHandler(e)}
-                            onTouchEnd={(e) => touchEndHandler(e, item._id)}
                             draggable={true}
                         >
                             <Li>
-                                <div className="flex items-center gap-x-3 flex-wrap">
-                                <div>
-                                        Заказ: (
-                                        {item?.order?.createdAt?.slice(0, 10)})
+                                <div className="flex items-center">
+                                    <div className="flex items-center gap-x-2 flex-wrap">
+                                        <div>
+                                            Заказ: (
+                                            {item?.order?.createdAt?.slice(0, 10)})
+                                        </div>
+                                        <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
+                                        <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
+                                        <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
+                                        <LinkButton
+                                            href={`/orderPage/${item._id}`}
+                                        >
+                                            Просмотр
+                                        </LinkButton>
                                     </div>
-                                    <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
-                                    <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
-                                    <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                    <LinkButton
-                                        href={`/orderPage/${item._id}`}
-                                    >
-                                        Просмотр
-                                    </LinkButton>
+                                    <div className="lg:hidden flex items-center gap-x-1.5">
+                                        <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                            <div>X</div>
+                                        </button>
+                                        <button onClick={() => {mobileDrop(index, "down")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                            <div>V</div>
+                                        </button>
+                                    </div>
                                 </div>
                             </Li>
                         </div>
@@ -184,26 +202,32 @@ export default function CourierActiveOrders(props) {
                             onDragEnd={(e) => {dragEndHandler(e)}}
                             onDragOver={(e) => {dragOverHandler(e)}}
                             onDrop={(e) => {onDropHandler(e, item._id)}}
-                            onTouchStart={(e) => touchStartHandler(e, item._id)}
-                            onTouchMove={(e) => touchMoveHandler(e)}
-                            onTouchEnd={(e) => touchEndHandler(e, item._id)}
                             draggable={true}    
                         >
                             <Li>
-                                <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
-                                        Заказ: (
-                                        {item?.order?.createdAt?.slice(0, 10)})
+                            <div className="flex items-center">
+                                    <div className="flex items-center gap-x-2 flex-wrap">
+                                        <div>
+                                            Заказ: (
+                                            {item?.order?.createdAt?.slice(0, 10)})
+                                        </div>
+                                        <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
+                                        <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
+                                        <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
+                                        <LinkButton
+                                            href={`/orderPage/${item._id}`}
+                                        >
+                                            Просмотр
+                                        </LinkButton>
                                     </div>
-                                    <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
-                                    <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
-                                    <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                    
-                                    <LinkButton
-                                        href={`/orderPage/${item?.order?._id}`}
-                                    >
-                                        Просмотр
-                                    </LinkButton>
+                                    <div className="lg:hidden flex items-center gap-x-1.5">
+                                        <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                            <UpIcon className="w-6 h-6 text-white" />
+                                        </button>
+                                        <button onClick={() => {mobileDrop(index, "down")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                            <DownIcon className="w-6 h-6 text-white" />
+                                        </button>
+                                    </div>
                                 </div>
                             </Li>
                         </div>
