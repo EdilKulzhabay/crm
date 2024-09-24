@@ -6,7 +6,7 @@ import Courier from "../Models/Courier.js";
 
 export const addOrder = async (req, res) => {
     try {
-        const { client, address, products, courier, date, clientNotes } =
+        const { client, address, products, courier, date, clientNotes, opForm } =
             req.body;
 
         const sum =
@@ -22,6 +22,7 @@ export const addOrder = async (req, res) => {
             courier,
             sum,
             clientNotes: clientNotes || "",
+            opForm
         });
 
         await order.save();
@@ -348,6 +349,12 @@ export const updateOrder = async (req, res) => {
             courier.orders.push(courierOrder)
 
             await courier.save()
+        }
+
+        if (change === "opForm") {
+            order.opForm = changeData
+
+            await order.save()
         }
 
         res.json({

@@ -28,6 +28,7 @@ export default function AddClient() {
         mail: "",
         price19: "",
         price12: "",
+        opForm: "cash"
     });
     const [addresses, setAddresses] = useState([
         {
@@ -40,6 +41,10 @@ export default function AddClient() {
     const changeHandler = (event) => {
         setForm({ ...form, [event.target.name]: event.target.value });
     };
+
+    const updateOpForm = (op) => {
+        setForm({...form, opForm: op})
+    }
 
     const addressChangeHandler = (index, event) => {
         const newAddresses = [...addresses];
@@ -174,7 +179,20 @@ export default function AddClient() {
                 </Li>
             </>
             <Div />
-
+            <Div>
+                <div>Форма оплаты: {form.opForm === "cash" && "наличные"}{form.opForm === "transfer" && "перевод"}{form.opForm === "card" && "карта"}{form.opForm === "coupon" && "талон"}</div>
+            </Div>
+            <Div>
+                <div className="text-red flex items-center gap-x-3">
+                    [
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("cash")}}>Наличные</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("transfer")}}>Перевод</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("card")}}>Карта</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("coupon")}}>Талон</button>
+                    ]
+                </div>
+            </Div>
+            <Div />
             <Div>
                 <div>Цена товаров:</div>
             </Div>

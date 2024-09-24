@@ -12,6 +12,7 @@ export const addClient = async (req, res) => {
             price19,
             price12,
             franchisee,
+            opForm
         } = req.body;
 
         const client = new Client({
@@ -22,6 +23,7 @@ export const addClient = async (req, res) => {
             price19,
             price12,
             franchisee,
+            opForm
         });
 
         await client.save();
