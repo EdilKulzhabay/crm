@@ -370,7 +370,7 @@ export default function ClientPage() {
                                 <div>
                                     2GIS ссылка:{" "}
                                     <a
-                                        className="text-blue-500 hover:text-blue-500"
+                                        className="text-blue-500 hover:text-green-500"
                                         target="_blank" rel="noreferrer"
                                         href={newAdress.link}
                                     >
