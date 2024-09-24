@@ -171,7 +171,12 @@ export const getOrders = async (req, res) => {
         }
 
         // Execute the query with the updated filter
-        const orders = await Order.find(filter)
+        const orders = await Order.find({
+            $or: [
+                { ...filter }, // Первое условие — фильтр с конкретными полями
+                { transferredFranchise: user.fullName } // Второе условие — передаем transferredFranchise
+            ]
+        })
             .populate("franchisee")
             .populate("courier")
             .populate("client")

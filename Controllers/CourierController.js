@@ -353,12 +353,36 @@ export const getFirstOrderForToday = async (req, res) => {
 
 export const updateOrderList = async (req, res) => {
     try {
-        const id = req.userId
-        const {orders} = req.body
+        const {id, orders} = req.body
+
+        console.log("ORDERS", orders);
+        
 
         const courier = await Courier.findById(id)
 
-        courier.orders = orders
+        if (!courier) {
+            return res.json({
+                success: false
+            })
+        }
+
+        let temporaryOrders = courier.orders
+        console.log("temporaryOrders", temporaryOrders);
+        
+
+        const ordesLen = orders.length
+        console.log("ordesLen", ordesLen);
+        
+
+        temporaryOrders.splice(0, ordesLen)
+
+        console.log("temporaryOrdersSзlice", temporaryOrders);
+
+        temporaryOrders = [...orders, ...temporaryOrders]
+
+        console.log("temporaryOrdersPush", temporaryOrders);
+
+        courier.orders = temporaryOrders
 
         await courier.save()
 
