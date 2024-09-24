@@ -13,6 +13,7 @@ export const processExcelFile = async (filePath, id) => {
             const encodedAddress = encodeURIComponent(row.adress);
             const newClient = {
                 fullName: row.fullName,
+                userName: row.userName,
                 phone: row.phone,
                 mail: row.mail,
                 addresses: [
@@ -24,7 +25,7 @@ export const processExcelFile = async (filePath, id) => {
                 ],
                 price19: row.price19,
                 price12: row.price12,
-                status: "active",
+                status: row.status,
                 franchisee: id,
                 opForm: row.opForm
             };
