@@ -181,7 +181,7 @@ export default function CourierActiveOrders(props) {
                                             Просмотр
                                         </LinkButton>
                                     </div>
-                                    <div className="lg:hidden flex items-center gap-x-1.5">
+                                    <div className="flex items-center gap-x-1.5">
                                         <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
                                             <UpIcon className="w-6 h-6 text-white" />
                                         </button>
@@ -220,7 +220,7 @@ export default function CourierActiveOrders(props) {
                                             Просмотр
                                         </LinkButton>
                                     </div>
-                                    <div className="lg:hidden flex items-center gap-x-1.5">
+                                    <div className="flex items-center gap-x-1.5">
                                         <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
                                             <UpIcon className="w-6 h-6 text-white" />
                                         </button>

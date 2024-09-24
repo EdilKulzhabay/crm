@@ -355,9 +355,6 @@ export const updateOrderList = async (req, res) => {
     try {
         const {id, orders} = req.body
 
-        console.log("ORDERS", orders);
-        
-
         const courier = await Courier.findById(id)
 
         if (!courier) {
@@ -367,20 +364,12 @@ export const updateOrderList = async (req, res) => {
         }
 
         let temporaryOrders = courier.orders
-        console.log("temporaryOrders", temporaryOrders);
-        
 
         const ordesLen = orders.length
-        console.log("ordesLen", ordesLen);
-        
 
         temporaryOrders.splice(0, ordesLen)
 
-        console.log("temporaryOrdersSзlice", temporaryOrders);
-
         temporaryOrders = [...orders, ...temporaryOrders]
-
-        console.log("temporaryOrdersPush", temporaryOrders);
 
         courier.orders = temporaryOrders
 
