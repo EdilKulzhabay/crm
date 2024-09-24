@@ -38,6 +38,7 @@ export default function AddOrder() {
     });
     const [couriersModal, setCouriersModal] = useState(false);
     const [courier, setCourier] = useState(null);
+    const [opForm, setOpForm] = useState("");
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -148,9 +149,10 @@ export default function AddOrder() {
     };
 
     const addOrder = () => {
+        const op = opForm ? opForm : client?.opForm
         api.post(
             "/addOrder",
-            { client, address, products, courier, date, clientNotes: "" },
+            { client, address, products, courier, date, clientNotes: "", opForm: op },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -348,6 +350,25 @@ export default function AddOrder() {
                         )}
                     </div>
                 </Li>
+                <Li>
+                <div>
+                    Форма оплаты:{" "}
+                    {(opForm || client?.opForm) === "cash" && "наличные"}
+                    {(opForm || client?.opForm) === "transfer" && "перевод"}
+                    {(opForm || client?.opForm) === "card" && "карта"}
+                    {(opForm || client?.opForm) === "coupon" && "талон"}
+                </div>
+                </Li>
+                <Li2>
+                    <div className="text-red flex items-center gap-x-3">
+                        [
+                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button>
+                        ]
+                    </div>
+                </Li2>
             </>
 
             <Div />

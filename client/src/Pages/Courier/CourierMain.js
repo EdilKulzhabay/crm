@@ -55,7 +55,7 @@ export default function CourierMain() {
             <Div>Текущий заказ:</Div>
             {firstActiveOrder !== null ? 
             <>
-                <Li>Адрес: {firstActiveOrder?.order?.address?.actual}</Li>
+                <Li>Адрес: {firstActiveOrder?.order?.address?.actual} <LinkButton href={firstActiveOrder?.order?.address?.link}>Построить маршрут</LinkButton></Li>
                 <Li>Количество 12.5 - литровых бутылей: {firstActiveOrder?.order?.products?.b12}</Li>
                 <Li>Количество 18.9 - литровых бутылей: {firstActiveOrder?.order?.products?.b19}</Li>
                 {firstActiveOrder?.order?.date?.time !== "" && <Li>Время доставки: {firstActiveOrder?.order?.date?.time}</Li>}

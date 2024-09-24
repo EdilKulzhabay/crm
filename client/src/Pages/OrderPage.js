@@ -160,6 +160,21 @@ export default function OrderPage() {
 
             <Div />
             <Div>
+                <div>Форма оплаты: {order?.opForm === "cash" && "наличные"}{order?.opForm === "transfer" && "перевод"}{order?.opForm === "card" && "карта"}{order?.opForm === "coupon" && "талон"}</div>
+            </Div>
+            <Div>
+                <div className="text-red flex items-center gap-x-3">
+                    [
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "cash")}}>Наличные</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "transfer")}}>Перевод</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button>
+                    ]
+                </div>
+            </Div>
+
+            <Div />
+            <Div>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <div>Статус заказа:</div>
                     <div className="flex items-center gap-x-2 flex-wrap text-red">

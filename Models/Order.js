@@ -62,6 +62,9 @@ const OrderSchema = new mongoose.Schema(
         clientReview: {
             type: String,
         },
+        opForm: {
+            type: String
+        }
     },
     {
         timestamps: true,

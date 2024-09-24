@@ -68,6 +68,12 @@ const ClientSchema = new mongoose.Schema(
         refreshToken: {
             type: String,
         },
+        opForm: {
+            type: String
+        },
+        dailyWater: {
+            type: Number
+        }
     },
     {
         timestamps: true,

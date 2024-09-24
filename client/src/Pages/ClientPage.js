@@ -304,6 +304,21 @@ export default function ClientPage() {
             </>
 
             <Div />
+            <Div>
+                <div>Форма оплаты: {client?.opForm === "cash" && "наличные"}{client?.opForm === "transfer" && "перевод"}{client?.opForm === "card" && "карта"}{client?.opForm === "coupon" && "талон"}</div>
+            </Div>
+            <Div>
+                <div className="text-red flex items-center gap-x-3">
+                    [
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "cash")}}>Наличные</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "transfer")}}>Перевод</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "card")}}>Карта</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талон</button>
+                    ]
+                </div>
+            </Div>
+
+            <Div />
             <Div>Адреса:</Div>
             {client.addresses &&
                 client.addresses.length > 0 &&
