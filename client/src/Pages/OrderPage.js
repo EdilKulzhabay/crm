@@ -9,6 +9,7 @@ import LinkButton from "../Components/LinkButton";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx"
+import DataInput from "../Components/DataInput";
 
 export default function OrderPage() {
     const { id } = useParams();
@@ -17,10 +18,67 @@ export default function OrderPage() {
     const [orderStatus, setOrderStatus] = useState("");
     const [orderCourier, setOrderCourier] = useState(null);
     const [couriersModal, setCouriersModal] = useState(false);
+    const [products, setProducts] = useState({
+        b12: "",
+        b19: "",
+    });
+    const [date, setDate] = useState({
+        d: "",
+        time: "",
+    });
+    const [changeDate, setChangeDate] = useState(false)
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const handleDateChange = (e) => {
+        setChangeDate(true)
+        let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
+        if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
+
+        const year = input.substring(0, 4);
+        const month = input.substring(4, 6);
+        const day = input.substring(6, 8);
+
+        let formattedValue = year;
+        if (input.length >= 5) {
+            formattedValue += "-" + month;
+        }
+        if (input.length >= 7) {
+            formattedValue += "-" + day;
+        }
+
+        setDate({ ...date, [e.target.name]: formattedValue });
+    };
+
+    const handleTimeChange = (e) => {
+        setChangeDate(true)
+        let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
+        if (input.length > 13) input = input.substring(0, 13); // Limit input to 8 digits
+
+        const h1 = input.substring(0, 2);
+        const m1 = input.substring(2, 4);
+        const h2 = input.substring(4, 6);
+        const m2 = input.substring(6, 8);
+
+        let formattedValue = h1;
+        if (input.length >= 3) {
+            formattedValue += ":" + m1;
+        }
+        if (input.length >= 5) {
+            formattedValue += " - " + h2;
+        }
+        if (input.length >= 7) {
+            formattedValue += ":" + m2;
+        }
+
+        setDate({ ...date, [e.target.name]: formattedValue });
+    };
+
+    const handleProductsChange = (event) => {
+        setProducts({ ...products, [event.target.name]: event.target.value });
+    };
 
     const closeSnack = () => {
         setOpen(false);
@@ -45,6 +103,10 @@ export default function OrderPage() {
                 setOrder(data.order);
                 setOrderStatus(data.order.status);
                 setOrderCourier(data.order.courier);
+                setDate({
+                    d: data.order.date.d,
+                    time: data.order.date.time
+                })
             })
             .catch((e) => {
                 console.log(e);
@@ -131,14 +193,39 @@ export default function OrderPage() {
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>12,5-литровая бутыль:</div>
                         <div>{order?.products?.b12} шт</div>
+                        <div>
+                            [{" "}
+                            <input
+                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                name="b12"
+                                value={products.b12}
+                                onChange={(event) => {
+                                    handleProductsChange(event);
+                                }}
+                            />{" "}
+                            ] шт
+                        </div>
                     </div>
                 </Li>
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>18,9-литровая бутыль:</div>
                         <div>{order?.products?.b19} шт</div>
+                        <div>
+                            [{" "}
+                            <input
+                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                name="b19"
+                                value={products.b19}
+                                onChange={(event) => {
+                                    handleProductsChange(event);
+                                }}
+                            />{" "}
+                            ] шт
+                        </div>
                     </div>
                 </Li>
+                {(products.b12 !== ""  || products.b19 !== "") && <Div><MyButton click={() => {updateOrder("products", products)}}>Применить</MyButton></Div>}
             </>
 
             <Div />
@@ -147,15 +234,40 @@ export default function OrderPage() {
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>Дата:</div>
-                        <div className="text-red">{order?.date?.d}</div>
+                        <div className="text-red">
+                            [
+                            <DataInput
+                                color="red"
+                                value={date.d}
+                                name="d"
+                                change={handleDateChange}
+                            />
+                            ]
+                        </div>
+                        {/* <div className="text-red">{order?.date?.d}</div> */}
                     </div>
                 </Li>
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>Время:</div>
-                        <div className="text-red">{order?.date?.time}</div>
+                        <div className="text-red">
+                            [
+                            <input
+                                className="bg-black outline-none border-b border-red border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm"
+                                value={date.time}
+                                size={13}
+                                name="time"
+                                onChange={(event) => {
+                                    handleTimeChange(event);
+                                }}
+                                placeholder=" HH:MM - HH:MM"
+                            />
+                            ]
+                        </div>
+                        {/* <div className="text-red">{order?.date?.time}</div> */}
                     </div>
                 </Li>
+                {changeDate && <Div><MyButton click={() => {updateOrder("date", date)}}>Применить</MyButton></Div>}
             </>
 
             <Div />

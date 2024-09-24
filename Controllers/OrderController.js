@@ -357,6 +357,18 @@ export const updateOrder = async (req, res) => {
             await order.save()
         }
 
+        if (change === "products") {
+            order.products = changeData
+
+            await order.save()
+        }
+
+        if (change === "date") {
+            order.date = changeData
+
+            await order.save()
+        }
+
         res.json({
             success: true,
             message: "Заказ успешно изменен",
