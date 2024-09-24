@@ -46,8 +46,6 @@ export default function CourierPage() {
             { headers: { "Content-Type": "application/json" } }
         )
             .then(({ data }) => {
-                console.log(data);
-                
                 setCourier(data);
             })
             .catch((e) => {

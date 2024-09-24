@@ -27,7 +27,6 @@ export default function CourierDeliveredOrders(props) {
             }
         )
             .then(({ data }) => {
-                console.log(data);
                 if (data.deliveredOrders.length === 0) {
                     setHasMore(false);
                 } else {
