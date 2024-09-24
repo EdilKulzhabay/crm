@@ -26,11 +26,13 @@ import SuperAdminCoincidence from "./Pages/SuperAdmin/SuperAdminCoincidence";
 import SuperAdminCoincidencePage from "./Pages/SuperAdmin/SuperAdminCoincidencePage";
 import AdditionalOrders from "./Pages/Admin/AdditionalOrders";
 import CourierSettings from "./Pages/Courier/CourierSettings";
+import PrivateRoute from "./Components/PrivateRoute";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
 
-    { path: "/addClinet", element: <AddClient /> },
+    
+    { path: "/addClinet", element: <PrivateRoute element={<AddClient />} />  },
     { path: "/ClientPage/:id", element: <ClientPage /> },
     { path: "/CourierPage/:id", element: <CourierPage /> },
     { path: "/addCourier", element: <AddCourier /> },

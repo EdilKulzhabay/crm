@@ -108,7 +108,11 @@ export default function CourierPage() {
             });
     };
 
-    
+    const changeSnackBar = (status, message) => {
+        setOpen(true)
+        setStatus(status)
+        setMessage(message)
+    }
 
     return (
         <Container role={role}>
@@ -162,7 +166,7 @@ export default function CourierPage() {
 
             <Div />
             <Div>Очередь заказов:</Div>
-            <CourierActiveOrders id={id} />
+            <CourierActiveOrders id={id} changeSnackBar={changeSnackBar} />
 
 
             <Div />

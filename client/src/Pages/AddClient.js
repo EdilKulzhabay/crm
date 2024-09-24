@@ -64,7 +64,9 @@ export default function AddClient() {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             setUserData(data);
-        });
+        }).catch((e) => {
+            navigate("/login")
+        })
     }, []);
 
     const addClient = () => {
@@ -74,8 +76,7 @@ export default function AddClient() {
 
         if (
             !formComplete ||
-            addresses[0].street === "" ||
-            addresses[0].house === ""
+            addresses[0].street === ""
         ) {
             setOpen(true);
             setStatus("error");
