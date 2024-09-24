@@ -183,10 +183,10 @@ export default function CourierActiveOrders(props) {
                                     </div>
                                     <div className="lg:hidden flex items-center gap-x-1.5">
                                         <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                            <div>X</div>
+                                            <UpIcon className="w-6 h-6 text-white" />
                                         </button>
                                         <button onClick={() => {mobileDrop(index, "down")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                            <div>V</div>
+                                            <DownIcon className="w-6 h-6 text-white" />
                                         </button>
                                     </div>
                                 </div>
