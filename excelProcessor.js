@@ -25,7 +25,8 @@ export const processExcelFile = async (filePath, id) => {
                 price19: row.price19,
                 price12: row.price12,
                 status: "active",
-                franchisee: id
+                franchisee: id,
+                opForm: row.opForm
             };
 
             await Client.create(newClient);
