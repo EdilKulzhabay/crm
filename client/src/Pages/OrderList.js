@@ -252,7 +252,7 @@ export default function OrderList() {
                                 : item?.status === "delivered"
                                 ? "Доставлен"
                                 : "Отменен",
-                        "Дата добавления": item.createdAt.slice(0, 10),
+                        "Дата доставки": item?.date?.d,
                     };
                 });
 

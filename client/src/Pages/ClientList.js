@@ -249,7 +249,7 @@ export default function ClientList() {
                         Цена12: item.price12,
                         "Статус клиента":
                             item.status === "active" ? "Раб." : "Не раб.",
-                        "Дата добавления": item.date.d,
+                        "Дата добавления": item.createdAt.slice(0, 10),
                         Бонусы: item.bonus,
                     };
                 });
