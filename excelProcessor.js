@@ -10,6 +10,7 @@ export const processExcelFile = async (filePath, id) => {
         for (const row of worksheet) {
             try {
                 const existingClient = await Client.findOne({ phone: row.phone });
+                
 
                 if (!existingClient) {
                     const encodedAddress = encodeURIComponent(row.adress);
