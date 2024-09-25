@@ -420,7 +420,7 @@ export default function ClientList() {
                             <div key={client._id} ref={lastClientElementRef}>
                                 <Li>
                                     <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>{client.fullName}</div>
+                                        <div>{client.userName}</div>
                                         <div>|</div>
                                         <div>{client.phone}</div>
                                         <div>|</div>
@@ -452,7 +452,7 @@ export default function ClientList() {
                             <div key={client._id}>
                                 <Li>
                                     <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>{client.fullName}</div>
+                                        <div>{client.userName}</div>
                                         <div>|</div>
                                         <div>{client.phone}</div>
                                         <div>|</div>
