@@ -241,13 +241,12 @@ export default function ClientList() {
                         addresses += address;
                     });
                     return {
-                        "Имя Клиента": item.fullName,
+                        "Имя Клиента": item.userName,
                         Адрес: addresses,
                         Номер: item.phone,
                         Почта: item.mail,
                         Цена19: item.price19,
                         Цена12: item.price12,
-                        Франчайзи: item?.franchisee?.fullName || "Не назначен",
                         "Статус клиента":
                             item.status === "active" ? "Раб." : "Не раб.",
                         "Дата добавления": item.createdAt.slice(0, 10),
