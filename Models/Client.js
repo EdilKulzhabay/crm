@@ -7,11 +7,9 @@ const ClientSchema = new mongoose.Schema(
         },
         phone: {
             type: String,
-            required: true,
         },
         mail: {
             type: String,
-            required: true,
         },
         password: {
             type: String,
