@@ -14,6 +14,9 @@ const ClientSchema = new mongoose.Schema(
         password: {
             type: String,
         },
+        region: {
+            type: String,
+        },
         addresses: [
             {
                 street: {
