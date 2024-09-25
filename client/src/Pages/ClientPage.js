@@ -232,8 +232,7 @@ export default function ClientPage() {
 
                 const mappedData = orders.map((item) => {
                     return {
-                        "Имя Клиента": item?.client?.fullName,
-                        Франчайзи: item?.franchisee?.fullName || "Не назначен",
+                        "Имя Клиента": item?.client?.userName,
                         Адрес: item.address.actual,
                         Кол19: item.products.b19,
                         Кол12: item.products.b12,
