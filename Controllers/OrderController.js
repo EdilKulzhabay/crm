@@ -476,9 +476,7 @@ export const getOrdersForExcel = async (req, res) => {
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const orders = await Order.find(filter)
-            .populate("franchisee", "fullName")
-            .populate("courier", "fullName")
-            .populate("client", "fullName")
+            .populate("client", "userName")
             .sort(sortOptions);
 
         res.json({ orders });
@@ -496,9 +494,8 @@ export const getClientOrdersForExcel = async (req, res) => {
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const orders = await Order.find({client: clientId})
-            .populate("franchisee", "fullName")
             .populate("courier", "fullName")
-            .populate("client", "fullName")
+            .populate("client", "userName")
             .sort({createdAt: 1});
 
         res.json({ orders });

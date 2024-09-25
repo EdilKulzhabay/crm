@@ -246,7 +246,7 @@ export default function ClientPage() {
                                 : item?.status === "delivered"
                                 ? "Доставлен"
                                 : "Отменен",
-                        "Дата добавления": item.createdAt.slice(0, 10),
+                        "Дата добавления": item.date.d,
                     };
                 });
 

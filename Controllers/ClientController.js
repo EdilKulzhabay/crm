@@ -205,7 +205,7 @@ export const searchClient = async (req, res) => {
         if (user.role === "admin") {
             franch.franchisee = id;
         }
-        
+
         const clients = await Client.find({
             ...franch,
             $or: filter,
@@ -374,7 +374,6 @@ export const getClientsForExcel = async (req, res) => {
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const clients = await Client.find(filter)
-            .populate("franchisee", "fullName")
             .sort({ createdAt: 1 });
 
         res.json({ clients });
