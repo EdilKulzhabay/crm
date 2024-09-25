@@ -88,7 +88,7 @@ export default function CourierPage() {
             });
     };
 
-    const deleteCourier = (id) => {
+    const deleteCourier = () => {
         api.post(
             "/deleteCourier",
             { id },
