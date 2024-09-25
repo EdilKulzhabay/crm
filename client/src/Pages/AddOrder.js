@@ -357,6 +357,7 @@ export default function AddOrder() {
                     {(opForm || client?.opForm) === "transfer" && "перевод"}
                     {(opForm || client?.opForm) === "card" && "карта"}
                     {(opForm || client?.opForm) === "coupon" && "талон"}
+                    {(opForm || client?.opForm) === "postpay" && "постоплата"}
                 </div>
                 </Li>
                 <Li2>
@@ -365,7 +366,8 @@ export default function AddOrder() {
                             <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> /
                             <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> /
                             <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button>
+                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button>
                         ]
                     </div>
                 </Li2>

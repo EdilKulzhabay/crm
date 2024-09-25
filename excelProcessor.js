@@ -14,7 +14,7 @@ export const processExcelFile = async (filePath, id) => {
             const newClient = {
                 fullName: row.fullName,
                 userName: row.userName,
-                phone: row.phone,
+                phone: row.phone || "",
                 mail: row.mail,
                 addresses: [
                     {
