@@ -112,7 +112,7 @@ export const getClients = async (req, res) => {
             ? new Date(endDate + "T00:00:00.000Z")
             : new Date("2026-01-01T00:00:00.000Z");
 
-        const limit = 3;
+        const limit = 5;
         const skip = (page - 1) * limit;
 
         const user = await User.findById(id);

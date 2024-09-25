@@ -98,7 +98,7 @@ export const getOrders = async (req, res) => {
             ? new Date(`${endDate}T23:59:59.999Z`)
             : new Date("2026-01-01T23:59:59.999Z");
 
-        const limit = 3;
+        const limit = 5;
         const skip = (page - 1) * limit;
 
         const user = await User.findById(id);

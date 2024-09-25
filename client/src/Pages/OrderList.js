@@ -551,7 +551,7 @@ export default function OrderList() {
 
             <Div />
             <Div>Список заказов:</Div>
-            <div className="max-h-[100px] overflow-scroll bg-black">
+            <div className="max-h-[180px] overflow-scroll bg-black">
                 {orders.map((item, index) => {
                     if (orders.length === index + 1) {
                         return (
