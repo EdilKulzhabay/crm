@@ -18,6 +18,7 @@ export const processExcelFile = async (filePath, id) => {
                         userName: row.userName,
                         phone: row.phone || "",
                         mail: row.mail,
+                        region: row.region,
                         addresses: [
                             {
                                 street: row.adress || "",
