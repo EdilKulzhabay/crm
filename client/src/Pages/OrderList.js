@@ -573,6 +573,7 @@ export default function OrderList() {
                                         {item?.transferred && <div>{item?.transferredFranchise}</div>}
                                         {item?.franchisee?.role === "superAdmin" && !item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
                                         {item?.franchisee?.role === "superAdmin" && item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                        <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
                             </div>
@@ -598,6 +599,7 @@ export default function OrderList() {
                                         {item?.transferred && <div>{item?.transferredFranchise}</div>}
                                         {item?.franchisee?.role === "superAdmin" && !item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
                                         {item?.franchisee?.role === "superAdmin" && item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                        <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
                             </div>
