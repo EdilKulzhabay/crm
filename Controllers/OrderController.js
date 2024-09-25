@@ -197,8 +197,6 @@ export const getOrders = async (req, res) => {
 export const getClientOrders = async (req, res) => {
     try {
         const { page, clientId } = req.body;
-        console.log(clientId);
-        
 
         const limit = 3;
         const skip = (page - 1) * limit;
@@ -359,7 +357,11 @@ export const updateOrder = async (req, res) => {
 
         if (change === "products") {
             order.products = changeData
-
+            const client = await Client.findById(order.client)
+            const sum =
+            Number(changeData.b12) * Number(client.price12) +
+            Number(changeData.b19) * Number(client.price19);
+            order.sum = sum
             await order.save()
         }
 
