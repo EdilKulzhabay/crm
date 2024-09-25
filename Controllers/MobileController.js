@@ -1,4 +1,5 @@
 import Client from "../Models/Client.js";
+import Order from "../Models/Order.js"
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -493,6 +494,102 @@ export const addBonus = async (req, res) => {
         await client.save();
 
         res.json({ success: true, message: "Бонусы были добавлены" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const addOrderClientMobile = async (req, res) => {
+    try {
+        const {clientId, address, products, clientNotes, date, opForm} = req.body
+        //У клиента есть chooseTime, если равно true то он может выбрать дату и время доставки
+        //Address должен быть в виде {actual: "", link: ""} actual это street + house
+        //Products = {b12: "", b19: ""}
+        //opForm это форма оплаты, по типу нал, перевод, карта и талон
+
+        const client = await Client.findById(clientId)
+
+        if (!client) {
+            return res.json(404).json({
+                success: false,
+                message: "Не удалось найти клиента"
+            })
+        }
+
+        const sum =
+            Number(products.b12) * Number(client.price12) +
+            Number(products.b19) * Number(client.price19);
+
+        const order = new Order({
+            franchisee: client.franchisee || "",
+            clientId,
+            address,
+            products,
+            date: date || {d: "", time: ""},
+            sum,
+            clientNotes: clientNotes || "",
+            opForm
+        });
+
+        await order.save();
+
+        res.json({
+            success: true,
+            message: "Заказ успешно создан"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getLastOrderMobile = async (req, res) => {
+    try {
+        const {clientId} = req.body;
+
+        const order = await Order.findOne({ client: clientId }).sort({ createdAt: -1 });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Не удалось получить заказ или её просто нет("
+            })
+        }
+
+        res.json({order})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getClientHistoryMobile = async (req, res) => {
+    try {
+        const {clientId, page} = req.body
+
+        const limit = 5;
+        const skip = (page - 1) * limit
+
+        const orders = await Order.find({client: clientId})
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        if (!orders) {
+            return res.status(404).json({
+                success: false,
+                message: "Хз че не так, но заказов нет("
+            })
+        }
+
+        res.json({ orders });
     } catch (error) {
         console.log(error);
         res.status(500).json({

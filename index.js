@@ -207,6 +207,9 @@ app.post(
 app.post("/refreshToken", MobileController.refreshToken);
 app.post("/logOutClient", MobileController.logOutClient);
 app.post("/addBonus", MobileController.addBonus);
+app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
+app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
+app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
