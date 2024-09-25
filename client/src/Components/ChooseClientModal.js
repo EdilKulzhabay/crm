@@ -132,7 +132,7 @@ export default function ChooseClientModal(props) {
                                     <Li>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-x-2 flex-wrap">
-                                                <div>{client.fullName}</div>
+                                                <div>{client.userName}</div>
                                                 <div>|</div>
                                                 <div>{client.phone}</div>
                                             </div>
@@ -155,7 +155,7 @@ export default function ChooseClientModal(props) {
                                     <Li>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-x-2 flex-wrap">
-                                                <div>{client.fullName}</div>
+                                                <div>{client.userName}</div>
                                                 <div>|</div>
                                                 <div>{client.phone}</div>
                                             </div>

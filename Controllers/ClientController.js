@@ -205,7 +205,7 @@ export const searchClient = async (req, res) => {
         if (user.role === "admin") {
             franch.franchisee = id;
         }
-
+        
         const clients = await Client.find({
             ...franch,
             $or: filter,

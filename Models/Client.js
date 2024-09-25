@@ -5,6 +5,9 @@ const ClientSchema = new mongoose.Schema(
         fullName: {
             type: String,
         },
+        userName: {
+            type: String,
+        },
         phone: {
             type: String,
         },
