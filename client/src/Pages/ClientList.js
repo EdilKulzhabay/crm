@@ -413,7 +413,7 @@ export default function ClientList() {
             <Div />
 
             <Div>Список клиентов:</Div>
-            <div className="max-h-[100px] overflow-scroll">
+            <div className="max-h-[180px] overflow-scroll">
                 {clients.map((client, index) => {
                     if (clients.length === index + 1) {
                         return (

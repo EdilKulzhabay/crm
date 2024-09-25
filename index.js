@@ -98,7 +98,6 @@ io.on("connection", (socket) => {
 app.get("/getAllUsersNCouriers", OtherController.getAllUsersNCouriers);
 app.get("/getMainPageInfo", checkAuth, OtherController.getMainPageInfo);
 app.post("/deleteUser", checkAuth, OtherController.deleteUser);
-app.post("/deleteCourier", checkAuth, OtherController.deleteCourier);
 
 ////MAIN
 
