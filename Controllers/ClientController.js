@@ -195,6 +195,7 @@ export const searchClient = async (req, res) => {
 
         const filter = [
             { fullName: { $regex: regex } },
+            { userName: { $regex: regex } },
             { phone: { $regex: regex } },
             { mail: { $regex: regex } },
         ];
