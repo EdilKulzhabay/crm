@@ -244,7 +244,7 @@ export default function AddOrder() {
                                         click={() => {
                                             setAddress({
                                                 actual:
-                                                    adress.street +
+                                                    adress.street + ", " +
                                                     adress.house,
                                                 link: adress.link,
                                             });
