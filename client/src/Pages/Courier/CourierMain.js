@@ -19,6 +19,8 @@ export default function CourierMain() {
         api.get("/getFirstOrderForToday", {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
+            console.log(data);
+            
             setFirstActiveOrder(data.firstActiveOrder)
             setOpForm(data.firstActiveOrder.order.opForm)
         }).catch((error) => {
@@ -70,8 +72,9 @@ export default function CourierMain() {
             <Div>Текущий заказ:</Div>
             {firstActiveOrder !== null ? 
             <>
-                <Li>Адрес: {firstActiveOrder?.order?.address?.actual}</Li>
-                <Li>Количество 12.5 - литровых бутылей: {firstActiveOrder?.order?.products?.b12} 
+                <Li>Наименование: {firstActiveOrder?.order?.client?.userName}</Li>
+                <Li>Адрес: <span className="text-blue-500">{firstActiveOrder?.order?.address?.actual}</span></Li>
+                <Li>Количество 12.5 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b12}</span>
                     <div>
                         [{" "}
                         <input
@@ -85,7 +88,7 @@ export default function CourierMain() {
                         ] шт
                     </div>
                 </Li>
-                <Li>Количество 18.9 - литровых бутылей: {firstActiveOrder?.order?.products?.b19}
+                <Li>Количество 18.9 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b19}</span>
                     <div>
                         [{" "}
                         <input
@@ -100,7 +103,7 @@ export default function CourierMain() {
                     </div>
                 </Li>
                 <Li>
-                    <div>Форма оплаты: {opForm === "cash" && "наличные"}{opForm === "postpay" && "постоплата"}{opForm === "transfer" && "перевод"}{opForm === "card" && "карта"}{opForm === "coupon" && "талон"}</div>
+                    <div>Форма оплаты:<span className="text-blue-500"> {opForm === "cash" && "наличные"}{opForm === "postpay" && "постоплата"}{opForm === "transfer" && "перевод"}{opForm === "card" && "карта"}{opForm === "coupon" && "талон"}</span></div>
                 </Li>
                 <div className="hidden lg:block">
                     <Li>
