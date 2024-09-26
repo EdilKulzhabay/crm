@@ -324,7 +324,7 @@ export default function ClientPage() {
                 client.addresses.length > 0 &&
                 client.addresses.map((adress, index) => {
                     return (
-                        <Li key={adress._id}>
+                        <Li key={adress?._id}>
                             <div className="flex items-center gap-x-3 flex-wrap">
                                 <div>
                                     Адрес{" "}
@@ -334,18 +334,18 @@ export default function ClientPage() {
                                     :
                                 </div>
                                 <div>
-                                    {adress.street} {adress.house}
+                                    {adress?.street} {adress?.house}
                                 </div>
                                 <a
-                                    href={adress.link}
+                                    href={adress?.link}
                                     target="_blank" rel="noreferrer"
                                     className="text-blue-500 hover:text-blue-500"
                                 >
-                                    link%%{adress.street}
+                                    link%%{adress?.street}
                                 </a>
                                 <MyButton
                                     click={() => {
-                                        deleteAdress(adress._id);
+                                        deleteAdress(adress?._id);
                                     }}
                                 >
                                     Удалить
@@ -361,7 +361,7 @@ export default function ClientPage() {
                             <div className="flex items-center gap-x-3 flex-wrap gap-y-2">
                                 <div>Улица, дом, под:</div>
                                 <MyInput
-                                    value={newAdress.street}
+                                    value={newAdress?.street}
                                     change={(event) =>
                                         addressChangeHandler(event)
                                     }
@@ -372,9 +372,9 @@ export default function ClientPage() {
                                     <a
                                         className="text-blue-500 hover:text-green-500"
                                         target="_blank" rel="noreferrer"
-                                        href={newAdress.link}
+                                        href={newAdress?.link}
                                     >
-                                        link%%{newAdress.street}
+                                        link%%{newAdress?.street}
                                     </a>
                                 </div>
                             </div>
@@ -533,19 +533,19 @@ export default function ClientPage() {
                 {orders.map((item, index) => {
                     if (orders.length === index + 1) {
                         return (
-                            <div key={item._id} ref={lastOrderElementRef}>
+                            <div key={item?._id} ref={lastOrderElementRef}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                     <div>
                                             Заказ: (
                                             {item.createdAt.slice(0, 10)})
                                         </div>
-                                        <div>{item.client.fullName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-500 hover:text-green-500">{item.address.actual}</a>
-                                        <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
-                                        <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
+                                        <div>{item?.client?.fullName}</div>
+                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                        <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                         <LinkButton
-                                            href={`/orderPage/${item._id}`}
+                                            href={`/orderPage/${item?._id}`}
                                         >
                                             Просмотр
                                         </LinkButton>
@@ -555,20 +555,19 @@ export default function ClientPage() {
                         );
                     } else {
                         return (
-                            <div key={item._id}>
+                            <div key={item?._id}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>
+                                    <div>
                                             Заказ: (
                                             {item.createdAt.slice(0, 10)})
                                         </div>
-                                        <div>{item.client.fullName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item.address.link} className="text-blue-500 hover:text-green-500">{item.address.actual}</a>
-                                        <div>{item.date.d} {item.date.time !== "" && item.date.time}</div>
-                                        <div>{item.products.b12 !== 0 && `12.5л: ${item.products.b12}`}; {item.products.b19 !== 0 && `18.9л: ${item.products.b19}`}</div>
-                                        
+                                        <div>{item?.client?.fullName}</div>
+                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                        <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                         <LinkButton
-                                            href={`/orderPage/${item._id}`}
+                                            href={`/orderPage/${item?._id}`}
                                         >
                                             Просмотр
                                         </LinkButton>
@@ -585,7 +584,7 @@ export default function ClientPage() {
             <Div>Действия:</Div>
             <Div>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <LinkButton href={`/addOrder/${client._id}`}>Создать заказ</LinkButton>
+                    <LinkButton href={`/addOrder/${client?._id}`}>Создать заказ</LinkButton>
                     <MyButton click={getClientOrdersForExcel}>
                         Выгрузить заказы в excel
                     </MyButton>
