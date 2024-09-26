@@ -15,6 +15,7 @@ import MySnackBar from "../Components/MySnackBar";
 
 export default function OrderList() {
     const [orders, setOrders] = useState([]);
+    const [additionalOrders, setAdditionalOrders] = useState([])
     const [userData, setUserData] = useState({});
     const [search, setSearch] = useState("");
     const [searchStatus, setSearchStatus] = useState(false);
@@ -22,21 +23,10 @@ export default function OrderList() {
         startDate: "",
         endDate: "",
     });
-    const [filterStatus, setFilterStatus] = useState("all");
-    const [filterProduct, setFilterProduct] = useState("all");
-    const [filterSort, setFilterSort] = useState("new");
-    const [couriersModal, setCouriersModal] = useState(false);
     const [franchiseesModal, setFranchiseesModal] = useState(false);
-    const [courier, setCourier] = useState(null);
     const [franchisee, setFranchisee] = useState(null);
     const [order, setOrder] = useState(null)
 
-    const [freeInfo, setFreeInfo] = useState({
-        totalB12: 0,
-        totalB19: 0,
-        totalSum: 0,
-        orderCount: 0,
-    });
 
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -50,15 +40,6 @@ export default function OrderList() {
         setOpen(false);
     };
 
-    const closeCouriersModal = () => {
-        setCouriersModal(false);
-    };
-
-    const chooseCourier = (chCourier) => {
-        setCourier(chCourier);
-        setCouriersModal(false);
-    };
-
     const closeFranchiseeModal = () => {
         setFranchiseesModal(false);
     };
@@ -66,25 +47,6 @@ export default function OrderList() {
     const chooseFranchisee = (chFranchisee) => {
         setFranchisee(chFranchisee);
         setFranchiseesModal(false);
-    };
-
-    const handleDateChange = (e) => {
-        let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
-        if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
-
-        const year = input.substring(0, 4);
-        const month = input.substring(4, 6);
-        const day = input.substring(6, 8);
-
-        let formattedValue = year;
-        if (input.length >= 5) {
-            formattedValue += "-" + month;
-        }
-        if (input.length >= 7) {
-            formattedValue += "-" + day;
-        }
-
-        setDates({ ...dates, [e.target.name]: formattedValue });
     };
 
     const handleSearch = (e) => {
@@ -97,17 +59,23 @@ export default function OrderList() {
         }
     };
 
+    const getAdditionalOrders = () => {
+        api.get("/getAdditionalOrders", {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            setAdditionalOrders(data.orders)
+        }).catch((e) => {
+            console.log(e);
+        })
+    }
+
     useEffect(() => {
         api.get("/getMe", {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             setUserData(data);
         });
-        api.get("/getFreeInfoOrder", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setFreeInfo(data);
-        });
+        getAdditionalOrders()
     }, []);
 
     const updateOrderTransfer = () => {
@@ -156,12 +124,6 @@ export default function OrderList() {
         }
     }, [franchisee])
 
-    const getOrdersWithFilter = () => {
-        setOrders([]);
-        setPage(1);
-        setHasMore(true);
-    };
-
     const loadMoreOrders = useCallback(async () => {
         if (loading || !hasMore) return;
 
@@ -171,10 +133,6 @@ export default function OrderList() {
             {
                 page,
                 ...dates,
-                status: filterStatus,
-                product: filterProduct,
-                sort: filterSort,
-                courier: courier ? courier._id : "",
                 searchStatus,
                 search
             },
@@ -184,6 +142,7 @@ export default function OrderList() {
         )
             .then(({ data }) => {
                 console.log(data);
+                
                 if (data.orders.length === 0) {
                     setHasMore(false);
                 } else {
@@ -195,7 +154,7 @@ export default function OrderList() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore, search, searchStatus]);
+    }, [page, loading, hasMore, searchStatus]);
 
     useEffect(() => {
         if (hasMore) {
@@ -223,10 +182,6 @@ export default function OrderList() {
             "/getOrdersForExcel",
             {
                 ...dates,
-                status: filterStatus,
-                product: filterProduct,
-                sort: filterSort,
-                courier: courier ? courier._id : "",
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -281,12 +236,6 @@ export default function OrderList() {
 
     return (
         <Container role={userData.role || "admin"}>
-            {couriersModal && (
-                <ChooseCourierModal
-                    closeCouriersModal={closeCouriersModal}
-                    chooseCourier={chooseCourier}
-                />
-            )}
             {franchiseesModal && (
                 <ChooseFranchiseeModal
                     closeFranchiseeModal={closeFranchiseeModal}
@@ -311,245 +260,45 @@ export default function OrderList() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
+                        console.log("userData", userData.role);
+                        
                     }}>Найти</MyButton>
                 </div>
             </Div>
-            <Div />
-            <Div>Фильтры:</Div>
-            <>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Дата регистрации:</div>
-                        <div className="text-red">
-                            [
-                            <DataInput
-                                color="red"
-                                value={dates.startDate}
-                                name="startDate"
-                                change={handleDateChange}
-                            />
-                            ]
-                        </div>
-                        <div> - </div>
-                        <div className="text-red">
-                            [
-                            <DataInput
-                                color="red"
-                                value={dates.endDate}
-                                name="endDate"
-                                change={handleDateChange}
-                            />
-                            ]
-                        </div>
-                        <MyButton click={getOrdersWithFilter}>
-                            Применить
-                        </MyButton>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Статус:</div>
-                        <div className="flex items-center gap-x-2 flex-wrap text-red">
-                            <div>[</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterStatus("all");
-                                }}
-                            >
-                                Все статусы
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterStatus("awaitingOrder");
-                                }}
-                            >
-                                Ожидает заказ
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterStatus("onTheWay");
-                                }}
-                            >
-                                В пути
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterStatus("delivered");
-                                }}
-                            >
-                                Доставлен
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterStatus("cancelled");
-                                }}
-                            >
-                                Отменен
-                            </button>
-                            <div>]</div>
-                        </div>
-                        <MyButton click={getOrdersWithFilter}>
-                            Применить
-                        </MyButton>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Продукция:</div>
-                        <div className="flex items-center gap-x-3 flex-wrap text-red">
-                            <div>[</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterProduct("all");
-                                }}
-                            >
-                                Все
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterProduct("b12");
-                                }}
-                            >
-                                12,5 л
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterProduct("b19");
-                                }}
-                            >
-                                19,8 л
-                            </button>
-                            <div>]</div>
-                        </div>
-                        <MyButton click={getOrdersWithFilter}>
-                            Применить
-                        </MyButton>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Курьер:</div>
-                        <div className="flex items-center gap-x-2 flex-wrap text-red">
-                            <div>[</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setCourier(null);
-                                }}
-                            >
-                                Все
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setCouriersModal(true);
-                                }}
-                            >
-                                Выбрать
-                            </button>
-                            <div>]</div>
-                            <div className="text-white">
-                                {courier && courier.fullName}
+            {userData?.role === "admin" && <>
+                <Div />
+                <Div>Доп. заказы</Div>
+                <div className="max-h-[180px] overflow-scroll bg-black">
+                    {additionalOrders.map((item) => {
+                        return (
+                            <div key={item?._id}>
+                                <Li>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                    <div>
+                                            Заказ: (
+                                            {item?.createdAt.slice(0, 10)})
+                                        </div>
+                                        <div>{item?.client?.userName}</div>
+                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                        <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                        <LinkButton
+                                            href={`/orderPage/${item?._id}`}
+                                        >
+                                            Просмотр
+                                        </LinkButton>
+                                        <div>{item?.courier?.fullName}</div>
+                                    </div>
+                                </Li>
                             </div>
-                        </div>
-                        <MyButton click={getOrdersWithFilter}>
-                            Применить
-                        </MyButton>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Сортировка:</div>
-                        <div className="flex items-center gap-x-2 flex-wrap text-red">
-                            <div>[</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterSort("new");
-                                }}
-                            >
-                                Новые
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterSort("old");
-                                }}
-                            >
-                                Старые
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterSort("expensive");
-                                }}
-                            >
-                                Дорогие
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterSort("cheap");
-                                }}
-                            >
-                                Дешевые
-                            </button>
-                            <div>]</div>
-                        </div>
-                        <MyButton click={getOrdersWithFilter}>
-                            Применить
-                        </MyButton>
-                    </div>
-                </Li>
-            </>
+                        )
+                    })}
+                </div>
+            </>}
+            
 
             <Div />
-            <Div>Сводная информация:</Div>
-            <Li>
-                <div className="flex items-center flex-wrap">
-                    <div>Общее количество заказов:</div>
-                    <Info>{freeInfo.orderCount}</Info>
-                </div>
-            </Li>
-            <Li>
-                <div className="flex items-center flex-wrap">
-                    <div>Количество 12,5-литровых бутылей:</div>
-                    <Info>{freeInfo.totalB12}</Info>
-                </div>
-            </Li>
-            <Li>
-                <div className="flex items-center flex-wrap">
-                    <div>Количество 18,9-литровых бутылей:</div>
-                    <Info>{freeInfo.totalB19}</Info>
-                </div>
-            </Li>
-            <Li>
-                <div className="flex items-center flex-wrap">
-                    <div>Общая сумма заказов:</div>
-                    <Info>{freeInfo.totalSum}</Info>
-                </div>
-            </Li>
-
-            <Div />
-            <Div>Список заказов:</Div>
+            <Div>Активные заказы:</Div>
             <div className="max-h-[180px] overflow-scroll bg-black">
                 {orders.map((item, index) => {
                     if (orders.length === index + 1) {
@@ -570,9 +319,13 @@ export default function OrderList() {
                                         >
                                             Просмотр
                                         </LinkButton>
-                                        {item?.transferred && <div>{item?.transferredFranchise}</div>}
-                                        {item?.franchisee?.role === "superAdmin" && !item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                        {item?.franchisee?.role === "superAdmin" && item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                        {userData?.role === "superAdmin" && <>
+                                            {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                        </>}
+                                        
+                                        
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
@@ -596,9 +349,11 @@ export default function OrderList() {
                                         >
                                             Просмотр
                                         </LinkButton>
-                                        {item?.transferred && <div>{item?.transferredFranchise}</div>}
-                                        {item?.franchisee?.role === "superAdmin" && !item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                        {item?.franchisee?.role === "superAdmin" && item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                        {userData?.role === "superAdmin" && <>
+                                            {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                        </>}
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
