@@ -88,13 +88,13 @@ export const addOrder = async (req, res) => {
 export const getOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const { page, startDate, endDate, status, product, sort, courier, search, searchStatus } =
+        const { page, startDate, endDate, search, searchStatus } =
             req.body;
 
-        const sDate = startDate
+        const sDate = startDate !== ""
             ? new Date(`${startDate}T00:00:00.000Z`)
             : new Date("2024-01-01T00:00:00.000Z");
-        const eDate = endDate
+        const eDate = endDate !== ""
             ? new Date(`${endDate}T23:59:59.999Z`)
             : new Date("2026-01-01T23:59:59.999Z");
 
@@ -103,55 +103,15 @@ export const getOrders = async (req, res) => {
 
         const user = await User.findById(id);
 
-        // Строим базовый фильтр
         const filter = {
             createdAt: { $gte: sDate, $lte: eDate },
-        };
-
-        // Добавляем фильтр по статусу, если он не "all"
-        if (status !== "all") {
-            filter.status = status;
+            status: { $nin: ["delivered", "cancelled"] },
         }
 
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {
             filter.franchisee = id;
         }
-
-        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
-        // Добавляем фильтр по продукту, если он указан
-        if (product !== "all") {
-            const productFilter = {};
-            productFilter[`products.${product}`] = { $gt: 0 };
-            Object.assign(filter, productFilter);
-        }
-
-        // Добавляем фильтр по курьеру, если он указан
-        if (courier) {
-            filter.courier = courier;
-        }
-
-        // Обрабатываем параметры сортировки
-        const sortOptions = {};
-        switch (sort) {
-            case "new":
-                sortOptions.createdAt = -1; // Сортировка по убыванию даты создания (новые)
-                break;
-            case "old":
-                sortOptions.createdAt = 1; // Сортировка по возрастанию даты создания (старые)
-                break;
-            case "expensive":
-                sortOptions.sum = -1; // Сортировка по убыванию суммы (дорогие)
-                break;
-            case "cheap":
-                sortOptions.sum = 1; // Сортировка по возрастанию суммы (дешевые)
-                break;
-            default:
-                sortOptions.createdAt = 1; // Сортировка по умолчанию по дате создания
-                break;
-        }
-
-        
 
         if (searchStatus && search) {
             // Find clients that match the search criteria
@@ -175,13 +135,11 @@ export const getOrders = async (req, res) => {
         const orders = await Order.find({
             $or: [
                 { ...filter }, // Первое условие — фильтр с конкретными полями
-                { transferredFranchise: user.fullName } // Второе условие — передаем transferredFranchise
             ]
         })
             .populate("franchisee")
             .populate("courier")
             .populate("client")
-            .sort(sortOptions)
             .skip(skip)
             .limit(limit);
 
@@ -409,12 +367,12 @@ export const updateOrderTransfer = async (req, res) => {
 export const getOrdersForExcel = async (req, res) => {
     try {
         const id = req.userId;
-        const { startDate, endDate, status, product, sort, courier } = req.body;
+        const { startDate, endDate } = req.body;
 
-        const sDate = startDate
+        const sDate = startDate !== ""
             ? new Date(`${startDate}T00:00:00.000Z`)
             : new Date("2024-01-01T00:00:00.000Z");
-        const eDate = endDate
+        const eDate = endDate !== ""
             ? new Date(`${endDate}T23:59:59.999Z`)
             : new Date("2026-01-01T23:59:59.999Z");
 
@@ -424,54 +382,14 @@ export const getOrdersForExcel = async (req, res) => {
         const filter = {
             createdAt: { $gte: sDate, $lte: eDate },
         };
-
-        // Добавляем фильтр по статусу, если он не "all"
-        if (status !== "all") {
-            filter.status = status;
-        }
-
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {
             filter.franchisee = id;
         }
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
-        // Добавляем фильтр по продукту, если он указан
-        if (product !== "all") {
-            const productFilter = {};
-            productFilter[`products.${product}`] = { $gt: 0 };
-            Object.assign(filter, productFilter);
-        }
-
-        // Добавляем фильтр по курьеру, если он указан
-        if (courier) {
-            filter.courier = courier;
-        }
-
-        // Обрабатываем параметры сортировки
-        const sortOptions = {};
-        switch (sort) {
-            case "new":
-                sortOptions.createdAt = -1; // Сортировка по убыванию даты создания (новые)
-                break;
-            case "old":
-                sortOptions.createdAt = 1; // Сортировка по возрастанию даты создания (старые)
-                break;
-            case "expensive":
-                sortOptions.sum = -1; // Сортировка по убыванию суммы (дорогие)
-                break;
-            case "cheap":
-                sortOptions.sum = 1; // Сортировка по возрастанию суммы (дешевые)
-                break;
-            default:
-                sortOptions.createdAt = 1; // Сортировка по умолчанию по дате создания
-                break;
-        }
-
-        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const orders = await Order.find(filter)
             .populate("client", "userName")
-            .sort(sortOptions);
 
         res.json({ orders });
     } catch (error) {
