@@ -190,7 +190,7 @@ export default function CourierList() {
                                             <LinkButton
                                                 href={`/CourierPage/${item._id}`}
                                             >
-                                                Редакитровать
+                                                Просмотр
                                             </LinkButton>
                                             <MyButton click={() => {updateCouriserStatus(item._id, item.status)}}>
                                                 {item.status === "active"
@@ -228,7 +228,7 @@ export default function CourierList() {
                                             <LinkButton
                                                 href={`/CourierPage/${item._id}`}
                                             >
-                                                Редакитровать
+                                                Просмотр
                                             </LinkButton>
                                             <MyButton click={() => {}}>
                                                 {item.status === "active"

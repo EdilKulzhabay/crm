@@ -225,7 +225,13 @@ export const getActiveOrdersCourier = async (req, res) => {
 
         // Находим курьера и пополняем поле orders.order
         const courier = await Courier.findById(id)
-            .populate('orders.order'); // Пополняем поле order
+            .populate({
+                path: 'orders.order', // Пополняем поле order
+                populate: {
+                    path: 'client', // Вложенный populate для клиента
+                    model: 'Client', // Указываем модель клиента
+                }
+            });
 
         if (!courier) {
             return res.status(404).json({ message: "Курьер не найден" });
@@ -265,7 +271,13 @@ export const getDeliveredOrdersCourier = async (req, res) => {
 
         // Находим курьера и пополняем поле orders.order
         const courier = await Courier.findById(id)
-            .populate('orders.order'); // Пополняем поле order
+            .populate({
+                path: 'orders.order', // Пополняем поле order
+                populate: {
+                    path: 'client', // Вложенный populate для клиента
+                    model: 'Client', // Указываем модель клиента
+                }
+            });
 
         if (!courier) {
             return res.status(404).json({ message: "Курьер не найден" });
