@@ -74,13 +74,14 @@ export default function CourierMain() {
             <>
                 <Li>Наименование: {firstActiveOrder?.order?.client?.userName}</Li>
                 <Li>Адрес: <span className="text-blue-500">{firstActiveOrder?.order?.address?.actual}</span></Li>
-                <Li>Количество 12.5 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b12}</span>
+                <Li><p>Количество 12.5 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b12}</span></p>
                     <div>
                         [{" "}
                         <input
                             className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                             name="b12"
                             value={products.b12}
+                            style={{ fontSize: '16px' }}
                             onChange={(event) => {
                                 changeProducts(event);
                             }}
@@ -88,13 +89,14 @@ export default function CourierMain() {
                         ] шт
                     </div>
                 </Li>
-                <Li>Количество 18.9 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b19}</span>
+                <Li><p>Количество 18.9 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b19}</span></p>
                     <div>
                         [{" "}
                         <input
                             className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                             name="b19"
                             value={products.b19}
+                            style={{ fontSize: '16px' }}
                             onChange={(event) => {
                                 changeProducts(event);
                             }}

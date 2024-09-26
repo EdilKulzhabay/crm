@@ -52,7 +52,7 @@ export default function ChangePassword(props) {
             <Div>Параметры безопасности:</Div>
             <Li>Смена пароля:</Li>
             <Li2>
-                <div className="flex items-center gap-x-3 flex-wrap">
+                <div className="flex flex-col gap-y-1.5 lg:flex-row lg:items-center gap-x-3 flex-wrap">
                     <div>Текущий пароль:</div>
                     <div className="text-red">
                         [
@@ -67,7 +67,7 @@ export default function ChangePassword(props) {
                 </div>
             </Li2>
             <Li2>
-                <div className="flex items-center gap-x-3 flex-wrap">
+                <div className="flex flex-col gap-y-1.5 lg:flex-row lg:items-center gap-x-3 flex-wrap">
                     <div>Новый пароль:</div>
                     <div className="text-red">
                         [
@@ -82,7 +82,7 @@ export default function ChangePassword(props) {
                 </div>
             </Li2>
             <Li2>
-                <div className="flex items-center gap-x-3 flex-wrap">
+                <div className="flex flex-col gap-y-1.5 lg:flex-row lg:items-center gap-x-3 flex-wrap">
                     <div>Подтвердите новый пароль:</div>
                     <div className="text-red">
                         [
@@ -93,7 +93,6 @@ export default function ChangePassword(props) {
                             color="red"
                         />
                         ]
-                        
                     </div>
                     {erNewPass && <p className="text-red">Не совпадает</p>}
                 </div>
