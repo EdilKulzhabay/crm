@@ -157,7 +157,7 @@ export const getOrders = async (req, res) => {
             // Find clients that match the search criteria
             const clients = await Client.find({
                 $or: [
-                    { fullName: { $regex: search, $options: "i" } },
+                    { userName: { $regex: search, $options: "i" } },
                     { phone: { $regex: search, $options: "i" } },
                 ]
             }).select('_id');
@@ -331,22 +331,16 @@ export const updateOrder = async (req, res) => {
                 `Пользователь ${user.fullName} изменил статус на "${changeStatus}"`
             );
             await order.save();
-        } else {
-            order.courier = changeData._id;
-            order.history.push(
-                `Пользователь ${user.fullName} изменил курьера на "${changeData.fullName}"`
-            );
-            await order.save();
-        }
+        } 
 
         if (change === "courier") {
             const courier = await Courier.findById(changeData._id)
-
             const courierOrder = {order: order._id, orderStatus: "inLine"}
-
             courier.orders.push(courierOrder)
-
             await courier.save()
+
+            order.courier = changeData._id;
+            await order.save();
         }
 
         if (change === "opForm") {
