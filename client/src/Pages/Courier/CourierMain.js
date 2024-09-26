@@ -20,6 +20,7 @@ export default function CourierMain() {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setFirstActiveOrder(data.firstActiveOrder)
+            setOpForm(data.firstActiveOrder.order.opForm)
         }).catch((error) => {
             if (error.response) {
                 if (error.response.status === 404) {
@@ -69,7 +70,7 @@ export default function CourierMain() {
             <Div>Текущий заказ:</Div>
             {firstActiveOrder !== null ? 
             <>
-                <Li>Адрес: {firstActiveOrder?.order?.address?.actual} <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer" className="text-red hover:text-blue-500">Построить маршрут</a></Li>
+                <Li>Адрес: {firstActiveOrder?.order?.address?.actual}</Li>
                 <Li>Количество 12.5 - литровых бутылей: {firstActiveOrder?.order?.products?.b12} 
                     <div>
                         [{" "}
@@ -101,20 +102,42 @@ export default function CourierMain() {
                 <Li>
                     <div>Форма оплаты: {opForm === "cash" && "наличные"}{opForm === "postpay" && "постоплата"}{opForm === "transfer" && "перевод"}{opForm === "card" && "карта"}{opForm === "coupon" && "талон"}</div>
                 </Li>
-                <Li>
-                    <div className="text-red flex items-center gap-x-3">
-                        [
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button>
-                        ]
-                    </div>
-                </Li>
+                <div className="hidden lg:block">
+                    <Li>
+                        <div className="text-red flex items-center gap-x-3">
+                            [
+                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> /
+                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> /
+                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> /
+                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button> /
+                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button>
+                            ]
+                        </div>
+                    </Li>
+                </div>
+                <div className="lg:hidden">
+                    <Li>
+                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> ]
+                    </Li>
+                    <Li>
+                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> ]
+                    </Li>
+                    <Li>
+                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> ]
+                    </Li>
+                    <Li>
+                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button> ]
+                    </Li>
+                    <Li>
+                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> ]
+                    </Li>
+                </div>
                 {firstActiveOrder?.order?.date?.time !== "" && <Li>Время доставки: {firstActiveOrder?.order?.date?.time}</Li>}
+                <Div/>
+                <Div/>
                 <Li>
                     {firstActiveOrder?.orderStatus === "inLine" && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer" className="text-red hover:text-blue-500"><button onClick={() => {updateCourierOrderStatus("onTheWay")}}>[ Начать ]</button></a>}
+                    {firstActiveOrder?.orderStatus === "onTheWay" && (opForm === "" || products.b12 === "" || products.b19 === "") && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer" className="text-red hover:text-blue-500">[ Построить маршрут ]</a>}
                     {firstActiveOrder?.orderStatus === "onTheWay" && opForm !== "" && products.b12 !== "" && products.b19 !== "" && <MyButton click={() => {updateCourierOrderStatus("delivered")}}>Завершить</MyButton>}
                 </Li>
             </> : 
