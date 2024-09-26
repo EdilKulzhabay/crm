@@ -431,7 +431,11 @@ export const getAdditionalOrders = async (req, res) => {
             })
         }
         const userName = user.fullName
-        const orders = await Order.find({transferredFranchise: userName})
+        const filter = {
+            transferredFranchise: userName,
+            status: { $nin: ["delivered", "cancelled"] },
+        }
+        const orders = await Order.find(filter)
         
         res.json({orders})
     } catch (error) {
