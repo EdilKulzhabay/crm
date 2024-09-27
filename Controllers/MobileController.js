@@ -521,12 +521,14 @@ export const addOrderClientMobile = async (req, res) => {
             })
         }
 
+        const franchiseeId = client.franchisee || ""; 
+
         const sum =
             Number(products.b12) * Number(client.price12) +
             Number(products.b19) * Number(client.price19);
 
         const order = new Order({
-            franchisee: client.franchisee || "",
+            franchisee: franchiseeId,
             clientId,
             address,
             products,
