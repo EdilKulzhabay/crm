@@ -71,19 +71,28 @@ export default function CompletedOrders() {
                             <div key={item?._id} ref={lastOrderElementRef}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
+                                        <div>
                                             Заказ: (
-                                            {item?.order?.createdAt?.slice(0, 10)})
+                                            {item?.createdAt.slice(0, 10)})
                                         </div>
-                                        <div>{item?.order?.client?.userName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
-                                        <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
-                                        <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
+                                        <div>{item?.client?.userName}</div>
+                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                        <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                         <LinkButton
-                                            href={`/orderPage/${item?.order?._id}`}
+                                            href={`/orderPage/${item?._id}`}
                                         >
                                             Просмотр
                                         </LinkButton>
+                                        {userData?.role === "superAdmin" && <>
+                                            {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
+                                                <span className="text-green-400">
+                                                    Отменить
+                                                </span></MyButton>}
+                                            </>}
+                                        <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
                             </div>
@@ -95,18 +104,26 @@ export default function CompletedOrders() {
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                         <div>
                                             Заказ: (
-                                            {item?.order?.createdAt?.slice(0, 10)})
+                                            {item?.createdAt.slice(0, 10)})
                                         </div>
-                                        <div>{item?.order?.client?.userName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
-                                        <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
-                                        <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                        
+                                        <div>{item?.client?.userName}</div>
+                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                        <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                         <LinkButton
-                                            href={`/orderPage/${item?.order?._id}`}
+                                            href={`/orderPage/${item?._id}`}
                                         >
                                             Просмотр
                                         </LinkButton>
+                                        {userData?.role === "superAdmin" && <>
+                                            {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
+                                                <span className="text-green-400">
+                                                    Отменить
+                                                </span></MyButton>}
+                                            </>}
+                                        <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
                             </div>
