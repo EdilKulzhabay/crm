@@ -45,34 +45,45 @@ export const addOrder = async (req, res) => {
             { phone: client.phone, franchisee: { $ne: client.franchisee } },
             { mail: client.mail, franchisee: { $ne: client.franchisee } },
         ];
-
+        
         const existingOrders = await Order.findOne({ $or: orConditions });
-
+        
         if (existingOrders) {
             let matchedField;
-            if (existingOrders.mail === mail && mail !== "")
+        
+            // Проверка на наличие почты и совпадение
+            if (existingOrders.mail && existingOrders.mail === mail) {
                 matchedField = "mail";
-            else if (existingOrders.fullName === fullName)
+            }
+            // Проверка на совпадение имени
+            else if (existingOrders.fullName && existingOrders.fullName === fullName) {
                 matchedField = "fullName";
-            else if (existingOrders.phone === phone) matchedField = "phone";
-
-            const notDoc = new Notification({
-                first: existingOrders.franchisee,
-                second: franchisee,
-                matchesType: "order",
-                matchedField,
-                firstObject: existingOrders._id,
-                secondObject: order._doc._id,
-            });
-
-            await notDoc.save();
-
-            const notification = {
-                message: "Есть совпадение заказов",
-            };
-
-            global.io.emit("orderMatch", notification);
+            }
+            // Проверка на совпадение телефона
+            else if (existingOrders.phone && existingOrders.phone === phone) {
+                matchedField = "phone";
+            }
+        
+            if (matchedField) {
+                const notDoc = new Notification({
+                    first: existingOrders.franchisee,
+                    second: franchisee,
+                    matchesType: "order",
+                    matchedField,
+                    firstObject: existingOrders._id,
+                    secondObject: order._doc._id,
+                });
+        
+                await notDoc.save();
+        
+                const notification = {
+                    message: "Есть совпадение заказов",
+                };
+        
+                global.io.emit("orderMatch", notification);
+            }
         }
+        
 
         res.json({
             success: true,
@@ -435,7 +446,7 @@ export const getAdditionalOrders = async (req, res) => {
             transferredFranchise: userName,
             status: { $nin: ["delivered", "cancelled"] },
         }
-        const orders = await Order.find(filter)
+        const orders = await Order.find(filter).populate("client")
         
         res.json({orders})
     } catch (error) {

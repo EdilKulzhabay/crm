@@ -150,6 +150,12 @@ export default function AddOrder() {
 
     const addOrder = () => {
         const op = opForm ? opForm : client?.opForm
+        if (address === null) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Добавьте адресс");
+            return ;
+        }
         api.post(
             "/addOrder",
             { client, address, products, courier, date, clientNotes: "", opForm: op },
@@ -194,7 +200,9 @@ export default function AddOrder() {
                                 setClientsModal(true);
                             }}
                         >
-                            Выбрать
+                            <span className="text-green-400">
+                                Выбрать
+                            </span>
                         </MyButton>
                         {client && (
                             <div className="flex items-center gap-x-3 flex-wrap">
@@ -251,7 +259,9 @@ export default function AddOrder() {
                                             setChooseAddress(index + 1);
                                         }}
                                     >
-                                        Выбрать
+                                        <span className="text-green-400">
+                                Выбрать
+                            </span>
                                     </MyButton>
                                 </div>
                             </Li2>
@@ -341,7 +351,9 @@ export default function AddOrder() {
                                 setCouriersModal(true);
                             }}
                         >
-                            Выбрать
+                            <span className="text-green-400">
+                                Выбрать
+                            </span>
                         </MyButton>
                         {courier && (
                             <div className="flex items-center gap-x-3 flex-wrap">

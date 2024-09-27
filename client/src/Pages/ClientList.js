@@ -342,7 +342,9 @@ export default function ClientList() {
                                 loadMoreClients();
                             }}
                         >
+                            <span className="text-green-400">
                             Применить
+                            </span>
                         </MyButton>
                     </div>
                 </Li>
@@ -379,7 +381,9 @@ export default function ClientList() {
                                 loadMoreClients();
                             }}
                         >
+                            <span className="text-green-400">
                             Применить
+                            </span>
                         </MyButton>
                     </div>
                 </Li>

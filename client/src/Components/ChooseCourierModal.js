@@ -165,7 +165,9 @@ export default function ChooseCourierModal(props) {
                                                         choose(item);
                                                     }}
                                                 >
-                                                    Выбрать
+                                                    <span className="text-green-400">
+                                Выбрать
+                            </span>
                                                 </MyButton>
                                             </div>
                                         </div>
@@ -186,7 +188,9 @@ export default function ChooseCourierModal(props) {
                                                         choose(item);
                                                     }}
                                                 >
-                                                    Выбрать
+                                                    <span className="text-green-400">
+                                Выбрать
+                            </span>
                                                 </MyButton>
                                             </div>
                                         </div>
