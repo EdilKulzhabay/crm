@@ -98,7 +98,9 @@ export default function ChangePassword(props) {
                 </div>
             </Li2>
             <Div>
-                <MyButton click={changePassword}>Сохранить</MyButton>
+                <MyButton click={changePassword}><span className="text-green-400">
+                                    Сохранить
+                                </span></MyButton>
             </Div>
         </>
     );

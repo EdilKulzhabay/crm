@@ -10,6 +10,7 @@ import Li from "../Components/Li";
 import Li2 from "../Components/Li2";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
+import clsx from "clsx";
 
 const getCurrentDate = () => {
     const today = new Date();
@@ -194,13 +195,38 @@ export default function AddOrder() {
             <>
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
+                        <div>Выберите курьера:</div>
+                        <MyButton
+                            click={() => {
+                                setCouriersModal(true);
+                            }}
+                        >
+                            <span className={clsx("", {
+                                "text-green-400": courier === null,
+                                "text-red": courier !== null
+                            })}>
+                                Выбрать
+                            </span>
+                        </MyButton>
+                        {courier && (
+                            <div className="flex items-center gap-x-3 flex-wrap">
+                                <div>|</div> <div>{courier.fullName}</div>{" "}
+                            </div>
+                        )}
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center gap-x-3 flex-wrap">
                         <div>Выберите клиента:</div>
                         <MyButton
                             click={() => {
                                 setClientsModal(true);
                             }}
                         >
-                            <span className="text-green-400">
+                            <span className={clsx("", {
+                                "text-green-400": client === null,
+                                "text-red": client !== null
+                            })}>
                                 Выбрать
                             </span>
                         </MyButton>
@@ -259,9 +285,12 @@ export default function AddOrder() {
                                             setChooseAddress(index + 1);
                                         }}
                                     >
-                                        <span className="text-green-400">
-                                Выбрать
-                            </span>
+                                        <span className={clsx("", {
+                                            "text-green-400": courier === null,
+                                            "text-red": courier !== null
+                                        })}>
+                                            Выбрать
+                                        </span>
                                     </MyButton>
                                 </div>
                             </Li2>
@@ -344,25 +373,6 @@ export default function AddOrder() {
                     </Li2>
                 </>
                 <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Выберите курьера:</div>
-                        <MyButton
-                            click={() => {
-                                setCouriersModal(true);
-                            }}
-                        >
-                            <span className="text-green-400">
-                                Выбрать
-                            </span>
-                        </MyButton>
-                        {courier && (
-                            <div className="flex items-center gap-x-3 flex-wrap">
-                                <div>|</div> <div>{courier.fullName}</div>{" "}
-                            </div>
-                        )}
-                    </div>
-                </Li>
-                <Li>
                 <div>
                     Форма оплаты:{" "}
                     {(opForm || client?.opForm) === "cash" && "наличные"}
@@ -389,13 +399,17 @@ export default function AddOrder() {
             <Div>Действия:</Div>
             <Div>
                 <div className="flex items-center gap-x-3">
-                    <MyButton click={addOrder}>Сохранить</MyButton>
+                    <MyButton click={addOrder}><span className="text-green-400">
+                                    Сохранить
+                                </span></MyButton>
                     <MyButton
                         click={() => {
                             navigate(-1);
                         }}
                     >
-                        Отменить
+                        <span className="text-green-400">
+                                    Отменить
+                                </span>
                     </MyButton>
                 </div>
             </Div>

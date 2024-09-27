@@ -45,7 +45,9 @@ export default function UpdateClientData(props) {
                             className="hover:text-blue-500"
                             onClick={handleSave}
                         >
-                            Сохранить
+                            <span className="text-green-400">
+                                    Сохранить
+                                </span>
                         </button>
                         <div>/</div>
                         <button
@@ -54,7 +56,9 @@ export default function UpdateClientData(props) {
                                 handleChange(name + "Open", !open);
                             }}
                         >
-                            Отменить
+                            <span className="text-green-400">
+                                    Отменить
+                                </span>
                         </button>
                         ]
                     </div>

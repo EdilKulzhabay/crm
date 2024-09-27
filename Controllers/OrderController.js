@@ -456,3 +456,40 @@ export const getAdditionalOrders = async (req, res) => {
         });
     }
 }
+
+export const getCompletedOrders = async (req, res) => {
+    try {
+        const id = req.userId;
+        const {page} = req.body
+        const user = await User.findById(id)
+        const limit = 5;
+        const skip = (page - 1) * limit;
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            })
+        }
+        const userId = user._id
+        const filter = {
+            status: { $in: ["delivered", "cancelled"] },
+        }
+
+        if (userId) {
+            filter.franchisee = userId
+        }
+        
+        const completedOrders = await Order.find(filter)
+        .populate("client")
+        .skip(skip)
+        .limit(limit);
+        
+        res.json({completedOrders})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

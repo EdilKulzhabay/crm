@@ -401,14 +401,18 @@ export default function ClientPage() {
                                         ]);
                                     }}
                                 >
+                                    <span className="text-green-400">
                                     Сохранить
+                                </span>
                                 </MyButton>
                                 <MyButton
                                     click={() => {
                                         setAddAdress(false);
                                     }}
                                 >
+                                    <span className="text-green-400">
                                     Отменить
+                                </span>
                                 </MyButton>
                             </div>
                         </Li>

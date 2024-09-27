@@ -73,14 +73,18 @@ export default function UpdateFranchiseeData(props) {
                     {update ? (
                         <div className="flex items-center gap-x-2 lg:gap-x-3">
                             <MyButton click={updateFranchisee}>
-                                Сохранить
+                                <span className="text-green-400">
+                                    Сохранить
+                                </span>
                             </MyButton>
                             <MyButton
                                 click={() => {
                                     setUpdate(false);
                                 }}
                             >
-                                Отменить
+                                <span className="text-green-400">
+                                    Отменить
+                                </span>
                             </MyButton>
                         </div>
                     ) : (

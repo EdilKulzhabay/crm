@@ -24,7 +24,7 @@ import OrderPage from "./Pages/OrderPage";
 import AdminSettings from "./Pages/Admin/AdminSettings";
 import SuperAdminCoincidence from "./Pages/SuperAdmin/SuperAdminCoincidence";
 import SuperAdminCoincidencePage from "./Pages/SuperAdmin/SuperAdminCoincidencePage";
-import AdditionalOrders from "./Pages/Admin/AdditionalOrders";
+import CompletedOrders from "./Pages/CompletedOrders";
 import CourierSettings from "./Pages/Courier/CourierSettings";
 import PrivateRoute from "./Components/PrivateRoute";
 
@@ -44,6 +44,7 @@ export const router = createBrowserRouter([
     { path: "/addOrder/:id", element: <AddOrder /> },
     { path: "/orderList", element: <OrderList /> },
     { path: "/orderPage/:id", element: <OrderPage /> },
+    { path: "/completedOrders", element: <CompletedOrders /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },
@@ -63,7 +64,7 @@ export const router = createBrowserRouter([
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
-    { path: "/additionalOrders", element: <AdditionalOrders /> },
+    
 
     ////COURIERLINKS
     { path: "/courier", element: <CourierMain /> },
