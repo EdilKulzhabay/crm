@@ -180,13 +180,17 @@ export default function AddPromoCode() {
 
             <Div>
                 <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={addPromoCode}>Сохранить</MyButton>
+                    <MyButton click={addPromoCode}><span className="text-green-400">
+                                    Сохранить
+                                </span></MyButton>
                     <MyButton
                         click={() => {
                             navigate(-1);
                         }}
                     >
-                        Отменить
+                        <span className="text-green-400">
+                                    Отменить
+                                </span>
                     </MyButton>
                 </div>
             </Div>

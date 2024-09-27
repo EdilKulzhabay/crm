@@ -304,8 +304,12 @@ export default function AddClient() {
             </Div>
             <Div>
                 <div className="flex items-center gap-x-3">
-                    <MyButton click={addClient}>Сохранить</MyButton>
-                    <MyButton click={cancel}>Отменить</MyButton>
+                    <MyButton click={addClient}><span className="text-green-400">
+                                    Сохранить
+                                </span></MyButton>
+                    <MyButton click={cancel}><span className="text-green-400">
+                                    Отменить
+                                </span></MyButton>
                 </div>
             </Div>
             <Div />

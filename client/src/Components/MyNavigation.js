@@ -28,6 +28,10 @@ const SAButtons = [
         title: "Совпадение",
     },
     {
+        href: "/completedOrders",
+        title: "Зав. заказы",
+    },
+    {
         href: "/analytics",
         title: "Аналитика",
     },
@@ -59,8 +63,8 @@ const AButtons = [
         title: "Курьеры",
     },
     {
-        href: "/additionalOrders",
-        title: "Доп. заказы",
+        href: "/completedOrders",
+        title: "Зав. заказы",
     },
     {
         href: "/analytics",

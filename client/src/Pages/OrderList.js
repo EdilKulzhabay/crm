@@ -322,7 +322,9 @@ export default function OrderList() {
                                         {userData?.role === "superAdmin" && <>
                                             {item?.transferred && <div>{item?.transferredFranchise}</div>}
                                             {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}><span className="text-green-400">
+                                    Отменить
+                                </span></MyButton>}
                                         </>}
                                         
                                         
@@ -352,7 +354,9 @@ export default function OrderList() {
                                         {userData?.role === "superAdmin" && <>
                                             {item?.transferred && <div>{item?.transferredFranchise}</div>}
                                             {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>Отменить</MyButton>}
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}><span className="text-green-400">
+                                    Отменить
+                                </span></MyButton>}
                                         </>}
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
