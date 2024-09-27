@@ -306,7 +306,7 @@ export default function OrderList() {
                             <div key={item?._id} ref={lastOrderElementRef}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
+                                        <div>
                                             Заказ: (
                                             {item?.createdAt.slice(0, 10)})
                                         </div>
@@ -322,12 +322,11 @@ export default function OrderList() {
                                         {userData?.role === "superAdmin" && <>
                                             {item?.transferred && <div>{item?.transferredFranchise}</div>}
                                             {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}><span className="text-green-400">
-                                    Отменить
-                                </span></MyButton>}
-                                        </>}
-                                        
-                                        
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
+                                                <span className="text-green-400">
+                                                    Отменить
+                                                </span></MyButton>}
+                                            </>}
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
