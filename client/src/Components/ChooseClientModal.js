@@ -142,7 +142,9 @@ export default function ChooseClientModal(props) {
                                                         choose(client);
                                                     }}
                                                 >
-                                                    Выбрать
+                                                    <span className="text-green-400">
+                                Выбрать
+                            </span>
                                                 </MyButton>
                                             </div>
                                         </div>
@@ -165,7 +167,9 @@ export default function ChooseClientModal(props) {
                                                         choose(client);
                                                     }}
                                                 >
-                                                    Выбрать
+                                                    <span className="text-green-400">
+                                Выбрать
+                            </span>
                                                 </MyButton>
                                             </div>
                                         </div>

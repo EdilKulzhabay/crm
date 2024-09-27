@@ -91,7 +91,9 @@ export default function ChooseFranchiseeModal(props) {
                                                     choose(item);
                                                 }}
                                             >
-                                                Выбрать
+                                                <span className="text-green-400">
+                                Выбрать
+                            </span>
                                             </MyButton>
                                         </div>
                                     </div>

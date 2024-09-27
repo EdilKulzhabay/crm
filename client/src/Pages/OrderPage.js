@@ -345,7 +345,9 @@ export default function OrderPage() {
                                 updateOrder("status", orderStatus);
                             }}
                         >
+                            <span className="text-green-400">
                             Применить
+                            </span>
                         </MyButton>
                     </div>
                 </div>
@@ -389,7 +391,9 @@ export default function OrderPage() {
                                     updateOrder("courier", orderCourier);
                                 }}
                             >
+                                <span className="text-green-400">
                                 Применить
+                                </span>
                             </MyButton>
                         )}
                     {orderCourier &&
