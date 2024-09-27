@@ -6,11 +6,19 @@ import Li from "../Components/Li"
 import LinkButton from "../Components/LinkButton"
 
 export default function CompletedOrders() {
-
+    const [userData, setUserData] = useState({});
     const [completedOrders, setCompletedOrders] = useState([])
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+
+    useEffect(() => {
+        api.get("/getMe", {
+            headers: { "Content-Type": "application/json" },
+        }).then(({ data }) => {
+            setUserData(data);
+        });
+    }, []);
 
     const loadMoreCompletedOrders = useCallback(async () => {
         if (loading || !hasMore) return;
@@ -86,11 +94,6 @@ export default function CompletedOrders() {
                                         </LinkButton>
                                         {userData?.role === "superAdmin" && <>
                                             {item?.transferred && <div>{item?.transferredFranchise}</div>}
-                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
-                                                <span className="text-green-400">
-                                                    Отменить
-                                                </span></MyButton>}
                                             </>}
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
@@ -117,11 +120,6 @@ export default function CompletedOrders() {
                                         </LinkButton>
                                         {userData?.role === "superAdmin" && <>
                                             {item?.transferred && <div>{item?.transferredFranchise}</div>}
-                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
-                                                <span className="text-green-400">
-                                                    Отменить
-                                                </span></MyButton>}
                                             </>}
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
