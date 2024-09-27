@@ -175,6 +175,7 @@ app.post("/getClientOrdersForExcel", checkAuth, OrderController.getClientOrdersF
 app.post("/getOrderDataForId", OrderController.getOrderDataForId);
 app.post("/updateOrder", checkAuth, OrderController.updateOrder);
 app.post("/updateOrderTransfer", OrderController.updateOrderTransfer);
+app.post("/getCompletedOrders", OrderController.getCompletedOrders)
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);
