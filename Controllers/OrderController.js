@@ -471,13 +471,12 @@ export const getCompletedOrders = async (req, res) => {
                 message: "User not found"
             })
         }
-        const userId = user._id
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
         }
 
-        if (userId) {
-            filter.franchisee = userId
+        if (user.role === "admin") {
+            filter.franchisee = id
         }
         
         const completedOrders = await Order.find(filter)
