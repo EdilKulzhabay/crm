@@ -53,6 +53,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setSearchStatus(false)
+            loadMoreCompletedOrders()
         }
     };
 
@@ -137,6 +138,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
+                    loadMoreCompletedOrders()
                 }}>Найти</MyButton>
             </div>
         </Div>
