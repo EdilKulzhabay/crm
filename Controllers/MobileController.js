@@ -540,6 +540,8 @@ export const addOrderClientMobile = async (req, res) => {
             });
     
             await order.save();
+            client.cart = {b12: 0, b19: 0}
+            await client.save()
         } else {
             const order = new Order({
                 clientId,
@@ -552,6 +554,8 @@ export const addOrderClientMobile = async (req, res) => {
             });
     
             await order.save();
+            client.cart = {b12: 0, b19: 0}
+            await client.save()
         }
 
         res.json({
