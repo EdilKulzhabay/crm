@@ -527,18 +527,32 @@ export const addOrderClientMobile = async (req, res) => {
             Number(products.b12) * Number(client.price12) +
             Number(products.b19) * Number(client.price19);
 
-        const order = new Order({
-            franchisee: franchiseeId,
-            clientId,
-            address,
-            products,
-            date: date || {d: "", time: ""},
-            sum,
-            clientNotes: clientNotes || "",
-            opForm
-        });
-
-        await order.save();
+        if (franchiseeId !== "") {
+            const order = new Order({
+                franchisee: franchiseeId,
+                clientId,
+                address,
+                products,
+                date: date || {d: "", time: ""},
+                sum,
+                clientNotes: clientNotes || "",
+                opForm
+            });
+    
+            await order.save();
+        } else {
+            const order = new Order({
+                clientId,
+                address,
+                products,
+                date: date || {d: "", time: ""},
+                sum,
+                clientNotes: clientNotes || "",
+                opForm
+            });
+    
+            await order.save();
+        }
 
         res.json({
             success: true,
