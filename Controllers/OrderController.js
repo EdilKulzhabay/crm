@@ -460,10 +460,17 @@ export const getAdditionalOrders = async (req, res) => {
 export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const {page} = req.body
+        const {page, startDate, endDate,} = req.body
         const user = await User.findById(id)
         const limit = 5;
         const skip = (page - 1) * limit;
+
+        const sDate = startDate !== ""
+            ? new Date(`${startDate}T00:00:00.000Z`)
+            : new Date("2024-01-01T00:00:00.000Z");
+        const eDate = endDate !== ""
+            ? new Date(`${endDate}T23:59:59.999Z`)
+            : new Date("2026-01-01T23:59:59.999Z");
 
         if (!user) {
             return res.json({
@@ -473,18 +480,40 @@ export const getCompletedOrders = async (req, res) => {
         }
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
+            createdAt: { $gte: sDate, $lte: eDate },
         }
 
         if (user.role === "admin") {
             filter.franchisee = id
         }
-        
-        const completedOrders = await Order.find(filter)
-        .populate("client")
-        .skip(skip)
-        .limit(limit);
-        
-        res.json({completedOrders})
+
+        const ordersResult = await Order.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalB12: { $sum: "$products.b12" },
+                    totalB19: { $sum: "$products.b19" },
+                    totalSum: { $sum: "$sum" },
+                    orders: { $push: "$$ROOT" }, // Push all orders
+                },
+            },
+        ]);
+
+        const orders = await Order.find(filter)
+            .populate("client")
+            .limit(limit)
+            .skip(skip)
+
+        const result = ordersResult.length > 0 ? ordersResult[0] : { totalB12: 0, totalB19: 0, totalSum: 0 };
+
+        // Ответ сервера
+        res.json({
+            orders: orders ? orders : [],
+            totalB12: result.totalB12,
+            totalB19: result.totalB19,
+            totalSum: result.totalSum,
+        })
     } catch (error) {
         console.log(error);
         res.status(500).json({

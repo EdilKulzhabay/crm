@@ -1,14 +1,11 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import api from "../api";
-import DataInput from "../Components/DataInput";
 import Div from "../Components/Div";
 import Li from "../Components/Li";
 import MyButton from "../Components/MyButton";
 import MyInput from "../Components/MyInput";
-import Info from "../Components/Info";
 import LinkButton from "../Components/LinkButton";
 import Container from "../Components/Container";
-import ChooseCourierModal from "../Components/ChooseCourierModal";
 import * as XLSX from "xlsx";
 import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
 import MySnackBar from "../Components/MySnackBar";
