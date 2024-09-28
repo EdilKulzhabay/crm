@@ -460,7 +460,7 @@ export const getAdditionalOrders = async (req, res) => {
 export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const {page, startDate, endDate,} = req.body
+        const {page, startDate, endDate, search, searchStatus} = req.body
         const user = await User.findById(id)
         const limit = 5;
         const skip = (page - 1) * limit;
@@ -485,6 +485,24 @@ export const getCompletedOrders = async (req, res) => {
 
         if (user.role === "admin") {
             filter.franchisee = id
+        }
+
+        if (searchStatus && search) {
+            // Find clients that match the search criteria
+            const clients = await Client.find({
+                $or: [
+                    { userName: { $regex: search, $options: "i" } },
+                    { phone: { $regex: search, $options: "i" } },
+                ]
+            }).select('_id');
+
+            const clientIds = clients.map(client => client._id);
+
+            // Update the filter to include orders with matching clients or addresses
+            filter.$or = [
+                { client: { $in: clientIds } },
+                { "address.actual": { $regex: search, $options: "i" } }
+            ];
         }
 
         const ordersResult = await Order.aggregate([

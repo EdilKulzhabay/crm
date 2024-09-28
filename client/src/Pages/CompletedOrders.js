@@ -72,7 +72,7 @@ export default function CompletedOrders() {
         api.post(
             "/getCompletedOrders",
             {
-                page, ...dates,
+                page, ...dates, search, searchStatus
             },
             {
                 headers: { "Content-Type": "application/json" },
