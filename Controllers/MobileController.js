@@ -530,7 +530,7 @@ export const addOrderClientMobile = async (req, res) => {
         if (franchiseeId !== "") {
             const order = new Order({
                 franchisee: franchiseeId,
-                clientId,
+                client: clientId,
                 address,
                 products,
                 date: date || {d: "", time: ""},
@@ -544,7 +544,7 @@ export const addOrderClientMobile = async (req, res) => {
             await client.save()
         } else {
             const order = new Order({
-                clientId,
+                client: clientId,
                 address,
                 products,
                 date: date || {d: "", time: ""},
