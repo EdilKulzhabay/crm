@@ -58,7 +58,43 @@ export const processExcelFile = async (filePath, id) => {
 
                     await Client.create(newClient);
                 } else {
-                    console.log(`Client with phone number ${row.phone} already exists`);
+                    let matchedField;
+                    if (existingClients.mail === mail && mail !== "")
+                        matchedField = "mail ";
+                    if (existingClients.fullName === fullName)
+                        matchedField += "fullName ";
+                    if (existingClients.userName === userName)
+                        matchedField += "userName ";
+                    if (existingClients.phone === phone) matchedField += "phone ";
+                    if (
+                        existingClients.addresses.some((addr) =>
+                            addresses.some(
+                                (newAddr) =>
+                                    addr.street === newAddr.street &&
+                                    addr.house === newAddr.house &&
+                                    addr.link === newAddr.link
+                            )
+                        )
+                    ) {
+                        matchedField += "addresses ";
+                    }
+
+                    const notDoc = new Notification({
+                        first: existingClients.franchisee,
+                        second: franchisee,
+                        matchesType: "client",
+                        matchedField,
+                        firstObject: existingClients._id,
+                        secondObject: client._doc._id,
+                    });
+
+                    await notDoc.save();
+
+                    const notification = {
+                        message: "Есть совпадение клиентов",
+                    };
+
+                    global.io.emit("clientMatch", notification);
                 }
             } catch (err) {
                 console.error(`Error processing row for phone ${row.phone}:`, err.message);
