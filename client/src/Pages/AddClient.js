@@ -75,7 +75,9 @@ export default function AddClient() {
     }, []);
 
     const addClient = () => {
-        const formComplete = Object.values(form).every(
+        const { mail, ...formWithoutMail } = form;
+        
+        const formComplete = Object.values(formWithoutMail).every(
             (value) => value.trim() !== ""
         );
 
