@@ -21,6 +21,10 @@ export default function SuperAdmin() {
             });
     }, []);
 
+    const formatCurrency = (amount) => {
+        return `${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
+    };
+
     return (
         <Container role="superAdmin">
             <Div>
@@ -51,14 +55,8 @@ export default function SuperAdmin() {
                 </Li>
                 <Li>
                     <div className="">
-                        Прибыль франчайзера от франчайзи:
-                        <Info>2 000 000 тенге</Info>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="">
-                        Прибыль франчайзи от клиентов:
-                        <Info>7 000 000 тенге</Info>
+                        Общая прибыль:
+                        <Info>{formatCurrency(info?.totalRevenue)}</Info>
                     </div>
                 </Li>
             </>
