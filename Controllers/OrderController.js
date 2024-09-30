@@ -403,7 +403,10 @@ export const getOrdersForExcel = async (req, res) => {
         };
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {
-            filter.franchisee = id;
+            filter.$or = [
+                {franchisee: id},
+                {transferredFranchise: user.fullName}
+            ]
         }
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
