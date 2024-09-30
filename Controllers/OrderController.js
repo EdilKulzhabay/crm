@@ -493,8 +493,10 @@ export const getCompletedOrders = async (req, res) => {
         }
 
         if (user.role === "admin") {
-            filter.franchisee = id
-            filter.transferredFranchise = user.fullName
+            filter.$or = [
+                {franchisee: id},
+                {transferredFranchise: user.fullName}
+            ]
         }
 
         if (searchStatus && search) {
