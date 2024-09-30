@@ -153,7 +153,7 @@ export const getMe = async (req, res) => {
 
 export const getAllFranchisee = async (req, res) => {
     try {
-        const franchisees = await User.find({ role: "admin" });
+        const franchisees = await User.find();
 
         if (!franchisees) {
             return res.status(409).json({

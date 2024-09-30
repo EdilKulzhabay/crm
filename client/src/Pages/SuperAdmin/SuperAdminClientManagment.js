@@ -46,7 +46,6 @@ export default function SuperAdminClientManagment() {
             headers: { "Content-Type": "application/json" },
         })
             .then(({ data }) => {
-                console.log(data);
                 setFranchisees(data.franchisees);
             })
             .catch((e) => {
@@ -92,6 +91,8 @@ export default function SuperAdminClientManagment() {
             }
         )
             .then(({ data }) => {
+                console.log(data);
+                
                 if (data.clients.length === 0) {
                     setHasMore(false);
                 } else {
@@ -244,7 +245,7 @@ export default function SuperAdminClientManagment() {
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                         <div>Клиент:</div>
-                                        <div>{client.fullName}</div>
+                                        <div>{client.userName}</div>
                                         <div>|</div>
                                         <div>Текущий франчайзи:</div>
                                         <div>
@@ -268,7 +269,7 @@ export default function SuperAdminClientManagment() {
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                         <div>Клиент:</div>
-                                        <div>{client.fullName}</div>
+                                        <div>{client.userName}</div>
                                         <div>|</div>
                                         <div>Текущий франчайзи:</div>
                                         <div>

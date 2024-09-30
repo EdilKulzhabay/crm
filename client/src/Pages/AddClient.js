@@ -137,7 +137,7 @@ export default function AddClient() {
             <>
                 <Li>
                     <div className="flex items-center gap-x-3">
-                        <div>ФИО:</div>
+                        <div>Наименование:</div>
                         <div>
                             [{" "}
                             <MyInput

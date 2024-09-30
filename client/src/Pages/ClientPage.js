@@ -277,7 +277,7 @@ export default function ClientPage() {
             <Div>Личные данные:</Div>
             <>
                 <UpdateClientData
-                    title="ФИО"
+                    title="Наименование"
                     open={updates.fullNameOpen}
                     str={updates.fullNameStr}
                     name="fullName"

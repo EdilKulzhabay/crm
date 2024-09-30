@@ -6,7 +6,6 @@ import MyButton from "../Components/MyButton";
 import MyInput from "../Components/MyInput";
 import LinkButton from "../Components/LinkButton";
 import Container from "../Components/Container";
-import * as XLSX from "xlsx";
 import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
 import MySnackBar from "../Components/MySnackBar";
 
@@ -174,63 +173,6 @@ export default function OrderList() {
         [loading, hasMore, loadMoreOrders]
     );
 
-    const getOrdersForExcel = () => {
-        api.post(
-            "/getOrdersForExcel",
-            {
-                ...dates,
-            },
-            {
-                headers: { "Content-Type": "application/json" },
-            }
-        )
-            .then(({ data }) => {
-                const type = "orders";
-                const orders = data.orders;
-
-                const mappedData = orders.map((item) => {
-                    return {
-                        "Имя Клиента": item?.client?.userName,
-                        Адрес: item.address.actual,
-                        Кол19: item.products.b19,
-                        Кол12: item.products.b12,
-                        Сумма: item.sum,
-                        Курьер: item?.courier?.fullName,
-                        Статус:
-                            item?.status === "awaitingOrder"
-                                ? "Ожидает заказ"
-                                : item?.status === "onTheWay"
-                                ? "В пути"
-                                : item?.status === "delivered"
-                                ? "Доставлен"
-                                : "Отменен",
-                        "Дата доставки": item?.date?.d,
-                    };
-                });
-
-                const workbook = XLSX.utils.book_new();
-                const worksheet = XLSX.utils.json_to_sheet(mappedData);
-                XLSX.utils.book_append_sheet(
-                    workbook,
-                    worksheet,
-                    type === "clients" ? "Clients" : "Orders"
-                );
-                const nowDate = new Date();
-                const fileDate =
-                    dates.startDate !== ""
-                        ? `${dates.startDate} - ${dates.endData}`
-                        : `${nowDate.getFullYear()}:${
-                              nowDate.getMonth() + 1
-                          }:${nowDate.getDate()}`;
-                const fileName = `${fileDate}.xlsx`; // Убедитесь, что функция formatDate определена и возвращает строку
-
-                XLSX.writeFile(workbook, fileName);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-    };
-
     return (
         <Container role={userData.role || "admin"}>
             {franchiseesModal && (
@@ -260,6 +202,14 @@ export default function OrderList() {
                         console.log("userData", userData.role);
                         
                     }}>Найти</MyButton>
+                </div>
+            </Div>
+
+            <Div />
+            <Div>Действия:</Div>
+            <Div>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                    <LinkButton href="/addOrder">Создать заказ</LinkButton>
                 </div>
             </Div>
             {userData?.role === "admin" && <>
@@ -365,15 +315,10 @@ export default function OrderList() {
             </div>
 
             <Div />
-            <Div>Действия:</Div>
             <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <LinkButton href="/addOrder">Создать заказ</LinkButton>
-                    <MyButton click={getOrdersForExcel}>
-                        Экспорт в excel
-                    </MyButton>
-                </div>
+                <LinkButton href="/completedOrders">Завершенные заказы</LinkButton>
             </Div>
+
             <Div />
             <MySnackBar
                 open={open}

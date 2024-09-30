@@ -116,7 +116,7 @@ export const getClients = async (req, res) => {
         const eDate = endDate
             ? new Date(endDate + "T00:00:00.000Z")
             : new Date("2026-01-01T00:00:00.000Z");
-
+        
         const limit = 5;
         const skip = (page - 1) * limit;
 
