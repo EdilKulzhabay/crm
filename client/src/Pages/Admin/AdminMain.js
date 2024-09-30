@@ -64,6 +64,12 @@ export default function SuperAdmin() {
                         <Info>{formatCurrency(info?.totalRevenue)}</Info>
                     </div>
                 </Li>
+                <Li>
+                    <div className="">
+                        Сумма:
+                        <Info>{formatCurrency(info?.totalSum)}</Info>
+                    </div>
+                </Li>
             </>
             <Div />
             <Div>

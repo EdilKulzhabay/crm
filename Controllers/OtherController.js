@@ -102,6 +102,11 @@ export const getMainPageInfo = async (req, res) => {
     try {
         const id = req.userId;
         const user = await User.findById(id);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayDate = `${year}-${month}-${day}`;
 
         // Строим базовый фильтр
         const filter = {};
@@ -114,20 +119,23 @@ export const getMainPageInfo = async (req, res) => {
         const clients = await Client.countDocuments({ ...filter });
         const activeOrders = await Order.countDocuments({
             ...filter,
-            status: "awaitingOrder" || "onTheWay",
+            'date.d': todayDate,
+            status: { $in: ["awaitingOrder", "onTheWay"] },
         });
         const deliveredOrders = await Order.countDocuments({
             ...filter,
-            status: "delivered" || "cancelled",
+            'date.d': todayDate,
+            status: { $in: ["delivered", "cancelled"] },
         });
 
         const costPrice19 = 250; // Себестоимость 19L бутылки
-        const costPrice12 = 150; // Себестоимость 12L бутылки
+        const costPrice12 = 170; // Себестоимость 12L бутылки
 
-        // Получаем все заказы клиента
-        const orders = await Order.find({...filter, status: "delivered"}).populate('client');
+
+        const orders = await Order.find({...filter, 'date.d': todayDate, status: "delivered"}).populate('client');
 
         let totalRevenue = 0;
+        let totalSum = 0
 
         if (orders.length > 0) {
             orders.forEach(order => {
@@ -149,6 +157,7 @@ export const getMainPageInfo = async (req, res) => {
     
                 // Суммарная выручка по заказу
                 totalRevenue += revenue19 + revenue12;
+                totalSum += order.sum
             });
         }
 
@@ -156,7 +165,8 @@ export const getMainPageInfo = async (req, res) => {
             clients,
             activeOrders,
             deliveredOrders,
-            totalRevenue
+            totalRevenue,
+            totalSum
         });
     } catch (error) {
         console.log(error);
