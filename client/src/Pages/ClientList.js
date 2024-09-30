@@ -427,8 +427,6 @@ export default function ClientList() {
                                         <div>|</div>
                                         <div>{client.phone}</div>
                                         <div>|</div>
-                                        <div>{client.mail}</div>
-                                        <div>|</div>
                                         <div>
                                             {client.status === "active"
                                                 ? "Активен"
@@ -458,8 +456,6 @@ export default function ClientList() {
                                         <div>{client.userName}</div>
                                         <div>|</div>
                                         <div>{client.phone}</div>
-                                        <div>|</div>
-                                        <div>{client.mail}</div>
                                         <div>|</div>
                                         <div>
                                             {client.status === "active"
