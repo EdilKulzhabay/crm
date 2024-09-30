@@ -162,10 +162,10 @@ export default function CompletedOrders() {
                     return {
                         "Наименование": item?.client?.fullName,
                         "Имя Пользоватлея": item?.client?.userName,
-                        Адрес: item.address.actual,
-                        Кол19: item.products.b19,
-                        Кол12: item.products.b12,
-                        Сумма: item.sum,
+                        Адрес: item?.address?.actual || "",
+                        Кол19: item?.products?.b19 || "",
+                        Кол12: item?.products?.b12 || "",
+                        Сумма: item?.sum,
                         Курьер: item?.courier?.fullName,
                         Статус:
                             item?.status === "awaitingOrder"
