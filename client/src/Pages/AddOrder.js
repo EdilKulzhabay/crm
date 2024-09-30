@@ -286,8 +286,8 @@ export default function AddOrder() {
                                         }}
                                     >
                                         <span className={clsx("", {
-                                            "text-green-400": courier === null,
-                                            "text-red": courier !== null
+                                            "text-green-400": chooseAddress === null,
+                                            "text-red": chooseAddress !== null
                                         })}>
                                             Выбрать
                                         </span>

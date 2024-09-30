@@ -444,6 +444,7 @@ export default function ClientList() {
                                         >
                                             Удалить
                                         </MyButton>
+                                        {role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
                                     </div>
                                 </Li>
                             </div>

@@ -183,6 +183,15 @@ export default function OrderList() {
             )}
             <Div>Список заказов</Div>
             <Div />
+            <Div>Действия:</Div>
+            <Div>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                    <LinkButton href="/addOrder">Создать заказ</LinkButton>
+                </div>
+            </Div>
+
+
+            <Div />
             <Div>
                 <div>Поиск заказа:</div>
             </Div>
@@ -204,14 +213,7 @@ export default function OrderList() {
                     }}>Найти</MyButton>
                 </div>
             </Div>
-
-            <Div />
-            <Div>Действия:</Div>
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <LinkButton href="/addOrder">Создать заказ</LinkButton>
-                </div>
-            </Div>
+            
             {userData?.role === "admin" && <>
                 <Div />
                 <Div>Доп. заказы</Div>
