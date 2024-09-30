@@ -613,27 +613,33 @@ export const getCompletedOrders = async (req, res) => {
 
         console.log("filter", filter);
         console.log("//////////\n\n");
+
+        const ordersResult = await Order.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalB12: { $sum: "$products.b12" },
+                    totalB19: { $sum: "$products.b19" },
+                    totalSum: { $sum: "$sum" },
+                    orders: { $push: "$$ROOT" }, // Push all orders
+                },
+            },
+        ]);
+
         const orders = await Order.find(filter)
             .populate("client")
             .limit(limit)
             .skip(skip)
 
-
-        let kol19 = 0, kol12 = 0, kolSum = 0
-        if (orders.length > 0) {
-            orders.forEach(order => {
-                kolSum += order.sum
-                kol19 += order?.products?.b19
-                kol12 += order?.products?.b12
-            });
-        }
+        const result = ordersResult.length > 0 ? ordersResult[0] : { totalB12: 0, totalB19: 0, totalSum: 0 };
 
         // Ответ сервера
         res.json({
             orders: orders ? orders : [],
-            totalB12: kol12,
-            totalB19: kol19,
-            totalSum: kolSum,
+            totalB12: result.totalB12,
+            totalB19: result.totalB19,
+            totalSum: result.totalSum,
         })
     } catch (error) {
         console.log(error);
