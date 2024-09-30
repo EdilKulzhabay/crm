@@ -50,6 +50,9 @@ export default function SuperAdminCoincidencePage() {
                         </div>
                     </Div>
                     <Div>
+                        Дата добавления: {notification?.firstObject?.createdAt}
+                    </Div>
+                    <Div>
                         {notification?.firstObject?.fullName}
                     </Div>
                     <Div>
@@ -69,6 +72,9 @@ export default function SuperAdminCoincidencePage() {
                         <div className="w-full text-center">
                             Второй {notification?.second?.fullName}
                         </div>
+                    </Div>
+                    <Div>
+                        Дата добавления: {notification?.secondObject?.createdAt}
                     </Div>
                     <Div>
                         {notification?.secondObject?.fullName}

@@ -35,30 +35,29 @@ export const processExcelFile = async (filePath, id) => {
                 const existingClient = await Client.findOne({ $or: orConditions });
                 
 
-                if (!existingClient) {
-                    const encodedAddress = encodeURIComponent(row.adress);
-                    const newClient = {
-                        fullName: row.fullName,
-                        userName: row.userName,
-                        phone: row.phone || "",
-                        mail: row.mail,
-                        region: row.region,
-                        addresses: [
-                            {
-                                street: row.adress || "",
-                                link: `https://2gis.kz/almaty/search/${encodedAddress}`,
-                                house: row.house || "",
-                            },
-                        ],
-                        price19: row.price19,
-                        price12: row.price12,
-                        status: row.status,
-                        franchisee: id,
-                        opForm: row.opForm
-                    };
+                const encodedAddress = encodeURIComponent(row.adress);
+                const newClient = {
+                    fullName: row.fullName,
+                    userName: row.userName,
+                    phone: row.phone || "",
+                    mail: row.mail,
+                    region: row.region,
+                    addresses: [
+                        {
+                            street: row.adress || "",
+                            link: `https://2gis.kz/almaty/search/${encodedAddress}`,
+                            house: row.house || "",
+                        },
+                    ],
+                    price19: row.price19,
+                    price12: row.price12,
+                    status: row.status,
+                    franchisee: id,
+                    opForm: row.opForm
+                };
 
-                    await Client.create(newClient);
-                } else {
+                await Client.create(newClient);
+                if (existingClient) {
                     let matchedField;
                     if (existingClients.mail === mail && mail !== "")
                         matchedField = "mail ";

@@ -28,7 +28,8 @@ export const getNotificationDataForId = async (req, res) => {
     try {
         const {id} = req.body
 
-        const notification = await Notification.findById(id).populate("first")
+        const notification = await Notification.findById(id)
+        .populate("first")
         .populate("second")
         .populate("firstObject")
         .populate("secondObject")
