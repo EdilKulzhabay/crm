@@ -129,27 +129,28 @@ export const getMainPageInfo = async (req, res) => {
 
         let totalRevenue = 0;
 
-        orders.forEach(order => {
-            const client = order.client;
-
-            // Цены продажи (price19 и price12) взятые из клиента
-            const sellingPrice19 = client.price19 || 0;
-            const sellingPrice12 = client.price12 || 0;
-
-            // Проданные объемы
-            const quantity19 = order.products.b19 || 0;
-            const quantity12 = order.products.b12 || 0;
-
-            // Выручка с 19 литровых бутылок
-            const revenue19 = (sellingPrice19 - costPrice19) * quantity19;
-
-            // Выручка с 12 литровых бутылок
-            const revenue12 = (sellingPrice12 - costPrice12) * quantity12;
-
-            // Суммарная выручка по заказу
-            totalRevenue += revenue19 + revenue12;
-        });
-
+        if (orders.length > 0) {
+            orders.forEach(order => {
+                const client = order.client;
+    
+                // Цены продажи (price19 и price12) взятые из клиента
+                const sellingPrice19 = client.price19 || 0;
+                const sellingPrice12 = client.price12 || 0;
+    
+                // Проданные объемы
+                const quantity19 = order.products.b19 || 0;
+                const quantity12 = order.products.b12 || 0;
+    
+                // Выручка с 19 литровых бутылок
+                const revenue19 = (sellingPrice19 - costPrice19) * quantity19;
+    
+                // Выручка с 12 литровых бутылок
+                const revenue12 = (sellingPrice12 - costPrice12) * quantity12;
+    
+                // Суммарная выручка по заказу
+                totalRevenue += revenue19 + revenue12;
+            });
+        }
 
         res.json({
             clients,
