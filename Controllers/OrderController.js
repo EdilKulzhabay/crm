@@ -135,11 +135,28 @@ export const getOrders = async (req, res) => {
 
             const clientIds = clients.map(client => client._id);
 
-            // Update the filter to include orders with matching clients or addresses
-            filter.$or = [
-                { client: { $in: clientIds } },
-                { "address.actual": { $regex: search, $options: "i" } }
-            ];
+            if (user.role === "admin") {
+                delete filter.$or; // Удаляем $or, если он пустой
+
+                filter.$and = [
+                    {
+                        $or: [
+                            { franchisee: id },
+                            { transferredFranchise: user.fullName }
+                        ]
+                    },
+                    {
+                        $or: [
+                            { client: { $in: clientIds } },
+                            { "address.actual": { $regex: search, $options: "i" } }
+                        ]
+                    }
+                ];
+            }
+        }
+
+        if (filter.$or && filter.$or.length === 0) {
+            delete filter.$or; // Удаляем $or, если он пустой
         }
 
         // Execute the query with the updated filter
@@ -385,7 +402,7 @@ export const updateOrderTransfer = async (req, res) => {
 export const getOrdersForExcel = async (req, res) => {
     try {
         const id = req.userId;
-        const { startDate, endDate } = req.body;
+        const { startDate, endDate, search, searchStatus } = req.body;
 
         const sDate = startDate !== ""
             ? new Date(`${startDate}T00:00:00.000Z`)
@@ -407,6 +424,42 @@ export const getOrdersForExcel = async (req, res) => {
                 {franchisee: id},
                 {transferredFranchise: user.fullName}
             ]
+        }
+
+        if (searchStatus && search) {
+            // Find clients that match the search criteria
+            const clients = await Client.find({
+                $or: [
+                    { userName: { $regex: search, $options: "i" } },
+                    { phone: { $regex: search, $options: "i" } },
+                    { fullName: { $regex: search, $options: "i" } },
+                ]
+            }).select('_id');
+
+            const clientIds = clients.map(client => client._id);
+
+            if (user.role === "admin") {
+                delete filter.$or; // Удаляем $or, если он пустой
+
+                filter.$and = [
+                    {
+                        $or: [
+                            { franchisee: id },
+                            { transferredFranchise: user.fullName }
+                        ]
+                    },
+                    {
+                        $or: [
+                            { client: { $in: clientIds } },
+                            { "address.actual": { $regex: search, $options: "i" } }
+                        ]
+                    }
+                ];
+            }
+        }
+
+        if (filter.$or && filter.$or.length === 0) {
+            delete filter.$or; // Удаляем $or, если он пустой
         }
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
@@ -477,12 +530,36 @@ export const getCompletedOrders = async (req, res) => {
         const limit = 5;
         const skip = (page - 1) * limit;
 
-        const sDate = startDate !== ""
-            ? new Date(`${startDate}T00:00:00.000Z`)
-            : new Date("2024-01-01T00:00:00.000Z");
-        const eDate = endDate !== ""
-            ? new Date(`${endDate}T23:59:59.999Z`)
-            : new Date("2026-01-01T23:59:59.999Z");
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayDate = `${year}-${month}-${day}`;
+        const tomorrow = new Date(today); // Копируем сегодняшнюю дату
+        tomorrow.setDate(today.getDate() + 1);  
+        const tYear = tomorrow.getFullYear();
+        const tMonth = String(tomorrow.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const tDay = String(tomorrow.getDate()).padStart(2, '0');
+        const tomorrowDate = `${tYear}-${tMonth}-${tDay}`;
+        
+
+        // Устанавливаем начальную и конечную даты
+        let sDate = startDate !== "" ? new Date(`${startDate}T00:00:00.000Z`) : `${todayDate}T00:00:00.000Z`;
+        let eDate = endDate !== "" ? new Date(`${endDate}T23:59:59.999Z`) : `${tomorrowDate}T00:00:00.000Z` // +1 день
+
+        if (startDate === "" && searchStatus) {
+            sDate = "2024-01-01T00:00:00.000Z";
+            eDate = "2030-01-01T00:00:00.000Z";
+        }
+
+
+        console.log("page", page);
+        console.log("sDate", sDate);
+        console.log("eDate", eDate);
+        console.log("search", search);
+        console.log("searchStatus", searchStatus);
+        
+        
 
         if (!user) {
             return res.json({
@@ -507,18 +584,35 @@ export const getCompletedOrders = async (req, res) => {
             const clients = await Client.find({
                 $or: [
                     { userName: { $regex: search, $options: "i" } },
+                    { fullName: { $regex: search, $options: "i" } },
                     { phone: { $regex: search, $options: "i" } },
                 ]
             }).select('_id');
 
             const clientIds = clients.map(client => client._id);
 
-            // Update the filter to include orders with matching clients or addresses
-            filter.$or = [
-                { client: { $in: clientIds } },
-                { "address.actual": { $regex: search, $options: "i" } }
-            ];
+            if (user.role === "admin") {
+                delete filter.$or; // Удаляем $or, если он пустой
+
+                filter.$and = [
+                    {
+                        $or: [
+                            { franchisee: id },
+                            { transferredFranchise: user.fullName }
+                        ]
+                    },
+                    {
+                        $or: [
+                            { client: { $in: clientIds } },
+                            { "address.actual": { $regex: search, $options: "i" } }
+                        ]
+                    }
+                ];
+            }
         }
+
+        console.log("filter", filter);
+        console.log("//////////\n\n");
 
         const ordersResult = await Order.aggregate([
             { $match: filter },

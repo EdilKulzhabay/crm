@@ -148,7 +148,7 @@ export default function CompletedOrders() {
         api.post(
             "/getOrdersForExcel",
             {
-                ...dates,
+                ...dates, search, searchStatus,
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -269,10 +269,10 @@ export default function CompletedOrders() {
             Сводная информация:
         </Div>
         <Li>
-            12,5 литровая бутыль: <span className="text-red">[ {info.totalB12} ]</span>
+            12,5 литровая бутыль: <span className="text-red">[ {info.totalB12} ]</span> шт.
         </Li>
         <Li>
-            18,9 литровая бутыль: <span className="text-red">[ {info.totalB19} ]</span>
+            18,9 литровая бутыль: <span className="text-red">[ {info.totalB19} ]</span> шт.
         </Li>
         <Li>
             Сумма: <span className="text-red">[ {formatCurrency(info.totalSum)} ]</span>
