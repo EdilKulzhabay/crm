@@ -6,6 +6,7 @@ export const addClient = async (req, res) => {
     try {
         const {
             fullName,
+            userName,
             phone,
             mail,
             addresses,
@@ -17,6 +18,7 @@ export const addClient = async (req, res) => {
 
         const client = new Client({
             fullName,
+            userName,
             phone,
             mail,
             addresses,
@@ -30,6 +32,7 @@ export const addClient = async (req, res) => {
 
         let orConditions = [
             { fullName: fullName, franchisee: { $ne: franchisee } },
+            { userName: userName, franchisee: { $ne: franchisee } },
             { phone: phone, franchisee: { $ne: franchisee } },
             { mail: mail, franchisee: { $ne: franchisee } },
         ];
@@ -57,6 +60,8 @@ export const addClient = async (req, res) => {
                 matchedField = "mail ";
             if (existingClients.fullName === fullName)
                 matchedField += "fullName ";
+            if (existingClients.userName === userName)
+                matchedField += "userName ";
             if (existingClients.phone === phone) matchedField += "phone ";
             if (
                 existingClients.addresses.some((addr) =>

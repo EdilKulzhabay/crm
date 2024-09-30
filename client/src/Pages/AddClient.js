@@ -24,6 +24,7 @@ export default function AddClient() {
 
     const [form, setForm] = useState({
         fullName: "",
+        userName: "",
         phone: "",
         mail: "",
         price19: "",
@@ -142,6 +143,21 @@ export default function AddClient() {
                             <MyInput
                                 name="fullName"
                                 value={form.fullName}
+                                change={changeHandler}
+                                color="white"
+                            />{" "}
+                            ]
+                        </div>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center gap-x-3">
+                        <div>Имя пользователя:</div>
+                        <div>
+                            [{" "}
+                            <MyInput
+                                name="userName"
+                                value={form.userName}
                                 change={changeHandler}
                                 color="white"
                             />{" "}
