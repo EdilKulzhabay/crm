@@ -118,7 +118,7 @@ export const getMainPageInfo = async (req, res) => {
         });
         const deliveredOrders = await Order.countDocuments({
             ...filter,
-            status: "delivered",
+            status: "delivered" || "cancelled",
         });
 
         res.json({
