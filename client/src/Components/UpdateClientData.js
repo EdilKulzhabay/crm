@@ -26,6 +26,7 @@ export default function UpdateClientData(props) {
                 ) : (
                     <div>
                         {name === "fullName" && client.fullName}
+                        {name === "userName" && client.userName}
                         {name === "phone" && client.phone}
                         {name === "mail" && client.mail}
                         {name === "price12" && (

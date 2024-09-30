@@ -33,6 +33,8 @@ export default function ClientPage() {
     const [updates, setUpdates] = useState({
         fullNameOpen: false,
         fullNameStr: "",
+        userNameOpen: false,
+        userNameStr: "",
         phoneOpen: false,
         phoneStr: "",
         mailOpen: false,
@@ -232,7 +234,8 @@ export default function ClientPage() {
 
                 const mappedData = orders.map((item) => {
                     return {
-                        "Имя Клиента": item?.client?.userName,
+                        "Имя Клиента": item?.client?.fullName,
+                        "Имя Пользователя": item?.client?.userName,
                         Адрес: item.address.actual,
                         Кол19: item.products.b19,
                         Кол12: item.products.b12,
@@ -274,10 +277,19 @@ export default function ClientPage() {
             <Div>Личные данные:</Div>
             <>
                 <UpdateClientData
-                    title="Имя"
+                    title="ФИО"
                     open={updates.fullNameOpen}
                     str={updates.fullNameStr}
                     name="fullName"
+                    handleChange={handleChangesUpdates}
+                    client={client}
+                    updateClientData={updateClientData}
+                />
+                <UpdateClientData
+                    title="Имя пользователя"
+                    open={updates.userNameOpen}
+                    str={updates.userNameStr}
+                    name="userName"
                     handleChange={handleChangesUpdates}
                     client={client}
                     updateClientData={updateClientData}
