@@ -9,7 +9,29 @@ export const processExcelFile = async (filePath, id) => {
 
         for (const row of worksheet) {
             try {
-                const existingClient = await Client.findOne({ phone: row.phone });
+                let orConditions = [
+                    { fullName: fullName, franchisee: { $ne: franchisee } },
+                    { userName: userName, franchisee: { $ne: franchisee } },
+                    { phone: phone, franchisee: { $ne: franchisee } },
+                    { mail: mail, franchisee: { $ne: franchisee } },
+                ];
+
+                if (addresses && addresses.length > 0) {
+                    addresses.forEach((address) => {
+                        orConditions.push({
+                            addresses: {
+                                $elemMatch: {
+                                    street: address.street,
+                                    house: address.house,
+                                    link: address.link,
+                                },
+                            },
+                            franchisee: { $ne: franchisee },
+                        });
+                    });
+                }
+
+                const existingClient = await Client.findOne({ $or: orConditions });
                 
 
                 if (!existingClient) {
