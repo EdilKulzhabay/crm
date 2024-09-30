@@ -363,6 +363,13 @@ export const updateOrderTransfer = async (req, res) => {
             order.transferred = false
         } else {
             order.transferred = true
+            if (order.courier) {
+                const courierId = order.courier
+                await Courier.updateOne(
+                    { _id: courierId }, // находим курьера по его ID
+                    { $pull: { orders: { order: orderId } } } // удаляем элемент из массива orders, где order равен orderId
+                );
+            }
         }
         await order.save()
 
@@ -391,6 +398,7 @@ export const getOrdersForExcel = async (req, res) => {
 
         // Строим базовый фильтр
         const filter = {
+            status: { $in: ["delivered", "cancelled"] },
             createdAt: { $gte: sDate, $lte: eDate },
         };
         // Добавляем фильтр по франчайзи для админа
@@ -400,7 +408,8 @@ export const getOrdersForExcel = async (req, res) => {
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const orders = await Order.find(filter)
-            .populate("client", "userName")
+            .populate("client", "userName fullName")
+            .populate("courier", "fullName")
 
         res.json({ orders });
     } catch (error) {
@@ -446,7 +455,7 @@ export const getAdditionalOrders = async (req, res) => {
             transferredFranchise: userName,
             status: { $nin: ["delivered", "cancelled"] },
         }
-        const orders = await Order.find(filter).populate("client")
+        const orders = await Order.find(filter).populate("client").populate("courier", "fullName")
         
         res.json({orders})
     } catch (error) {
@@ -485,6 +494,7 @@ export const getCompletedOrders = async (req, res) => {
 
         if (user.role === "admin") {
             filter.franchisee = id
+            filter.transferredFranchise = user.fullName
         }
 
         if (searchStatus && search) {

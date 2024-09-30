@@ -7,6 +7,8 @@ import LinkButton from "../Components/LinkButton"
 import DataInput from "../Components/DataInput"
 import MyButton from "../Components/MyButton"
 import MyInput from "../Components/MyInput"
+import * as XLSX from "xlsx";
+import MySnackBar from "../Components/MySnackBar"
 
 export default function CompletedOrders() {
     const [userData, setUserData] = useState({});
@@ -26,6 +28,14 @@ export default function CompletedOrders() {
         startDate: "",
         endDate: "",
     });
+
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [status, setStatus] = useState("");
+
+    const closeSnack = () => {
+        setOpen(false);
+    };
 
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
@@ -56,6 +66,21 @@ export default function CompletedOrders() {
             loadMoreCompletedOrders()
         }
     };
+
+    const handleDate = () => {
+        if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
+        
+        setCompletedOrders([])
+        setPage(1)
+        setLoading(false)
+        setHasMore(true)
+        loadMoreCompletedOrders()
+    }
 
     useEffect(() => {
         api.get("/getMe", {
@@ -119,6 +144,68 @@ export default function CompletedOrders() {
         [loading, hasMore, loadMoreCompletedOrders]
     );
 
+    const getOrdersForExcel = () => {
+        api.post(
+            "/getOrdersForExcel",
+            {
+                ...dates,
+            },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                const type = "orders";
+                const orders = data.orders;
+
+                const mappedData = orders.map((item) => {
+                    return {
+                        "Наименование": item?.client?.fullName,
+                        "Имя Пользоватлея": item?.client?.userName,
+                        Адрес: item.address.actual,
+                        Кол19: item.products.b19,
+                        Кол12: item.products.b12,
+                        Сумма: item.sum,
+                        Курьер: item?.courier?.fullName,
+                        Статус:
+                            item?.status === "awaitingOrder"
+                                ? "Ожидает заказ"
+                                : item?.status === "onTheWay"
+                                ? "В пути"
+                                : item?.status === "delivered"
+                                ? "Доставлен"
+                                : "Отменен",
+                        "Дата доставки": item?.date?.d,
+                    };
+                });
+
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(mappedData);
+                XLSX.utils.book_append_sheet(
+                    workbook,
+                    worksheet,
+                    type === "clients" ? "Clients" : "Orders"
+                );
+                const nowDate = new Date();
+                const fileDate =
+                    dates.startDate !== ""
+                        ? `${dates.startDate} - ${dates.endDate}`
+                        : `${nowDate.getFullYear()}:${
+                              nowDate.getMonth() + 1
+                          }:${nowDate.getDate()}`;
+                const fileName = `${fileDate}.xlsx`; // Убедитесь, что функция formatDate определена и возвращает строку
+
+                XLSX.writeFile(workbook, fileName);
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
+
+    const formatCurrency = (amount) => {
+        return `${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
+    };
+
     return <Container role={userData?.role || ""}>
         <Div>Завершенные заказы</Div>
         <Div />
@@ -169,14 +256,10 @@ export default function CompletedOrders() {
                         />
                         ]
                     </div>
-                    <MyButton click={() => {
-                        setCompletedOrders([])
-                        setPage(1)
-                        setLoading(false)
-                        setHasMore(true)
-                        loadMoreCompletedOrders()
-                    }}>
-                        Применить
+                    <MyButton click={handleDate}>
+                        <span className="text-green-400">
+                            Применить
+                        </span>
                     </MyButton>
                 </div>
             </Li>
@@ -192,7 +275,7 @@ export default function CompletedOrders() {
             18,9 литровая бутыль: <span className="text-red">[ {info.totalB19} ]</span>
         </Li>
         <Li>
-            Сумма: <span className="text-red">[ {info.totalSum} ]</span>
+            Сумма: <span className="text-red">[ {formatCurrency(info.totalSum)} ]</span>
         </Li>
         
         <Div />
@@ -253,6 +336,22 @@ export default function CompletedOrders() {
                 }
             })}
         </div>
+
         <Div />
+            <Div>Действия:</Div>
+            <Div>
+                <div className="flex items-center gap-x-3 flex-wrap">
+                    <MyButton click={getOrdersForExcel}>
+                        Экспорт в excel
+                    </MyButton>
+                </div>
+            </Div>
+        <Div />
+        <MySnackBar
+            open={open}
+            text={message}
+            status={status}
+            close={closeSnack}
+        />
     </Container>
 }
