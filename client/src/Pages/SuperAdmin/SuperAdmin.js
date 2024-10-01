@@ -84,6 +84,12 @@ export default function SuperAdmin() {
                 </Li>
                 <Li>
                     <div className="flex items-center flex-wrap gap-x-3">
+                        <div>Список сотрудников цеха:</div>
+                        <LinkButton href="/departmentList">Перейти</LinkButton>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
                         <div>Настройка подписок:</div>
                         <LinkButton href="/subsciption">Перейти</LinkButton>
                     </div>

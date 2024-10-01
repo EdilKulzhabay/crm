@@ -28,6 +28,9 @@ import CompletedOrders from "./Pages/CompletedOrders";
 import CourierSettings from "./Pages/Courier/CourierSettings";
 import PrivateRoute from "./Components/PrivateRoute";
 import CourierWholeList from "./Pages/Courier/СourierWholeList";
+import DepartmentList from "./Pages/DepartmentList";
+import AddDepartment from "./Pages/AddDepartment";
+import DepartmentPage from "./Pages/DepartmentPage";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -61,6 +64,9 @@ export const router = createBrowserRouter([
     },
     { path: "/superAdminCoincidence", element: <SuperAdminCoincidence /> },
     { path: "/superAdminCoincidencePage/:id", element: <SuperAdminCoincidencePage /> },
+    { path: "/departmentList", element: <DepartmentList /> },
+    { path: "/addDepartment", element: <AddDepartment /> },
+    { path: "/departmentPage/:id", element: <DepartmentPage /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },

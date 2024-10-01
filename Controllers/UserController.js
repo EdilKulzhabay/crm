@@ -2,6 +2,7 @@ import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import Courier from "../Models/Courier.js";
+import Department from "../Models/Department.js";
 
 export const register = async (req, res) => {
     try {
@@ -62,6 +63,39 @@ export const login = async (req, res) => {
             const courier = await Courier.findOne({phone: userName})
 
             if (!courier) {
+
+                const department = await Department.findOne({ userName });
+
+                if (!department) {
+                    return res.status(404).json({
+                        message: "Неверный логин или пароль",
+                    });
+                }
+
+                if (department) {
+                    const isValidPassC = await bcrypt.compare(password, department.password);
+    
+                    if (!isValidPassC) {
+                        return res.status(404).json({
+                            message: "Неверный логин или пароль",
+                        });
+                    }
+    
+                    if (department.status !== "active") {
+                        return res.status(404).json({
+                            message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
+                        });
+                    }
+    
+                    const token = jwt.sign({ _id: department._id }, process.env.SecretKey, {
+                        expiresIn: "30d",
+                    });
+    
+                    const role = "department";
+    
+                    return res.json({ token, role });
+                }
+
                 return res.status(404).json({
                     message: "Неверный логин или пароль",
                 });
