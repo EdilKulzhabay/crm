@@ -7,6 +7,7 @@ import UpIcon from "../icons/UpIcon";
 import DownIcon from "../icons/DownIcon";
 
 export default function CourierActiveOrders(props) {
+    const who = props?.who || ""
     const id = props.id
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -176,11 +177,12 @@ export default function CourierActiveOrders(props) {
                                         <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                                         <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                                         <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                        <LinkButton
+                                        {who !== "courier" && <LinkButton
                                             href={`/orderPage/${item?.order?._id}`}
                                         >
                                             Просмотр
-                                        </LinkButton>
+                                        </LinkButton>}
+                                        
                                     </div>
                                     <div className="flex items-center gap-x-1.5">
                                         <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
@@ -216,11 +218,11 @@ export default function CourierActiveOrders(props) {
                                         <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                                         <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                                         <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                        <LinkButton
+                                        {who !== "courier" && <LinkButton
                                             href={`/orderPage/${item?.order?._id}`}
                                         >
                                             Просмотр
-                                        </LinkButton>
+                                        </LinkButton>}
                                     </div>
                                     <div className="flex items-center gap-x-1.5">
                                         <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">

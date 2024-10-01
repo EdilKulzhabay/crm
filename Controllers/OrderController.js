@@ -296,27 +296,13 @@ export const updateOrder = async (req, res) => {
 
         if (change === "status") {
             order.status = changeData;
-            let changeStatus = "Ожидает заказ";
-            switch (changeData) {
-                case "awaitingOrder":
-                    changeStatus = "Ожидает заказ";
-                    break;
-                case "onTheWay":
-                    changeStatus = "В пути";
-                    break;
-                case "delivered":
-                    changeStatus = "Доставлен";
-                    break;
-                case "cancelled":
-                    changeStatus = "Отменен";
-                    break;
-                default:
-                    changeStatus = "Ожидает заказ";
-                    break;
+            if (changeData === "delivered" || changeData === "cancelled") {
+                const courierId = order.courier
+                await Courier.updateOne(
+                    { _id: courierId },
+                    { $pull: { orders: { order: orderId } } }
+                );
             }
-            order.history.push(
-                `Пользователь ${user.fullName} изменил статус на "${changeStatus}"`
-            );
             await order.save();
         } 
 
