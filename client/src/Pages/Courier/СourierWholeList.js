@@ -35,7 +35,7 @@ export default function CourierWholeList() {
         <Div>Список заказов</Div>
         <Div/>
         <Div>Очередь заказов:</Div>
-        {userData?._id && <CourierActiveOrders id={userData?._id} changeSnackBar={changeSnackBar} />}
+        {userData?._id && <CourierActiveOrders id={userData?._id} changeSnackBar={changeSnackBar} who="courier" />}
 
 
         <MySnackBar
