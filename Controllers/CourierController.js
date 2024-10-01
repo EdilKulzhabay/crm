@@ -330,12 +330,12 @@ export const getFirstOrderForToday = async (req, res) => {
 
         // Фильтруем заказы на текущую дату
         const activeOrders = courier.orders.filter(
-            (item) => item.order.date.d === todayString
+            (item) => item?.order?.date?.d === todayString
         );
 
         // Ищем заказы со статусом 'onTheWay'
         const onTheWayOrders = activeOrders.filter(
-            (item) => item.orderStatus === "onTheWay"
+            (item) => item?.orderStatus === "onTheWay"
         );
 
         // Если есть заказы со статусом 'onTheWay', возвращаем первый из них
@@ -442,4 +442,6 @@ export const updateCourierOrderStatus = async (req, res) => {
         res.status(500).json({ message: "Не удалось обновить статус заказа" });
     }
 };
+
+
 

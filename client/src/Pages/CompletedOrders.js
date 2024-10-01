@@ -203,7 +203,12 @@ export default function CompletedOrders() {
     };
 
     const formatCurrency = (amount) => {
-        return `${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
+        if (amount === undefined || amount === null) {
+            return "0 тенге"; // Или любое другое значение по умолчанию
+        }
+    
+        // Преобразуем число в строку и форматируем его
+        return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
 
     return <Container role={userData?.role || ""}>

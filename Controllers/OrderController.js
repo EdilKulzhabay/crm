@@ -3,6 +3,7 @@ import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 import Client from "../Models/Client.js";
 import Courier from "../Models/Courier.js";
+import mongoose from "mongoose";
 
 export const addOrder = async (req, res) => {
     try {
@@ -544,22 +545,13 @@ export const getCompletedOrders = async (req, res) => {
         
 
         // Устанавливаем начальную и конечную даты
-        let sDate = startDate !== "" ? new Date(`${startDate}T00:00:00.000Z`) : `${todayDate}T00:00:00.000Z`;
-        let eDate = endDate !== "" ? new Date(`${endDate}T23:59:59.999Z`) : `${tomorrowDate}T00:00:00.000Z` // +1 день
+        let sDate = startDate !== "" ? new Date(`${startDate}T00:00:00.000Z`) : new Date(`${todayDate}T00:00:00.000Z`);
+        let eDate = endDate !== "" ? new Date(`${endDate}T23:59:59.999Z`) : new Date(`${tomorrowDate}T00:00:00.000Z`) // +1 день
 
         if (startDate === "" && searchStatus) {
-            sDate = "2024-01-01T00:00:00.000Z";
-            eDate = "2030-01-01T00:00:00.000Z";
+            sDate = new Date("2024-01-01T00:00:00.000Z");
+            eDate = new Date("2030-01-01T00:00:00.000Z");
         }
-
-
-        console.log("page", page);
-        console.log("sDate", sDate);
-        console.log("eDate", eDate);
-        console.log("search", search);
-        console.log("searchStatus", searchStatus);
-        
-        
 
         if (!user) {
             return res.json({
@@ -574,7 +566,7 @@ export const getCompletedOrders = async (req, res) => {
 
         if (user.role === "admin") {
             filter.$or = [
-                {franchisee: id},
+                {franchisee: new mongoose.Types.ObjectId(id)},
                 {transferredFranchise: user.fullName}
             ]
         }
@@ -597,7 +589,7 @@ export const getCompletedOrders = async (req, res) => {
                 filter.$and = [
                     {
                         $or: [
-                            { franchisee: id },
+                            { franchisee: new mongoose.Types.ObjectId(id)},
                             { transferredFranchise: user.fullName }
                         ]
                     },
@@ -610,9 +602,6 @@ export const getCompletedOrders = async (req, res) => {
                 ];
             }
         }
-
-        console.log("filter", filter);
-        console.log("//////////\n\n");
 
         const ordersResult = await Order.aggregate([
             { $match: filter },

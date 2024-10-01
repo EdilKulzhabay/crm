@@ -12,6 +12,7 @@ export default function CourierMain() {
         b19: "",
     });
     const [opForm, setOpForm] = useState("")
+    const [userData, setUserData] = useState({})
 
     const [firstActiveOrder, setFirstActiveOrder] = useState([])
 
@@ -19,8 +20,6 @@ export default function CourierMain() {
         api.get("/getFirstOrderForToday", {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
-            console.log(data);
-            
             setFirstActiveOrder(data.firstActiveOrder)
             setOpForm(data.firstActiveOrder.order.opForm)
         }).catch((error) => {
@@ -39,6 +38,13 @@ export default function CourierMain() {
     }
 
     useEffect(() => {
+        api.get("/getMe", {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            setUserData(data)
+        }).catch((e) => {
+            console.log(e);
+        })
         getFirstOrderForToday()
     }, [])
 
@@ -68,6 +74,8 @@ export default function CourierMain() {
             <Div>
                 Главная панель
             </Div>
+            <Div/>
+            {userData?.wholeList && <Div><LinkButton href="/courierWholeList">Список заказов</LinkButton></Div>}
             <Div />
             <Div>Текущий заказ:</Div>
             {firstActiveOrder !== null ? 
