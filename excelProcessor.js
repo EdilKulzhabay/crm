@@ -10,32 +10,26 @@ export const processExcelFile = async (filePath, id) => {
 
         for (const row of worksheet) {
             try {
+                // Извлекаем данные из строки
+                const fullName = row.fullName || "";
+                const userName = row.userName || "";
+                const phone = row.phone || "";
+                const mail = row.mail || "";
+                const franchisee = id;
+        
+                // Условие для поиска существующего клиента
                 let orConditions = [
                     { fullName: fullName, franchisee: { $ne: franchisee } },
                     { userName: userName, franchisee: { $ne: franchisee } },
                     { phone: phone, franchisee: { $ne: franchisee } },
                     { mail: mail, franchisee: { $ne: franchisee } },
                 ];
-
-                if (addresses && addresses.length > 0) {
-                    addresses.forEach((address) => {
-                        orConditions.push({
-                            addresses: {
-                                $elemMatch: {
-                                    street: address.street,
-                                    house: address.house,
-                                    link: address.link,
-                                },
-                            },
-                            franchisee: { $ne: franchisee },
-                        });
-                    });
-                }
-
+        
                 const existingClient = await Client.findOne({ $or: orConditions });
-                
-
+        
                 const encodedAddress = encodeURIComponent(row.adress);
+        
+                // Создаём нового клиента
                 const newClient = {
                     fullName: row.fullName || "",
                     userName: row.userName || "",
@@ -55,51 +49,42 @@ export const processExcelFile = async (filePath, id) => {
                     franchisee: id || "",
                     opForm: row.opForm || ""
                 };
-
+        
                 await Client.create(newClient);
+        
                 if (existingClient) {
-                    let matchedField;
-                    if (existingClients.mail === mail && mail !== "")
+                    let matchedField = "";
+        
+                    if (existingClient.mail === mail && mail !== "")
                         matchedField = "mail ";
-                    if (existingClients.fullName === fullName)
+                    if (existingClient.fullName === fullName)
                         matchedField += "fullName ";
-                    if (existingClients.userName === userName)
+                    if (existingClient.userName === userName)
                         matchedField += "userName ";
-                    if (existingClients.phone === phone) matchedField += "phone ";
-                    if (
-                        existingClients.addresses.some((addr) =>
-                            addresses.some(
-                                (newAddr) =>
-                                    addr.street === newAddr.street &&
-                                    addr.house === newAddr.house &&
-                                    addr.link === newAddr.link
-                            )
-                        )
-                    ) {
-                        matchedField += "addresses ";
-                    }
-
+                    if (existingClient.phone === phone) matchedField += "phone ";
+        
                     const notDoc = new Notification({
-                        first: existingClients.franchisee,
+                        first: existingClient.franchisee,
                         second: franchisee,
                         matchesType: "client",
                         matchedField,
-                        firstObject: existingClients._id,
-                        secondObject: client._doc._id,
+                        firstObject: existingClient._id,
+                        secondObject: newClient._id,
                     });
-
+        
                     await notDoc.save();
-
+        
                     const notification = {
                         message: "Есть совпадение клиентов",
                     };
-
+        
                     global.io.emit("clientMatch", notification);
                 }
             } catch (err) {
                 console.error(`Error processing row for phone ${row.phone}:`, err.message);
             }
         }
+        
     } catch (err) {
         console.error('Error reading the Excel file:', err.message);
         throw new Error('Failed to process Excel file');
