@@ -37,11 +37,11 @@ export const processExcelFile = async (filePath, id) => {
 
                 const encodedAddress = encodeURIComponent(row.adress);
                 const newClient = {
-                    fullName: row.fullName,
-                    userName: row.userName,
+                    fullName: row.fullName || "",
+                    userName: row.userName || "",
                     phone: row.phone || "",
-                    mail: row.mail,
-                    region: row.region,
+                    mail: row.mail || "",
+                    region: row.region || "",
                     addresses: [
                         {
                             street: row.adress || "",
@@ -49,11 +49,11 @@ export const processExcelFile = async (filePath, id) => {
                             house: row.house || "",
                         },
                     ],
-                    price19: row.price19,
-                    price12: row.price12,
-                    status: row.status,
-                    franchisee: id,
-                    opForm: row.opForm
+                    price19: row.price19 || "",
+                    price12: row.price12 || "",
+                    status: row.status || "",
+                    franchisee: id || "",
+                    opForm: row.opForm || ""
                 };
 
                 await Client.create(newClient);
