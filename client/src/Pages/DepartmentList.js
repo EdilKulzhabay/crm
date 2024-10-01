@@ -38,7 +38,7 @@ export default function DepartmentList() {
 
         <Div/>
         <Div>
-            <LinkButton href="addDepartment">Создать сотрудника</LinkButton>
+            <LinkButton href="/addDepartment">Создать сотрудника</LinkButton>
         </Div>
 
         <Div />

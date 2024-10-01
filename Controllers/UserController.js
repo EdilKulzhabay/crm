@@ -73,6 +73,8 @@ export const login = async (req, res) => {
                 }
 
                 if (department) {
+                    console.log(department.password);
+                    
                     const isValidPassC = await bcrypt.compare(password, department.password);
     
                     if (!isValidPassC) {
@@ -167,6 +169,15 @@ export const getMe = async (req, res) => {
 
         if (!user) {
             const courier = await Courier.findById(id)
+
+            if (!courier) {
+                const department = await Department.findById(id)
+
+                const {password, ...userData} = department._doc
+                userData.role = "department"
+
+                return res.json(userData)
+            }
 
             const {password, ...userData} = courier._doc
             userData.role = "courier"
@@ -313,6 +324,38 @@ export const changePassword = async (req, res) => {
             const courier = await Courier.findById(id)
 
             if (!courier) {
+
+                const department = await Department.findById(id)
+
+                if (!department) {
+                    return res.json({
+                        success: false,
+                        message: "Не удалось найти пользователя",
+                    });
+                }
+
+                if (department) {
+                    const isValidPass = await bcrypt.compare(password, department.password);
+
+                    if (!isValidPass) {
+                        return res.json({
+                            success: false,
+                            message: "Пароль введен не правильно",
+                        });
+                    }
+
+                    const salt = await bcrypt.genSalt(10);
+                    const hash = await bcrypt.hash(newPassword, salt);
+
+                    department.password = hash;
+
+                    await department.save();
+
+                    return res.json({
+                        success: true,
+                    });
+                }
+
                 return res.json({
                     success: false,
                     message: "Не удалось найти пользователя",

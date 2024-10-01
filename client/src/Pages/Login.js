@@ -81,6 +81,8 @@ export default function Login() {
                 navigate("/admin");
             } else if (role === "courier") {
                 navigate("/courier");
+            } else if (role === "department") {
+                navigate("/department");
             } else {
                 navigate("/");
             }

@@ -36,6 +36,18 @@ const UserSchema = new mongoose.Schema(
             default: "active",
         },
         notificationTypes: [],
+        b121kol: {
+            type: Number,
+            default: -1
+        },
+        b191kol: {
+            type: Number,
+            default: 0
+        },
+        b197kol: {
+            type: Number,
+            default: 0
+        }
     },
     {
         timestamps: true,

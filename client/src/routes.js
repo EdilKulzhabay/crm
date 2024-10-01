@@ -31,6 +31,8 @@ import CourierWholeList from "./Pages/Courier/СourierWholeList";
 import DepartmentList from "./Pages/DepartmentList";
 import AddDepartment from "./Pages/AddDepartment";
 import DepartmentPage from "./Pages/DepartmentPage";
+import DepartmentMain from "./Pages/Department/DepartmentMain";
+import DepartmentSettings from "./Pages/Department/DepartmentSettings";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -78,4 +80,8 @@ export const router = createBrowserRouter([
     { path: "/courierSettings", element: <CourierSettings/> },
     { path: "/courierWholeList", element: <CourierWholeList/> },
     { path: "*", element: <Navigate to="/login" replace /> },
+
+    /////DEPARTMENT
+    { path: "/department", element: <DepartmentMain />},
+    { path: "/departmentSettings", element: <DepartmentSettings />}
 ]);
