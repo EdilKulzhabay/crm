@@ -21,12 +21,10 @@ export default function CourierMain() {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setFirstActiveOrder(data.firstActiveOrder)
-            setOpForm(data.firstActiveOrder.order.opForm)
         }).catch((error) => {
             if (error.response) {
                 if (error.response.status === 404) {
                     console.log("Заказ не найден");
-                    // Здесь можно задать обработку для 404, например, установить пустое значение
                     setFirstActiveOrder(null); 
                 } else {
                     console.log("Произошла другая ошибка:", error.response.status);
@@ -90,6 +88,13 @@ export default function CourierMain() {
                             name="b12"
                             value={products.b12}
                             style={{ fontSize: '16px' }}
+                            inputMode="numeric"
+                            pattern="\d*"
+                            onKeyPress={(event) => {
+                                if (!/[0-9]/.test(event.key)) {
+                                    event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                }
+                            }}
                             onChange={(event) => {
                                 changeProducts(event);
                             }}
@@ -105,6 +110,13 @@ export default function CourierMain() {
                             name="b19"
                             value={products.b19}
                             style={{ fontSize: '16px' }}
+                            inputMode="numeric"
+                            pattern="\d*"
+                            onKeyPress={(event) => {
+                                if (!/[0-9]/.test(event.key)) {
+                                    event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                }
+                            }}
                             onChange={(event) => {
                                 changeProducts(event);
                             }}
@@ -113,7 +125,10 @@ export default function CourierMain() {
                     </div>
                 </Li>
                 <Li>
-                    <div>Форма оплаты:<span className="text-blue-500"> {opForm === "cash" && "наличные"}{opForm === "postpay" && "постоплата"}{opForm === "transfer" && "перевод"}{opForm === "card" && "карта"}{opForm === "coupon" && "талон"}</span></div>
+                    <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "cash" && "наличные"}{firstActiveOrder?.order?.opForm === "postpay" && "постоплата"}{firstActiveOrder?.order?.opForm === "transfer" && "перевод"}{firstActiveOrder?.order?.opForm === "card" && "карта"}{firstActiveOrder?.order?.opForm === "coupon" && "талон"}</span></div>
+                </Li>
+                <Li>
+                    <div>Форма оплаты по факту:<span className="text-blue-500"> {opForm === "cash" && "наличные"}{opForm === "postpay" && "постоплата"}{opForm === "transfer" && "перевод"}{opForm === "card" && "карта"}{opForm === "coupon" && "талон"}</span></div>
                 </Li>
                 <div className="hidden lg:block">
                     <Li>

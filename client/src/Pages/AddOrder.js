@@ -309,6 +309,13 @@ export default function AddOrder() {
                                     className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                                     name="b12"
                                     value={products.b12}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
                                     onChange={(event) => {
                                         changeProducts(event);
                                     }}
@@ -326,6 +333,13 @@ export default function AddOrder() {
                                     className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                                     name="b19"
                                     value={products.b19}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
                                     onChange={(event) => {
                                         changeProducts(event);
                                     }}
@@ -362,6 +376,13 @@ export default function AddOrder() {
                                     value={date.time}
                                     size={13}
                                     name="time"
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
                                     onChange={(event) => {
                                         handleTimeChange(event);
                                     }}
