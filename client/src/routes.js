@@ -27,6 +27,7 @@ import SuperAdminCoincidencePage from "./Pages/SuperAdmin/SuperAdminCoincidenceP
 import CompletedOrders from "./Pages/CompletedOrders";
 import CourierSettings from "./Pages/Courier/CourierSettings";
 import PrivateRoute from "./Components/PrivateRoute";
+import CourierWholeList from "./Pages/Courier/СourierWholeList";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -69,5 +70,6 @@ export const router = createBrowserRouter([
     ////COURIERLINKS
     { path: "/courier", element: <CourierMain /> },
     { path: "/courierSettings", element: <CourierSettings/> },
+    { path: "/courierWholeList", element: <CourierWholeList/> },
     { path: "*", element: <Navigate to="/login" replace /> },
 ]);
