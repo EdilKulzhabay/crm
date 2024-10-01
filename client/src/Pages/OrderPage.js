@@ -138,6 +138,12 @@ export default function OrderPage() {
                     setMessage(data.message);
                     setStatus("success");
                     setOpen(true);
+                    if (change === "products") {
+                        setProducts({
+                            b12: "",
+                            b19: ""
+                        })
+                    }
                 }
                 getOrderData();
             })
@@ -239,7 +245,17 @@ export default function OrderPage() {
                         </div>
                     </div>
                 </Li>
-                {(products.b12 !== ""  || products.b19 !== "") && <Div><MyButton click={() => {updateOrder("products", products)}}>Применить</MyButton></Div>}
+                {(products.b12 !== ""  || products.b19 !== "") && <Div>
+                    <MyButton click={() => {
+                        if (products.b12 === "") {
+                            products.b12 = order?.products?.b12
+                        }
+                        if (products.b19 === "") {
+                            products.b19 = order?.products?.b19
+                        }
+                        updateOrder("products", products)
+                    }}>Применить</MyButton>
+                </Div>}
             </>
 
             <Div />
