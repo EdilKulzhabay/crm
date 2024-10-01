@@ -225,6 +225,7 @@ export default function AddClient() {
                                 name="price12"
                                 value={form.price12}
                                 change={changeHandler}
+                                format="numeric"
                                 color="white"
                             />{" "}
                             ] тенге
@@ -240,6 +241,7 @@ export default function AddClient() {
                                 name="price19"
                                 value={form.price19}
                                 change={changeHandler}
+                                format="numeric"
                                 color="white"
                             />{" "}
                             ] тенге
