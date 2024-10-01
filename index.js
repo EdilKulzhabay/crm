@@ -181,6 +181,9 @@ app.post("/getCompletedOrders", checkAuth, OrderController.getCompletedOrders)
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
 app.post("/addDepartment", DepartmentController.addDepartment)
+app.post("/getDepartmentData", DepartmentController.getDepartmentData)
+app.post("/updateDepartmentData", DepartmentController.updateDepartmentData)
+app.post("/deleteDepartment", DepartmentController.deleteDepartment)
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);

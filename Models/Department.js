@@ -18,6 +18,7 @@ const DepartmentSchema = new mongoose.Schema(
             type: String,
             default: "active",
         },
+        history: [String]
     },
     {
         timestamps: true,

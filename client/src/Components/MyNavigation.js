@@ -79,6 +79,17 @@ const CButtons = [
     },
 ];
 
+const DButtons = [
+    {
+        href: "/department",
+        title: "Главная страница",
+    },
+    {
+        href: "/departmentSettings",
+        title: "Настройки",
+    },
+];
+
 export default function MyNavigation(props) {
     if (props.role === "superAdmin") {
         return (
@@ -149,6 +160,32 @@ export default function MyNavigation(props) {
                 </div>
                 <Div styles="hidden lg:flex">
                     {CButtons.map((item) => (
+                        <LinkButton key={item.href} href={item.href}>
+                            {item.title}
+                        </LinkButton>
+                    ))}
+                </Div>
+            </>
+        );
+    }
+
+    if (props.role === "department") {
+        return (
+            <>
+                <Div>
+                    <div>Навигация:</div>
+                </Div>
+                <div className="lg:hidden">
+                    {DButtons.map((item) => (
+                        <Li key={item.href}>
+                            <LinkButton href={item.href}>
+                                {item.title}
+                            </LinkButton>
+                        </Li>
+                    ))}
+                </div>
+                <Div styles="hidden lg:flex">
+                    {DButtons.map((item) => (
                         <LinkButton key={item.href} href={item.href}>
                             {item.title}
                         </LinkButton>
