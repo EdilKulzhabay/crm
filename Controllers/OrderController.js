@@ -389,26 +389,44 @@ export const updateOrderTransfer = async (req, res) => {
 export const getOrdersForExcel = async (req, res) => {
     try {
         const id = req.userId;
-        const { startDate, endDate, search, searchStatus } = req.body;
+        const {startDate, endDate, search, searchStatus} = req.body
+        const user = await User.findById(id)
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayDate = `${year}-${month}-${day}`;
+        const tomorrow = new Date(today); // Копируем сегодняшнюю дату
+        tomorrow.setDate(today.getDate() + 1);  
+        const tYear = tomorrow.getFullYear();
+        const tMonth = String(tomorrow.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const tDay = String(tomorrow.getDate()).padStart(2, '0');
+        const tomorrowDate = `${tYear}-${tMonth}-${tDay}`;
+        
 
-        const sDate = startDate !== ""
-            ? new Date(`${startDate}T00:00:00.000Z`)
-            : new Date("2024-01-01T00:00:00.000Z");
-        const eDate = endDate !== ""
-            ? new Date(`${endDate}T23:59:59.999Z`)
-            : new Date("2026-01-01T23:59:59.999Z");
+        // Устанавливаем начальную и конечную даты
+        let sDate = startDate !== "" ? new Date(`${startDate}T00:00:00.000Z`) : new Date(`${todayDate}T00:00:00.000Z`);
+        let eDate = endDate !== "" ? new Date(`${endDate}T23:59:59.999Z`) : new Date(`${tomorrowDate}T00:00:00.000Z`) // +1 день
 
-        const user = await User.findById(id);
+        if (startDate === "" && searchStatus) {
+            sDate = new Date("2024-01-01T00:00:00.000Z");
+            eDate = new Date("2030-01-01T00:00:00.000Z");
+        }
 
-        // Строим базовый фильтр
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            })
+        }
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
             createdAt: { $gte: sDate, $lte: eDate },
-        };
-        // Добавляем фильтр по франчайзи для админа
+        }
+
         if (user.role === "admin") {
             filter.$or = [
-                {franchisee: id},
+                {franchisee: new mongoose.Types.ObjectId(id)},
                 {transferredFranchise: user.fullName}
             ]
         }
@@ -418,8 +436,8 @@ export const getOrdersForExcel = async (req, res) => {
             const clients = await Client.find({
                 $or: [
                     { userName: { $regex: search, $options: "i" } },
-                    { phone: { $regex: search, $options: "i" } },
                     { fullName: { $regex: search, $options: "i" } },
+                    { phone: { $regex: search, $options: "i" } },
                 ]
             }).select('_id');
 
@@ -431,7 +449,7 @@ export const getOrdersForExcel = async (req, res) => {
                 filter.$and = [
                     {
                         $or: [
-                            { franchisee: id },
+                            { franchisee: new mongoose.Types.ObjectId(id)},
                             { transferredFranchise: user.fullName }
                         ]
                     },
@@ -443,10 +461,6 @@ export const getOrdersForExcel = async (req, res) => {
                     }
                 ];
             }
-        }
-
-        if (filter.$or && filter.$or.length === 0) {
-            delete filter.$or; // Удаляем $or, если он пустой
         }
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
