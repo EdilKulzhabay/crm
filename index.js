@@ -122,6 +122,8 @@ app.post(
     checkAuth,
     UserController.updateNotificationTypes
 );
+app.post("/getFranchiseeClients", UserController.getFranchiseeClients);
+app.post("/updateFranchiseeData", UserController.updateFranchiseeData);
 
 //////Subscriptions
 app.get("/getAllSubscriptions", SubscriptionController.getAllSubscriptions);

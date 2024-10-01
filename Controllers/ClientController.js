@@ -108,7 +108,7 @@ export const addClient = async (req, res) => {
 export const getClients = async (req, res) => {
     try {
         const id = req.userId;
-        const { page, startDate, endDate, status } = req.body;
+        const { page, startDate, endDate } = req.body;
 
         const sDate = startDate
             ? new Date(startDate + "T00:00:00.000Z")
@@ -126,11 +126,6 @@ export const getClients = async (req, res) => {
         const filter = {
             createdAt: { $gte: sDate, $lte: eDate },
         };
-
-        // Добавляем фильтр по статусу, если он не "all"
-        if (status !== "all") {
-            filter.status = status;
-        }
 
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {

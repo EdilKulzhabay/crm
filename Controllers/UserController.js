@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import Courier from "../Models/Courier.js";
 import Department from "../Models/Department.js";
+import Client from "../Models/Client.js";
+import Order from "../Models/Order.js";
 
 export const register = async (req, res) => {
     try {
@@ -221,13 +223,28 @@ export const getFranchiseeById = async (req, res) => {
 
         const franchisee = await User.findById(id);
 
-        if (!franchisee) {
-            return res.status(409).json({
-                message: "Не получилось найти франчайзи",
-            });
+        const clientsKol = await Client.countDocuments({franchisee: id})
+        const filter = {
+            $or: [
+                { franchisee: franchisee._id},
+                { transferredFranchise: franchisee.fullName },
+            ]
         }
+        const ordersResult = await Order.aggregate([
+            { $match: filter },  // Фильтрация заказов на основе вашего условия
+            {
+                $group: {
+                    _id: null,                         // Группируем все заказы в одну групп
+                    totalSum: { $sum: "$sum" },        // Считаем общую сумму по полю sum
+                    totalOrders: { $sum: 1 },          // Считаем количество заказов
+                    orders: { $push: "$$ROOT" },       // Добавляем все заказы в массив orders
+                },
+            },
+        ]);
+        
+        const result = ordersResult.length > 0 ? ordersResult[0] : { totalSum: 0, totalOrders: 0 };
 
-        res.json({ franchisee });
+        res.json({ franchisee, clientsKol, totalSum: result.totalSum, totalOrders: result.totalOrders });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -469,3 +486,58 @@ export const updateNotificationTypes = async (req, res) => {
         });
     }
 };
+
+export const getFranchiseeClients = async (req, res) => {
+    try {
+        const { id, page } = req.body;
+        
+        const limit = 5;
+        const skip = (page - 1) * limit;
+
+        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
+        const clients = await Client.find({franchisee: id})
+            .sort({ createdAt: 1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({ clients });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const updateFranchiseeData = async (req, res) => {
+    try {
+        const { userId, change, changeData } = req.body;
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "Не удалось найти пользователя",
+            });
+        }
+
+        if (change === "bottles") {
+            user.b121kol = changeData.b121kol
+            user.b191kol = changeData.b191kol
+            user.b197kol = changeData.b197kol
+        }
+
+        await user.save()
+
+        res.json({
+            success: true,
+            message: "Заказ успешно изменен",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

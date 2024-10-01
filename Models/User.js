@@ -38,7 +38,7 @@ const UserSchema = new mongoose.Schema(
         notificationTypes: [],
         b121kol: {
             type: Number,
-            default: -1
+            default: 9999
         },
         b191kol: {
             type: Number,
