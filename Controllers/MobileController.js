@@ -62,6 +62,37 @@ export const sendMail = async (req, res) => {
     });
 };
 
+export const sendMailRecovery = async (req, res) => {
+    const { mail } = req.body;
+
+    const candidate = await Client.findOne({ mail });
+
+    if (candidate) {
+        const confirmCode = generateCode();
+
+        codes[mail] = confirmCode;
+
+        const mailOptions = {
+            from: "kzautonex@mail.ru",
+            to: mail,
+            subject: "Подтвердждение электронной почты",
+            text: confirmCode,
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                //console.log(error);
+                return res.status(500).send("Ошибка при отправке письма");
+            } else {
+                //console.log("Email sent: " + info.response);
+                return res.status(200).send("Письмо успешно отправлено");
+            }
+        });
+    }
+
+    res.status(500).send("Пользователя с такой почтой не сушествует")
+};
+
 export const codeConfirm = async (req, res) => {
     try {
         const { mail, code } = req.body;

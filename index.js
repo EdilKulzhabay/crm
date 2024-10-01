@@ -16,6 +16,7 @@ import {
     OrderController,
     MobileController,
     NotificationController,
+    DepartmentController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -177,6 +178,10 @@ app.post("/updateOrder", checkAuth, OrderController.updateOrder);
 app.post("/updateOrderTransfer", OrderController.updateOrderTransfer);
 app.post("/getCompletedOrders", checkAuth, OrderController.getCompletedOrders)
 
+//////DEPARTMENT
+app.get("/getDepartments", DepartmentController.getDepartments)
+app.post("/addDepartment", DepartmentController.addDepartment)
+
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);
 app.post("/getNotificationDataForId", NotificationController.getNotificationDataForId);
@@ -185,6 +190,7 @@ app.post("/deleteNotification", NotificationController.deleteNotification);
 
 //////MOBILE
 app.post("/sendMail", MobileController.sendMail);
+app.post("/sendMailRecovery", MobileController.sendMailRecovery);
 app.post("/codeConfirm", MobileController.codeConfirm);
 app.post("/clientRegister", MobileController.clientRegister);
 app.post("/clientLogin", MobileController.clientLogin);
