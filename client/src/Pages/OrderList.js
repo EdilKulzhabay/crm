@@ -94,6 +94,7 @@ export default function OrderList() {
         }).then(({ data }) => {
             setUserData(data);
         });
+        getActiveOrdersKol()
         getAdditionalOrders()
     }, []);
 
@@ -295,7 +296,7 @@ export default function OrderList() {
             
 
             <Div />
-            <Div>Активные заказы: {activeOrdersKol}</Div>
+            <Div>Заказы: {activeOrdersKol}</Div>
             <div className="max-h-[180px] overflow-scroll bg-black">
                 {orders.map((item, index) => {
                     if (orders.length === index + 1) {
