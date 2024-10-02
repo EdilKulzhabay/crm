@@ -122,10 +122,7 @@ export const getOrders = async (req, res) => {
 
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {
-            filter.$or = [
-                {franchisee: new mongoose.Types.ObjectId(id)},
-                {transferredFranchise: user.fullName}
-            ]
+            filter.franchisee = id
         }
 
         if (user.role === "superAdmin" && searchF !== "") {
@@ -144,30 +141,10 @@ export const getOrders = async (req, res) => {
 
             const clientIds = clients.map(client => client._id);
 
-            if (user.role === "admin") {
-                delete filter.$or; // Удаляем $or, если он пустой
-
-                filter.$and = [
-                    {
-                        $or: [
-                            { franchisee: new mongoose.Types.ObjectId(id)},
-                            { transferredFranchise: user.fullName }
-                        ]
-                    },
-                    {
-                        $or: [
-                            { client: { $in: clientIds } },
-                            { "address.actual": { $regex: search, $options: "i" } }
-                        ]
-                    }
-                ];
-            } else {
-                delete filter.$or;
-                filter.$or = [
-                    { client: { $in: clientIds } },
-                    { "address.actual": { $regex: search, $options: "i" } }
-                ]
-            }
+            filter.$or = [
+                { client: { $in: clientIds } },
+                { "address.actual": { $regex: search, $options: "i" } }
+            ]
         }
 
         // Execute the query with the updated filter
