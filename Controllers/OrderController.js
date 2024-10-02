@@ -672,11 +672,13 @@ export const deleteOrder = async (req, res) => {
         const user = await User.findById(id)
         if (user.role === "superAdmin") {
             const order = await Order.findById(id)
-            const courierId = order.courier
-            const courier = await Courier.findById(courierId)
-            const orders = courier.orders.filter(item => item.order !== orderId);
-            courier.orders = orders
-            await courier.save()
+            if (order.courier) {
+                const courierId = order.courier
+                const courier = await Courier.findById(courierId)
+                const orders = courier.orders.filter(item => item.order !== orderId);
+                courier.orders = orders
+                await courier.save()
+            }
             const delRes = await Order.findByIdAndDelete(orderId);
 
             if (!delRes) {
