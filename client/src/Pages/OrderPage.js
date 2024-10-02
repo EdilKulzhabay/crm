@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
 import Container from "../Components/Container";
@@ -13,6 +13,7 @@ import DataInput from "../Components/DataInput";
 
 export default function OrderPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [role, setRole] = useState("");
     const [order, setOrder] = useState(null);
     const [orderStatus, setOrderStatus] = useState("");
@@ -151,6 +152,20 @@ export default function OrderPage() {
                 console.log(e);
             });
     };
+
+    const deleteOrder = () => {
+        api.post("/deleteOrder", {orderId: id}, {
+            headers: { "Content-Type": "application/json" }
+        }).then(({data}) => {
+            if (data.success) {
+                navigate(-1)
+            } else {
+                setOpen(true)
+                setStatus("error")
+                setMessage("Не удалось удалить заказ")
+            }
+        })
+    }
 
     return (
         <Container role={role}>
@@ -465,18 +480,17 @@ export default function OrderPage() {
                     : "Клиент не оставил отзыва"}
             </Li>
 
-            {/* <Div />
-            <Div>Действия:</Div>
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={() => {}}>
-                        Отправить уведомление клиенту
-                    </MyButton>
-                    <MyButton click={() => {}}>
-                        Отправить уведомление курьеру
-                    </MyButton>
-                </div>
-            </Div> */}
+            {role === "superAdmin" && <>
+                <Div />
+                <Div>Действия:</Div>
+                <Div>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <MyButton click={deleteOrder}>
+                            Удалить заказ
+                        </MyButton>
+                    </div>
+                </Div>
+            </>}
             <Div />
             <MySnackBar
                 open={open}
