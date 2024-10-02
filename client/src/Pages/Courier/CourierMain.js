@@ -67,6 +67,13 @@ export default function CourierMain() {
         setProducts({ ...products, [event.target.name]: event.target.value });
     };
 
+    const getSum = () => {
+        if (products.b12 !== "" && products.b19 !== "") {
+            const sum = Number(products.b12) * Number(firstActiveOrder?.order?.client?.price12) + Number(products.b19) * Number(firstActiveOrder?.order?.client?.price19)
+            return sum
+        }
+    }
+
     return (
         <Container role="courier">
             <Div>
@@ -127,7 +134,7 @@ export default function CourierMain() {
                     </div>
                 </Li>
                 <Li>
-                    <div>Сумма оплаты: <span className="text-blue-500">{firstActiveOrder?.sum}</span></div>
+                    <div>Сумма оплаты: <span className="text-blue-500">{getSum()}</span></div>
                 </Li>
                 <Li>
                     <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "cash" && "наличные"}{firstActiveOrder?.order?.opForm === "postpay" && "постоплата"}{firstActiveOrder?.order?.opForm === "transfer" && "перевод"}{firstActiveOrder?.order?.opForm === "card" && "карта"}{firstActiveOrder?.order?.opForm === "coupon" && "талон"}</span></div>
