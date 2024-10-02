@@ -176,7 +176,7 @@ export default function CourierMain() {
                 <Div/>
                 <Div/>
                 <Li>
-                    {firstActiveOrder?.orderStatus === "inLine" && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer" className="text-red hover:text-blue-500"><button onClick={() => {updateCourierOrderStatus("onTheWay")}}>[ Начать ]</button></a>}
+                    {firstActiveOrder?.orderStatus === "inLine" && <button className="text-red hover:text-blue-500" onClick={() => {updateCourierOrderStatus("onTheWay")}}>[ Начать ]</button>}
                     {firstActiveOrder?.orderStatus === "onTheWay" && (opForm === "" || products.b12 === "" || products.b19 === "") && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer" className="text-red hover:text-blue-500">[ Построить маршрут ]</a>}
                     {firstActiveOrder?.orderStatus === "onTheWay" && opForm !== "" && products.b12 !== "" && products.b19 !== "" && <MyButton click={() => {updateCourierOrderStatus("delivered")}}>Завершить</MyButton>}
                 </Li>
