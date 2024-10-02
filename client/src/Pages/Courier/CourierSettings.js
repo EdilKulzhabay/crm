@@ -45,7 +45,7 @@ export default function CourierSettings() {
 
     return (
         <Container role="courier">
-            <Div>Настройки</Div>
+            <Div>Настройки: {info?.fullName}</Div>
             <Div />
             <ChangePassword
                 responce={(resStatus, resMessage) => {

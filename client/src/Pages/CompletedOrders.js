@@ -23,6 +23,7 @@ export default function CompletedOrders() {
     })
 
     const [search, setSearch] = useState("");
+    const [searchF, setSearchF] = useState("");
     const [searchStatus, setSearchStatus] = useState(false);
     const [dates, setDates] = useState({
         startDate: "",
@@ -67,6 +68,17 @@ export default function CompletedOrders() {
         }
     };
 
+    const handleSearchF = (e) => {
+        setSearchF(e.target.value);
+        if (e.target.value === "") {
+            setCompletedOrders([]);
+            setPage(1);
+            setHasMore(true);
+            setSearchStatus(false)
+            loadMoreCompletedOrders()
+        }
+    };
+
     const handleDate = () => {
         if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
             setOpen(true)
@@ -98,7 +110,7 @@ export default function CompletedOrders() {
         api.post(
             "/getCompletedOrders",
             {
-                page, ...dates, search, searchStatus
+                page, ...dates, search, searchStatus, searchF
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -148,7 +160,7 @@ export default function CompletedOrders() {
         api.post(
             "/getOrdersForExcel",
             {
-                ...dates, search, searchStatus,
+                ...dates, search, searchStatus, searchF
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -234,6 +246,32 @@ export default function CompletedOrders() {
                 }}>Найти</MyButton>
             </div>
         </Div>
+
+        {userData?.role === "superAdmin" && <>
+            <Div />
+            <Div>
+                Фильтрация по франчайзи:
+            </Div>
+            <Div>
+                <div className="flex items-center flex-wrap gap-x-4">
+                    <MyInput
+                        value={searchF}
+                        change={handleSearchF}
+                        color="white"
+                    />
+                    <MyButton click={() => {
+                        setCompletedOrders([]);
+                        setPage(1);
+                        setHasMore(true);
+                        setSearchStatus(true)
+                        setLoading(false)
+                        loadMoreCompletedOrders()
+                    }}>Найти</MyButton>
+                </div>
+            </Div>
+        </>
+        }
+
         <Div />
         <Div>Фильтры:</Div>
         <>

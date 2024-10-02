@@ -15,6 +15,7 @@ export default function OrderList() {
     const [additionalOrders, setAdditionalOrders] = useState([])
     const [userData, setUserData] = useState({});
     const [search, setSearch] = useState("");
+    const [searchF, setSearchF] = useState("");
     const [searchStatus, setSearchStatus] = useState(false);
     const [dates, setDates] = useState({
         startDate: "",
@@ -23,6 +24,7 @@ export default function OrderList() {
     const [franchiseesModal, setFranchiseesModal] = useState(false);
     const [franchisee, setFranchisee] = useState(null);
     const [order, setOrder] = useState(null)
+    const [activeOrdersKol, setActiveOrdersKol] = useState(0)
 
 
     const [page, setPage] = useState(1);
@@ -56,11 +58,31 @@ export default function OrderList() {
         }
     };
 
+    const handleSearchF = (e) => {
+        setSearchF(e.target.value);
+        if (e.target.value === "") {
+            setOrders([]);
+            setPage(1);
+            setHasMore(true);
+            setSearchStatus(false)
+        }
+    };
+
     const getAdditionalOrders = () => {
         api.get("/getAdditionalOrders", {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setAdditionalOrders(data.orders)
+        }).catch((e) => {
+            console.log(e);
+        })
+    }
+
+    const getActiveOrdersKol = () => {
+        api.post("/getActiveOrdersKol", {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            setActiveOrdersKol(data.activeOrdersKol)
         }).catch((e) => {
             console.log(e);
         })
@@ -131,7 +153,8 @@ export default function OrderList() {
                 page,
                 ...dates,
                 searchStatus,
-                search
+                search,
+                searchF
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -209,15 +232,37 @@ export default function OrderList() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
-                        console.log("userData", userData.role);
-                        
                     }}>Найти</MyButton>
                 </div>
             </Div>
+
+            {userData?.role === "superAdmin" && <>
+                <Div />
+                <Div>
+                    Фильтрация по франчайзи:
+                </Div>
+                <Div>
+                    <div className="flex items-center flex-wrap gap-x-4">
+                        <MyInput
+                            value={searchF}
+                            change={handleSearchF}
+                            color="white"
+                        />
+                        <MyButton click={() => {
+                            setOrders([]);
+                            setPage(1);
+                            setHasMore(true);
+                            setSearchStatus(true)
+                            setLoading(false)
+                        }}>Найти</MyButton>
+                    </div>
+                </Div>
+            </>
+            }
             
             {userData?.role === "admin" && <>
                 <Div />
-                <Div>Доп. заказы</Div>
+                <Div>Доп. заказы: {additionalOrders.length}</Div>
                 <div className="max-h-[180px] overflow-scroll bg-black">
                     {additionalOrders.map((item) => {
                         return (
@@ -250,7 +295,7 @@ export default function OrderList() {
             
 
             <Div />
-            <Div>Активные заказы:</Div>
+            <Div>Активные заказы: {activeOrdersKol}</Div>
             <div className="max-h-[180px] overflow-scroll bg-black">
                 {orders.map((item, index) => {
                     if (orders.length === index + 1) {

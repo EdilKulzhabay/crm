@@ -111,7 +111,7 @@ export default function SuperAdminSettings() {
 
     return (
         <Container role="superAdmin">
-            <Div>Настройки</Div>
+            <Div>Настройки: {info?.fullName}</Div>
             <Div />
             <Div>Управление пользователями:</Div>
             <Li>Список пользователей:</Li>

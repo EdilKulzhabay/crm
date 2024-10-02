@@ -256,6 +256,7 @@ export default function SuperAdminUpdateFranchisee() {
                         <div>
                         {" "}[{" "}
                             <input
+                                size={11}
                                 className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                                 name="b121kol"
                                 value={bottles.b121kol}
@@ -281,6 +282,7 @@ export default function SuperAdminUpdateFranchisee() {
                         <div>
                         {" "}[{" "}
                             <input
+                                size={11}
                                 className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                                 name="b191kol"
                                 value={bottles.b191kol}
@@ -306,6 +308,7 @@ export default function SuperAdminUpdateFranchisee() {
                         <div>
                         {" "}[{" "}
                             <input
+                                size={11}
                                 className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                                 name="b197kol"
                                 value={bottles.b197kol}

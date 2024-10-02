@@ -44,7 +44,7 @@ export default function AdminSettings() {
 
     return (
         <Container role="admin">
-            <Div>Настройки</Div>
+            <Div>Настройки: {info?.fullName}</Div>
             <Div />
             <ChangePassword
                 responce={(resStatus, resMessage) => {

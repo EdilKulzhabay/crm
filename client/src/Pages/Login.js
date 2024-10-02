@@ -101,6 +101,7 @@ export default function Login() {
                 <div className="w-full mt-7">
                     <div>
                         <input
+                            size={11}
                             error="true"
                             className="w-full p-3 border rounded-md"
                             placeholder="Имя"
@@ -113,6 +114,7 @@ export default function Login() {
                     </div>
                     <div className="mt-3">
                         <input
+                            size={11}
                             error="true"
                             className="w-full p-3 border rounded-md"
                             placeholder="Пароль"
