@@ -100,7 +100,7 @@ export const addOrder = async (req, res) => {
 export const getOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const { page, startDate, endDate, search, searchStatus } =
+        const { page, startDate, endDate, search, searchStatus, searchF } =
             req.body;
 
         const sDate = startDate !== ""
@@ -122,7 +122,14 @@ export const getOrders = async (req, res) => {
 
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {
-            filter.franchisee = id;
+            filter.$or = [
+                {franchisee: new mongoose.Types.ObjectId(id)},
+                {transferredFranchise: user.fullName}
+            ]
+        }
+
+        if (user.role === "superAdmin" && searchF !== "") {
+            filter.transferredFranchise = { $regex: searchF, $options: "i" }
         }
 
         if (searchStatus && search) {
@@ -130,6 +137,7 @@ export const getOrders = async (req, res) => {
             const clients = await Client.find({
                 $or: [
                     { userName: { $regex: search, $options: "i" } },
+                    { fullName: { $regex: search, $options: "i" } },
                     { phone: { $regex: search, $options: "i" } },
                 ]
             }).select('_id');
@@ -142,7 +150,7 @@ export const getOrders = async (req, res) => {
                 filter.$and = [
                     {
                         $or: [
-                            { franchisee: id },
+                            { franchisee: new mongoose.Types.ObjectId(id)},
                             { transferredFranchise: user.fullName }
                         ]
                     },
@@ -153,19 +161,17 @@ export const getOrders = async (req, res) => {
                         ]
                     }
                 ];
+            } else {
+                delete filter.$or;
+                filter.$or = [
+                    { client: { $in: clientIds } },
+                    { "address.actual": { $regex: search, $options: "i" } }
+                ]
             }
         }
 
-        if (filter.$or && filter.$or.length === 0) {
-            delete filter.$or; // Удаляем $or, если он пустой
-        }
-
         // Execute the query with the updated filter
-        const orders = await Order.find({
-            $or: [
-                { ...filter }, // Первое условие — фильтр с конкретными полями
-            ]
-        })
+        const orders = await Order.find(filter)
             .populate("franchisee")
             .populate("courier")
             .populate("client")
@@ -389,7 +395,7 @@ export const updateOrderTransfer = async (req, res) => {
 export const getOrdersForExcel = async (req, res) => {
     try {
         const id = req.userId;
-        const {startDate, endDate, search, searchStatus} = req.body
+        const {startDate, endDate, search, searchStatus, searchF} = req.body
         const user = await User.findById(id)
         const today = new Date();
         const year = today.getFullYear();
@@ -431,6 +437,10 @@ export const getOrdersForExcel = async (req, res) => {
             ]
         }
 
+        if (user.role === "superAdmin" && searchF !== "") {
+            filter.transferredFranchise = { $regex: searchF, $options: "i" }
+        }
+
         if (searchStatus && search) {
             // Find clients that match the search criteria
             const clients = await Client.find({
@@ -460,6 +470,12 @@ export const getOrdersForExcel = async (req, res) => {
                         ]
                     }
                 ];
+            } else {
+                delete filter.$or;
+                filter.$or = [
+                    { client: { $in: clientIds } },
+                    { "address.actual": { $regex: search, $options: "i" } }
+                ]
             }
         }
 
@@ -526,7 +542,7 @@ export const getAdditionalOrders = async (req, res) => {
 export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const {page, startDate, endDate, search, searchStatus} = req.body
+        const {page, startDate, endDate, search, searchStatus, searchF} = req.body
         const user = await User.findById(id)
         const limit = 5;
         const skip = (page - 1) * limit;
@@ -571,6 +587,10 @@ export const getCompletedOrders = async (req, res) => {
             ]
         }
 
+        if (user.role === "superAdmin" && searchF !== "") {
+            filter.transferredFranchise = { $regex: searchF, $options: "i" }
+        }
+
         if (searchStatus && search) {
             // Find clients that match the search criteria
             const clients = await Client.find({
@@ -600,6 +620,12 @@ export const getCompletedOrders = async (req, res) => {
                         ]
                     }
                 ];
+            } else {
+                delete filter.$or;
+                filter.$or = [
+                    { client: { $in: clientIds } },
+                    { "address.actual": { $regex: search, $options: "i" } }
+                ]
             }
         }
 
@@ -629,6 +655,33 @@ export const getCompletedOrders = async (req, res) => {
             totalB12: result.totalB12,
             totalB19: result.totalB19,
             totalSum: result.totalSum,
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getActiveOrdersKol = async (req, res) => {
+    try {
+        const id = req.userId;
+
+        const user = await User.findById(id);
+
+        const filter = {
+            status: { $nin: ["delivered", "cancelled"] },
+        }
+
+        if (user.role === "admin") {
+            filter.franchisee = id;
+        }
+
+        const activeOrdersKol = await Order.countDocuments(filter)
+
+        res.json({
+            activeOrdersKol
         })
     } catch (error) {
         console.log(error);

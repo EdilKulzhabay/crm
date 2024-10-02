@@ -84,6 +84,7 @@ export default function CourierMain() {
                     <div>
                         [{" "}
                         <input
+                            size={11}
                             className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                             name="b12"
                             value={products.b12}
@@ -106,6 +107,7 @@ export default function CourierMain() {
                     <div>
                         [{" "}
                         <input
+                            size={11}
                             className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                             name="b19"
                             value={products.b19}
@@ -123,6 +125,9 @@ export default function CourierMain() {
                         />{" "}
                         ] шт
                     </div>
+                </Li>
+                <Li>
+                    <div>Сумма оплаты: <span className="text-blue-500">{firstActiveOrder?.sum}</span></div>
                 </Li>
                 <Li>
                     <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "cash" && "наличные"}{firstActiveOrder?.order?.opForm === "postpay" && "постоплата"}{firstActiveOrder?.order?.opForm === "transfer" && "перевод"}{firstActiveOrder?.order?.opForm === "card" && "карта"}{firstActiveOrder?.order?.opForm === "coupon" && "талон"}</span></div>

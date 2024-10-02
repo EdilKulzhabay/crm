@@ -114,6 +114,7 @@ export const getMainPageInfo = async (req, res) => {
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {
             filter.franchisee = id;
+            filter.transferredFranchise = user.fullName
         }
 
         const clients = await Client.countDocuments({ ...filter });

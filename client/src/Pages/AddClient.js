@@ -105,6 +105,7 @@ export default function AddClient() {
                 setMessage("Вы успешно добавили клиента");
                 setForm({
                     fullName: "",
+                    userName: "",
                     phone: "",
                     mail: "",
                     price19: "",
