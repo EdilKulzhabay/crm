@@ -56,6 +56,7 @@ export default function OrderList() {
             setHasMore(true);
             setSearchStatus(false)
             setLoading(false)
+            setAgain(again + 1)
         }
     };
 
@@ -66,6 +67,7 @@ export default function OrderList() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
+            setAgain(again + 1)
         }
     };
 
@@ -183,6 +185,13 @@ export default function OrderList() {
         }
     }, [hasMore]);
 
+    useEffect(() => {
+        console.log("useEffect triggered with again:", again);
+        if (hasMore) {
+            loadMoreOrders();
+        }
+    }, [again]);
+
     const observer = useRef();
     const lastOrderElementRef = useCallback(
         (node) => {
@@ -233,6 +242,7 @@ export default function OrderList() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
+                        setAgain(again + 1)
                     }}>Найти</MyButton>
                 </div>
             </Div>
@@ -254,6 +264,7 @@ export default function OrderList() {
                             setPage(1);
                             setHasMore(true);
                             setLoading(false)
+                            setAgain(again + 1)
                         }}>Найти</MyButton>
                     </div>
                 </Div>
