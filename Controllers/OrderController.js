@@ -536,16 +536,6 @@ export const getCompletedOrders = async (req, res) => {
         const tDay = String(tomorrow.getDate()).padStart(2, '0');
         const tomorrowDate = `${tYear}-${tMonth}-${tDay}`;
         
-
-        // Устанавливаем начальную и конечную даты
-        let sDate = startDate !== "" ? new Date(`${startDate}T00:00:00.000Z`) : new Date(`${todayDate}T00:00:00.000Z`);
-        let eDate = endDate !== "" ? new Date(`${endDate}T23:59:59.999Z`) : new Date(`${tomorrowDate}T00:00:00.000Z`) // +1 день
-
-        if (startDate === "" && searchStatus) {
-            sDate = new Date("2024-01-01T00:00:00.000Z");
-            eDate = new Date("2030-01-01T00:00:00.000Z");
-        }
-
         if (!user) {
             return res.json({
                 success: false,
@@ -554,7 +544,7 @@ export const getCompletedOrders = async (req, res) => {
         }
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
-            createdAt: { $gte: sDate, $lte: eDate },
+            "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
         }
 
         if (user.role === "admin") {
