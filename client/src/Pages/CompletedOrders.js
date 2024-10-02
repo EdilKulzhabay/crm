@@ -29,6 +29,7 @@ export default function CompletedOrders() {
         startDate: "",
         endDate: "",
     });
+    const [again, setAgain] = useState(0)
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -64,7 +65,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setSearchStatus(false)
-            loadMoreCompletedOrders()
+            setAgain(again + 1)
         }
     };
 
@@ -75,7 +76,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setSearchStatus(false)
-            loadMoreCompletedOrders()
+            setAgain(again + 1)
         }
     };
 
@@ -91,7 +92,7 @@ export default function CompletedOrders() {
         setPage(1)
         setLoading(false)
         setHasMore(true)
-        loadMoreCompletedOrders()
+        setAgain(again + 1)
     }
 
     useEffect(() => {
@@ -133,7 +134,7 @@ export default function CompletedOrders() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore]);
+    }, [page, loading, hasMore, again]);
 
     useEffect(() => {
         if (hasMore) {
@@ -242,7 +243,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    loadMoreCompletedOrders()
+                    setAgain(again + 1)
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -265,7 +266,7 @@ export default function CompletedOrders() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
-                        loadMoreCompletedOrders()
+                        setAgain(again + 1)
                     }}>Найти</MyButton>
                 </div>
             </Div>
