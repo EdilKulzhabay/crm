@@ -25,7 +25,7 @@ export default function OrderList() {
     const [franchisee, setFranchisee] = useState(null);
     const [order, setOrder] = useState(null)
     const [activeOrdersKol, setActiveOrdersKol] = useState(0)
-
+    const [again, setAgain] = useState(0)
 
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -55,6 +55,7 @@ export default function OrderList() {
             setPage(1);
             setHasMore(true);
             setSearchStatus(false)
+            setAgain(again + 1)
         }
     };
 
@@ -65,6 +66,7 @@ export default function OrderList() {
             setPage(1);
             setHasMore(true);
             setSearchStatus(false)
+            setAgain(again + 1)
         }
     };
 
@@ -175,7 +177,7 @@ export default function OrderList() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore, searchStatus]);
+    }, [page, loading, hasMore, searchStatus, again]);
 
     useEffect(() => {
         if (hasMore) {
@@ -232,8 +234,7 @@ export default function OrderList() {
                         setPage(1);
                         setHasMore(true);
                         setSearchStatus(true)
-                        setLoading(false)
-                        loadMoreOrders()
+                        setAgain(again + 1)
                     }}>Найти</MyButton>
                 </div>
             </Div>
@@ -255,8 +256,7 @@ export default function OrderList() {
                             setPage(1);
                             setHasMore(true);
                             setSearchStatus(true)
-                            setLoading(false)
-                            loadMoreOrders()
+                            setAgain(again + 1)
                         }}>Найти</MyButton>
                     </div>
                 </Div>
