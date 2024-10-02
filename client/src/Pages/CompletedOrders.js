@@ -66,7 +66,7 @@ export default function CompletedOrders() {
             setHasMore(true);
             setLoading(false)
             setSearchStatus(false)
-            setAgain(again + 1)
+            
         }
     };
 
@@ -77,7 +77,6 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            setAgain(again + 1)
         }
     };
 
@@ -93,7 +92,6 @@ export default function CompletedOrders() {
         setPage(1)
         setLoading(false)
         setHasMore(true)
-        setAgain(again + 1)
     }
 
     useEffect(() => {
@@ -135,9 +133,11 @@ export default function CompletedOrders() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore, again]);
+    }, [page, loading, hasMore]);
 
     useEffect(() => {
+        console.log("useEffect CompletedOrders");
+        
         if (hasMore) {
             loadMoreCompletedOrders();
         }
@@ -244,7 +244,6 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    setAgain(again + 1)
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -265,9 +264,7 @@ export default function CompletedOrders() {
                         setCompletedOrders([]);
                         setPage(1);
                         setHasMore(true);
-                        setSearchStatus(true)
                         setLoading(false)
-                        setAgain(again + 1)
                     }}>Найти</MyButton>
                 </div>
             </Div>

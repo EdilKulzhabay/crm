@@ -56,7 +56,6 @@ export default function OrderList() {
             setHasMore(true);
             setSearchStatus(false)
             setLoading(false)
-            setAgain(again + 1)
         }
     };
 
@@ -67,7 +66,6 @@ export default function OrderList() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            setAgain(again + 1)
         }
     };
 
@@ -181,6 +179,7 @@ export default function OrderList() {
     }, [page, loading, hasMore, searchStatus, again]);
 
     useEffect(() => {
+        console.log("useEffect Orders");
         if (hasMore) {
             loadMoreOrders();
         }
@@ -236,7 +235,6 @@ export default function OrderList() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
-                        setAgain(again + 1)
                     }}>Найти</MyButton>
                 </div>
             </Div>
@@ -258,7 +256,6 @@ export default function OrderList() {
                             setPage(1);
                             setHasMore(true);
                             setLoading(false)
-                            setAgain(again + 1)
                         }}>Найти</MyButton>
                     </div>
                 </Div>
