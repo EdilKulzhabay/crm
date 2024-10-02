@@ -290,11 +290,13 @@ export const updateOrder = async (req, res) => {
         } 
 
         if (change === "courier") {
-            const courierId = order.courier
-            const lCourier = await Courier.findById(courierId)
-            const orders = lCourier.orders.filter(item => item.order !== orderId);
-            lCourier.orders = orders
-            await lCourier.save()
+            if (order.courier) {
+                const courierId = order.courier
+                const lCourier = await Courier.findById(courierId)
+                const orders = lCourier.orders.filter(item => item.order !== orderId);
+                lCourier.orders = orders
+                await lCourier.save()
+            }
             const courier = await Courier.findById(changeData._id)
             const courierOrder = {order: order._id, orderStatus: "inLine"}
             courier.orders.push(courierOrder)
