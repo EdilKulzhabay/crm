@@ -79,7 +79,7 @@ export default function OrderList() {
     }
 
     const getActiveOrdersKol = () => {
-        api.post("/getActiveOrdersKol", {
+        api.get("/getActiveOrdersKol", {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setActiveOrdersKol(data.activeOrdersKol)
@@ -233,6 +233,7 @@ export default function OrderList() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
+                        loadMoreOrders()
                     }}>Найти</MyButton>
                 </div>
             </Div>
@@ -255,6 +256,7 @@ export default function OrderList() {
                             setHasMore(true);
                             setSearchStatus(true)
                             setLoading(false)
+                            loadMoreOrders()
                         }}>Найти</MyButton>
                     </div>
                 </Div>
