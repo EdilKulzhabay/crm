@@ -672,7 +672,7 @@ export const deleteOrder = async (req, res) => {
         const user = await User.findById(id)
         if (user.role === "superAdmin") {
             const order = await Order.findById(id)
-            if (order.courier) {
+            if (order?.courier) {
                 const courierId = order.courier
                 const courier = await Courier.findById(courierId)
                 const orders = courier.orders.filter(item => item.order !== orderId);
