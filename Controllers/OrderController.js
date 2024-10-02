@@ -290,6 +290,11 @@ export const updateOrder = async (req, res) => {
         } 
 
         if (change === "courier") {
+            const courierId = order.courier
+            const lCourier = await Courier.findById(courierId)
+            const orders = lCourier.orders.filter(item => item.order !== orderId);
+            lCourier.orders = orders
+            await lCourier.save()
             const courier = await Courier.findById(changeData._id)
             const courierOrder = {order: order._id, orderStatus: "inLine"}
             courier.orders.push(courierOrder)
@@ -650,6 +655,38 @@ export const getActiveOrdersKol = async (req, res) => {
         res.json({
             activeOrdersKol
         })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const deleteOrder = async (req, res) => {
+    try {
+        const id = req.userId;
+        const {orderId} = req.body
+        const user = await User.findById(id)
+        if (user.role === "superAdmin") {
+            const order = await Order.findById(id)
+            const courierId = order.courier
+            const courier = await Courier.findById(courierId)
+            const orders = courier.orders.filter(item => item.order !== orderId);
+            courier.orders = orders
+            await courier.save()
+            const delRes = await Order.findByIdAndDelete(orderId);
+
+            if (!delRes) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Не удалось удалить заказа",
+                });
+            }
+            return res.json({success: true})
+        }
+
+        res.json({success: false})
     } catch (error) {
         console.log(error);
         res.status(500).json({
