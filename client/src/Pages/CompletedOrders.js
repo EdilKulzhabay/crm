@@ -64,6 +64,7 @@ export default function CompletedOrders() {
             setCompletedOrders([]);
             setPage(1);
             setHasMore(true);
+            setLoading(false)
             setSearchStatus(false)
             setAgain(again + 1)
         }
@@ -75,7 +76,7 @@ export default function CompletedOrders() {
             setCompletedOrders([]);
             setPage(1);
             setHasMore(true);
-            setSearchStatus(false)
+            setLoading(false)
             setAgain(again + 1)
         }
     };
