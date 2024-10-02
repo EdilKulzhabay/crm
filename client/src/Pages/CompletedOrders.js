@@ -136,7 +136,7 @@ export default function CompletedOrders() {
     }, [page, loading, hasMore]);
 
     useEffect(() => {
-        console.log("useEffect CompletedOrders");
+        console.log("useEffect triggered with hasMore:", hasMore);
         
         if (hasMore) {
             loadMoreCompletedOrders();
