@@ -163,8 +163,6 @@ export default function OrderList() {
             }
         )
             .then(({ data }) => {
-                console.log(data);
-                
                 if (data.orders.length === 0) {
                     setHasMore(false);
                 } else {
@@ -179,7 +177,7 @@ export default function OrderList() {
     }, [page, loading, hasMore, searchStatus, again]);
 
     useEffect(() => {
-        console.log("useEffect Orders");
+        console.log("useEffect triggered with hasMore:", hasMore);
         if (hasMore) {
             loadMoreOrders();
         }
