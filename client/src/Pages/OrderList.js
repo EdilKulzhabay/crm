@@ -56,7 +56,7 @@ export default function OrderList() {
             setHasMore(true);
             setSearchStatus(false)
             setLoading(false)
-            setAgain(again + 1)
+            
         }
     };
 
@@ -67,7 +67,7 @@ export default function OrderList() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            setAgain(again + 1)
+            
         }
     };
 
@@ -149,8 +149,8 @@ export default function OrderList() {
 
     const loadMoreOrders = useCallback(async () => {
         if (loading || !hasMore) return;
-
         setLoading(true);
+
         api.post(
             "/getOrders",
             {
@@ -165,6 +165,8 @@ export default function OrderList() {
             }
         )
             .then(({ data }) => {
+                console.log(data);
+                
                 if (data.orders.length === 0) {
                     setHasMore(false);
                 } else {
@@ -185,12 +187,6 @@ export default function OrderList() {
         }
     }, [hasMore]);
 
-    useEffect(() => {
-        console.log("useEffect triggered with again:", again);
-        if (hasMore) {
-            loadMoreOrders();
-        }
-    }, [again]);
 
     const observer = useRef();
     const lastOrderElementRef = useCallback(
@@ -242,7 +238,7 @@ export default function OrderList() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
-                        setAgain(again + 1)
+                        
                     }}>Найти</MyButton>
                 </div>
             </Div>
@@ -264,7 +260,7 @@ export default function OrderList() {
                             setPage(1);
                             setHasMore(true);
                             setLoading(false)
-                            setAgain(again + 1)
+                            
                         }}>Найти</MyButton>
                     </div>
                 </Div>
