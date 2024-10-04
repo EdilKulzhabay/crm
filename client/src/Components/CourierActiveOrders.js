@@ -240,6 +240,10 @@ export default function CourierActiveOrders(props) {
             })}
             {loading && <div>Загрузка...</div>}
         </div>
-        {isUpdate && <Li><MyButton click={updateOrderList}>Применить</MyButton></Li>}
+        {isUpdate && <Li><MyButton click={updateOrderList}>
+            <span className="text-green-400">
+                Применить
+            </span>
+        </MyButton></Li>}
     </>
 }

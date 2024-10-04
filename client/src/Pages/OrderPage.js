@@ -347,54 +347,54 @@ export default function OrderPage() {
                     <div className="flex items-center gap-x-2 flex-wrap text-red">
                         [
                         <button
-                            className={clsx("hover:text-blue-500", {
+                            className={clsx("", {
                                 "text-red-500": orderStatus !== "awaitingOrder",
-                                "text-blue-800": orderStatus === "awaitingOrder"
+                                "text-yellow-300": orderStatus === "awaitingOrder"
                             })}
-                            onClick={() => {
-                                setOrderStatus("awaitingOrder");
-                            }}
+                            // onClick={() => {
+                            //     setOrderStatus("awaitingOrder");
+                            // }}
                         >
                             Ожидает заказ
                         </button>
                         <div>/</div>
                         <button
-                            className={clsx("hover:text-blue-500", {
+                            className={clsx("", {
                                 "text-red-500": orderStatus !== "onTheWay",
-                                "text-blue-800": orderStatus === "onTheWay"
+                                "text-yellow-300": orderStatus === "onTheWay"
                             })}
-                            onClick={() => {
-                                setOrderStatus("onTheWay");
-                            }}
+                            // onClick={() => {
+                            //     setOrderStatus("onTheWay");
+                            // }}
                         >
                             В пути
                         </button>
                         <div>/</div>
                         <button
-                            className={clsx("hover:text-blue-500", {
+                            className={clsx("", {
                                 "text-red-500": orderStatus !== "delivered",
-                                "text-blue-800": orderStatus === "delivered"
+                                "text-yellow-300": orderStatus === "delivered"
                             })}
-                            onClick={() => {
-                                setOrderStatus("delivered");
-                            }}
+                            // onClick={() => {
+                            //     setOrderStatus("delivered");
+                            // }}
                         >
                             Доставлен
                         </button>
                         <div>/</div>
                         <button
-                            className={clsx("hover:text-blue-500", {
+                            className={clsx("", {
                                 "text-red-500": orderStatus !== "cancelled",
-                                "text-blue-800": orderStatus === "cancelled"
+                                "text-yellow-300": orderStatus === "cancelled"
                             })}
-                            onClick={() => {
-                                setOrderStatus("cancelled");
-                            }}
+                            // onClick={() => {
+                            //     setOrderStatus("cancelled");
+                            // }}
                         >
                             Отменен
                         </button>
                         ]
-                        <MyButton
+                        {/* <MyButton
                             click={() => {
                                 updateOrder("status", orderStatus);
                             }}
@@ -402,11 +402,11 @@ export default function OrderPage() {
                             <span className="text-green-400">
                             Применить
                             </span>
-                        </MyButton>
+                        </MyButton> */}
                     </div>
                 </div>
             </Div>
-            <Li>
+            {/* <Li>
                 {order?.status === "awaitingOrder"
                     ? "Ожидает заказ"
                     : order?.status === "onTheWay"
@@ -414,7 +414,7 @@ export default function OrderPage() {
                     : order?.status === "delivered"
                     ? "Доставлен"
                     : "Отменен"}
-            </Li>
+            </Li> */}
 
             <Div />
             <Div>
