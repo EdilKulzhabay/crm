@@ -290,7 +290,7 @@ export const updateOrder = async (req, res) => {
         } 
 
         if (change === "courier") {
-            if (order.courier) {
+            if (order?.courier) {
                 const courierId = order.courier
                 const lCourier = await Courier.findById(courierId)
                 console.log("lCourier", lCourier);

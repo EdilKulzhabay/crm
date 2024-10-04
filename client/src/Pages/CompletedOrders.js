@@ -66,7 +66,7 @@ export default function CompletedOrders() {
             setHasMore(true);
             setLoading(false)
             setSearchStatus(false)
-            setAgain(again + 1)
+            
         }
     };
 
@@ -77,7 +77,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            setAgain(again + 1)
+            
         }
     };
 
@@ -144,12 +144,6 @@ export default function CompletedOrders() {
         }
     }, [hasMore]);
 
-    useEffect(() => {
-        console.log("useEffect triggered with again:", again);
-        if (hasMore) {
-            loadMoreCompletedOrders();
-        }
-    }, [again]);
 
     const observer = useRef();
     const lastOrderElementRef = useCallback(
@@ -252,7 +246,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    setAgain(again + 1)
+                    
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -274,7 +268,7 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        setAgain(again + 1)
+                        
                     }}>Найти</MyButton>
                 </div>
             </Div>
