@@ -316,7 +316,7 @@ export default function ClientPage() {
 
             <Div />
             <Div>
-                <div>Форма оплаты: {client?.opForm === "cash" && "наличные"}{client?.opForm === "postpay" && "постоплата"}{client?.opForm === "transfer" && "перевод"}{client?.opForm === "card" && "карта"}{client?.opForm === "coupon" && "талон"}</div>
+                <div>Форма оплаты: {client?.opForm === "cash" && "наличные"}{client?.opForm === "postpay" && "постоплата"}{client?.opForm === "transfer" && "перевод"}{client?.opForm === "card" && "карта"}{client?.opForm === "coupon" && "талон"}{client?.opForm === "mixed" && "смешанное"}</div>
             </Div>
             <Div>
                 <div className="text-red flex items-center gap-x-3">
@@ -325,7 +325,8 @@ export default function ClientPage() {
                         <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "transfer")}}>Перевод</button> /
                         <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "card")}}>Карта</button> /
                         <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талон</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button>
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанное</button>
                     ]
                 </div>
             </Div>

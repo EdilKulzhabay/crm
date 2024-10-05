@@ -199,7 +199,7 @@ export default function AddClient() {
             </>
             <Div />
             <Div>
-                <div>Форма оплаты: {form.opForm === "cash" && "наличные"}{form.opForm === "postpay" && "постоплата"}{form.opForm === "transfer" && "перевод"}{form.opForm === "card" && "карта"}{form.opForm === "coupon" && "талон"}</div>
+                <div>Форма оплаты: {form.opForm === "cash" && "наличные"}{form.opForm === "postpay" && "постоплата"}{form.opForm === "transfer" && "перевод"}{form.opForm === "card" && "карта"}{form.opForm === "coupon" && "талон"}{form.opForm === "mixed" && "смешанное"}</div>
             </Div>
             <Div>
                 <div className="text-red flex items-center gap-x-3">
@@ -208,7 +208,8 @@ export default function AddClient() {
                         <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("transfer")}}>Перевод</button> /
                         <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("card")}}>Карта</button> /
                         <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("coupon")}}>Талон</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("postpay")}}>Постоплата</button>
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("postpay")}}>Постоплата</button> /
+                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("mixed")}}>Смешанное</button>
                     ]
                 </div>
             </Div>
