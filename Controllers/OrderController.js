@@ -287,7 +287,10 @@ export const updateOrder = async (req, res) => {
                 );
             }
             await order.save();
-            global.io.emit("orderStatusChanged", {
+            
+            const client = await Client.findById(order.client)
+            const clientId = client._id
+            global.io.to(clientId).emit("orderStatusChanged", {
                 orderId: order._id,
                 status: changeData,
                 message: `Статус заказа #${order._id} был изменен на ${changeData}`,
