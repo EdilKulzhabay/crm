@@ -84,6 +84,11 @@ io.on("connection", (socket) => {
     // Пример отправки сообщения клиенту
     socket.emit("message", "Welcome to the WebSocket server!");
 
+    socket.on("join", (id, userName) => {
+        socket.join(id);
+        console.log("user ", userName, " joined room ", room);
+    });
+
     // Пример приёма сообщения от клиента
     socket.on("sendMessage", (message) => {
         console.log(message);
