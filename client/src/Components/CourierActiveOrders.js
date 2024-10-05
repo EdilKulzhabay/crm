@@ -233,13 +233,13 @@ export default function CourierActiveOrders() {
                             <div className="flex items-center">
                                 <div className="flex items-center gap-x-2 flex-wrap">
                                     <div>
-                                        Заказ: {index + 1}
+                                        Заказ: <span className="text-green-500">{index + 1}</span>
                                     </div>
                                     <div>{item?.order?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                                     <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                                     <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                    {userData.role !== "courier" && <LinkButton
+                                    {(userData.role === "admin" || userData.role === "superAdmin") && <LinkButton
                                         href={`/orderPage/${item?.order?._id}`}
                                     >
                                         Просмотр

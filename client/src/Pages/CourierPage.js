@@ -165,7 +165,7 @@ export default function CourierPage() {
 
             <Div />
             <Div>
-                <LinkButton href={`/courierActiveOrders/${id}`}>Очередь заказов</LinkButton>
+                <LinkButton href={`/courierActiveOrders/${id}`}>Список активных заказов</LinkButton>
             </Div>
             {/* <CourierActiveOrders id={id} changeSnackBar={changeSnackBar} /> */}
 
