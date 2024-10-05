@@ -365,6 +365,14 @@ export const updateOrderTransfer = async (req, res) => {
         order[change] = changeData
         if (changeData === "") {
             order.transferred = false
+            if (order.courier) {
+                const courierId = order.courier
+                await Courier.updateOne(
+                    { _id: courierId }, // находим курьера по его ID
+                    { $pull: { orders: { order: orderId } } } // удаляем элемент из массива orders, где order равен orderId
+                );
+                order.courier = ""
+            }
         } else {
             order.transferred = true
             if (order.courier) {
@@ -373,6 +381,7 @@ export const updateOrderTransfer = async (req, res) => {
                     { _id: courierId }, // находим курьера по его ID
                     { $pull: { orders: { order: orderId } } } // удаляем элемент из массива orders, где order равен orderId
                 );
+                order.courier = ""
             }
         }
         await order.save()
