@@ -57,7 +57,6 @@ export default function CourierActiveOrders() {
             .then(({ data }) => {
                 setUserData(data)
                 console.log(data);
-                
             })
             .catch((e) => {
                 console.log(e);
@@ -65,6 +64,7 @@ export default function CourierActiveOrders() {
     }
 
     useEffect(() => {
+        getMe()
         getActiveOrdersCourier()
     }, [id]);
 
@@ -207,7 +207,7 @@ export default function CourierActiveOrders() {
         setIsUpdate(true)
     }
 
-    return <Container role={userData?.role || "courier"}>
+    return <Container role={userData?.role}>
         <Div>
             Список активных заказов курьера
         </Div>
