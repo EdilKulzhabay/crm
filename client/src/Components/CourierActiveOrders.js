@@ -207,15 +207,15 @@ export default function CourierActiveOrders() {
         setIsUpdate(true)
     }
 
-    return <Container role={userData?.role}>
+    return <Container role={userData?.role || "courier"}>
         <Div>
             Список активных заказов курьера
         </Div>
-        <Div>
-            <button onClick={() => {console.log(userData.role);
+        {/* <Div>
+            <button onClick={() => {console.log(userData);
             }}>get info</button>
 
-        </Div>
+        </Div> */}
         <Div />
         <div className="mb-1">
             {activeOrders.map((item, index) => {
