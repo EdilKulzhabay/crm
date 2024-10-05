@@ -391,6 +391,7 @@ export const getOrdersForExcel = async (req, res) => {
         const id = req.userId;
         const {startDate, endDate, search, searchStatus, searchF} = req.body
         const user = await User.findById(id)
+
         const today = new Date();
         const year = today.getFullYear();
         const month = String(today.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
@@ -403,16 +404,6 @@ export const getOrdersForExcel = async (req, res) => {
         const tDay = String(tomorrow.getDate()).padStart(2, '0');
         const tomorrowDate = `${tYear}-${tMonth}-${tDay}`;
         
-
-        // Устанавливаем начальную и конечную даты
-        let sDate = startDate !== "" ? new Date(`${startDate}T00:00:00.000Z`) : new Date(`${todayDate}T00:00:00.000Z`);
-        let eDate = endDate !== "" ? new Date(`${endDate}T23:59:59.999Z`) : new Date(`${tomorrowDate}T00:00:00.000Z`) // +1 день
-
-        if (startDate === "" && searchStatus) {
-            sDate = new Date("2024-01-01T00:00:00.000Z");
-            eDate = new Date("2030-01-01T00:00:00.000Z");
-        }
-
         if (!user) {
             return res.json({
                 success: false,
@@ -421,7 +412,7 @@ export const getOrdersForExcel = async (req, res) => {
         }
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
-            createdAt: { $gte: sDate, $lte: eDate },
+            "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
         }
 
         if (user.role === "admin") {
@@ -473,7 +464,6 @@ export const getOrdersForExcel = async (req, res) => {
             }
         }
 
-        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const orders = await Order.find(filter)
             .populate("client", "userName fullName")
             .populate("courier", "fullName")
