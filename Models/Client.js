@@ -79,7 +79,7 @@ const ClientSchema = new mongoose.Schema(
             type: Number
         },
         type: {
-            type: bool,
+            type: Boolean,
             default: true
         }
     },
