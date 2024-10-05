@@ -86,7 +86,7 @@ io.on("connection", (socket) => {
 
     socket.on("join", (id, userName) => {
         socket.join(id);
-        console.log("user ", userName, " joined room ", room);
+        console.log("user ", userName, " joined room ");
     });
 
     // Пример приёма сообщения от клиента

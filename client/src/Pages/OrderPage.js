@@ -326,7 +326,7 @@ export default function OrderPage() {
 
             <Div />
             <Div>
-                <div>Форма оплаты: {order?.opForm === "cash" && "наличные"}{order?.opForm === "postpay" && "постоплата"}{order?.opForm === "transfer" && "перевод"}{order?.opForm === "card" && "карта"}{order?.opForm === "coupon" && "талон"}</div>
+                <div>Форма оплаты: {order?.opForm === "cash" && "наличные"}{order?.opForm === "postpay" && "постоплата"}{order?.opForm === "transfer" && "перевод"}{order?.opForm === "card" && "карта"}{order?.opForm === "coupon" && "талон"}{order?.opForm === "mixed" && "смешанно"}</div>
             </Div>
             <div className="hidden lg:block">
                 <Div>
@@ -336,7 +336,8 @@ export default function OrderPage() {
                             <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "transfer")}}>Перевод</button> /
                             <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button> /
                             <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button>
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "mixed")}}>Смешанное</button>
                         ]
                     </div>
                 </Div>
@@ -348,6 +349,7 @@ export default function OrderPage() {
                 <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button></Div>
                 <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button></Div>
                 <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button></Div>
+                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "mixed")}}>Смешанное</button></Div>
             </div>
 
             <Div />

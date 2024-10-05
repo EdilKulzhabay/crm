@@ -23,6 +23,7 @@ const NotificationComponent = () => {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             if (data.role === "superAdmin") {
+                socket.emit("join", data._id, data.userName)
                 socket.on("clientMatch", (notification) => {
                     setOpen(true);
                     setMessage(notification.message);
