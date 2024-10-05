@@ -10,6 +10,17 @@ import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx"
 import DataInput from "../Components/DataInput";
+import UpIcon from "../icons/UpIcon";
+import DownIcon from "../icons/DownIcon";
+
+const adjustDateByDays = (dateStr, days) => {
+    const currentDate = new Date(dateStr);
+    currentDate.setDate(currentDate.getDate() + days);
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const year = currentDate.getFullYear();
+    return `${year}-${month}-${day}`;
+};
 
 export default function OrderPage() {
     const { id } = useParams();
@@ -92,6 +103,14 @@ export default function OrderPage() {
     const chooseCourier = (chCourier) => {
         setOrderCourier(chCourier);
         setCouriersModal(false);
+    };
+
+    const incrementDate = () => {
+        setDate({ ...date, d: adjustDateByDays(date.d, 1) });
+    };
+
+    const decrementDate = () => {
+        setDate({ ...date, d: adjustDateByDays(date.d, -1) });
     };
 
     const getOrderData = () => {
@@ -290,6 +309,14 @@ export default function OrderPage() {
                                 change={handleDateChange}
                             />
                             ]
+                        </div>
+                        <div className="flex items-center gap-x-2">
+                            <button onClick={incrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                <UpIcon className="w-6 h-6 text-white" />
+                            </button>
+                            <button onClick={decrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                <DownIcon className="w-6 h-6 text-white" />
+                            </button>
                         </div>
                         {/* <div className="text-red">{order?.date?.d}</div> */}
                     </div>
