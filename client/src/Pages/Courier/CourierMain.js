@@ -80,7 +80,7 @@ export default function CourierMain() {
                 Главная панель
             </Div>
             <Div/>
-            {userData?.wholeList && <Div><LinkButton href="/courierWholeList">Список заказов</LinkButton></Div>}
+            {userData?.wholeList && <Div><LinkButton href={`/courierActiveOrders/${userData?._id}`}>Список заказов</LinkButton></Div>}
             <Div />
             <Div>Текущий заказ:</Div>
             {firstActiveOrder !== null ? 
