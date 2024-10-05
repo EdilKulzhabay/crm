@@ -32,6 +32,13 @@ const NotificationComponent = () => {
                         console.error("Failed to play audio:", error);
                     });
                 });
+                socket.on("orderStatusChanged", (notification) => {
+                    console.log("orderStatusChanged");
+                    
+                    setOpen(true)
+                    setStatus("success")
+                    setMessage(notification.message)
+                })
                 socket.on("orderMatch", (notification) => {
                     setOpen(true);
                     setMessage(notification.message);
