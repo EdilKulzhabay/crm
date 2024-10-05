@@ -207,7 +207,7 @@ export default function CourierActiveOrders() {
         setIsUpdate(true)
     }
 
-    return <Container role={userData.role || "admin"}>
+    return <Container role={userData?.role || "admin"}>
         <Div>
             Список активных заказов курьера
         </Div>
