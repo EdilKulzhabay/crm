@@ -134,7 +134,8 @@ export const clientRegister = async (req, res) => {
                 b19: 0,
             },
             price12: 900,
-            price19: 1300
+            price19: 1300,
+            dailyWater: 2
         });
 
         const client = await doc.save();

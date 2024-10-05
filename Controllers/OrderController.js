@@ -287,6 +287,11 @@ export const updateOrder = async (req, res) => {
                 );
             }
             await order.save();
+            global.io.emit("orderStatusChanged", {
+                orderId: order._id,
+                status: changeData,
+                message: `Статус заказа #${order._id} был изменен на ${changeData}`,
+            });
         } 
 
         if (change === "courier") {
