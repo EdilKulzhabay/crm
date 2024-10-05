@@ -328,17 +328,27 @@ export default function OrderPage() {
             <Div>
                 <div>Форма оплаты: {order?.opForm === "cash" && "наличные"}{order?.opForm === "postpay" && "постоплата"}{order?.opForm === "transfer" && "перевод"}{order?.opForm === "card" && "карта"}{order?.opForm === "coupon" && "талон"}</div>
             </Div>
-            <Div>
-                <div className="text-red flex items-center gap-x-3">
-                    [
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "cash")}}>Наличные</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "transfer")}}>Перевод</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button>
-                    ]
-                </div>
-            </Div>
+            <div className="hidden lg:block">
+                <Div>
+                    <div className="text-red flex items-center gap-x-3">
+                        [
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "cash")}}>Наличные</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "transfer")}}>Перевод</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button>
+                        ]
+                    </div>
+                </Div>
+            </div>
+
+            <div className="lg:hidden">
+                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "cash")}}>Наличные</button></Div>
+                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "transfer")}}>Перевод</button></Div>
+                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button></Div>
+                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button></Div>
+                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button></Div>
+            </div>
 
             <Div />
             <Div>
@@ -351,9 +361,6 @@ export default function OrderPage() {
                                 "text-red-500": orderStatus !== "awaitingOrder",
                                 "text-yellow-300": orderStatus === "awaitingOrder"
                             })}
-                            // onClick={() => {
-                            //     setOrderStatus("awaitingOrder");
-                            // }}
                         >
                             Ожидает заказ
                         </button>
@@ -363,9 +370,6 @@ export default function OrderPage() {
                                 "text-red-500": orderStatus !== "onTheWay",
                                 "text-yellow-300": orderStatus === "onTheWay"
                             })}
-                            // onClick={() => {
-                            //     setOrderStatus("onTheWay");
-                            // }}
                         >
                             В пути
                         </button>
@@ -375,9 +379,6 @@ export default function OrderPage() {
                                 "text-red-500": orderStatus !== "delivered",
                                 "text-yellow-300": orderStatus === "delivered"
                             })}
-                            // onClick={() => {
-                            //     setOrderStatus("delivered");
-                            // }}
                         >
                             Доставлен
                         </button>

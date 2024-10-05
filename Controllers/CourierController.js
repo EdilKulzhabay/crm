@@ -214,14 +214,11 @@ export const deleteCourier = async (req, res) => {
 
 export const getActiveOrdersCourier = async (req, res) => {
     try {
-        const { id, page } = req.body;
+        const { id } = req.body;
 
         if (!id) {
             return res.status(400).json({ message: "ID курьера не предоставлен" });
         }
-
-        const limit = 5; // Количество заказов на странице
-        const skip = (page - 1) * limit;
 
         // Находим курьера и пополняем поле orders.order
         const courier = await Courier.findById(id)
@@ -245,11 +242,8 @@ export const getActiveOrdersCourier = async (req, res) => {
         // Убираем заказы, где поле order равно null
         const filteredOrders = activeOrders.filter(item => item.order !== null);
 
-        // Применяем skip и limit на отфильтрованные заказы
-        const paginatedOrders = filteredOrders.slice(skip, skip + limit);
-
         // Возвращаем только нужные заказы для текущей страницы
-        res.json({ activeOrders: paginatedOrders, totalOrders: filteredOrders.length });
+        res.json({ activeOrders: filteredOrders, totalOrders: filteredOrders.length });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -335,7 +329,7 @@ export const getFirstOrderForToday = async (req, res) => {
 
         // Ищем заказы со статусом 'onTheWay'
         const onTheWayOrders = activeOrders.filter(
-            (item) => item?.orderStatus === "onTheWay"
+            (item) => item?.orderStatus === "inLine"
         );
 
         // Если есть заказы со статусом 'onTheWay', возвращаем первый из них
@@ -345,7 +339,7 @@ export const getFirstOrderForToday = async (req, res) => {
 
         // Если нет заказов со статусом 'onTheWay', ищем самый первый заказ со статусом 'inLine'
         const inLineOrders = activeOrders.filter(
-            (item) => item.orderStatus === "inLine"
+            (item) => item.orderStatus === "onTheWay"
         );
 
         const firstInLineOrder = inLineOrders.length > 0 ? inLineOrders[0] : null;
@@ -366,6 +360,10 @@ export const getFirstOrderForToday = async (req, res) => {
 export const updateOrderList = async (req, res) => {
     try {
         const {id, orders} = req.body
+        console.log(id);
+        console.log(orders);
+        
+        
 
         const courier = await Courier.findById(id)
 
@@ -375,15 +373,7 @@ export const updateOrderList = async (req, res) => {
             })
         }
 
-        let temporaryOrders = courier.orders
-
-        const ordesLen = orders.length
-
-        temporaryOrders.splice(0, ordesLen)
-
-        temporaryOrders = [...orders, ...temporaryOrders]
-
-        courier.orders = temporaryOrders
+        courier.orders = orders
 
         await courier.save()
 
