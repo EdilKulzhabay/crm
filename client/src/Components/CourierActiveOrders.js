@@ -1,72 +1,120 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import Li from "./Li";
 import LinkButton from "./LinkButton";
 import api from "../api";
 import MyButton from "./MyButton";
+import Div from "./Div";
 import UpIcon from "../icons/UpIcon";
 import DownIcon from "../icons/DownIcon";
+import Container from "./Container";
+import { useParams } from "react-router-dom";
+import MySnackBar from "./MySnackBar";
 
-export default function CourierActiveOrders(props) {
-    const who = props?.who || ""
-    const id = props.id
-    const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+export default function CourierActiveOrders() {
+    const { id } = useParams();
+
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [status, setStatus] = useState("");
+    // const [page, setPage] = useState(1);
+    // const [loading, setLoading] = useState(false);
+    // const [hasMore, setHasMore] = useState(true);
 
     const [activeOrders, setActiveOrders] = useState([])
+    const [totalOrders, setTotalOrders] = useState(0)
+    const [userData, setUserData] = useState({})
 
     const [draggingOrderId, setDraggingOrderId] = useState(null);
     const [isUpdate, setIsUpdate] = useState(false)
 
-    const loadMoreActiveOrders = useCallback(async () => {
-        if (loading || !hasMore) return;
+    const closeSnack = () => {
+        setOpen(false);
+    };
 
-        setLoading(true);
-        
+    const getActiveOrdersCourier = () => {
         api.post(
             "/getActiveOrdersCourier",
             {
                 id,
-                page,
             },
             {
                 headers: { "Content-Type": "application/json" },
             }
         )
             .then(({ data }) => {
-                if (data.activeOrders.length === 0) {
-                    setHasMore(false);
-                } else {
-                    setActiveOrders((prevActiveOrders) => [...prevActiveOrders, ...data.activeOrders]);
-                    setPage(page + 1);
-                }
+                setActiveOrders(data.activeOrders)
+                setTotalOrders(data.totalOrders)
             })
             .catch((e) => {
                 console.log(e);
             });
-        setLoading(false);
-    }, [page, loading, hasMore, id]);
+    }
+
+    const getMe = () => {
+        api.get("/getMe", {
+            headers: { "Content-Type": "application/json" },
+        })
+            .then(({ data }) => {
+                setUserData(data)
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    }
 
     useEffect(() => {
-        if (hasMore) {
-            loadMoreActiveOrders();
-        }
-    }, [hasMore, id]);
+        getActiveOrdersCourier()
+    }, [id]);
 
-    const observer = useRef();
-    const lastOrderElementRef = useCallback(
-        (node) => {
-            if (loading) return;
-            if (observer.current) observer.current.disconnect();
-            observer.current = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting && hasMore) {
-                    loadMoreActiveOrders();
-                }
-            });
-            if (node) observer.current.observe(node);
-        },
-        [loading, hasMore, loadMoreActiveOrders]
-    );
+    // const loadMoreActiveOrders = useCallback(async () => {
+    //     if (loading || !hasMore) return;
+
+    //     setLoading(true);
+        
+    //     api.post(
+    //         "/getActiveOrdersCourier",
+    //         {
+    //             id,
+    //             page,
+    //         },
+    //         {
+    //             headers: { "Content-Type": "application/json" },
+    //         }
+    //     )
+    //         .then(({ data }) => {
+    //             if (data.activeOrders.length === 0) {
+    //                 setHasMore(false);
+    //             } else {
+    //                 setActiveOrders((prevActiveOrders) => [...prevActiveOrders, ...data.activeOrders]);
+    //                 setPage(page + 1);
+    //             }
+    //         })
+    //         .catch((e) => {
+    //             console.log(e);
+    //         });
+    //     setLoading(false);
+    // }, [page, loading, hasMore, id]);
+
+    // useEffect(() => {
+    //     if (hasMore) {
+    //         loadMoreActiveOrders();
+    //     }
+    // }, [hasMore, id]);
+
+    // const observer = useRef();
+    // const lastOrderElementRef = useCallback(
+    //     (node) => {
+    //         if (loading) return;
+    //         if (observer.current) observer.current.disconnect();
+    //         observer.current = new IntersectionObserver((entries) => {
+    //             if (entries[0].isIntersecting && hasMore) {
+    //                 loadMoreActiveOrders();
+    //             }
+    //         });
+    //         if (node) observer.current.observe(node);
+    //     },
+    //     [loading, hasMore, loadMoreActiveOrders]
+    // );
 
     const dragStartHandler = (e, orderId) => {
         setDraggingOrderId(orderId);
@@ -108,6 +156,12 @@ export default function CourierActiveOrders(props) {
         setDraggingOrderId(null); 
     }
 
+    const changeSnackBar = (status, message) => {
+        setOpen(true)
+        setStatus(status)
+        setMessage(message)
+    }
+
     const updateOrderList = () => {
         const ordersToSend = activeOrders.map(item => ({
             order: item.order._id, // Сохраняем только ObjectId заказа
@@ -118,13 +172,13 @@ export default function CourierActiveOrders(props) {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             if (data.success) {
-                props.changeSnackBar("success", "Данные успешно изменены")
+                changeSnackBar("success", "Данные успешно изменены")
             } else {
-                props.changeSnackBar("error", "Попробуйте еще раз")
+                changeSnackBar("error", "Попробуйте еще раз")
             }
         }).catch((e) => {
             console.log(e);
-            props.changeSnackBar("error", "Попробуйте еще раз")
+            changeSnackBar("error", "Попробуйте еще раз")
         })
         setIsUpdate(false)
     }
@@ -151,99 +205,64 @@ export default function CourierActiveOrders(props) {
         setIsUpdate(true)
     }
 
-    return <>
-        <div className="max-h-[180px] overflow-scroll mb-1">
+    return <Container role={userData.role || "admin"}>
+        <Div>
+            Список активных заказов курьера
+        </Div>
+        <Div />
+        <div className="mb-1">
             {activeOrders.map((item, index) => {
-                if (activeOrders.length === index + 1) {
-                    return (
-                        <div 
-                            key={item?._id} 
-                            ref={lastOrderElementRef}
-                            onDragStart={(e) => {dragStartHandler(e, item._id)}}
-                            onDragLeave={(e) => {dragLeaveHandler(e)}}
-                            onDragEnd={(e) => {dragEndHandler(e)}}
-                            onDragOver={(e) => {dragOverHandler(e)}}
-                            onDrop={(e) => {onDropHandler(e, item._id)}}
-                            draggable={true}
-                        >
-                            <Li>
-                                <div className="flex items-center">
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>
-                                            Заказ: (
-                                            {item?.order?.createdAt?.slice(0, 10)})
-                                        </div>
-                                        <div>{item?.order?.client?.userName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
-                                        <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
-                                        <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                        {who !== "courier" && <LinkButton
-                                            href={`/orderPage/${item?.order?._id}`}
-                                        >
-                                            Просмотр
-                                        </LinkButton>}
-                                        
-                                    </div>
-                                    <div className="flex items-center gap-x-1.5">
-                                        <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                            <UpIcon className="w-6 h-6 text-white" />
-                                        </button>
-                                        <button onClick={() => {mobileDrop(index, "down")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                            <DownIcon className="w-6 h-6 text-white" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </Li>
-                        </div>
-                    );
-                } else {
-                    return (
-                        <div 
-                            key={item?._id} 
-                            onDragStart={(e) => {dragStartHandler(e, item._id)}}
-                            onDragLeave={(e) => {dragLeaveHandler(e)}}
-                            onDragEnd={(e) => {dragEndHandler(e)}}
-                            onDragOver={(e) => {dragOverHandler(e)}}
-                            onDrop={(e) => {onDropHandler(e, item._id)}}
-                            draggable={true}    
-                        >
-                            <Li>
+                return (
+                    <div 
+                        key={item?._id} 
+                        onDragStart={(e) => {dragStartHandler(e, item._id)}}
+                        onDragLeave={(e) => {dragLeaveHandler(e)}}
+                        onDragEnd={(e) => {dragEndHandler(e)}}
+                        onDragOver={(e) => {dragOverHandler(e)}}
+                        onDrop={(e) => {onDropHandler(e, item._id)}}
+                        draggable={true}    
+                    >
+                        <Li>
                             <div className="flex items-center">
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>
-                                            Заказ: (
-                                            {item?.order?.createdAt?.slice(0, 10)})
-                                        </div>
-                                        <div>{item?.order?.client?.userName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
-                                        <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
-                                        <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
-                                        {who !== "courier" && <LinkButton
-                                            href={`/orderPage/${item?.order?._id}`}
-                                        >
-                                            Просмотр
-                                        </LinkButton>}
+                                <div className="flex items-center gap-x-2 flex-wrap">
+                                    <div>
+                                        Заказ: {index + 1}
                                     </div>
-                                    <div className="flex items-center gap-x-1.5">
-                                        <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                            <UpIcon className="w-6 h-6 text-white" />
-                                        </button>
-                                        <button onClick={() => {mobileDrop(index, "down")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                            <DownIcon className="w-6 h-6 text-white" />
-                                        </button>
-                                    </div>
+                                    <div>{item?.order?.client?.userName}</div>
+                                    <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
+                                    <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
+                                    <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
+                                    {userData.role !== "courier" && <LinkButton
+                                        href={`/orderPage/${item?.order?._id}`}
+                                    >
+                                        Просмотр
+                                    </LinkButton>}
                                 </div>
-                            </Li>
-                        </div>
-                    );
-                }
+                                <div className="flex items-center gap-x-1.5">
+                                    <button onClick={() => {mobileDrop(index, "up")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                        <UpIcon className="w-6 h-6 text-white" />
+                                    </button>
+                                    <button onClick={() => {mobileDrop(index, "down")}} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                        <DownIcon className="w-6 h-6 text-white" />
+                                    </button>
+                                </div>
+                            </div>
+                        </Li>
+                    </div>
+                );
             })}
-            {loading && <div>Загрузка...</div>}
         </div>
         {isUpdate && <Li><MyButton click={updateOrderList}>
             <span className="text-green-400">
                 Применить
             </span>
         </MyButton></Li>}
-    </>
+        <Div />
+        <MySnackBar
+            open={open}
+            text={message}
+            status={status}
+            close={closeSnack}
+        />
+    </Container>
 }

@@ -8,6 +8,7 @@ import MySnackBar from "../Components/MySnackBar";
 import UpdateClientData from "../Components/UpdateClientData";
 import CourierActiveOrders from "../Components/CourierActiveOrders";
 import CourierDeliveredOrders from "../Components/CourierDeliveredOrders";
+import LinkButton from "../Components/LinkButton";
 
 export default function CourierPage() {
     const navigate = useNavigate();
@@ -163,8 +164,10 @@ export default function CourierPage() {
             </Div>
 
             <Div />
-            <Div>Очередь заказов:</Div>
-            <CourierActiveOrders id={id} changeSnackBar={changeSnackBar} />
+            <Div>
+                <LinkButton href={`/courierActiveOrders/${id}`}>Очередь заказов</LinkButton>
+            </Div>
+            {/* <CourierActiveOrders id={id} changeSnackBar={changeSnackBar} /> */}
 
 
             <Div />
