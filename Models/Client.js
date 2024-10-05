@@ -77,6 +77,10 @@ const ClientSchema = new mongoose.Schema(
         },
         dailyWater: {
             type: Number
+        },
+        type: {
+            type: bool,
+            default: true
         }
     },
     {
