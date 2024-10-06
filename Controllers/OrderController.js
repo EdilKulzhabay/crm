@@ -365,23 +365,23 @@ export const updateOrderTransfer = async (req, res) => {
         order[change] = changeData
         if (changeData === "") {
             order.transferred = false
-            if (order.courier) {
-                const courierId = order.courier
+            if (order?.courier) {
+                const courierId = order?.courier
                 await Courier.updateOne(
                     { _id: courierId }, // находим курьера по его ID
                     { $pull: { orders: { order: orderId } } } // удаляем элемент из массива orders, где order равен orderId
                 );
-                order.courier = ""
+                order.courier = null
             }
         } else {
             order.transferred = true
-            if (order.courier) {
-                const courierId = order.courier
+            if (order?.courier) {
+                const courierId = order?.courier
                 await Courier.updateOne(
                     { _id: courierId }, // находим курьера по его ID
                     { $pull: { orders: { order: orderId } } } // удаляем элемент из массива orders, где order равен orderId
                 );
-                order.courier = ""
+                order.courier = null
             }
         }
         await order.save()
