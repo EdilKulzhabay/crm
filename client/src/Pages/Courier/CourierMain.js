@@ -85,7 +85,7 @@ export default function CourierMain() {
             <Div>
                 Текущий заказ: 
                 {firstActiveOrder?.orderStatus === "inLine" && <button className="text-green-500" onClick={() => {updateCourierOrderStatus("onTheWay")}}><span className="text-green500">[ Начать ]</span></button>}
-                {firstActiveOrder?.orderStatus === "onTheWay" && (opForm === "" || products.b12 === "" || products.b19 === "") && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer"><span className="text-green500">[ Построить маршрут ]</span></a>}
+                {firstActiveOrder?.orderStatus === "onTheWay" && (opForm === "" || products.b12 === "" || products.b19 === "") && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer"><span className="text-green-500">[ Построить маршрут ]</span></a>}
                 {firstActiveOrder?.orderStatus === "onTheWay" && opForm !== "" && products.b12 !== "" && products.b19 !== "" && <MyButton click={() => {updateCourierOrderStatus("delivered")}}><span className="text-green500">Завершить</span></MyButton>}    
             </Div>
             {firstActiveOrder !== null ? 
