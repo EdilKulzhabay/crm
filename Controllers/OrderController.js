@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 
 export const addOrder = async (req, res) => {
     try {
-        const { client, address, products, courier, date, clientNotes, opForm } =
+        const { client, address, products, courier, date, clientNotes, opForm, comment } =
             req.body;
 
         const sum =
@@ -23,7 +23,8 @@ export const addOrder = async (req, res) => {
             courier,
             sum,
             clientNotes: clientNotes || "",
-            opForm
+            opForm,
+            comment: comment || ""
         });
 
         await order.save();
@@ -335,6 +336,11 @@ export const updateOrder = async (req, res) => {
         if (change === "date") {
             order.date = changeData
 
+            await order.save()
+        }
+
+        if (change === "comment") {
+            order.comment = changeData
             await order.save()
         }
 

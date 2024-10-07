@@ -79,10 +79,15 @@ export default function CourierMain() {
             <Div>
                 Главная панель
             </Div>
-            <Div/>
-            {userData?.wholeList && <Div><LinkButton href={`/courierActiveOrders/${userData?._id}`}>Список заказов</LinkButton></Div>}
+            
+            {userData?.wholeList && <><Div/><Div><LinkButton href={`/courierActiveOrders/${userData?._id}`}>Список заказов</LinkButton></Div></> }
             <Div />
-            <Div>Текущий заказ:</Div>
+            <Div>
+                Текущий заказ: 
+                {firstActiveOrder?.orderStatus === "inLine" && <button className="text-green-500" onClick={() => {updateCourierOrderStatus("onTheWay")}}><span className="text-green500">[ Начать ]</span></button>}
+                {firstActiveOrder?.orderStatus === "onTheWay" && (opForm === "" || products.b12 === "" || products.b19 === "") && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer"><span className="text-green500">[ Построить маршрут ]</span></a>}
+                {firstActiveOrder?.orderStatus === "onTheWay" && opForm !== "" && products.b12 !== "" && products.b19 !== "" && <MyButton click={() => {updateCourierOrderStatus("delivered")}}><span className="text-green500">Завершить</span></MyButton>}    
+            </Div>
             {firstActiveOrder !== null ? 
             <>
                 <Li>Наименование: {firstActiveOrder?.order?.client?.userName}</Li>
@@ -133,6 +138,10 @@ export default function CourierMain() {
                         ] шт
                     </div>
                 </Li>
+                {firstActiveOrder?.order?.comment && <Li>
+                    <LinkButton href={`/courierOrderComment/${firstActiveOrder?.order?._id}`}>Есть комм.</LinkButton>
+                     
+                    </Li>}
                 <Li>
                     <div>Сумма оплаты: <span className="text-blue-500">{getSum()}</span></div>
                 </Li>
@@ -176,14 +185,13 @@ export default function CourierMain() {
                         [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанное</button> ]
                     </Li>
                 </div>
-                {firstActiveOrder?.order?.date?.time !== "" && <Li>Время доставки: {firstActiveOrder?.order?.date?.time}</Li>}
-                <Div/>
-                <Div/>
-                <Li>
+                {firstActiveOrder?.order?.date?.time !== "" && <Li>Время доставки: <span className="text-red">{firstActiveOrder?.order?.date?.time}</span></Li>}
+                
+                {/* <Li>
                     {firstActiveOrder?.orderStatus === "inLine" && <button className="text-red hover:text-blue-500" onClick={() => {updateCourierOrderStatus("onTheWay")}}>[ Начать ]</button>}
                     {firstActiveOrder?.orderStatus === "onTheWay" && (opForm === "" || products.b12 === "" || products.b19 === "") && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer" className="text-red hover:text-blue-500">[ Построить маршрут ]</a>}
                     {firstActiveOrder?.orderStatus === "onTheWay" && opForm !== "" && products.b12 !== "" && products.b19 !== "" && <MyButton click={() => {updateCourierOrderStatus("delivered")}}>Завершить</MyButton>}
-                </Li>
+                </Li> */}
             </> : 
             <>
                 <Div>Заказов не осталось</Div>

@@ -48,6 +48,7 @@ export default function AddOrder() {
         d: getCurrentDate(),
         time: "",
     });
+    const [comment, setComment] = useState("")
     const [couriersModal, setCouriersModal] = useState(false);
     const [courier, setCourier] = useState(null);
     const [opForm, setOpForm] = useState("");
@@ -133,6 +134,8 @@ export default function AddOrder() {
 
     const chooseClient = (chClient) => {
         setClient(chClient);
+        console.log(chClient);
+        
         setClientsModal(false);
     };
 
@@ -178,7 +181,7 @@ export default function AddOrder() {
         }
         api.post(
             "/addOrder",
-            { client, address, products, courier, date, clientNotes: "", opForm: op },
+            { client, address, products, courier, date, clientNotes: "", opForm: client.opForm, comment },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -423,27 +426,20 @@ export default function AddOrder() {
                     </Li2>
                 </>
                 <Li>
-                <div>
-                    Форма оплаты:{" "}
-                    {(opForm || client?.opForm) === "cash" && "наличные"}
-                    {(opForm || client?.opForm) === "transfer" && "перевод"}
-                    {(opForm || client?.opForm) === "card" && "карта"}
-                    {(opForm || client?.opForm) === "coupon" && "талон"}
-                    {(opForm || client?.opForm) === "mixed" && "смешанное"}
+                    <div>
+                        Форма оплаты:{" "}
+                        {client?.opForm === "cash" && "наличные"}
+                        {client?.opForm === "transfer" && "перевод"}
+                        {client?.opForm === "card" && "карта"}
+                        {client?.opForm === "coupon" && "талон"}
+                        {client?.opForm === "postpay" && "постоплата"}
+                        {client?.opForm === "mixed" && "смешанное"}
 
-                </div>
-                </Li>
-                <Li2>
-                    <div className="text-red flex items-center gap-x-3">
-                        [
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button>
-                            <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанное</button>
-                        ]
                     </div>
+                </Li>
+                <Li>Комментарии к заказу:</Li>
+                <Li2>
+                    <textarea value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
                 </Li2>
             </>
 

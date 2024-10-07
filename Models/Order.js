@@ -64,6 +64,9 @@ const OrderSchema = new mongoose.Schema(
         },
         opForm: {
             type: String
+        },
+        comment: {
+            type: String
         }
     },
     {
