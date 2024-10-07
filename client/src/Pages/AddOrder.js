@@ -169,6 +169,7 @@ export default function AddOrder() {
             d: getCurrentDate(),
             time: "",
         });
+        setComment("")
     };
 
     const addOrder = () => {
