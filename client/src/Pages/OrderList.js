@@ -56,7 +56,7 @@ export default function OrderList() {
             setHasMore(true);
             setSearchStatus(false)
             setLoading(false)
-            
+            loadMoreOrders(1, dates, "", false, searchF)
         }
     };
 
@@ -67,7 +67,7 @@ export default function OrderList() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            
+            loadMoreOrders(1, dates, search, searchStatus, "")
         }
     };
 
@@ -147,7 +147,7 @@ export default function OrderList() {
         }
     }, [franchisee])
 
-    const loadMoreOrders = useCallback(async () => {
+    const loadMoreOrders = useCallback(async (page, dates, search, searchStatus, searchF) => {
         if (loading || !hasMore) return;
         setLoading(true);
 
@@ -170,7 +170,11 @@ export default function OrderList() {
                 if (data.orders.length === 0) {
                     setHasMore(false);
                 } else {
-                    setOrders((prevOrders) => [...prevOrders, ...data.orders]);
+                    if (page === 1 && (search !== "" || searchF !== "")) {
+                        setOrders([...data.orders])
+                    } else {
+                        setOrders((prevOrders) => [...prevOrders, ...data.orders]);
+                    }
                     setPage(page + 1);
                 }
             })
@@ -178,12 +182,12 @@ export default function OrderList() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore, searchStatus, again]);
+    }, [page, loading]);
 
     useEffect(() => {
         console.log("useEffect triggered with hasMore:", hasMore);
         if (hasMore) {
-            loadMoreOrders();
+            loadMoreOrders(page, dates, search, searchStatus, searchF);
         }
     }, [hasMore]);
 
@@ -195,7 +199,7 @@ export default function OrderList() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreOrders();
+                    loadMoreOrders(page, dates, search, searchStatus, searchF);
                 }
             });
             if (node) observer.current.observe(node);
@@ -238,7 +242,7 @@ export default function OrderList() {
                         setHasMore(true);
                         setSearchStatus(true)
                         setLoading(false)
-                        
+                        loadMoreOrders(1, dates, search, true, searchF)
                     }}>Найти</MyButton>
                 </div>
             </Div>
@@ -260,7 +264,7 @@ export default function OrderList() {
                             setPage(1);
                             setHasMore(true);
                             setLoading(false)
-                            
+                            loadMoreOrders(1, dates, search, searchStatus, searchF)
                         }}>Найти</MyButton>
                     </div>
                 </Div>
@@ -277,8 +281,7 @@ export default function OrderList() {
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                     <div>
-                                            Заказ: (
-                                            {item?.createdAt.slice(0, 10)})
+                                            Заказ: 
                                         </div>
                                         <div>{item?.client?.userName}</div>
                                         <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
@@ -286,6 +289,7 @@ export default function OrderList() {
                                             "text-yellow-300": new Date(item?.date?.d) > new Date()
                                         })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                         <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                        <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                         <LinkButton
                                             href={`/orderPage/${item?._id}`}
                                         >
@@ -311,8 +315,7 @@ export default function OrderList() {
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                         <div>
-                                            Заказ: (
-                                            {item?.createdAt.slice(0, 10)})
+                                            Заказ: 
                                         </div>
                                         <div>{item?.client?.userName}</div>
                                         <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
@@ -320,6 +323,7 @@ export default function OrderList() {
                                             "text-yellow-300": new Date(item?.date?.d) > new Date()
                                         })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                         <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                        <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                         <LinkButton
                                             href={`/orderPage/${item?._id}`}
                                         >
@@ -344,8 +348,7 @@ export default function OrderList() {
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
                                         <div>
-                                            Заказ: (
-                                            {item?.createdAt.slice(0, 10)})
+                                            Заказ: 
                                         </div>
                                         <div>{item?.client?.userName}</div>
                                         <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
@@ -353,6 +356,7 @@ export default function OrderList() {
                                             "text-yellow-300": new Date(item?.date?.d) > new Date()
                                         })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                         <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                        <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                         <LinkButton
                                             href={`/orderPage/${item?._id}`}
                                         >

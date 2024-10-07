@@ -34,6 +34,7 @@ import DepartmentPage from "./Pages/DepartmentPage";
 import DepartmentMain from "./Pages/Department/DepartmentMain";
 import DepartmentSettings from "./Pages/Department/DepartmentSettings";
 import CourierActiveOrders from "./Components/CourierActiveOrders";
+import CourierOrderComment from "./Pages/Courier/CourierOrderComment";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
     { path: "/orderPage/:id", element: <OrderPage /> },
     { path: "/completedOrders", element: <CompletedOrders /> },
     { path: "/courierActiveOrders/:id", element: <CourierActiveOrders /> },
+    { path: "/courierOrderComment/:id", element: <CourierOrderComment /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },

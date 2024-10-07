@@ -39,6 +39,7 @@ export default function OrderPage() {
         time: "",
     });
     const [changeDate, setChangeDate] = useState(false)
+    const [comment, setComment] = useState("")
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -106,10 +107,12 @@ export default function OrderPage() {
     };
 
     const incrementDate = () => {
+        setChangeDate(true)
         setDate({ ...date, d: adjustDateByDays(date.d, 1) });
     };
 
     const decrementDate = () => {
+        setChangeDate(true)
         setDate({ ...date, d: adjustDateByDays(date.d, -1) });
     };
 
@@ -127,6 +130,7 @@ export default function OrderPage() {
                     d: data.order.date.d,
                     time: data.order.date.time
                 })
+                setComment(data.order?.comment)
             })
             .catch((e) => {
                 console.log(e);
@@ -355,7 +359,7 @@ export default function OrderPage() {
             <Div>
                 <div>Форма оплаты: {order?.opForm === "cash" && "наличные"}{order?.opForm === "postpay" && "постоплата"}{order?.opForm === "transfer" && "перевод"}{order?.opForm === "card" && "карта"}{order?.opForm === "coupon" && "талон"}{order?.opForm === "mixed" && "смешанно"}</div>
             </Div>
-            <div className="hidden lg:block">
+            {/* <div className="hidden lg:block">
                 <Div>
                     <div className="text-red flex items-center gap-x-3">
                         [
@@ -377,7 +381,7 @@ export default function OrderPage() {
                 <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button></Div>
                 <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button></Div>
                 <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "mixed")}}>Смешанное</button></Div>
-            </div>
+            </div> */}
 
             <Div />
             <Div>
@@ -490,16 +494,13 @@ export default function OrderPage() {
             </Li>
 
             <Div />
-            <Div>История изменений:</Div>
-            {order?.history &&
-                order?.history.length > 0 &&
-                order?.history.map((item, index) => {
-                    return (
-                        <div key={index}>
-                            <Li>{item}</Li>
-                        </div>
-                    );
-                })}
+            <Div>Комментарии к заказу:</Div>
+            <Li>
+                <textarea value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+            </Li>
+            <Div>
+                {order?.comment !== comment && <MyButton click={() => {updateOrder("comment", comment)}}><span className="text-green-500">Применить</span></MyButton>}
+            </Div>
 
             <Div />
             <Div>Отзыв клиента:</Div>
