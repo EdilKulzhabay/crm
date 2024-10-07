@@ -329,7 +329,7 @@ export const getFirstOrderForToday = async (req, res) => {
 
         // Ищем заказы со статусом 'onTheWay'
         const onTheWayOrders = activeOrders.filter(
-            (item) => item?.orderStatus === "inLine"
+            (item) => item?.orderStatus === "onTheWay"
         );
 
         // Если есть заказы со статусом 'onTheWay', возвращаем первый из них
@@ -339,7 +339,7 @@ export const getFirstOrderForToday = async (req, res) => {
 
         // Если нет заказов со статусом 'onTheWay', ищем самый первый заказ со статусом 'inLine'
         const inLineOrders = activeOrders.filter(
-            (item) => item.orderStatus === "onTheWay"
+            (item) => item.orderStatus === "inLine"
         );
 
         const firstInLineOrder = inLineOrders.length > 0 ? inLineOrders[0] : null;
