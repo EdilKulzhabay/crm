@@ -38,7 +38,6 @@ export default function OrderPage() {
         d: "",
         time: "",
     });
-    const [changeDate, setChangeDate] = useState(false)
     const [comment, setComment] = useState("")
 
     const [open, setOpen] = useState(false);
@@ -46,7 +45,6 @@ export default function OrderPage() {
     const [status, setStatus] = useState("");
 
     const handleDateChange = (e) => {
-        setChangeDate(true)
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
         if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
 
@@ -66,7 +64,6 @@ export default function OrderPage() {
     };
 
     const handleTimeChange = (e) => {
-        setChangeDate(true)
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
         if (input.length > 13) input = input.substring(0, 13); // Limit input to 8 digits
 
@@ -107,12 +104,10 @@ export default function OrderPage() {
     };
 
     const incrementDate = () => {
-        setChangeDate(true)
         setDate({ ...date, d: adjustDateByDays(date.d, 1) });
     };
 
     const decrementDate = () => {
-        setChangeDate(true)
         setDate({ ...date, d: adjustDateByDays(date.d, -1) });
     };
 
@@ -352,7 +347,7 @@ export default function OrderPage() {
                         {/* <div className="text-red">{order?.date?.time}</div> */}
                     </div>
                 </Li>
-                {changeDate && <Div><MyButton click={() => {updateOrder("date", date)}}>Применить</MyButton></Div>}
+                {(date?.d !== order?.date?.d || date?.time !== order?.date?.time) && <Div><MyButton click={() => {updateOrder("date", date)}}>Применить</MyButton></Div>}
             </>
 
             <Div />

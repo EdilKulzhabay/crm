@@ -66,7 +66,7 @@ export default function CompletedOrders() {
             setHasMore(true);
             setLoading(false)
             setSearchStatus(false)
-            
+            loadMoreCompletedOrders(1, dates, "", false, searchF)
         }
     };
 
@@ -77,7 +77,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            
+            loadMoreCompletedOrders(1, dates, search, searchStatus, "")
         }
     };
 
@@ -103,7 +103,7 @@ export default function CompletedOrders() {
         });
     }, []);
 
-    const loadMoreCompletedOrders = useCallback(async () => {
+    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF) => {
         if (loading || !hasMore) return;
 
         setLoading(true);
@@ -140,7 +140,7 @@ export default function CompletedOrders() {
         console.log("useEffect triggered with hasMore:", hasMore);
         
         if (hasMore) {
-            loadMoreCompletedOrders();
+            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF);
         }
     }, [hasMore]);
 
@@ -152,7 +152,7 @@ export default function CompletedOrders() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreCompletedOrders();
+                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF);
                 }
             });
             if (node) observer.current.observe(node);
@@ -246,7 +246,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    
+                    loadMoreCompletedOrders(1, dates, search, true, searchF)
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -268,7 +268,7 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        
+                        loadMoreCompletedOrders(1, dates, search, true, searchF)
                     }}>Найти</MyButton>
                 </div>
             </Div>
