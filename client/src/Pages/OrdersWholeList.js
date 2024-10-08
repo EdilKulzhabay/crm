@@ -308,7 +308,11 @@ export default function OrdersWholeList() {
                                         <div className={clsx("", {
                                             "text-yellow-300": new Date(item?.date?.d) > new Date()
                                         })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                        <div>
+                                            {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: {item?.products?.b12} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
+                                            {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: {item?.products?.b19} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
+                                        </div>
+                                        {/* <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div> */}
                                         <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                         <LinkButton
                                             href={`/orderPage/${item?._id}`}
