@@ -211,11 +211,6 @@ export default function CourierActiveOrders() {
         <Div>
             Список активных заказов курьера
         </Div>
-        {/* <Div>
-            <button onClick={() => {console.log(userData);
-            }}>get info</button>
-
-        </Div> */}
         <Div />
         <div className="mb-1">
             {activeOrders.map((item, index) => {
@@ -238,7 +233,10 @@ export default function CourierActiveOrders() {
                                     <div>{item?.order?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                                     <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
-                                    <div>{item?.order?.products?.b12 !== 0 && `12.5л: ${item?.order?.products?.b12}`}; {item?.order?.products?.b19 !== 0 && `18.9л: ${item?.order?.products?.b19}`}</div>
+                                    <div>
+                                        {(item?.order?.products?.b12 !== 0 && item?.order?.products?.b12 !== null) && <>12.5л: {item?.order?.products?.b12} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.order?.client?.price12}тг)</span>};</>}
+                                        {(item?.order?.products?.b19 !== 0 && item?.order?.products?.b19 !== null) && <>{" "}18.9л: {item?.order?.products?.b19} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.order?.client?.price19}тг)</span>};</>}
+                                    </div>
                                     {(userData.role === "admin" || userData.role === "superAdmin") && <LinkButton
                                         href={`/orderPage/${item?.order?._id}`}
                                     >

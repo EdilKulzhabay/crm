@@ -7,12 +7,12 @@ import MyInput from "../Components/MyInput";
 import LinkButton from "../Components/LinkButton";
 import Container from "../Components/Container";
 import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
+import ChooseCourierModal from "../Components/ChooseCourierModal";
 import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx";
 
-export default function OrderList() {
+export default function OrdersWholeList() {
     const [orders, setOrders] = useState([]);
-    const [additionalOrders, setAdditionalOrders] = useState([])
     const [userData, setUserData] = useState({});
     const [search, setSearch] = useState("");
     const [searchF, setSearchF] = useState("");
@@ -25,7 +25,9 @@ export default function OrderList() {
     const [franchisee, setFranchisee] = useState(null);
     const [order, setOrder] = useState(null)
     const [activeOrdersKol, setActiveOrdersKol] = useState(0)
-    const [again, setAgain] = useState(0)
+    const [orderCourier, setOrderCourier] = useState(null);
+    const [couriersModal, setCouriersModal] = useState(false);
+    const [orderCourierChange, setOrderCourierChange] = useState(null)
 
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -34,6 +36,15 @@ export default function OrderList() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const closeCouriersModal = () => {
+        setCouriersModal(false);
+    };
+
+    const chooseCourier = (chCourier) => {
+        setOrderCourier(chCourier);
+        setCouriersModal(false);
+    };
 
     const closeSnack = () => {
         setOpen(false);
@@ -44,6 +55,8 @@ export default function OrderList() {
     };
 
     const chooseFranchisee = (chFranchisee) => {
+        console.log(chFranchisee);
+        
         setFranchisee(chFranchisee);
         setFranchiseesModal(false);
     };
@@ -71,16 +84,6 @@ export default function OrderList() {
         }
     };
 
-    const getAdditionalOrders = () => {
-        api.get("/getAdditionalOrders", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            setAdditionalOrders(data.orders)
-        }).catch((e) => {
-            console.log(e);
-        })
-    }
-
     const getActiveOrdersKol = () => {
         api.get("/getActiveOrdersKol", {
             headers: { "Content-Type": "application/json" },
@@ -98,7 +101,6 @@ export default function OrderList() {
             setUserData(data);
         });
         getActiveOrdersKol()
-        getAdditionalOrders()
     }, []);
 
     const updateOrderTransfer = () => {
@@ -140,6 +142,27 @@ export default function OrderList() {
             }
         }).catch((e) => {})
     }
+
+    useEffect(() => {
+        if (orderCourier !== null && orderCourierChange !== null) {
+            api.post("/updateOrder", {orderId: orderCourierChange, change: "courier", changeData: orderCourier}, {
+                headers: { "Content-Type": "application/json" },
+            }).then(({data}) => {
+                orders.map((item) => {
+                    if (item._id === orderCourierChange) {
+                        item.courier = orderCourier
+                    }
+                })
+                setOpen(true)
+                setStatus("success")
+                setMessage(data.message)
+                setOrderCourier(null)
+                setOrderCourierChange(null)
+            }).catch((e) => {
+
+            })
+        }
+    }, [orderCourier])
 
     useEffect(() => {
         if (order && franchisee) {
@@ -213,16 +236,13 @@ export default function OrderList() {
                     chooseFranchisee={chooseFranchisee}
                 />
             )}
+            {couriersModal && (
+                <ChooseCourierModal
+                    closeCouriersModal={closeCouriersModal}
+                    chooseCourier={chooseCourier}
+                />
+            )}
             <Div>Список заказов</Div>
-            <Div />
-            <Div>Действия:</Div>
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <LinkButton href="/addOrder">Создать заказ</LinkButton>
-                </div>
-            </Div>
-
-
             <Div />
             <Div>
                 <div>Поиск заказа:</div>
@@ -268,50 +288,12 @@ export default function OrderList() {
                 </Div>
             </>
             }
-            
-            {userData?.role === "admin" && <>
-                <Div />
-                <Div>
-                    <div>Доп. заказы: {additionalOrders.length}</div>
-                    <div><LinkButton href={`/additionalOrdersWholeList`}>Полный список</LinkButton></div>
-                </Div>
-                <div className="max-h-[180px] overflow-scroll bg-black">
-                    {additionalOrders.map((item) => {
-                        return (
-                            <div key={item?._id}>
-                                <Li>
-                                    <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
-                                            Заказ: 
-                                        </div>
-                                        <div>{item?.client?.userName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
-                                        <div className={clsx("", {
-                                            "text-yellow-300": new Date(item?.date?.d) > new Date()
-                                        })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
-                                        <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
-                                        <LinkButton
-                                            href={`/orderPage/${item?._id}`}
-                                        >
-                                            Просмотр
-                                        </LinkButton>
-                                        <div>{item?.courier?.fullName}</div>
-                                    </div>
-                                </Li>
-                            </div>
-                        )
-                    })}
-                </div>
-            </>}
-            
 
             <Div />
             <Div>
                 <div>Заказы: {activeOrdersKol}</div>
-                <div><LinkButton href={`/ordersWholeList`}>Полный список</LinkButton></div>
             </Div>
-            <div className="max-h-[180px] overflow-scroll bg-black">
+            <div className=" bg-black">
                 {orders.map((item, index) => {
                     if (orders.length === index + 1) {
                         return (
@@ -333,6 +315,7 @@ export default function OrderList() {
                                         >
                                             Просмотр
                                         </LinkButton>
+                                        
                                         {userData?.role === "superAdmin" && <>
                                             {item?.transferred && <div>{item?.transferredFranchise}</div>}
                                             {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
@@ -341,6 +324,10 @@ export default function OrderList() {
                                                     Отменить
                                                 </span></MyButton>}
                                             </>}
+                                        <MyButton click={() => {
+                                        setOrderCourierChange(item._id)
+                                        setCouriersModal(true)
+                                        }}>Курьер</MyButton>
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
@@ -369,10 +356,15 @@ export default function OrderList() {
                                         {userData?.role === "superAdmin" && <>
                                             {item?.transferred && <div>{item?.transferredFranchise}</div>}
                                             {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}><span className="text-green-400">
-                                    Отменить
-                                </span></MyButton>}
+                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
+                                                <span className="text-green-400">
+                                                    Отменить
+                                                </span></MyButton>}
                                         </>}
+                                        <MyButton click={() => {
+                                            setOrderCourierChange(item._id)
+                                            setCouriersModal(true)
+                                            }}>Курьер</MyButton>
                                         <div>{item?.courier?.fullName}</div>
                                     </div>
                                 </Li>
@@ -382,11 +374,6 @@ export default function OrderList() {
                 })}
                 {loading && <div>Загрузка...</div>}
             </div>
-
-            <Div />
-            <Div>
-                <LinkButton href="/completedOrders">Завершенные заказы</LinkButton>
-            </Div>
 
             <Div />
             <MySnackBar
