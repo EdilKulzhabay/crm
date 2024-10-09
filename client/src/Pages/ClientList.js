@@ -21,6 +21,9 @@ export default function ClientList() {
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
 
+    const [deleteModal, setDeleteModal] = useState(false)
+    const [deleteObject, setDeleteObject] = useState(null)
+
     const closeSnack = () => {
         setOpen(false);
     };
@@ -182,10 +185,10 @@ export default function ClientList() {
                     setOpen(true);
                     setMessage("Клиент успешно удален");
                     setStatus("success");
-                    setClients([]);
-                    setPage(1);
-                    setHasMore(true);
-                    getFreeInfo();
+                    const temporaryClients = clients.filter((item) => item._id !== id)
+                    setClients(temporaryClients)
+                    setDeleteModal(false)
+                    setDeleteObject(null)
                 }
             })
             .catch((e) => {
@@ -439,6 +442,8 @@ export default function ClientList() {
                                         </LinkButton>
                                         <MyButton
                                             click={() => {
+                                                // setDeleteObject(client._id)
+                                                // setDeleteModal(true)
                                                 deleteClient(client._id);
                                             }}
                                         >
@@ -470,6 +475,8 @@ export default function ClientList() {
                                         </LinkButton>
                                         <MyButton
                                             click={() => {
+                                                // setDeleteObject(client._id)
+                                                // setDeleteModal(true)
                                                 deleteClient(client._id);
                                             }}
                                         >
@@ -512,6 +519,27 @@ export default function ClientList() {
                     )}
                 </div>
             </Div>
+
+            {/* {deleteModal && <div 
+                onClick={() => {
+                    setDeleteModal(false)
+                }}
+                className="absolute inset-0 bg-black bg-opacity-80"
+            >
+                <div
+                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-black bg-opacity-80"
+                    
+                >
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                        }}
+                        className="relative px-8 py-4 border border-red rounded-md"
+                    >
+                        <MyButton click={() => {deleteClient(deleteObject)}}>подтвердить удаление</MyButton>
+                    </div>
+                </div>
+            </div>} */}
 
             <Div />
             <MySnackBar

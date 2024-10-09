@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
@@ -43,6 +43,22 @@ export default function OrderPage() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const [scrollPosition, setScrollPosition] = useState(0);
+
+    const handleScroll = useCallback(() => {
+        setScrollPosition(window.scrollY);
+        console.log("Scroll Y position:", window.scrollY);
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll);
+        
+        // Удаление обработчика при размонтировании компонента
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+        };
+    }, [handleScroll]);
 
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
@@ -191,6 +207,7 @@ export default function OrderPage() {
                 <ChooseCourierModal
                     closeCouriersModal={closeCouriersModal}
                     chooseCourier={chooseCourier}
+                    scrollPosition={scrollPosition}
                 />
             )}
             <Div>Детали заказа</Div>
@@ -352,31 +369,8 @@ export default function OrderPage() {
 
             <Div />
             <Div>
-                <div>Форма оплаты: {order?.opForm === "cash" && "наличные"}{order?.opForm === "postpay" && "постоплата"}{order?.opForm === "transfer" && "перевод"}{order?.opForm === "card" && "карта"}{order?.opForm === "coupon" && "талон"}{order?.opForm === "mixed" && "смешанно"}</div>
+                <div>Форма оплаты: {order?.opForm === "fakt" && "по факту"}{order?.opForm === "postpay" && "постоплата"}{order?.opForm === "credit" && "в долг"}{order?.opForm === "coupon" && "талон"}{order?.opForm === "mixed" && "смешанно"}</div>
             </Div>
-            {/* <div className="hidden lg:block">
-                <Div>
-                    <div className="text-red flex items-center gap-x-3">
-                        [
-                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "cash")}}>Наличные</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "transfer")}}>Перевод</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button> /
-                            <button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "mixed")}}>Смешанное</button>
-                        ]
-                    </div>
-                </Div>
-            </div>
-
-            <div className="lg:hidden">
-                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "cash")}}>Наличные</button></Div>
-                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "transfer")}}>Перевод</button></Div>
-                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "card")}}>Карта</button></Div>
-                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "coupon")}}>Талон</button></Div>
-                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "postpay")}}>Постоплата</button></Div>
-                <Div><button className="text-red hover:text-blue-500" onClick={() => {updateOrder("opForm", "mixed")}}>Смешанное</button></Div>
-            </div> */}
 
             <Div />
             <Div>

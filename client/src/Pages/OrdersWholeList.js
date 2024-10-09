@@ -37,6 +37,22 @@ export default function OrdersWholeList() {
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
 
+    const [scrollPosition, setScrollPosition] = useState(0);
+
+    const handleScroll = useCallback(() => {
+        setScrollPosition(window.scrollY);
+        console.log("Scroll Y position:", window.scrollY);
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll);
+        
+        // Удаление обработчика при размонтировании компонента
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+        };
+    }, [handleScroll]);
+
     const closeCouriersModal = () => {
         setCouriersModal(false);
     };
@@ -229,163 +245,168 @@ export default function OrdersWholeList() {
     );
 
     return (
-        <Container role={userData.role || "admin"}>
+        <div className="relative">
             {franchiseesModal && (
                 <ChooseFranchiseeModal
                     closeFranchiseeModal={closeFranchiseeModal}
                     chooseFranchisee={chooseFranchisee}
+                    scrollPosition={scrollPosition}
                 />
             )}
             {couriersModal && (
                 <ChooseCourierModal
                     closeCouriersModal={closeCouriersModal}
                     chooseCourier={chooseCourier}
+                    scrollPosition={scrollPosition}
                 />
             )}
-            <Div>Список заказов</Div>
-            <Div />
-            <Div>
-                <div>Поиск заказа:</div>
-            </Div>
-            <Div>
-                <div className="flex items-center flex-wrap gap-x-4">
-                    <MyInput
-                        value={search}
-                        change={handleSearch}
-                        color="white"
-                    />
-                    <MyButton click={() => {
-                        setOrders([]);
-                        setPage(1);
-                        setHasMore(true);
-                        setSearchStatus(true)
-                        setLoading(false)
-                        loadMoreOrders(1, dates, search, true, searchF)
-                    }}>Найти</MyButton>
-                </div>
-            </Div>
-
-            {userData?.role === "superAdmin" && <>
+            <Container role={userData.role || "admin"}>
+                
+                <Div>Список заказов</Div>
                 <Div />
                 <Div>
-                    Фильтрация по франчайзи:
+                    <div>Поиск заказа:</div>
                 </Div>
                 <Div>
                     <div className="flex items-center flex-wrap gap-x-4">
                         <MyInput
-                            value={searchF}
-                            change={handleSearchF}
+                            value={search}
+                            change={handleSearch}
                             color="white"
                         />
                         <MyButton click={() => {
                             setOrders([]);
                             setPage(1);
                             setHasMore(true);
+                            setSearchStatus(true)
                             setLoading(false)
-                            loadMoreOrders(1, dates, search, searchStatus, searchF)
+                            loadMoreOrders(1, dates, search, true, searchF)
                         }}>Найти</MyButton>
                     </div>
                 </Div>
-            </>
-            }
 
-            <Div />
-            <Div>
-                <div>Заказы: {activeOrdersKol}</div>
-            </Div>
-            <div className=" bg-black">
-                {orders.map((item, index) => {
-                    if (orders.length === index + 1) {
-                        return (
-                            <div key={item?._id} ref={lastOrderElementRef}>
-                                <Li>
-                                    <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>
-                                            Заказ: 
-                                        </div>
-                                        <div>{item?.client?.userName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
-                                        <div className={clsx("", {
-                                            "text-yellow-300": new Date(item?.date?.d) > new Date()
-                                        })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                        <div>
-                                            {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: {item?.products?.b12} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
-                                            {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: {item?.products?.b19} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
-                                        </div>
-                                        {/* <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div> */}
-                                        <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
-                                        <LinkButton
-                                            href={`/orderPage/${item?._id}`}
-                                        >
-                                            Просмотр
-                                        </LinkButton>
-                                        
-                                        {userData?.role === "superAdmin" && <>
-                                            {item?.transferred && <div>{item?.transferredFranchise}</div>}
-                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
-                                                <span className="text-green-400">
-                                                    Отменить
-                                                </span></MyButton>}
-                                            </>}
-                                        <MyButton click={() => {
-                                        setOrderCourierChange(item._id)
-                                        setCouriersModal(true)
-                                        }}>Курьер</MyButton>
-                                        <div>{item?.courier?.fullName}</div>
-                                    </div>
-                                </Li>
-                            </div>
-                        );
-                    } else {
-                        return (
-                            <div key={item._id}>
-                                <Li>
-                                    <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>
-                                            Заказ: 
-                                        </div>
-                                        <div>{item?.client?.userName}</div>
-                                        <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
-                                        <div className={clsx("", {
-                                            "text-yellow-300": new Date(item?.date?.d) > new Date()
-                                        })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                        <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
-                                        <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
-                                        <LinkButton
-                                            href={`/orderPage/${item?._id}`}
-                                        >
-                                            Просмотр
-                                        </LinkButton>
-                                        {userData?.role === "superAdmin" && <>
-                                            {item?.transferred && <div>{item?.transferredFranchise}</div>}
-                                            {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                            {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
-                                                <span className="text-green-400">
-                                                    Отменить
-                                                </span></MyButton>}
-                                        </>}
-                                        <MyButton click={() => {
+                {userData?.role === "superAdmin" && <>
+                    <Div />
+                    <Div>
+                        Фильтрация по франчайзи:
+                    </Div>
+                    <Div>
+                        <div className="flex items-center flex-wrap gap-x-4">
+                            <MyInput
+                                value={searchF}
+                                change={handleSearchF}
+                                color="white"
+                            />
+                            <MyButton click={() => {
+                                setOrders([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)
+                                loadMoreOrders(1, dates, search, searchStatus, searchF)
+                            }}>Найти</MyButton>
+                        </div>
+                    </Div>
+                </>
+                }
+
+                <Div />
+                <Div>
+                    <div>Заказы: {activeOrdersKol}</div>
+                </Div>
+                <div className=" bg-black">
+                    {orders.map((item, index) => {
+                        if (orders.length === index + 1) {
+                            return (
+                                <div key={item?._id} ref={lastOrderElementRef}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div className="bg-red">
+                                                Заказ: 
+                                            </div>
+                                            <div>{item?.client?.userName}</div>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                            <div className={clsx("", {
+                                                "text-yellow-300": new Date(item?.date?.d) > new Date()
+                                            })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                            <div>
+                                                {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: {item?.products?.b12} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
+                                                {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: {item?.products?.b19} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
+                                            </div>
+                                            {/* <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div> */}
+                                            <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
+                                            <LinkButton
+                                                href={`/orderPage/${item?._id}`}
+                                            >
+                                                Просмотр
+                                            </LinkButton>
+                                            
+                                            {userData?.role === "superAdmin" && <>
+                                                {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                                {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                                {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
+                                                    <span className="text-green-400">
+                                                        Отменить
+                                                    </span></MyButton>}
+                                                </>}
+                                            <MyButton click={() => {
                                             setOrderCourierChange(item._id)
                                             setCouriersModal(true)
                                             }}>Курьер</MyButton>
-                                        <div>{item?.courier?.fullName}</div>
-                                    </div>
-                                </Li>
-                            </div>
-                        );
-                    }
-                })}
-                {loading && <div>Загрузка...</div>}
-            </div>
+                                            <div>{item?.courier?.fullName}</div>
+                                        </div>
+                                    </Li>
+                                </div>
+                            );
+                        } else {
+                            return (
+                                <div key={item._id}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div className="bg-red">
+                                                Заказ: 
+                                            </div>
+                                            <div>{item?.client?.userName}</div>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                            <div className={clsx("", {
+                                                "text-yellow-300": new Date(item?.date?.d) > new Date()
+                                            })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                            <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                            <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
+                                            <LinkButton
+                                                href={`/orderPage/${item?._id}`}
+                                            >
+                                                Просмотр
+                                            </LinkButton>
+                                            {userData?.role === "superAdmin" && <>
+                                                {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                                {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
+                                                {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
+                                                    <span className="text-green-400">
+                                                        Отменить
+                                                    </span></MyButton>}
+                                            </>}
+                                            <MyButton click={() => {
+                                                setOrderCourierChange(item._id)
+                                                setCouriersModal(true)
+                                                }}>Курьер</MyButton>
+                                            <div>{item?.courier?.fullName}</div>
+                                        </div>
+                                    </Li>
+                                </div>
+                            );
+                        }
+                    })}
+                    {loading && <div>Загрузка...</div>}
+                </div>
 
-            <Div />
-            <MySnackBar
-                open={open}
-                text={message}
-                status={status}
-                close={closeSnack}
-            />
-        </Container>
+                <Div />
+                <MySnackBar
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
+                />
+            </Container>
+        </div>
     );
 }

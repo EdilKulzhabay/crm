@@ -391,7 +391,7 @@ export const updateOrderList = async (req, res) => {
 export const updateCourierOrderStatus = async (req, res) => {
     try {
         const id = req.userId
-        const {orderId, trueOrder, newStatus, products, opForm} = req.body
+        const {orderId, trueOrder, newStatus, products, opForm, sum} = req.body
         
 
         const updateQuery = {
@@ -416,6 +416,7 @@ export const updateCourierOrderStatus = async (req, res) => {
         if (newStatus === "delivered") {
             order.products = products
             order.opForm = opForm
+            order.sum = sum
         }
 
         await order.save()

@@ -228,7 +228,7 @@ export default function CourierActiveOrders() {
                             <div className="flex items-center">
                                 <div className="flex items-center gap-x-2 flex-wrap">
                                     <div>
-                                        Заказ: <span className="text-green-500">{index + 1}</span>
+                                        <span className="bg-red">Заказ:</span> <span className="text-green-500">{index + 1}</span>
                                     </div>
                                     <div>{item?.order?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>

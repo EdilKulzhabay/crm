@@ -68,9 +68,8 @@ export default function CourierDeliveredOrders(props) {
                 <div key={item?._id} ref={lastOrderElementRef}>
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>
-                                Заказ: (
-                                {item?.order?.createdAt?.slice(0, 10)})
+                            <div className="bg-red">
+                                Заказ: 
                             </div>
                             <div>{item?.order?.client?.userName}</div>
                             <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
@@ -90,9 +89,8 @@ export default function CourierDeliveredOrders(props) {
                 <div key={item?._id}>
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
-                            <div>
-                                Заказ: (
-                                {item?.order?.createdAt?.slice(0, 10)})
+                            <div className="bg-red">
+                                Заказ: 
                             </div>
                             <div>{item?.order?.client?.userName}</div>
                             <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
