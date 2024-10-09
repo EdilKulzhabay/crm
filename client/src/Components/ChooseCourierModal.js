@@ -54,6 +54,8 @@ export default function ChooseCourierModal(props) {
     };
 
     useEffect(() => {
+        console.log("we here");
+        
         api.get("/getMe", {
             headers: { "Content-Type": "application/json" },
         })
@@ -125,81 +127,87 @@ export default function ChooseCourierModal(props) {
             onClick={() => {
                 props.closeCouriersModal();
             }}
-            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80"
+            className="absolute inset-0 bg-black bg-opacity-80"
+            style={{ minHeight: props.scrollPosition }} 
         >
             <div
-                onClick={(e) => {
-                    e.stopPropagation();
-                }}
-                className="relative px-8 py-4 border border-red rounded-md"
+                className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-80"
+                style={{ top: props.scrollPosition + 50 }} 
             >
-                <div className="text-center">Выбор курьера</div>
-                <Div>
-                    <div>Поиск курьера:</div>
-                </Div>
-                <Div>
-                    <div className="flex items-center flex-wrap gap-x-4">
-                        <MyInput
-                            value={search}
-                            change={handleSearch}
-                            color="white"
-                        />
-                        <MyButton click={searchCourier}>Найти</MyButton>
+                <div
+                    onClick={(e) => {
+                        e.stopPropagation();
+                    }}
+                    className="relative px-8 py-4 border border-red rounded-md"
+                >
+                    <div className="text-center">Выбор курьера</div>
+                    <Div>
+                        <div>Поиск курьера:</div>
+                    </Div>
+                    <Div>
+                        <div className="flex items-center flex-wrap gap-x-4">
+                            <MyInput
+                                value={search}
+                                change={handleSearch}
+                                color="white"
+                            />
+                            <MyButton click={searchCourier}>Найти</MyButton>
+                        </div>
+                    </Div>
+                    <Div />
+                    <Div>Список курьеров:</Div>
+                    <div className="max-h-[100px] overflow-scroll">
+                        {couriers.map((item, index) => {
+                            if (couriers.length === index + 1) {
+                                return (
+                                    <div key={item._id} ref={lastCourierElementRef}>
+                                        <Li>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-x-2 flex-wrap">
+                                                    <div>{item.fullName}</div>
+                                                </div>
+                                                <div className="min-w-max ml-5 lg:ml-10 flex items-center">
+                                                    <MyButton
+                                                        click={() => {
+                                                            choose(item);
+                                                        }}
+                                                    >
+                                                        <span className="text-green-400">
+                                                            Выбрать
+                                                        </span>
+                                                    </MyButton>
+                                                </div>
+                                            </div>
+                                        </Li>
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <div key={item._id}>
+                                        <Li>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-x-2 flex-wrap">
+                                                    <div>{item.fullName}</div>
+                                                </div>
+                                                <div className="min-w-max ml-5 lg:ml-10 flex items-center">
+                                                    <MyButton
+                                                        click={() => {
+                                                            choose(item);
+                                                        }}
+                                                    >
+                                                        <span className="text-green-400">
+                                                            Выбрать
+                                                        </span>
+                                                    </MyButton>
+                                                </div>
+                                            </div>
+                                        </Li>
+                                    </div>
+                                );
+                            }
+                        })}
+                        {loading && <div>Загрузка...</div>}
                     </div>
-                </Div>
-                <Div />
-                <Div>Список курьеров:</Div>
-                <div className="max-h-[100px] overflow-scroll">
-                    {couriers.map((item, index) => {
-                        if (couriers.length === index + 1) {
-                            return (
-                                <div key={item._id} ref={lastCourierElementRef}>
-                                    <Li>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-x-2 flex-wrap">
-                                                <div>{item.fullName}</div>
-                                            </div>
-                                            <div className="min-w-max ml-5 lg:ml-10 flex items-center">
-                                                <MyButton
-                                                    click={() => {
-                                                        choose(item);
-                                                    }}
-                                                >
-                                                    <span className="text-green-400">
-                                                        Выбрать
-                                                    </span>
-                                                </MyButton>
-                                            </div>
-                                        </div>
-                                    </Li>
-                                </div>
-                            );
-                        } else {
-                            return (
-                                <div key={item._id}>
-                                    <Li>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-x-2 flex-wrap">
-                                                <div>{item.fullName}</div>
-                                            </div>
-                                            <div className="min-w-max ml-5 lg:ml-10 flex items-center">
-                                                <MyButton
-                                                    click={() => {
-                                                        choose(item);
-                                                    }}
-                                                >
-                                                    <span className="text-green-400">
-                                                        Выбрать
-                                                    </span>
-                                                </MyButton>
-                                            </div>
-                                        </div>
-                                    </Li>
-                                </div>
-                            );
-                        }
-                    })}
-                    {loading && <div>Загрузка...</div>}
                 </div>
             </div>
         </div>

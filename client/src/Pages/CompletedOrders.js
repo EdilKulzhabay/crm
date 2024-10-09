@@ -93,6 +93,7 @@ export default function CompletedOrders() {
         setPage(1)
         setLoading(false)
         setHasMore(true)
+        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF)
     }
 
     useEffect(() => {
@@ -332,14 +333,13 @@ export default function CompletedOrders() {
                         <div key={item?._id} ref={lastOrderElementRef}>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
-                                        Заказ: (
-                                        {item?.createdAt.slice(0, 10)})
+                                    <div className="bg-red">
+                                        Заказ: 
                                     </div>
                                     <div>{item?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                     <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                    <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                    <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) !== 0 && `12.5л: ${item?.products?.b12}`}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                     <LinkButton
                                         href={`/orderPage/${item?._id}`}
                                     >
@@ -358,14 +358,13 @@ export default function CompletedOrders() {
                         <div key={item?._id}>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
-                                        Заказ: (
-                                        {item?.createdAt.slice(0, 10)})
+                                    <div className="bg-red">
+                                        Заказ: 
                                     </div>
                                     <div>{item?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                     <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                    <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                    <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) !== 0 && `12.5л: ${item?.products?.b12}`}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                     <LinkButton
                                         href={`/orderPage/${item?._id}`}
                                     >

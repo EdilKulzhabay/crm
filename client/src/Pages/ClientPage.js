@@ -316,20 +316,39 @@ export default function ClientPage() {
 
             <Div />
             <Div>
-                <div>Форма оплаты: {client?.opForm === "cash" && "наличные"}{client?.opForm === "postpay" && "постоплата"}{client?.opForm === "transfer" && "перевод"}{client?.opForm === "card" && "карта"}{client?.opForm === "coupon" && "талон"}{client?.opForm === "mixed" && "смешанное"}</div>
+                <div>Форма оплаты: {client?.opForm === "fakt" && "по факту"}{client?.opForm === "postpay" && "постоплата"}{client?.opForm === "credit" && "в долг"}{client?.opForm === "coupon" && "талон"}{client?.opForm === "mixed" && "смешанное"}</div>
             </Div>
-            <Div>
-                <div className="text-red flex items-center gap-x-3">
-                    [
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "cash")}}>Наличные</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "transfer")}}>Перевод</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "card")}}>Карта</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талон</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанное</button>
-                    ]
-                </div>
-            </Div>
+            <div className="hidden lg:block">
+                <Div>
+                    <div className="text-red flex items-center gap-x-3">
+                        [
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "fakt")}}>По факту</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талон</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "credit")}}>В долг</button> /
+                            <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанное</button>
+                        ]
+                    </div>
+                </Div>
+            </div>
+
+            <div className="lg:hidden">
+                <Div>
+                    <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "fakt")}}>По факту</button>
+                </Div>
+                <Div>
+                    <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талон</button> 
+                </Div>
+                <Div>
+                    <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> 
+                </Div>
+                <Div>
+                    <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "credit")}}>В долг</button>
+                </Div>
+                <Div>
+                    <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанное</button>
+                </Div>
+            </div>
 
             <Div />
             <Div>Адреса:</Div>
@@ -553,9 +572,8 @@ export default function ClientPage() {
                             <div key={item?._id} ref={lastOrderElementRef}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
-                                            Заказ: (
-                                            {item.createdAt.slice(0, 10)})
+                                        <div className="bg-red">
+                                            Заказ: 
                                         </div>
                                         <div>{item?.client?.fullName}</div>
                                         <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
@@ -575,9 +593,8 @@ export default function ClientPage() {
                             <div key={item?._id}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
-                                            Заказ: (
-                                            {item.createdAt.slice(0, 10)})
+                                        <div className="bg-red">
+                                            Заказ: 
                                         </div>
                                         <div>{item?.client?.fullName}</div>
                                         <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import ChooseClientModal from "../Components/ChooseClientModal";
@@ -56,6 +56,22 @@ export default function AddOrder() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const [scrollPosition, setScrollPosition] = useState(0);
+
+    const handleScroll = useCallback(() => {
+        setScrollPosition(window.scrollY);
+        console.log("Scroll Y position:", window.scrollY);
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll);
+        
+        // Удаление обработчика при размонтировании компонента
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+        };
+    }, [handleScroll]);
 
     const closeSnack = () => {
         setOpen(false);
@@ -210,6 +226,7 @@ export default function AddOrder() {
                 <ChooseCourierModal
                     closeCouriersModal={closeCouriersModal}
                     chooseCourier={chooseCourier}
+                    scrollPosition={scrollPosition}
                 />
             )}
             <Div>Добавление нового заказа</Div>
@@ -429,9 +446,8 @@ export default function AddOrder() {
                 <Li>
                     <div>
                         Форма оплаты:{" "}
-                        {client?.opForm === "cash" && "наличные"}
-                        {client?.opForm === "transfer" && "перевод"}
-                        {client?.opForm === "card" && "карта"}
+                        {client?.opForm === "fakt" && "по факту"}
+                        {client?.opForm === "credit" && "в долг"}
                         {client?.opForm === "coupon" && "талон"}
                         {client?.opForm === "postpay" && "постоплата"}
                         {client?.opForm === "mixed" && "смешанное"}

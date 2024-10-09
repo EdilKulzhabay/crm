@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../api";
 import Div from "../Components/Div";
 import Li from "../Components/Li";
@@ -21,6 +21,22 @@ export default function AdditionalOrdersWholeList() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const [scrollPosition, setScrollPosition] = useState(0);
+
+    const handleScroll = useCallback(() => {
+        setScrollPosition(window.scrollY);
+        console.log("Scroll Y position:", window.scrollY);
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll);
+        
+        // Удаление обработчика при размонтировании компонента
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+        };
+    }, [handleScroll]);
 
     const closeCouriersModal = () => {
         setCouriersModal(false);
@@ -81,6 +97,7 @@ export default function AdditionalOrdersWholeList() {
                 <ChooseCourierModal
                     closeCouriersModal={closeCouriersModal}
                     chooseCourier={chooseCourier}
+                    scrollPosition={scrollPosition}
                 />
             )}
             <Div>Список заказов</Div>
@@ -111,7 +128,7 @@ export default function AdditionalOrdersWholeList() {
             {userData?.role === "admin" && <>
                 <Div />
                 <Div>Доп. заказы: {additionalOrders.length}</Div>
-                <div className="max-h-[180px] overflow-scroll bg-black">
+                <div className="bg-black">
                     {additionalOrders.map((item) => {
                         return (
                             <div key={item?._id}>

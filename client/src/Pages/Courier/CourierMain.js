@@ -47,7 +47,8 @@ export default function CourierMain() {
     }, [])
 
     const updateCourierOrderStatus = (status) => {
-        api.post("/updateCourierOrderStatus", {orderId: firstActiveOrder._id, trueOrder: firstActiveOrder.order._id, "newStatus": status, products, opForm}, {
+        const sum = getSum()
+        api.post("/updateCourierOrderStatus", {orderId: firstActiveOrder._id, trueOrder: firstActiveOrder.order._id, "newStatus": status, products, opForm, sum}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             if (data.success) {
@@ -146,20 +147,19 @@ export default function CourierMain() {
                     <div>Сумма оплаты: <span className="text-blue-500">{getSum()}</span></div>
                 </Li>
                 <Li>
-                    <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "cash" && "наличные"}{firstActiveOrder?.order?.opForm === "postpay" && "постоплата"}{firstActiveOrder?.order?.opForm === "transfer" && "перевод"}{firstActiveOrder?.order?.opForm === "card" && "карта"}{firstActiveOrder?.order?.opForm === "coupon" && "талон"}{firstActiveOrder?.order?.opForm === "mixed" && "смешанное"}</span></div>
+                    <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "fakt" && "по факту"}{firstActiveOrder?.order?.opForm === "postpay" && "постоплата"}{firstActiveOrder?.order?.opForm === "credit" && "в долг"}{firstActiveOrder?.order?.opForm === "coupon" && "талон"}{firstActiveOrder?.order?.opForm === "mixed" && "смешанное"}</span></div>
                 </Li>
                 <Li>
-                    <div>Форма оплаты по факту:<span className="text-blue-500"> {opForm === "cash" && "наличные"}{opForm === "postpay" && "постоплата"}{opForm === "transfer" && "перевод"}{opForm === "card" && "карта"}{opForm === "coupon" && "талон"}{opForm === "mixed" && "смешанное"}</span></div>
+                    <div>Форма оплаты по факту:<span className="text-blue-500"> {opForm === "fakt" && "по факту"}{opForm === "postpay" && "постоплата"}{opForm === "credit" && "в долг"}{opForm === "coupon" && "талон"}{opForm === "mixed" && "смешанное"}</span></div>
                 </Li>
                 <div className="hidden lg:block">
                     <Li>
                         <div className="text-red flex items-center gap-x-3">
                             [
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> /
+                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>По факту</button> /
                                 <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button> /
                                 <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> /
+                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> /
                                 <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанное</button>
                             ]
                         </div>
@@ -170,16 +170,13 @@ export default function CourierMain() {
                         [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> ]
                     </Li>
                     <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("transfer")}}>Перевод</button> ]
-                    </Li>
-                    <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("card")}}>Карта</button> ]
-                    </Li>
-                    <Li>
                         [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талон</button> ]
                     </Li>
                     <Li>
                         [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> ]
+                    </Li>
+                    <Li>
+                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> ]
                     </Li>
                     <Li>
                         [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанное</button> ]
@@ -187,11 +184,6 @@ export default function CourierMain() {
                 </div>
                 {firstActiveOrder?.order?.date?.time !== "" && <Li>Время доставки: <span className="text-red">{firstActiveOrder?.order?.date?.time}</span></Li>}
                 
-                {/* <Li>
-                    {firstActiveOrder?.orderStatus === "inLine" && <button className="text-red hover:text-blue-500" onClick={() => {updateCourierOrderStatus("onTheWay")}}>[ Начать ]</button>}
-                    {firstActiveOrder?.orderStatus === "onTheWay" && (opForm === "" || products.b12 === "" || products.b19 === "") && <a href={firstActiveOrder?.order?.address?.link} target="_blank" rel="noreferrer" className="text-red hover:text-blue-500">[ Построить маршрут ]</a>}
-                    {firstActiveOrder?.orderStatus === "onTheWay" && opForm !== "" && products.b12 !== "" && products.b19 !== "" && <MyButton click={() => {updateCourierOrderStatus("delivered")}}>Завершить</MyButton>}
-                </Li> */}
             </> : 
             <>
                 <Div>Заказов не осталось</Div>
