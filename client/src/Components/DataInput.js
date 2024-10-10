@@ -27,7 +27,8 @@ export default function DataInput(props) {
             name={name}
             className={`bg-black outline-none border-b border-${props.color} border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm`}
             value={props.value}
-            size={11}
+            size={13}
+            style={{ fontSize: '16px' }}
             onChange={props.change}
             placeholder=" YYYY-MM-DD"
         />
