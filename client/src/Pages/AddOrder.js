@@ -13,6 +13,7 @@ import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx";
 import UpIcon from "../icons/UpIcon";
 import DownIcon from "../icons/DownIcon";
+import useScrollPosition from "../customHooks/useScrollPosition";
 
 const getCurrentDate = () => {
     const today = new Date();
@@ -33,6 +34,7 @@ const adjustDateByDays = (dateStr, days) => {
 };
 
 export default function AddOrder() {
+    const scrollPosition = useScrollPosition();
     const navigate = useNavigate();
     const {id} = useParams()
     const [userData, setUserData] = useState({});
@@ -56,22 +58,6 @@ export default function AddOrder() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-
-    const [scrollPosition, setScrollPosition] = useState(0);
-
-    const handleScroll = useCallback(() => {
-        setScrollPosition(window.scrollY);
-        console.log("Scroll Y position:", window.scrollY);
-    }, []);
-
-    useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        
-        // Удаление обработчика при размонтировании компонента
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [handleScroll]);
 
     const closeSnack = () => {
         setOpen(false);
@@ -446,11 +432,11 @@ export default function AddOrder() {
                 <Li>
                     <div>
                         Форма оплаты:{" "}
-                        {client?.opForm === "fakt" && "по факту"}
-                        {client?.opForm === "credit" && "в долг"}
-                        {client?.opForm === "coupon" && "талон"}
-                        {client?.opForm === "postpay" && "постоплата"}
-                        {client?.opForm === "mixed" && "смешанное"}
+                        {client?.opForm === "fakt" && "Нал_Карта_QR"}
+                        {client?.opForm === "credit" && "В долг"}
+                        {client?.opForm === "coupon" && "Талоны"}
+                        {client?.opForm === "postpay" && "Постоплата"}
+                        {client?.opForm === "mixed" && "Смешанная"}
 
                     </div>
                 </Li>

@@ -9,8 +9,11 @@ import LinkButton from "../../Components/LinkButton";
 import MyButton from "../../Components/MyButton";
 import MySnackBar from "../../Components/MySnackBar";
 import UpdateFranchiseeData from "../../Components/UpdateFranchiseeData";
+import useScrollPosition from "../../customHooks/useScrollPosition";
+import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
 
 export default function SuperAdminUpdateFranchisee() {
+    const scrollPosition = useScrollPosition();
     const navigate = useNavigate();
 
     const { id } = useParams();
@@ -29,6 +32,20 @@ export default function SuperAdminUpdateFranchisee() {
         b191kol: "",
         b197kol: ""
     })
+
+    const [deleteModal, setDeleteModal] = useState(false)
+    const [deleteObject, setDeleteObject] = useState(null)
+
+    const confirmDelete = () => {
+        deleteFranchisee()
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
+
+    const closeConfirmModal = () => {
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
 
     const handleBottlesChange = (event) => {
         setBottles({ ...bottles, [event.target.name]: event.target.value });
@@ -193,230 +210,237 @@ export default function SuperAdminUpdateFranchisee() {
     }
 
     return (
-        <Container role="superAdmin">
-            <Div>
-                <div>Франчайзи: {franchisee.fullName}</div>
-            </Div>
-            <Div />
+        <div className="relative">
+            {deleteModal && <ConfirmDeleteModal
+                closeConfirmModal={closeConfirmModal}
+                confirmDelete={confirmDelete}
+                scrollPosition={scrollPosition}
+            />}
+            <Container role="superAdmin">
+                <Div>
+                    <div>Франчайзи: {franchisee.fullName}</div>
+                </Div>
+                <Div />
 
-            <Div>
-                <div>Личные данные:</div>
-            </Div>
+                <Div>
+                    <div>Личные данные:</div>
+                </Div>
 
-            <UpdateFranchiseeData
-                franchisee={franchisee}
-                property="userName"
-                getFranchiseeById={getFranchiseeById}
-            />
-            <UpdateFranchiseeData
-                franchisee={franchisee}
-                property="fullName"
-                getFranchiseeById={getFranchiseeById}
-            />
-            <UpdateFranchiseeData
-                franchisee={franchisee}
-                property="phone"
-                getFranchiseeById={getFranchiseeById}
-            />
-            <UpdateFranchiseeData
-                franchisee={franchisee}
-                property="mail"
-                getFranchiseeById={getFranchiseeById}
-            />
+                <UpdateFranchiseeData
+                    franchisee={franchisee}
+                    property="userName"
+                    getFranchiseeById={getFranchiseeById}
+                />
+                <UpdateFranchiseeData
+                    franchisee={franchisee}
+                    property="fullName"
+                    getFranchiseeById={getFranchiseeById}
+                />
+                <UpdateFranchiseeData
+                    franchisee={franchisee}
+                    property="phone"
+                    getFranchiseeById={getFranchiseeById}
+                />
+                <UpdateFranchiseeData
+                    franchisee={franchisee}
+                    property="mail"
+                    getFranchiseeById={getFranchiseeById}
+                />
 
-            <Div />
+                <Div />
 
-            <Div>
-                <div>Сводные данные:</div>
-            </Div>
+                <Div>
+                    <div>Сводные данные:</div>
+                </Div>
 
-            <>
-                <Li>
+                <>
+                    <Li>
+                        <div className="flex items-center flex-wrap">
+                            <div>Количество клиентов:</div>
+                            <Info>{info?.clientsKol}</Info>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center flex-wrap">
+                            <div>Количество заказов:</div>
+                            <Info>{info?.totalOrders}</Info>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center flex-wrap">
+                            <div>Прибыль:</div>
+                            <Info>{formatCurrency(info?.totalSum)}</Info>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center flex-wrap">
+                            <div>Количество 12,5 л.:</div>
+                            <Info>{franchisee.b121kol}</Info>
+                            <div>
+                            {" "}[{" "}
+                                <input
+                                    size={11}
+                                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                    name="b121kol"
+                                    value={bottles.b121kol}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        handleBottlesChange(event);
+                                    }}
+                                />{" "}
+                                ] шт
+                            </div>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center flex-wrap">
+                            <div>Количество 18,9 л. (1):</div>
+                            <Info>{franchisee.b191kol}</Info>
+                            <div>
+                            {" "}[{" "}
+                                <input
+                                    size={11}
+                                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                    name="b191kol"
+                                    value={bottles.b191kol}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        handleBottlesChange(event);
+                                    }}
+                                />{" "}
+                                ] шт
+                            </div>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center flex-wrap">
+                            <div>Количество 18,9 л. (7):</div>
+                            <Info>{franchisee.b197kol}</Info>
+                            <div>
+                            {" "}[{" "}
+                                <input
+                                    size={11}
+                                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                    name="b197kol"
+                                    value={bottles.b197kol}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        handleBottlesChange(event);
+                                    }}
+                                />{" "}
+                                ] шт
+                            </div>
+                        </div>
+                    </Li>
+                    {(bottles.b121kol !== ""  || bottles.b191kol !== ""  || bottles.b197kol !== "") && <Div>
+                        <MyButton click={() => {
+                            if (bottles.b121kol === "") {
+                                bottles.b121kol = franchisee?.b121kol
+                            }
+                            if (bottles.b191kol === "") {
+                                bottles.b191kol = franchisee?.b191kol
+                            }
+                            if (bottles.b197kol === "") {
+                                bottles.b197kol = franchisee?.b197kol
+                            }
+                            updateFranchiseeData("bottles", bottles)
+                        }}>Применить</MyButton>
+                    </Div>}
+                </>
+
+                <Div />
+
+                <Div>
                     <div className="flex items-center flex-wrap">
-                        <div>Количество клиентов:</div>
-                        <Info>{info?.clientsKol}</Info>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center flex-wrap">
-                        <div>Количество заказов:</div>
-                        <Info>{info?.totalOrders}</Info>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center flex-wrap">
-                        <div>Прибыль:</div>
-                        <Info>{formatCurrency(info?.totalSum)}</Info>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center flex-wrap">
-                        <div>Количество 12,5 л.:</div>
-                        <Info>{franchisee.b121kol}</Info>
-                        <div>
-                        {" "}[{" "}
-                            <input
-                                size={11}
-                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
-                                name="b121kol"
-                                value={bottles.b121kol}
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    handleBottlesChange(event);
-                                }}
-                            />{" "}
-                            ] шт
+                        <div>Статус заказа:</div>
+                        <Info>
+                            {franchisee.status === "active"
+                                ? "Активен"
+                                : "Заблокирован"}
+                        </Info>
+                        <div className="ml-3">
+                            <MyButton click={updateFranchiseeStatus}>
+                                Изменить статус
+                            </MyButton>
                         </div>
                     </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center flex-wrap">
-                        <div>Количество 18,9 л. (1):</div>
-                        <Info>{franchisee.b191kol}</Info>
-                        <div>
-                        {" "}[{" "}
-                            <input
-                                size={11}
-                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
-                                name="b191kol"
-                                value={bottles.b191kol}
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    handleBottlesChange(event);
-                                }}
-                            />{" "}
-                            ] шт
-                        </div>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center flex-wrap">
-                        <div>Количество 18,9 л. (7):</div>
-                        <Info>{franchisee.b197kol}</Info>
-                        <div>
-                        {" "}[{" "}
-                            <input
-                                size={11}
-                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
-                                name="b197kol"
-                                value={bottles.b197kol}
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    handleBottlesChange(event);
-                                }}
-                            />{" "}
-                            ] шт
-                        </div>
-                    </div>
-                </Li>
-                {(bottles.b121kol !== ""  || bottles.b191kol !== ""  || bottles.b197kol !== "") && <Div>
-                    <MyButton click={() => {
-                        if (bottles.b121kol === "") {
-                            bottles.b121kol = franchisee?.b121kol
-                        }
-                        if (bottles.b191kol === "") {
-                            bottles.b191kol = franchisee?.b191kol
-                        }
-                        if (bottles.b197kol === "") {
-                            bottles.b197kol = franchisee?.b197kol
-                        }
-                        updateFranchiseeData("bottles", bottles)
-                    }}>Применить</MyButton>
-                </Div>}
-            </>
+                </Div>
 
-            <Div />
-
-            <Div>
-                <div className="flex items-center flex-wrap">
-                    <div>Статус заказа:</div>
-                    <Info>
-                        {franchisee.status === "active"
-                            ? "Активен"
-                            : "Заблокирован"}
-                    </Info>
-                    <div className="ml-3">
-                        <MyButton click={updateFranchiseeStatus}>
-                            Изменить статус
-                        </MyButton>
-                    </div>
+                <Div />
+                <Div>Список клиентов:</Div>
+                <div className="max-h-[180px] overflow-scroll">
+                    {clients.map((client, index) => {
+                        if (clients.length === index + 1) {
+                            return (
+                                <div key={client._id} ref={lastClientElementRef}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-2 flex-wrap">
+                                            <div>{client.userName}</div>
+                                            <div>|</div>
+                                            <div>{client.phone}</div>
+                                            <div>|</div>
+                                            <div>
+                                                {client.status === "active"
+                                                    ? "Активен"
+                                                    : "Неактивен"}
+                                            </div>
+                                        </div>
+                                    </Li>
+                                </div>
+                            );
+                        } else {
+                            return (
+                                <div key={client._id}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-2 flex-wrap">
+                                            <div>{client.userName}</div>
+                                            <div>|</div>
+                                            <div>{client.phone}</div>
+                                            <div>|</div>
+                                            <div>
+                                                {client.status === "active"
+                                                    ? "Активен"
+                                                    : "Неактивен"}
+                                            </div>
+                                        </div>
+                                    </Li>
+                                </div>
+                            );
+                        }
+                    })}
+                    {loading && <div>Загрузка...</div>}
                 </div>
-            </Div>
 
-            <Div />
-            <Div>Список клиентов:</Div>
-            <div className="max-h-[180px] overflow-scroll">
-                {clients.map((client, index) => {
-                    if (clients.length === index + 1) {
-                        return (
-                            <div key={client._id} ref={lastClientElementRef}>
-                                <Li>
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>{client.userName}</div>
-                                        <div>|</div>
-                                        <div>{client.phone}</div>
-                                        <div>|</div>
-                                        <div>
-                                            {client.status === "active"
-                                                ? "Активен"
-                                                : "Неактивен"}
-                                        </div>
-                                    </div>
-                                </Li>
-                            </div>
-                        );
-                    } else {
-                        return (
-                            <div key={client._id}>
-                                <Li>
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>{client.userName}</div>
-                                        <div>|</div>
-                                        <div>{client.phone}</div>
-                                        <div>|</div>
-                                        <div>
-                                            {client.status === "active"
-                                                ? "Активен"
-                                                : "Неактивен"}
-                                        </div>
-                                    </div>
-                                </Li>
-                            </div>
-                        );
-                    }
-                })}
-                {loading && <div>Загрузка...</div>}
-            </div>
-
-            <Div />
-            <Div>
-                <MyButton click={deleteFranchisee}>Удалить франчайзи</MyButton>
-            </Div>
-            <Div />
-            <MySnackBar
-                open={open}
-                text={message}
-                status={status}
-                close={closeSnack}
-            />
-        </Container>
+                <Div />
+                <Div>
+                    <MyButton click={() => {setDeleteModal(true)}}>Удалить франчайзи</MyButton>
+                </Div>
+                <Div />
+                <MySnackBar
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
+                />
+            </Container>
+        </div>
     );
 }

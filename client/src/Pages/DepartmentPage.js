@@ -6,8 +6,11 @@ import Div from "../Components/Div";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 import UpdateClientData from "../Components/UpdateClientData";
+import useScrollPosition from "../customHooks/useScrollPosition";
+import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 
 export default function DepartmentPage() {
+    const scrollPosition = useScrollPosition();
     const navigate = useNavigate();
     const { id } = useParams();
     const [department, setDepartment] = useState({});
@@ -15,6 +18,20 @@ export default function DepartmentPage() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const [deleteModal, setDeleteModal] = useState(false)
+    const [deleteObject, setDeleteObject] = useState(null)
+
+    const confirmDelete = () => {
+        deleteDepartment()
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
+
+    const closeConfirmModal = () => {
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
 
     const closeSnack = () => {
         setOpen(false);
@@ -91,55 +108,66 @@ export default function DepartmentPage() {
             });
     };
 
-    return <Container role="superAdmin">
-        <Div>Карточка сотрудника</Div>
-        <Div />
-        <Div>Личные данные:</Div>
-        <>
-            <UpdateClientData
-                title="ФИО"
-                open={updates.fullNameOpen}
-                str={updates.fullNameStr}
-                name="fullName"
-                handleChange={handleChangesUpdates}
-                client={department}
-                updateClientData={updateDepartmentData}
-            />
-            <UpdateClientData
-                title="Имя пользователя"
-                open={updates.userNameOpen}
-                str={updates.userNameStr}
-                name="userName"
-                handleChange={handleChangesUpdates}
-                client={department}
-                updateClientData={updateDepartmentData}
-            />
-        </>
-        <Div />
-        <Div>История:</Div>
-        <div className="max-h-[180px] overflow-y-scroll">
-            {department.history && department.history.length > 0 && department.history.map((item, index) => {
-                return <div key={index}>
-                    <Div>{item}</Div>
+    return (
+        <div className="relative">
+            {deleteModal && <ConfirmDeleteModal
+                closeConfirmModal={closeConfirmModal}
+                confirmDelete={confirmDelete}
+                scrollPosition={scrollPosition}
+            />}
+            <Container role="superAdmin">
+                <Div>Карточка сотрудника</Div>
+                <Div />
+                <Div>Личные данные:</Div>
+                <>
+                    <UpdateClientData
+                        title="ФИО"
+                        open={updates.fullNameOpen}
+                        str={updates.fullNameStr}
+                        name="fullName"
+                        handleChange={handleChangesUpdates}
+                        client={department}
+                        updateClientData={updateDepartmentData}
+                    />
+                    <UpdateClientData
+                        title="Имя пользователя"
+                        open={updates.userNameOpen}
+                        str={updates.userNameStr}
+                        name="userName"
+                        handleChange={handleChangesUpdates}
+                        client={department}
+                        updateClientData={updateDepartmentData}
+                    />
+                </>
+                <Div />
+                <Div>История:</Div>
+                <div className="max-h-[180px] overflow-y-scroll">
+                    {department.history && department.history.length > 0 && department.history.map((item, index) => {
+                        return <div key={index}>
+                            <Div>{item}</Div>
+                        </div>
+                    })}
                 </div>
-            })}
+                
+
+                <Div />
+                <Div>Действия:</Div>
+                <Div>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <MyButton click={() => {
+                            setDeleteModal(true)
+                        }}>Удалить сотрудника</MyButton>
+                    </div>
+                </Div>
+
+                <MySnackBar
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
+                />
+                <Div />
+            </Container>
         </div>
-        
-
-        <Div />
-        <Div>Действия:</Div>
-        <Div>
-            <div className="flex items-center gap-x-3 flex-wrap">
-                <MyButton click={deleteDepartment}>Удалить сотрудника</MyButton>
-            </div>
-        </Div>
-
-        <MySnackBar
-            open={open}
-            text={message}
-            status={status}
-            close={closeSnack}
-        />
-        <Div />
-    </Container>
+    )
 }

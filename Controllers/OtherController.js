@@ -64,39 +64,39 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-export const deleteCourier = async (req, res) => {
-    try {
-        const id = req.userId;
+// export const deleteCourier = async (req, res) => {
+//     try {
+//         const id = req.userId;
 
-        const user = await User.findById(id);
+//         const user = await User.findById(id);
 
-        if (user.role !== "superAdmin") {
-            res.json({
-                success: false,
-                message: "Не достаточно прав",
-            });
-        }
+//         if (user.role !== "superAdmin") {
+//             res.json({
+//                 success: false,
+//                 message: "Не достаточно прав",
+//             });
+//         }
 
-        const { userId } = req.body;
+//         const { userId } = req.body;
 
-        const delRes = await Courier.findByIdAndDelete(userId);
+//         const delRes = await Courier.findByIdAndDelete(userId);
 
-        if (!delRes) {
-            return res.json({
-                success: false,
-                message: "Не удалось удалить курьера",
-            });
-        }
-        res.json({
-            success: true,
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-};
+//         if (!delRes) {
+//             return res.json({
+//                 success: false,
+//                 message: "Не удалось удалить курьера",
+//             });
+//         }
+//         res.json({
+//             success: true,
+//         });
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({
+//             message: "Что-то пошло не так",
+//         });
+//     }
+// };
 
 export const getMainPageInfo = async (req, res) => {
     try {

@@ -9,6 +9,7 @@ import DownIcon from "../icons/DownIcon";
 import Container from "./Container";
 import { useParams } from "react-router-dom";
 import MySnackBar from "./MySnackBar";
+import clsx from "clsx";
 
 export default function CourierActiveOrders() {
     const { id } = useParams();
@@ -228,7 +229,11 @@ export default function CourierActiveOrders() {
                             <div className="flex items-center">
                                 <div className="flex items-center gap-x-2 flex-wrap">
                                     <div>
-                                        <span className="bg-red">Заказ:</span> <span className="text-green-500">{index + 1}</span>
+                                        <span className={clsx("", {
+                                                "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
+                                                "text-white bg-green-400": new Date(item?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
+                                                "text-white bg-blue-600": new Date(item?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
+                                            })}>Заказ:</span> <span className="text-green-500">{index + 1}</span>
                                     </div>
                                     <div>{item?.order?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>

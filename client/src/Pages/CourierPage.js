@@ -6,11 +6,13 @@ import Div from "../Components/Div";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 import UpdateClientData from "../Components/UpdateClientData";
-import CourierActiveOrders from "../Components/CourierActiveOrders";
 import CourierDeliveredOrders from "../Components/CourierDeliveredOrders";
 import LinkButton from "../Components/LinkButton";
+import useScrollPosition from "../customHooks/useScrollPosition";
+import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 
 export default function CourierPage() {
+    const scrollPosition = useScrollPosition();
     const navigate = useNavigate();
     const { id } = useParams();
     const [role, setRole] = useState("");
@@ -19,6 +21,20 @@ export default function CourierPage() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+
+    const [deleteModal, setDeleteModal] = useState(false)
+    const [deleteObject, setDeleteObject] = useState(null)
+
+    const confirmDelete = () => {
+        deleteCourier()
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
+
+    const closeConfirmModal = () => {
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
 
     const closeSnack = () => {
         setOpen(false);
@@ -114,81 +130,90 @@ export default function CourierPage() {
     }
 
     return (
-        <Container role={role}>
-            <Div>Карточка курьера</Div>
-            <Div />
-            <Div>Личные данные:</Div>
-            <>
-                <UpdateClientData
-                    title="Имя"
-                    open={updates.fullNameOpen}
-                    str={updates.fullNameStr}
-                    name="fullName"
-                    handleChange={handleChangesUpdates}
-                    client={courier}
-                    updateClientData={updateCourierData}
+        <div className="relative">
+            {deleteModal && <ConfirmDeleteModal
+                closeConfirmModal={closeConfirmModal}
+                confirmDelete={confirmDelete}
+                scrollPosition={scrollPosition}
+            />}
+            <Container role={role}>
+                <Div>Карточка курьера</Div>
+                <Div />
+                <Div>Личные данные:</Div>
+                <>
+                    <UpdateClientData
+                        title="Имя"
+                        open={updates.fullNameOpen}
+                        str={updates.fullNameStr}
+                        name="fullName"
+                        handleChange={handleChangesUpdates}
+                        client={courier}
+                        updateClientData={updateCourierData}
+                    />
+                    <UpdateClientData
+                        title="Телефон"
+                        open={updates.phoneOpen}
+                        str={updates.phoneStr}
+                        name="phone"
+                        handleChange={handleChangesUpdates}
+                        client={courier}
+                        updateClientData={updateCourierData}
+                    />
+                    <UpdateClientData
+                        title="Email"
+                        open={updates.mailOpen}
+                        str={updates.mailStr}
+                        name="mail"
+                        handleChange={handleChangesUpdates}
+                        client={courier}
+                        updateClientData={updateCourierData}
+                    />
+                </>
+
+                <Div />
+                <Div>Сводная информация:</Div>
+                <Div>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <div>Количество выполненных заказов:</div>
+                        <div className="text-red">{courier.completedOrders}</div>
+                    </div>
+                </Div>
+
+                <Div />
+                <Div>Возможность видеть весь список: {courier?.wholeList ? "Включен" : "Отключен"}</Div>
+                <Div>
+                    <MyButton click={() => {updateCourierData("wholeList", !courier?.wholeList)}}>{courier?.wholeList ? "Отключить" : "Включить"}</MyButton>
+                </Div>
+
+                <Div />
+                <Div>
+                    <LinkButton href={`/courierActiveOrders/${id}`}>Список активных заказов</LinkButton>
+                </Div>
+                {/* <CourierActiveOrders id={id} changeSnackBar={changeSnackBar} /> */}
+
+
+                <Div />
+                <Div>История заказов:</Div>
+                <CourierDeliveredOrders id={id} />
+
+                <Div />
+                <Div>Действия:</Div>
+                <Div>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <MyButton click={() => {
+                            setDeleteModal(true)
+                        }}>Удалить курьера</MyButton>
+                    </div>
+                </Div>
+
+                <MySnackBar
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
                 />
-                <UpdateClientData
-                    title="Телефон"
-                    open={updates.phoneOpen}
-                    str={updates.phoneStr}
-                    name="phone"
-                    handleChange={handleChangesUpdates}
-                    client={courier}
-                    updateClientData={updateCourierData}
-                />
-                <UpdateClientData
-                    title="Email"
-                    open={updates.mailOpen}
-                    str={updates.mailStr}
-                    name="mail"
-                    handleChange={handleChangesUpdates}
-                    client={courier}
-                    updateClientData={updateCourierData}
-                />
-            </>
-
-            <Div />
-            <Div>Сводная информация:</Div>
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <div>Количество выполненных заказов:</div>
-                    <div className="text-red">{courier.completedOrders}</div>
-                </div>
-            </Div>
-
-            <Div />
-            <Div>Возможность видеть весь список: {courier?.wholeList ? "Включен" : "Отключен"}</Div>
-            <Div>
-                <MyButton click={() => {updateCourierData("wholeList", !courier?.wholeList)}}>{courier?.wholeList ? "Отключить" : "Включить"}</MyButton>
-            </Div>
-
-            <Div />
-            <Div>
-                <LinkButton href={`/courierActiveOrders/${id}`}>Список активных заказов</LinkButton>
-            </Div>
-            {/* <CourierActiveOrders id={id} changeSnackBar={changeSnackBar} /> */}
-
-
-            <Div />
-            <Div>История заказов:</Div>
-            <CourierDeliveredOrders id={id} />
-
-            <Div />
-            <Div>Действия:</Div>
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <MyButton click={deleteCourier}>Удалить курьера</MyButton>
-                </div>
-            </Div>
-
-            <MySnackBar
-                open={open}
-                text={message}
-                status={status}
-                close={closeSnack}
-            />
-            <Div />
-        </Container>
+                <Div />
+            </Container>
+        </div>
     );
 }

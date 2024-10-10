@@ -24,7 +24,7 @@ export default function OrdersWholeList() {
     const [franchiseesModal, setFranchiseesModal] = useState(false);
     const [franchisee, setFranchisee] = useState(null);
     const [order, setOrder] = useState(null)
-    const [activeOrdersKol, setActiveOrdersKol] = useState(0)
+    const [totalOrders, setTotalOrders] = useState(0)
     const [orderCourier, setOrderCourier] = useState(null);
     const [couriersModal, setCouriersModal] = useState(false);
     const [orderCourierChange, setOrderCourierChange] = useState(null)
@@ -100,23 +100,12 @@ export default function OrdersWholeList() {
         }
     };
 
-    const getActiveOrdersKol = () => {
-        api.get("/getActiveOrdersKol", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            setActiveOrdersKol(data.activeOrdersKol)
-        }).catch((e) => {
-            console.log(e);
-        })
-    }
-
     useEffect(() => {
         api.get("/getMe", {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             setUserData(data);
         });
-        getActiveOrdersKol()
     }, []);
 
     const updateOrderTransfer = () => {
@@ -204,6 +193,7 @@ export default function OrdersWholeList() {
             }
         )
             .then(({ data }) => {
+                setTotalOrders(data.totalOrders)
                 if (data.orders.length === 0) {
                     setHasMore(false);
                 } else {
@@ -311,7 +301,7 @@ export default function OrdersWholeList() {
 
                 <Div />
                 <Div>
-                    <div>Заказы: {activeOrdersKol}</div>
+                    <div>Заказы: {totalOrders}</div>
                 </Div>
                 <div className=" bg-black">
                     {orders.map((item, index) => {
@@ -320,7 +310,11 @@ export default function OrdersWholeList() {
                                 <div key={item?._id} ref={lastOrderElementRef}>
                                     <Li>
                                         <div className="flex items-center gap-x-3 flex-wrap">
-                                            <div className="bg-red">
+                                            <div className={clsx("", {
+                                                "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
+                                                "text-white bg-green-400": new Date(item?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
+                                                "text-white bg-blue-600": new Date(item?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
+                                            })}>
                                                 Заказ: 
                                             </div>
                                             <div>{item?.client?.userName}</div>
@@ -341,7 +335,12 @@ export default function OrdersWholeList() {
                                             </LinkButton>
                                             
                                             {userData?.role === "superAdmin" && <>
-                                                {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                                {item?.transferred && 
+                                                <div className={clsx("", {
+                                                    "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
+                                                })}>
+                                                    {item?.transferredFranchise}
+                                                </div>}
                                                 {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
                                                 {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
                                                     <span className="text-green-400">
@@ -362,7 +361,11 @@ export default function OrdersWholeList() {
                                 <div key={item._id}>
                                     <Li>
                                         <div className="flex items-center gap-x-3 flex-wrap">
-                                            <div className="bg-red">
+                                            <div className={clsx("", {
+                                                "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
+                                                "text-white bg-green-400": new Date(item?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
+                                                "text-white bg-blue-600": new Date(item?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
+                                            })}>
                                                 Заказ: 
                                             </div>
                                             <div>{item?.client?.userName}</div>
@@ -378,7 +381,12 @@ export default function OrdersWholeList() {
                                                 Просмотр
                                             </LinkButton>
                                             {userData?.role === "superAdmin" && <>
-                                                {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                                {item?.transferred && 
+                                                <div className={clsx("", {
+                                                    "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
+                                                })}>
+                                                    {item?.transferredFranchise}
+                                                </div>}
                                                 {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
                                                 {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
                                                     <span className="text-green-400">
