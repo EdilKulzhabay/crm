@@ -97,7 +97,7 @@ export default function CourierMain() {
                     <div>
                         [{" "}
                         <input
-                            size={11}
+                            size={13}
                             className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                             name="b12"
                             value={products.b12}
@@ -120,7 +120,7 @@ export default function CourierMain() {
                     <div>
                         [{" "}
                         <input
-                            size={11}
+                            size={13}
                             className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                             name="b19"
                             value={products.b19}

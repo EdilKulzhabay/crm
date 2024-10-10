@@ -333,6 +333,7 @@ export default function AddOrder() {
                                 [{" "}
                                 <input
                                     size={13}
+                                    style={{ fontSize: '16px' }}
                                     className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                                     name="b12"
                                     value={products.b12}
@@ -358,6 +359,7 @@ export default function AddOrder() {
                                 [{" "}
                                 <input
                                     size={13}
+                                    style={{ fontSize: '16px' }}
                                     className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
                                     name="b19"
                                     value={products.b19}
@@ -411,6 +413,7 @@ export default function AddOrder() {
                                     className="bg-black outline-none border-b border-red border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm"
                                     value={date.time}
                                     size={13}
+                                    style={{ fontSize: '16px' }}
                                     name="time"
                                     inputMode="numeric"
                                     pattern="\d*"

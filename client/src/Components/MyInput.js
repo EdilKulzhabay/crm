@@ -8,7 +8,8 @@ export default function MyInput(props) {
                 name={name}
                 className={`bg-black outline-none border-b border-${props.color} border-dashed text-sm lg:text-base`}
                 value={props.value}
-                size={11}
+                size={13}
+                style={{ fontSize: '16px' }}
                 inputMode="numeric"
                 pattern="\d*"
                 onKeyPress={(event) => {
@@ -23,7 +24,8 @@ export default function MyInput(props) {
         return (
             <input
                 name={name}
-                size={11}
+                size={13}
+                style={{ fontSize: '16px' }}
                 className={`bg-black outline-none border-b border-${props.color} border-dashed text-sm lg:text-base`}
                 value={props.value}
                 onChange={props.change}
