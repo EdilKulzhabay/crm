@@ -97,8 +97,8 @@ export default function ChooseFranchiseeModal(props) {
                                                     }}
                                                 >
                                                     <span className="text-green-400">
-                                    Выбрать
-                                </span>
+                                                        Выбрать
+                                                    </span>
                                                 </MyButton>
                                             </div>
                                         </div>

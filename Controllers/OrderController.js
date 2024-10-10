@@ -127,8 +127,24 @@ export const getOrders = async (req, res) => {
         }
 
         if (user.role === "superAdmin" && searchF !== "") {
-            filter.transferredFranchise = { $regex: searchF, $options: "i" }
+            // Сначала ищем франчайзи по имени или логину
+            const franchisees = await User.find({
+                $or: [
+                    { fullName: { $regex: searchF, $options: "i" } },
+                    { userName: { $regex: searchF, $options: "i" } }
+                ]
+            }).select('_id'); // Получаем только _id франчайзи
+        
+            // Извлекаем их ID
+            const franchiseeIds = franchisees.map(franchisee => franchisee._id);
+        
+            // Добавляем ID франчайзи в фильтр заказов
+            filter.$or = [
+                { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
+                { transferredFranchise: { $regex: searchF, $options: "i" } } // Фильтр по transferredFranchise
+            ];
         }
+        
 
         if (searchStatus && search) {
             // Find clients that match the search criteria
@@ -148,6 +164,8 @@ export const getOrders = async (req, res) => {
             ]
         }
 
+        const totalOrders = await Order.countDocuments(filter)
+
         // Execute the query with the updated filter
         const orders = await Order.find(filter)
             .populate("franchisee")
@@ -156,7 +174,7 @@ export const getOrders = async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        res.json({ orders });
+        res.json({ orders, totalOrders });
     } catch (error) {
         console.log(error);
         res.status(500).json({

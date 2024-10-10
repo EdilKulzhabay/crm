@@ -542,7 +542,7 @@ export const addOrderClientMobile = async (req, res) => {
         //У клиента есть chooseTime, если равно true то он может выбрать дату и время доставки
         //Address должен быть в виде {actual: "", link: ""} actual это street + house
         //Products = {b12: "", b19: ""}
-        //opForm это форма оплаты, по типу нал, перевод, карта и талон
+        //opForm это форма оплаты, по типу нал, перевод, карта и Талоны
 
         const client = await Client.findById(clientId)
 

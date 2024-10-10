@@ -4,11 +4,27 @@ import Div from "../../Components/Div";
 import MyButton from "../../Components/MyButton";
 import { useEffect, useState } from "react";
 import api from "../../api"
+import useScrollPosition from "../../customHooks/useScrollPosition";
+import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
 
 export default function SuperAdminCoincidencePage() {
+    const scrollPosition = useScrollPosition();
     const navigate = useNavigate();
     const { id } = useParams();
     const [notification, setNotification] = useState({})
+    const [deleteModal, setDeleteModal] = useState(false)
+    const [deleteObject, setDeleteObject] = useState(null)
+
+    const confirmDelete = () => {
+        deleteNotification()
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
+
+    const closeConfirmModal = () => {
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
 
     useEffect(() => {
         api.post("/getNotificationDataForId", {id}, {
@@ -49,68 +65,77 @@ export default function SuperAdminCoincidencePage() {
     };
 
     return (
-        <Container role="superAdmin">
-            <Div>Совпадение по {notification?.matchesType === "client" ? "Клиенту" : "Заказу"}</Div>
-            <Div />
-            <Div>Совпадении: {notification?.matchedField?.includes("mail") && "почта "} {notification?.matchedField?.includes("fullName") && "наименование или ФИО "} {notification?.matchedField?.includes("phone") && "номер телефона "} {notification?.matchedField?.includes("addresses") && "адрес"}</Div>
-            <Div />
-            <div className="flex flex-col lg:flex-row lg:gap-x-5">
-                <div className="lg:w-[33%]">
-                    <Div>
-                        <div className="w-full text-center">
-                            Первый {notification?.first?.fullName}
-                        </div>
-                    </Div>
-                    <Div>
-                        Дата добавления: {formatDate(notification?.firstObject?.createdAt)}
-                    </Div>
-                    <Div>
-                        {notification?.firstObject?.fullName}
-                    </Div>
-                    <Div>
-                        {notification?.firstObject?.phone}
-                    </Div>
-                    <Div>
-                        {notification?.firstObject?.addresses.length > 0 && notification?.firstObject?.addresses.map((item, index) => {
-                            return <div key={item._id}>
-                                Адрес {index + 1}: {item.street} {item.house}
+        <div className="relative">
+            {deleteModal && <ConfirmDeleteModal
+                closeConfirmModal={closeConfirmModal}
+                confirmDelete={confirmDelete}
+                scrollPosition={scrollPosition}
+            />}
+            <Container role="superAdmin">
+                <Div>Совпадение по {notification?.matchesType === "client" ? "Клиенту" : "Заказу"}</Div>
+                <Div />
+                <Div>Совпадении: {notification?.matchedField?.includes("mail") && "почта "} {notification?.matchedField?.includes("fullName") && "наименование или ФИО "} {notification?.matchedField?.includes("phone") && "номер телефона "} {notification?.matchedField?.includes("addresses") && "адрес"}</Div>
+                <Div />
+                <div className="flex flex-col lg:flex-row lg:gap-x-5">
+                    <div className="lg:w-[33%]">
+                        <Div>
+                            <div className="w-full text-center">
+                                Первый {notification?.first?.fullName}
                             </div>
-                        })} 
-                    </Div>
-                </div>
-                <div className="lg:hidden"><Div /></div>
-                <div className="lg:w-[33%]">
-                    <Div>
-                        <div className="w-full text-center">
-                            Второй {notification?.second?.fullName}
-                        </div>
-                    </Div>
-                    <Div>
-                        Дата добавления: {formatDate(notification?.secondObject?.createdAt)}
-                    </Div>
-                    <Div>
-                        {notification?.secondObject?.fullName}
-                    </Div>
-                    <Div>
-                        {notification?.secondObject?.phone}
-                    </Div>
-                    <Div>
-                        {notification?.secondObject?.addresses.length > 0 && notification?.secondObject?.addresses.map((item, index) => {
-                            return <div key={item._id}>
-                                Адрес {index + 1}: {item.street} {item.house}
+                        </Div>
+                        <Div>
+                            Дата добавления: {formatDate(notification?.firstObject?.createdAt)}
+                        </Div>
+                        <Div>
+                            {notification?.firstObject?.fullName}
+                        </Div>
+                        <Div>
+                            {notification?.firstObject?.phone}
+                        </Div>
+                        <Div>
+                            {notification?.firstObject?.addresses.length > 0 && notification?.firstObject?.addresses.map((item, index) => {
+                                return <div key={item._id}>
+                                    Адрес {index + 1}: {item.street} {item.house}
+                                </div>
+                            })} 
+                        </Div>
+                    </div>
+                    <div className="lg:hidden"><Div /></div>
+                    <div className="lg:w-[33%]">
+                        <Div>
+                            <div className="w-full text-center">
+                                Второй {notification?.second?.fullName}
                             </div>
-                        })} 
-                    </Div>
+                        </Div>
+                        <Div>
+                            Дата добавления: {formatDate(notification?.secondObject?.createdAt)}
+                        </Div>
+                        <Div>
+                            {notification?.secondObject?.fullName}
+                        </Div>
+                        <Div>
+                            {notification?.secondObject?.phone}
+                        </Div>
+                        <Div>
+                            {notification?.secondObject?.addresses.length > 0 && notification?.secondObject?.addresses.map((item, index) => {
+                                return <div key={item._id}>
+                                    Адрес {index + 1}: {item.street} {item.house}
+                                </div>
+                            })} 
+                        </Div>
+                    </div>
                 </div>
-            </div>
-            <Div />
-            <Div>
-            <div className="flex items-center gap-x-3">
-                    <MyButton click={deleteNotification}>Удалить</MyButton>
-                    <MyButton click={cancel}>Назад</MyButton>
-                </div>
-            </Div>
-            <Div />
-        </Container>
+                <Div />
+                <Div>
+                <div className="flex items-center gap-x-3">
+                        <MyButton click={() => {
+                            setDeleteModal(true)
+                        }}>Удалить</MyButton>
+                        <MyButton click={cancel}>Назад</MyButton>
+                    </div>
+                </Div>
+                <Div />
+            </Container>
+        </div>
     )
 }

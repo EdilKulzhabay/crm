@@ -12,6 +12,8 @@ import clsx from "clsx"
 import DataInput from "../Components/DataInput";
 import UpIcon from "../icons/UpIcon";
 import DownIcon from "../icons/DownIcon";
+import useScrollPosition from "../customHooks/useScrollPosition";
+import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 
 const adjustDateByDays = (dateStr, days) => {
     const currentDate = new Date(dateStr);
@@ -23,6 +25,7 @@ const adjustDateByDays = (dateStr, days) => {
 };
 
 export default function OrderPage() {
+    const scrollPosition = useScrollPosition();
     const { id } = useParams();
     const navigate = useNavigate();
     const [role, setRole] = useState("");
@@ -44,21 +47,19 @@ export default function OrderPage() {
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
 
-    const [scrollPosition, setScrollPosition] = useState(0);
+    const [deleteModal, setDeleteModal] = useState(false)
+    const [deleteObject, setDeleteObject] = useState(null)
 
-    const handleScroll = useCallback(() => {
-        setScrollPosition(window.scrollY);
-        console.log("Scroll Y position:", window.scrollY);
-    }, []);
+    const confirmDelete = () => {
+        deleteOrder()
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
 
-    useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        
-        // Удаление обработчика при размонтировании компонента
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [handleScroll]);
+    const closeConfirmModal = () => {
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
 
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
@@ -202,322 +203,332 @@ export default function OrderPage() {
     }
 
     return (
-        <Container role={role}>
-            {couriersModal && (
-                <ChooseCourierModal
-                    closeCouriersModal={closeCouriersModal}
-                    chooseCourier={chooseCourier}
+        <div className="relative">
+            {deleteModal && <ConfirmDeleteModal
+                    closeConfirmModal={closeConfirmModal}
+                    confirmDelete={confirmDelete}
                     scrollPosition={scrollPosition}
-                />
-            )}
-            <Div>Детали заказа</Div>
-            <Div />
-            <Div>Клиент:</Div>
-            <>
-                <Li>
+                />}
+            <Container role={role}>
+                {couriersModal && (
+                    <ChooseCourierModal
+                        closeCouriersModal={closeCouriersModal}
+                        chooseCourier={chooseCourier}
+                        scrollPosition={scrollPosition}
+                    />
+                )}
+                
+                <Div>Детали заказа</Div>
+                <Div />
+                <Div>Клиент:</Div>
+                <>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Имя:</div>
+                            <div>{order?.client?.fullName || ""}</div>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Телефон:</div>
+                            <div>{order?.client?.phone || ""}</div>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Адрес:</div>
+                            <div>
+                                {order?.address?.actual || ""}{" "}
+                                <a
+                                    href={order?.address?.link || "/"}
+                                    className="text-blue-500 hover:text-blue-500"
+                                    target="_blank" rel="noreferrer"
+                                >
+                                    %2gis%
+                                </a>
+                            </div>
+                        </div>
+                    </Li>
+                </>
+                <Div />
+                <Div>Продукты:</Div>
+                <>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>12,5-литровая бутыль:</div>
+                            <div>{order?.products?.b12} шт</div>
+                            <div>
+                                [{" "}
+                                <input
+                                    size={13}
+                                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                    name="b12"
+                                    value={products.b12}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        handleProductsChange(event);
+                                    }}
+                                />{" "}
+                                ] шт
+                            </div>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>18,9-литровая бутыль:</div>
+                            <div>{order?.products?.b19} шт</div>
+                            <div>
+                                [{" "}
+                                <input
+                                    size={13}
+                                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                    name="b19"
+                                    value={products.b19}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        handleProductsChange(event);
+                                    }}
+                                />{" "}
+                                ] шт
+                            </div>
+                        </div>
+                    </Li>
+                    {(products.b12 !== ""  || products.b19 !== "") && <Div>
+                        <MyButton click={() => {
+                            if (products.b12 === "") {
+                                products.b12 = order?.products?.b12
+                            }
+                            if (products.b19 === "") {
+                                products.b19 = order?.products?.b19
+                            }
+                            updateOrder("products", products)
+                        }}>Применить</MyButton>
+                    </Div>}
+                </>
+
+                <Div />
+                <Div>Дата и время заказа:</Div>
+                <>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Дата:</div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    value={date.d}
+                                    name="d"
+                                    change={handleDateChange}
+                                />
+                                ]
+                            </div>
+                            <div className="flex items-center gap-x-2">
+                                <button onClick={incrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                    <UpIcon className="w-6 h-6 text-white" />
+                                </button>
+                                <button onClick={decrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                    <DownIcon className="w-6 h-6 text-white" />
+                                </button>
+                            </div>
+                            {/* <div className="text-red">{order?.date?.d}</div> */}
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Время:</div>
+                            <div className="text-red">
+                                [
+                                <input
+                                    className="bg-black outline-none border-b border-red border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm"
+                                    value={date.time}
+                                    size={13}
+                                    name="time"
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        handleTimeChange(event);
+                                    }}
+                                    placeholder=" HH:MM - HH:MM"
+                                />
+                                ]
+                            </div>
+                            {/* <div className="text-red">{order?.date?.time}</div> */}
+                        </div>
+                    </Li>
+                    {(date?.d !== order?.date?.d || date?.time !== order?.date?.time) && <Div><MyButton click={() => {updateOrder("date", date)}}>Применить</MyButton></Div>}
+                </>
+
+                <Div />
+                <Div>
+                    <div>Форма оплаты: {order?.opForm === "fakt" && "Нал_Карта_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "В долг"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "смешанно"}</div>
+                </Div>
+
+                <Div />
+                <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Имя:</div>
-                        <div>{order?.client?.fullName || ""}</div>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Телефон:</div>
-                        <div>{order?.client?.phone || ""}</div>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Адрес:</div>
-                        <div>
-                            {order?.address?.actual || ""}{" "}
-                            <a
-                                href={order?.address?.link || "/"}
-                                className="text-blue-500 hover:text-blue-500"
-                                target="_blank" rel="noreferrer"
+                        <div>Статус заказа:</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-red">
+                            [
+                            <button
+                                className={clsx("", {
+                                    "text-red-500": orderStatus !== "awaitingOrder",
+                                    "text-yellow-300": orderStatus === "awaitingOrder"
+                                })}
                             >
-                                %2gis%
-                            </a>
-                        </div>
-                    </div>
-                </Li>
-            </>
-            <Div />
-            <Div>Продукты:</Div>
-            <>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>12,5-литровая бутыль:</div>
-                        <div>{order?.products?.b12} шт</div>
-                        <div>
-                            [{" "}
-                            <input
-                                size={13}
-                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
-                                name="b12"
-                                value={products.b12}
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    handleProductsChange(event);
-                                }}
-                            />{" "}
-                            ] шт
-                        </div>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>18,9-литровая бутыль:</div>
-                        <div>{order?.products?.b19} шт</div>
-                        <div>
-                            [{" "}
-                            <input
-                                size={13}
-                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
-                                name="b19"
-                                value={products.b19}
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    handleProductsChange(event);
-                                }}
-                            />{" "}
-                            ] шт
-                        </div>
-                    </div>
-                </Li>
-                {(products.b12 !== ""  || products.b19 !== "") && <Div>
-                    <MyButton click={() => {
-                        if (products.b12 === "") {
-                            products.b12 = order?.products?.b12
-                        }
-                        if (products.b19 === "") {
-                            products.b19 = order?.products?.b19
-                        }
-                        updateOrder("products", products)
-                    }}>Применить</MyButton>
-                </Div>}
-            </>
-
-            <Div />
-            <Div>Дата и время заказа:</Div>
-            <>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Дата:</div>
-                        <div className="text-red">
-                            [
-                            <DataInput
-                                color="red"
-                                value={date.d}
-                                name="d"
-                                change={handleDateChange}
-                            />
-                            ]
-                        </div>
-                        <div className="flex items-center gap-x-2">
-                            <button onClick={incrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                <UpIcon className="w-6 h-6 text-white" />
+                                Ожидает заказ
                             </button>
-                            <button onClick={decrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                <DownIcon className="w-6 h-6 text-white" />
+                            <div>/</div>
+                            <button
+                                className={clsx("", {
+                                    "text-red-500": orderStatus !== "onTheWay",
+                                    "text-yellow-300": orderStatus === "onTheWay"
+                                })}
+                            >
+                                В пути
                             </button>
-                        </div>
-                        {/* <div className="text-red">{order?.date?.d}</div> */}
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Время:</div>
-                        <div className="text-red">
-                            [
-                            <input
-                                className="bg-black outline-none border-b border-red border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm"
-                                value={date.time}
-                                size={13}
-                                name="time"
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    handleTimeChange(event);
-                                }}
-                                placeholder=" HH:MM - HH:MM"
-                            />
+                            <div>/</div>
+                            <button
+                                className={clsx("", {
+                                    "text-red-500": orderStatus !== "delivered",
+                                    "text-yellow-300": orderStatus === "delivered"
+                                })}
+                            >
+                                Доставлен
+                            </button>
+                            <div>/</div>
+                            <button
+                                className={clsx("", {
+                                    "text-red-500": orderStatus !== "cancelled",
+                                    "text-yellow-300": orderStatus === "cancelled"
+                                })}
+                                // onClick={() => {
+                                //     setOrderStatus("cancelled");
+                                // }}
+                            >
+                                Отменен
+                            </button>
                             ]
-                        </div>
-                        {/* <div className="text-red">{order?.date?.time}</div> */}
-                    </div>
-                </Li>
-                {(date?.d !== order?.date?.d || date?.time !== order?.date?.time) && <Div><MyButton click={() => {updateOrder("date", date)}}>Применить</MyButton></Div>}
-            </>
-
-            <Div />
-            <Div>
-                <div>Форма оплаты: {order?.opForm === "fakt" && "по факту"}{order?.opForm === "postpay" && "постоплата"}{order?.opForm === "credit" && "в долг"}{order?.opForm === "coupon" && "талон"}{order?.opForm === "mixed" && "смешанно"}</div>
-            </Div>
-
-            <Div />
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <div>Статус заказа:</div>
-                    <div className="flex items-center gap-x-2 flex-wrap text-red">
-                        [
-                        <button
-                            className={clsx("", {
-                                "text-red-500": orderStatus !== "awaitingOrder",
-                                "text-yellow-300": orderStatus === "awaitingOrder"
-                            })}
-                        >
-                            Ожидает заказ
-                        </button>
-                        <div>/</div>
-                        <button
-                            className={clsx("", {
-                                "text-red-500": orderStatus !== "onTheWay",
-                                "text-yellow-300": orderStatus === "onTheWay"
-                            })}
-                        >
-                            В пути
-                        </button>
-                        <div>/</div>
-                        <button
-                            className={clsx("", {
-                                "text-red-500": orderStatus !== "delivered",
-                                "text-yellow-300": orderStatus === "delivered"
-                            })}
-                        >
-                            Доставлен
-                        </button>
-                        <div>/</div>
-                        <button
-                            className={clsx("", {
-                                "text-red-500": orderStatus !== "cancelled",
-                                "text-yellow-300": orderStatus === "cancelled"
-                            })}
-                            // onClick={() => {
-                            //     setOrderStatus("cancelled");
-                            // }}
-                        >
-                            Отменен
-                        </button>
-                        ]
-                        {/* <MyButton
-                            click={() => {
-                                updateOrder("status", orderStatus);
-                            }}
-                        >
-                            <span className="text-green-400">
-                            Применить
-                            </span>
-                        </MyButton> */}
-                    </div>
-                </div>
-            </Div>
-            {/* <Li>
-                {order?.status === "awaitingOrder"
-                    ? "Ожидает заказ"
-                    : order?.status === "onTheWay"
-                    ? "В пути"
-                    : order?.status === "delivered"
-                    ? "Доставлен"
-                    : "Отменен"}
-            </Li> */}
-
-            <Div />
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <div>Курьер:</div>
-                    <div>{order?.courier?.fullName}</div>
-                </div>
-            </Div>
-            <Li>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    {order?.courier?._id && <LinkButton href={`/CourierPage/${order?.courier?._id}`}>
-                        Просмотр
-                    </LinkButton>
-                    }
-                    
-                    <MyButton
-                        click={() => {
-                            setCouriersModal(true);
-                        }}
-                    >
-                        {order?.courier?._id ? "Изменить " : "Назначить " }курьера
-                    </MyButton>
-
-                    {orderCourier &&
-                        orderCourier?._id !== order?.courier?._id && (
-                            <MyButton
+                            {/* <MyButton
                                 click={() => {
-                                    updateOrder("courier", orderCourier);
+                                    updateOrder("status", orderStatus);
                                 }}
                             >
                                 <span className="text-green-400">
                                 Применить
                                 </span>
-                            </MyButton>
-                        )}
-                    {orderCourier &&
-                        orderCourier?._id !== order?.courier?._id && (
-                            <div className="flex items-center gap-x-3 flex-wrap">
-                                <div>|</div> <div>{orderCourier.fullName}</div>{" "}
-                            </div>
-                        )}
-                </div>
-            </Li>
-
-            <Div />
-            <Div>Комментарии к заказу:</Div>
-            <Li>
-                <textarea value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
-            </Li>
-            <Div>
-                {order?.comment !== comment && <MyButton click={() => {updateOrder("comment", comment)}}><span className="text-green-500">Применить</span></MyButton>}
-            </Div>
-
-            <Div />
-            <Div>Отзыв клиента:</Div>
-            <Li>
-                Отзыв:{" "}
-                {order?.clientNotes
-                    ? order.clientNotes
-                    : "Клиент не оставил отзыва"}
-            </Li>
-
-            {role === "superAdmin" && <>
-                <Div />
-                <Div>Действия:</Div>
-                <Div>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <MyButton click={deleteOrder}>
-                            Удалить заказ
-                        </MyButton>
+                            </MyButton> */}
+                        </div>
                     </div>
                 </Div>
-            </>}
-            <Div />
-            <MySnackBar
-                open={open}
-                text={message}
-                status={status}
-                close={closeSnack}
-            />
-        </Container>
+                {/* <Li>
+                    {order?.status === "awaitingOrder"
+                        ? "Ожидает заказ"
+                        : order?.status === "onTheWay"
+                        ? "В пути"
+                        : order?.status === "delivered"
+                        ? "Доставлен"
+                        : "Отменен"}
+                </Li> */}
+
+                <Div />
+                <Div>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <div>Курьер:</div>
+                        <div>{order?.courier?.fullName}</div>
+                    </div>
+                </Div>
+                <Li>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        {order?.courier?._id && <LinkButton href={`/CourierPage/${order?.courier?._id}`}>
+                            Просмотр
+                        </LinkButton>
+                        }
+                        
+                        <MyButton
+                            click={() => {
+                                setCouriersModal(true);
+                            }}
+                        >
+                            {order?.courier?._id ? "Изменить " : "Назначить " }курьера
+                        </MyButton>
+
+                        {orderCourier &&
+                            orderCourier?._id !== order?.courier?._id && (
+                                <MyButton
+                                    click={() => {
+                                        updateOrder("courier", orderCourier);
+                                    }}
+                                >
+                                    <span className="text-green-400">
+                                    Применить
+                                    </span>
+                                </MyButton>
+                            )}
+                        {orderCourier &&
+                            orderCourier?._id !== order?.courier?._id && (
+                                <div className="flex items-center gap-x-3 flex-wrap">
+                                    <div>|</div> <div>{orderCourier.fullName}</div>{" "}
+                                </div>
+                            )}
+                    </div>
+                </Li>
+
+                <Div />
+                <Div>Комментарии к заказу:</Div>
+                <Li>
+                    <textarea value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                </Li>
+                <Div>
+                    {order?.comment !== comment && <MyButton click={() => {updateOrder("comment", comment)}}><span className="text-green-500">Применить</span></MyButton>}
+                </Div>
+
+                <Div />
+                <Div>Отзыв клиента:</Div>
+                <Li>
+                    Отзыв:{" "}
+                    {order?.clientNotes
+                        ? order.clientNotes
+                        : "Клиент не оставил отзыва"}
+                </Li>
+
+                {role === "superAdmin" && <>
+                    <Div />
+                    <Div>Действия:</Div>
+                    <Div>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <MyButton click={() => {
+                                setDeleteModal(true)
+                            }}>
+                                Удалить заказ
+                            </MyButton>
+                        </div>
+                    </Div>
+                </>}
+                <Div />
+                <MySnackBar
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
+                />
+            </Container>
+        </div>
     );
 }

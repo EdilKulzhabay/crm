@@ -10,8 +10,11 @@ import LinkButton from "../Components/LinkButton";
 import MySnackBar from "../Components/MySnackBar";
 import Container from "../Components/Container";
 import * as XLSX from "xlsx";
+import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
+import useScrollPosition from "../customHooks/useScrollPosition";
 
 export default function ClientList() {
+    const scrollPosition = useScrollPosition();
     const [search, setSearch] = useState("");
     const [clients, setClients] = useState([]);
     const [filterClientStatus, setFilterClientStatus] = useState("all");
@@ -23,6 +26,17 @@ export default function ClientList() {
 
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleteObject, setDeleteObject] = useState(null)
+
+    const confirmDelete = () => {
+        deleteClient(deleteObject)
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
+
+    const closeConfirmModal = () => {
+        setDeleteModal(false)
+        setDeleteObject(null)
+    }
 
     const closeSnack = () => {
         setOpen(false);
@@ -281,273 +295,280 @@ export default function ClientList() {
     };
 
     return (
-        <Container role={role}>
-            <Div>
-                <div>Клиенты</div>
-            </Div>
-            <Div />
+        <div className="relative">
+            {deleteModal && <ConfirmDeleteModal
+                closeConfirmModal={closeConfirmModal}
+                confirmDelete={confirmDelete}
+                scrollPosition={scrollPosition}
+            />}
+            <Container role={role}>
+                <Div>
+                    <div>Клиенты</div>
+                </Div>
+                <Div />
 
-            <Div>
-                <div>Поиск клиента:</div>
-            </Div>
-            <Div>
-                <div className="flex items-center flex-wrap gap-x-4">
-                    <MyInput
-                        value={search}
-                        change={handleSearch}
-                        color="white"
-                    />
-                    <MyButton click={searchClient}>Найти</MyButton>
-                </div>
-            </Div>
-            <Div />
-            <Div>Фильтры:</Div>
-            <>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Статус клиента:</div>
-                        <div className="flex items-center gap-x-2 flex-wrap text-red">
-                            [
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterClientStatus("all");
+                <Div>
+                    <div>Поиск клиента:</div>
+                </Div>
+                <Div>
+                    <div className="flex items-center flex-wrap gap-x-4">
+                        <MyInput
+                            value={search}
+                            change={handleSearch}
+                            color="white"
+                        />
+                        <MyButton click={searchClient}>Найти</MyButton>
+                    </div>
+                </Div>
+                <Div />
+                <Div>Фильтры:</Div>
+                <>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Статус клиента:</div>
+                            <div className="flex items-center gap-x-2 flex-wrap text-red">
+                                [
+                                <button
+                                    className="text-red hover:text-blue-500"
+                                    onClick={() => {
+                                        setFilterClientStatus("all");
+                                    }}
+                                >
+                                    Все
+                                </button>
+                                <div>/</div>
+                                <button
+                                    className="text-red hover:text-blue-500"
+                                    onClick={() => {
+                                        setFilterClientStatus("active");
+                                    }}
+                                >
+                                    Активные
+                                </button>
+                                <div>/</div>
+                                <button
+                                    className="text-red hover:text-blue-500"
+                                    onClick={() => {
+                                        setFilterClientStatus("inActive");
+                                    }}
+                                >
+                                    Неактивные
+                                </button>
+                                ]
+                            </div>
+                            <MyButton
+                                click={() => {
+                                    setClients([]);
+                                    setPage(1);
+                                    setLoading(false);
+                                    setHasMore(true);
+                                    loadMoreClients();
                                 }}
                             >
-                                Все
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterClientStatus("active");
-                                }}
-                            >
-                                Активные
-                            </button>
-                            <div>/</div>
-                            <button
-                                className="text-red hover:text-blue-500"
-                                onClick={() => {
-                                    setFilterClientStatus("inActive");
-                                }}
-                            >
-                                Неактивные
-                            </button>
-                            ]
+                                <span className="text-green-400">
+                                Применить
+                                </span>
+                            </MyButton>
                         </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Дата регистрации:</div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    value={dates.startDate}
+                                    name="startDate"
+                                    change={handleDateChange}
+                                />
+                                ]
+                            </div>
+                            <div> - </div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    value={dates.endData}
+                                    name="endData"
+                                    change={handleDateChange}
+                                />
+                                ]
+                            </div>
+                            <MyButton
+                                click={() => {
+                                    setClients([]);
+                                    setPage(1);
+                                    setLoading(false);
+                                    setHasMore(true);
+                                    loadMoreClients();
+                                }}
+                            >
+                                <span className="text-green-400">
+                                Применить
+                                </span>
+                            </MyButton>
+                        </div>
+                    </Li>
+                </>
+
+                <Div />
+
+                <Div>Сводная информация:</Div>
+                <>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Общее количество клиентов:</div>
+                            <Info>{freeInfo.total}</Info>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Количество активных клиентов:</div>
+                            <Info>{freeInfo.activeTotal}</Info>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Количество неактивных клиентов:</div>
+                            <Info>{freeInfo.inActiveTotal}</Info>
+                        </div>
+                    </Li>
+                </>
+
+                <Div />
+
+                <Div>Список клиентов:</Div>
+                <div className="max-h-[180px] overflow-scroll">
+                    {clients.map((client, index) => {
+                        if (clients.length === index + 1) {
+                            return (
+                                <div key={client._id} ref={lastClientElementRef}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-2 flex-wrap">
+                                            <div>{client.userName}</div>
+                                            <div>|</div>
+                                            <div>{client.phone}</div>
+                                            <div>|</div>
+                                            <div>
+                                                {client.status === "active"
+                                                    ? "Активен"
+                                                    : "Неактивен"}
+                                            </div>
+                                            <LinkButton
+                                                href={`/ClientPage/${client._id}`}
+                                            >
+                                                Редактировать
+                                            </LinkButton>
+                                            <MyButton
+                                                click={() => {
+                                                    setDeleteObject(client._id)
+                                                    setDeleteModal(true)
+                                                    // deleteClient(client._id);
+                                                }}
+                                            >
+                                                Удалить
+                                            </MyButton>
+                                            {role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
+                                        </div>
+                                    </Li>
+                                </div>
+                            );
+                        } else {
+                            return (
+                                <div key={client._id}>
+                                    <Li>
+                                        <div className="flex items-center gap-x-2 flex-wrap">
+                                            <div>{client.userName}</div>
+                                            <div>|</div>
+                                            <div>{client.phone}</div>
+                                            <div>|</div>
+                                            <div>
+                                                {client.status === "active"
+                                                    ? "Активен"
+                                                    : "Неактивен"}
+                                            </div>
+                                            <LinkButton
+                                                href={`/ClientPage/${client._id}`}
+                                            >
+                                                Редактировать
+                                            </LinkButton>
+                                            <MyButton
+                                                click={() => {
+                                                    setDeleteObject(client._id)
+                                                    setDeleteModal(true)
+                                                    // deleteClient(client._id);
+                                                }}
+                                            >
+                                                Удалить
+                                            </MyButton>
+                                            {role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
+                                        </div>
+                                    </Li>
+                                </div>
+                            );
+                        }
+                    })}
+                    {loading && <div>Загрузка...</div>}
+                </div>
+
+                <Div />
+
+                <Div>Действия:</Div>
+                <Div>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <LinkButton href="/addClinet">Добавить клиента</LinkButton>
+                        <MyButton click={getClientsForExcel}>
+                            Экспорт в excel
+                        </MyButton>
+                        <input
+                            type="file"
+                            onChange={handleFileChange}
+                            ref={fileInputRef}
+                            className="hidden"
+                        />
                         <MyButton
                             click={() => {
-                                setClients([]);
-                                setPage(1);
-                                setLoading(false);
-                                setHasMore(true);
-                                loadMoreClients();
+                                fileInputRef.current.click();
                             }}
                         >
-                            <span className="text-green-400">
-                            Применить
-                            </span>
+                            Импортировать с excel
                         </MyButton>
+                        {selectedFile && (
+                            <div className="text-red">{selectedFile.name}</div>
+                        )}
                     </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Дата регистрации:</div>
-                        <div className="text-red">
-                            [
-                            <DataInput
-                                color="red"
-                                value={dates.startDate}
-                                name="startDate"
-                                change={handleDateChange}
-                            />
-                            ]
-                        </div>
-                        <div> - </div>
-                        <div className="text-red">
-                            [
-                            <DataInput
-                                color="red"
-                                value={dates.endData}
-                                name="endData"
-                                change={handleDateChange}
-                            />
-                            ]
-                        </div>
-                        <MyButton
-                            click={() => {
-                                setClients([]);
-                                setPage(1);
-                                setLoading(false);
-                                setHasMore(true);
-                                loadMoreClients();
-                            }}
-                        >
-                            <span className="text-green-400">
-                            Применить
-                            </span>
-                        </MyButton>
-                    </div>
-                </Li>
-            </>
+                </Div>
 
-            <Div />
-
-            <Div>Сводная информация:</Div>
-            <>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Общее количество клиентов:</div>
-                        <Info>{freeInfo.total}</Info>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Количество активных клиентов:</div>
-                        <Info>{freeInfo.activeTotal}</Info>
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Количество неактивных клиентов:</div>
-                        <Info>{freeInfo.inActiveTotal}</Info>
-                    </div>
-                </Li>
-            </>
-
-            <Div />
-
-            <Div>Список клиентов:</Div>
-            <div className="max-h-[180px] overflow-scroll">
-                {clients.map((client, index) => {
-                    if (clients.length === index + 1) {
-                        return (
-                            <div key={client._id} ref={lastClientElementRef}>
-                                <Li>
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>{client.userName}</div>
-                                        <div>|</div>
-                                        <div>{client.phone}</div>
-                                        <div>|</div>
-                                        <div>
-                                            {client.status === "active"
-                                                ? "Активен"
-                                                : "Неактивен"}
-                                        </div>
-                                        <LinkButton
-                                            href={`/ClientPage/${client._id}`}
-                                        >
-                                            Редактировать
-                                        </LinkButton>
-                                        <MyButton
-                                            click={() => {
-                                                // setDeleteObject(client._id)
-                                                // setDeleteModal(true)
-                                                deleteClient(client._id);
-                                            }}
-                                        >
-                                            Удалить
-                                        </MyButton>
-                                        {role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
-                                    </div>
-                                </Li>
-                            </div>
-                        );
-                    } else {
-                        return (
-                            <div key={client._id}>
-                                <Li>
-                                    <div className="flex items-center gap-x-2 flex-wrap">
-                                        <div>{client.userName}</div>
-                                        <div>|</div>
-                                        <div>{client.phone}</div>
-                                        <div>|</div>
-                                        <div>
-                                            {client.status === "active"
-                                                ? "Активен"
-                                                : "Неактивен"}
-                                        </div>
-                                        <LinkButton
-                                            href={`/ClientPage/${client._id}`}
-                                        >
-                                            Редактировать
-                                        </LinkButton>
-                                        <MyButton
-                                            click={() => {
-                                                // setDeleteObject(client._id)
-                                                // setDeleteModal(true)
-                                                deleteClient(client._id);
-                                            }}
-                                        >
-                                            Удалить
-                                        </MyButton>
-                                        {role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
-                                    </div>
-                                </Li>
-                            </div>
-                        );
-                    }
-                })}
-                {loading && <div>Загрузка...</div>}
-            </div>
-
-            <Div />
-
-            <Div>Действия:</Div>
-            <Div>
-                <div className="flex items-center gap-x-3 flex-wrap">
-                    <LinkButton href="/addClinet">Добавить клиента</LinkButton>
-                    <MyButton click={getClientsForExcel}>
-                        Экспорт в excel
-                    </MyButton>
-                    <input
-                        type="file"
-                        onChange={handleFileChange}
-                        ref={fileInputRef}
-                        className="hidden"
-                    />
-                    <MyButton
-                        click={() => {
-                            fileInputRef.current.click();
-                        }}
-                    >
-                        Импортировать с excel
-                    </MyButton>
-                    {selectedFile && (
-                        <div className="text-red">{selectedFile.name}</div>
-                    )}
-                </div>
-            </Div>
-
-            {/* {deleteModal && <div 
-                onClick={() => {
-                    setDeleteModal(false)
-                }}
-                className="absolute inset-0 bg-black bg-opacity-80"
-            >
-                <div
-                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-black bg-opacity-80"
-                    
+                {/* {deleteModal && <div 
+                    onClick={() => {
+                        setDeleteModal(false)
+                    }}
+                    className="absolute inset-0 bg-black bg-opacity-80"
                 >
                     <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                        }}
-                        className="relative px-8 py-4 border border-red rounded-md"
+                        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-black bg-opacity-80"
+                        
                     >
-                        <MyButton click={() => {deleteClient(deleteObject)}}>подтвердить удаление</MyButton>
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                            className="relative px-8 py-4 border border-red rounded-md"
+                        >
+                            <MyButton click={() => {deleteClient(deleteObject)}}>подтвердить удаление</MyButton>
+                        </div>
                     </div>
-                </div>
-            </div>} */}
+                </div>} */}
 
-            <Div />
-            <MySnackBar
-                open={open}
-                text={message}
-                status={status}
-                close={closeSnack}
-            />
-        </Container>
+                <Div />
+                <MySnackBar
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
+                />
+            </Container>
+        </div>
     );
 }

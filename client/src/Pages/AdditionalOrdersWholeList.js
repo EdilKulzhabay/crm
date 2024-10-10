@@ -3,10 +3,8 @@ import api from "../api";
 import Div from "../Components/Div";
 import Li from "../Components/Li";
 import MyButton from "../Components/MyButton";
-import MyInput from "../Components/MyInput";
 import LinkButton from "../Components/LinkButton";
 import Container from "../Components/Container";
-import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
 import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
@@ -134,7 +132,11 @@ export default function AdditionalOrdersWholeList() {
                             <div key={item?._id}>
                                 <Li>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
+                                        <div className={clsx("", {
+                                                "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
+                                                "text-white bg-green-400": new Date(item?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
+                                                "text-white bg-blue-600": new Date(item?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
+                                            })}>
                                             Заказ: 
                                         </div>
                                         <div>{item?.client?.userName}</div>
