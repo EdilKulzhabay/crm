@@ -30,12 +30,20 @@ export const addClient = async (req, res) => {
 
         await client.save();
 
-        let orConditions = [
-            { fullName: fullName, franchisee: { $ne: franchisee } },
-            { userName: userName, franchisee: { $ne: franchisee } },
-            { phone: phone, franchisee: { $ne: franchisee } },
-            { mail: mail, franchisee: { $ne: franchisee } },
-        ];
+        let orConditions = [];
+
+        if (fullName) {
+            orConditions.push({ fullName: fullName, franchisee: { $ne: franchisee } });
+        }
+        if (userName) {
+            orConditions.push({ userName: userName, franchisee: { $ne: franchisee } });
+        }
+        if (phone) {
+            orConditions.push({ phone: phone, franchisee: { $ne: franchisee } });
+        }
+        if (mail) {
+            orConditions.push({ mail: mail, franchisee: { $ne: franchisee } });
+        }
 
         if (addresses && addresses.length > 0) {
             addresses.forEach((address) => {
@@ -44,7 +52,6 @@ export const addClient = async (req, res) => {
                         $elemMatch: {
                             street: address.street,
                             house: address.house,
-                            link: address.link,
                         },
                     },
                     franchisee: { $ne: franchisee },
