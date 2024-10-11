@@ -167,7 +167,7 @@ export default function CourierMain() {
                 </div>
                 <div className="lg:hidden">
                     <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Наличные</button> ]
+                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Нал_Карта_QR</button> ]
                     </Li>
                     <Li>
                         [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> ]
