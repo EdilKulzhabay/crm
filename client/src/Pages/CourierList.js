@@ -250,7 +250,7 @@ export default function CourierList() {
 
             <Div />
             <Div>
-                <LinkButton href="/addCourier">Добавить курьера</LinkButton>
+                <LinkButton color="green" href="/addCourier">Добавить курьера</LinkButton>
             </Div>
             <Div />
         </Container>

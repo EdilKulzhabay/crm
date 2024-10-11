@@ -78,20 +78,20 @@ export default function SuperAdmin() {
             <div className="lg:hidden">
                 <>
                     <Li>
-                        <LinkButton href="/addOrder">Добавить заказ</LinkButton>
+                        <LinkButton color="green" href="/addOrder">Добавить заказ</LinkButton>
                     </Li>
                     <Li>
-                        <LinkButton href="/addClinet">
+                        <LinkButton color="green" href="/addClinet">
                             Добавить клиента
                         </LinkButton>
                     </Li>
                     <Li>
-                        <LinkButton href="/addPromoCode">
+                        <LinkButton color="green" href="/addPromoCode">
                             Создать промокод
                         </LinkButton>
                     </Li>
                     <Li>
-                        <LinkButton href="/addCourier">
+                        <LinkButton color="green" href="/addCourier">
                             Добавить курьера
                         </LinkButton>
                     </Li>
@@ -99,12 +99,12 @@ export default function SuperAdmin() {
             </div>
             <Div styles="hidden lg:flex">
                 <div className="flex items-center gap-x-3">
-                    <LinkButton href="/addOrder">Добавить заказ</LinkButton>
-                    <LinkButton href="/addClinet">Добавить клиента</LinkButton>
-                    <LinkButton href="/addPromoCode">
+                    <LinkButton color="green" href="/addOrder">Добавить заказ</LinkButton>
+                    <LinkButton color="green" href="/addClinet">Добавить клиента</LinkButton>
+                    <LinkButton color="green" href="/addPromoCode">
                         Создать промокод
                     </LinkButton>
-                    <LinkButton href="/addCourier">Добавить курьера</LinkButton>
+                    <LinkButton color="green" href="/addCourier">Добавить курьера</LinkButton>
                 </div>
             </Div>
             <Div />

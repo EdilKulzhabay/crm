@@ -254,7 +254,7 @@ export default function PromoCodeList() {
                 <Div />
 
                 <Div>
-                    <LinkButton href="/addPromoCode">Добавить промокод</LinkButton>
+                    <LinkButton color="green" href="/addPromoCode">Добавить промокод</LinkButton>
                 </Div>
 
                 <Div />

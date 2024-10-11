@@ -14,6 +14,7 @@ import UpIcon from "../icons/UpIcon";
 import DownIcon from "../icons/DownIcon";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
+import Info from "../Components/Info";
 
 const adjustDateByDays = (dateStr, days) => {
     const currentDate = new Date(dateStr);
@@ -256,7 +257,7 @@ export default function OrderPage() {
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>12,5-литровая бутыль:</div>
-                            <div>{order?.products?.b12} шт</div>
+                            <div><Info>{order?.products?.b12}</Info> шт</div>
                             <div>
                                 [{" "}
                                 <input
@@ -283,7 +284,7 @@ export default function OrderPage() {
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>18,9-литровая бутыль:</div>
-                            <div>{order?.products?.b19} шт</div>
+                            <div><Info>{order?.products?.b19}</Info> шт</div>
                             <div>
                                 [{" "}
                                 <input

@@ -9,6 +9,7 @@ import Container from "../Components/Container";
 import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
 import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx";
+import OrderInfo from "../Components/OrderInfo";
 
 export default function OrderList() {
     const [orders, setOrders] = useState([]);
@@ -227,7 +228,7 @@ export default function OrderList() {
                 <Div>Действия:</Div>
                 <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
-                        <LinkButton href="/addOrder">Создать заказ</LinkButton>
+                        <LinkButton color="green" href="/addOrder">Создать заказ</LinkButton>
                     </div>
                 </Div>
 
@@ -302,7 +303,7 @@ export default function OrderList() {
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                            <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) && `12.5л: ${item?.products?.b12}`}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) && `18.9л: ${item?.products?.b19}`}</div>
+                                            <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                             <LinkButton
                                                 href={`/orderPage/${item?._id}`}
@@ -343,7 +344,7 @@ export default function OrderList() {
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                            <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) !== 0 && `12.5л: ${item?.products?.b12}`}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                            <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                             <LinkButton
                                                 href={`/orderPage/${item?._id}`}
@@ -385,7 +386,7 @@ export default function OrderList() {
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                            <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) !== 0 && `12.5л: ${item?.products?.b12}`}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                            <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                             <LinkButton
                                                 href={`/orderPage/${item?._id}`}

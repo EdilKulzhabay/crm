@@ -144,7 +144,7 @@ export default function SuperAdminFranchiseeList() {
                                 </div>
                                 <div>
                                     <LinkButton
-                                        color="red"
+                                        color="green"
                                         href={`/updateFranchisee/${item._id}`}
                                     >
                                         Редактировать
@@ -168,7 +168,7 @@ export default function SuperAdminFranchiseeList() {
 
             <Div />
             <Div>
-                <LinkButton href="/addFranchisee">
+                <LinkButton color="green" href="/addFranchisee">
                     Добавить франчайзи
                 </LinkButton>
             </Div>
