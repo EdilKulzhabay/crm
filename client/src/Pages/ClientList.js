@@ -323,7 +323,7 @@ export default function ClientList() {
                 <Div />
                 <Div>Фильтры:</Div>
                 <>
-                    <Li>
+                    {/* <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>Статус клиента:</div>
                             <div className="flex items-center gap-x-2 flex-wrap text-red">
@@ -370,7 +370,7 @@ export default function ClientList() {
                                 </span>
                             </MyButton>
                         </div>
-                    </Li>
+                    </Li> */}
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>Дата регистрации:</div>

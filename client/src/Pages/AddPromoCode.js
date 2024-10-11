@@ -103,7 +103,7 @@ export default function AddPromoCode() {
             <Li>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <div>Код:</div>
-                    <div className="text-red">[{promoCode.title}]</div>
+                    <div className="text-red">[<span className="text-white">{promoCode.title}</span>]</div>
                     <MyButton click={generateCode}>
                         Сгенерировать новый
                     </MyButton>
@@ -152,10 +152,10 @@ export default function AddPromoCode() {
             <Li>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     <div>{promoCode.addData ? "Включено" : "Отключено"}:</div>
-                    <div className="flex items-center gap-x-2 flex-wrap text-red">
+                    <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                         [
                         <button
-                            className="text-red hover:text-blue-500"
+                            className="hover:text-blue-500"
                             onClick={() => {
                                 setPromoCode({ ...promoCode, addData: true });
                             }}
@@ -164,7 +164,7 @@ export default function AddPromoCode() {
                         </button>
                         <div>/</div>
                         <button
-                            className="text-red hover:text-blue-500"
+                            className="hover:text-blue-500"
                             onClick={() => {
                                 setPromoCode({ ...promoCode, addData: false });
                             }}

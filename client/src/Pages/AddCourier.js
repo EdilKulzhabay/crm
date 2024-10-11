@@ -144,27 +144,27 @@ export default function AddCourier() {
                     </div>
                 </Li>
             </>
-            <Div />
+            {/* <Div />
             <Div>Статус:</Div>
             <Li>
-                <div className="flex items-center gap-x-2 flex-wrap text-red">
+                <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                     [
                     <button
-                        className="text-red hover:text-blue-500"
+                        className="hover:text-blue-500"
                         onClick={() => {}}
                     >
                         Активен
                     </button>
                     <div>/</div>
                     <button
-                        className="text-red hover:text-blue-500"
+                        className="hover:text-blue-500"
                         onClick={() => {}}
                     >
                         Неактивен
                     </button>
                     ]
                 </div>
-            </Li>
+            </Li> */}
             <Div />
             <Div>Действия:</Div>
             <Div>

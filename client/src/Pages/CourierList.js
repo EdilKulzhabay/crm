@@ -175,25 +175,25 @@ export default function CourierList() {
                     couriers.map((item, index) => {
                         if (couriers.length === index + 1) {
                             return (
-                                <div key={item._id} ref={lastCourierElementRef}>
+                                <div key={item?._id} ref={lastCourierElementRef}>
                                     <Li>
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                             <div>Имя:</div>
-                                            <div>{item.fullName}</div>
+                                            <div>{item?.fullName}</div>
                                             <div>|</div>
                                             <div>Статус:</div>
                                             <div>
-                                                {item.status === "active"
+                                                {item?.status === "active"
                                                     ? "Активен"
                                                     : "Неактивен"}
                                             </div>
                                             <LinkButton
-                                                href={`/CourierPage/${item._id}`}
+                                                href={`/CourierPage/${item?._id}`}
                                             >
                                                 Просмотр
                                             </LinkButton>
-                                            <MyButton click={() => {updateCouriserStatus(item._id, item.status)}}>
-                                                {item.status === "active"
+                                            <MyButton click={() => {updateCouriserStatus(item?._id, item?.status)}}>
+                                                {item?.status === "active"
                                                     ? "Блокировать"
                                                     : "Разблокировать"}
                                             </MyButton>
@@ -202,10 +202,7 @@ export default function CourierList() {
                                     <Li2>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div>
-                                                Количество выполненных заказов:
-                                            </div>
-                                            <div className="text-red">
-                                                {item.completedOrders}
+                                                Количество выполненных заказов: {item?.completedOrders}
                                             </div>
                                         </div>
                                     </Li2>
@@ -213,25 +210,25 @@ export default function CourierList() {
                             );
                         } else {
                             return (
-                                <div key={item._id}>
+                                <div key={item?._id}>
                                     <Li>
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                             <div>Имя:</div>
-                                            <div>{item.fullName}</div>
+                                            <div>{item?.fullName}</div>
                                             <div>|</div>
                                             <div>Статус:</div>
                                             <div>
-                                                {item.status === "active"
+                                                {item?.status === "active"
                                                     ? "Активен"
                                                     : "Неактивен"}
                                             </div>
                                             <LinkButton
-                                                href={`/CourierPage/${item._id}`}
+                                                href={`/CourierPage/${item?._id}`}
                                             >
                                                 Просмотр
                                             </LinkButton>
                                             <MyButton click={() => {}}>
-                                                {item.status === "active"
+                                                {item?.status === "active"
                                                     ? "Блокировать"
                                                     : "Разблокировать"}
                                             </MyButton>
@@ -240,10 +237,7 @@ export default function CourierList() {
                                     <Li2>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div>
-                                                Количество выполненных заказов:
-                                            </div>
-                                            <div className="text-red">
-                                                {item.completedOrders}
+                                                Количество выполненных заказов: {item?.completedOrders}
                                             </div>
                                         </div>
                                     </Li2>

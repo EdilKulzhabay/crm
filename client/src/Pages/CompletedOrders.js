@@ -316,13 +316,13 @@ export default function CompletedOrders() {
             Сводная информация:
         </Div>
         <Li>
-            12,5 литровая бутыль: <span className="text-red">[ {info.totalB12} ]</span> шт.
+            12,5 литровая бутыль: <span className="text-red">[ <span className="text-white">{info.totalB12}</span> ]</span> шт.
         </Li>
         <Li>
-            18,9 литровая бутыль: <span className="text-red">[ {info.totalB19} ]</span> шт.
+            18,9 литровая бутыль: <span className="text-red">[ <span className="text-white">{info.totalB19}</span> ]</span> шт.
         </Li>
         <Li>
-            Сумма: <span className="text-red">[ {formatCurrency(info.totalSum)} ]</span>
+            Сумма: <span className="text-red">[ <span className="text-white">{formatCurrency(info.totalSum)}</span> ]</span>
         </Li>
         
         <Div />

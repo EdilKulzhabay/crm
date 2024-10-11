@@ -199,16 +199,16 @@ export default function AddClient() {
             </>
             <Div />
             <Div>
-                <div>Форма оплаты: {form.opForm === "fakt" && "Нал_Карта_QR"}{form.opForm === "postpay" && "Постоплата"}{form.opForm === "credit" && "В долг"}{form.opForm === "coupon" && "Талоны"}{form.opForm === "mixed" && "Смешанная"}</div>
+                <div>Форма оплаты: <span className="text-yellow-300">{form.opForm === "fakt" && "Нал_Карта_QR"}{form.opForm === "postpay" && "Постоплата"}{form.opForm === "credit" && "В долг"}{form.opForm === "coupon" && "Талоны"}{form.opForm === "mixed" && "Смешанная"}</span></div>
             </Div>
             <Div>
-                <div className="text-red flex items-center gap-x-3">
+                <div className="text-green-400 flex items-center gap-x-3">
                     [
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("fakt")}}>Нал_Карта_QR</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("coupon")}}>Талоны</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("postpay")}}>Постоплата</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("credit")}}>В долг</button> /
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateOpForm("mixed")}}>Смешанная</button>
+                        <button className="hover:text-blue-500" onClick={() => {updateOpForm("fakt")}}>Нал_Карта_QR</button> /
+                        <button className="hover:text-blue-500" onClick={() => {updateOpForm("coupon")}}>Талоны</button> /
+                        <button className="hover:text-blue-500" onClick={() => {updateOpForm("postpay")}}>Постоплата</button> /
+                        <button className="hover:text-blue-500" onClick={() => {updateOpForm("credit")}}>В долг</button> /
+                        <button className="hover:text-blue-500" onClick={() => {updateOpForm("mixed")}}>Смешанная</button>
                     ]
                 </div>
             </Div>

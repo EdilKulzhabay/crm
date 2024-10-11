@@ -150,7 +150,7 @@ export default function CourierMain() {
                     <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "fakt" && "Нал_Карта_QR"}{firstActiveOrder?.order?.opForm === "postpay" && "Постоплата"}{firstActiveOrder?.order?.opForm === "credit" && "В долг"}{firstActiveOrder?.order?.opForm === "coupon" && "Талоны"}{firstActiveOrder?.order?.opForm === "mixed" && "Смешанная"}</span></div>
                 </Li>
                 <Li>
-                    <div>Форма оплаты по факту:<span className="text-blue-500"> {opForm === "fakt" && "Нал_Карта_QR"}{opForm === "postpay" && "Постоплата"}{opForm === "credit" && "В долг"}{opForm === "coupon" && "Талоны"}{opForm === "mixed" && "Смешанная"}</span></div>
+                    <div>Форма оплаты по факту:<span className="text-yellow-300"> {opForm === "fakt" && "Нал_Карта_QR"}{opForm === "postpay" && "Постоплата"}{opForm === "credit" && "В долг"}{opForm === "coupon" && "Талоны"}{opForm === "mixed" && "Смешанная"}</span></div>
                 </Li>
                 <div className="hidden lg:block">
                     <Li>
