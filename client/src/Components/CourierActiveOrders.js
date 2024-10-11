@@ -230,14 +230,14 @@ export default function CourierActiveOrders() {
                                 <div className="flex items-center gap-x-2 flex-wrap">
                                     <div>
                                         <span className={clsx("", {
-                                                "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
-                                                "text-white bg-green-400": new Date(item?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
-                                                "text-white bg-blue-600": new Date(item?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
+                                                "text-white bg-red": new Date(item?.order?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
+                                                "text-white bg-green-400": new Date(item?.order?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
+                                                "text-white bg-blue-600": new Date(item?.order?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
                                             })}>Заказ:</span> <span className="text-green-500">{index + 1}</span>
                                     </div>
                                     <div>{item?.order?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
-                                    <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
+                                    <div>{item?.order?.date?.d} {item?.order?.date?.time && item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                                     <div>
                                         {(item?.order?.products?.b12 !== 0 && item?.order?.products?.b12 !== null) && <>12.5л: {item?.order?.products?.b12} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.order?.client?.price12}тг)</span>};</>}
                                         {(item?.order?.products?.b19 !== 0 && item?.order?.products?.b19 !== null) && <>{" "}18.9л: {item?.order?.products?.b19} {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.order?.client?.price19}тг)</span>};</>}
