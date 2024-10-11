@@ -134,7 +134,7 @@ export default function SuperAdminCoincidence() {
                                             <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>({item?.first?.fullName} и {item?.second?.fullName})</div>
                                                 <div>Совпадение по {item?.matchesType === "client" ? "Клиенту" : "Заказу"}</div>
-                                                <div>Совпадении: {item?.matchedField.includes("mail") && "почта "} {item?.matchedField.includes("fullName") && "наименование или ФИО "} {item?.matchedField.includes("phone") && "номер телефона "} {item?.matchedField.includes("addresses") && "адрес"}</div>
+                                                <div>Совпадении: {item?.matchedField?.includes("mail") && "почта "} {item?.matchedField?.includes("fullName") && "наименование или ФИО "} {item?.matchedField?.includes("phone") && "номер телефона "} {item?.matchedField.includes("addresses") && "адрес"}</div>
                                                 <LinkButton href={`/superAdminCoincidencePage/${item?._id}`}>Перейти</LinkButton>
                                                 <MyButton click={() => {
                                                     setDeleteObject(item._id)
