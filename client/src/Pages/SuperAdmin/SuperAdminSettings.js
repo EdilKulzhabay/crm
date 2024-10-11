@@ -209,7 +209,7 @@ export default function SuperAdminSettings() {
                             );
                         })}
                 </div>
-                <Div />
+                {/* <Div />
                 <Div>Настройки уведомлений:</Div>
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
@@ -241,7 +241,7 @@ export default function SuperAdminSettings() {
                             ]
                         </div>
                     </div>
-                </Li>
+                </Li> */}
                 {/* <Li>Типы уведомления:</Li>
                 <Li2>
                     <div className="flex items-center gap-x-3 flex-wrap">
