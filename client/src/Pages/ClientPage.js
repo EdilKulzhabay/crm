@@ -339,17 +339,17 @@ export default function ClientPage() {
 
                 <Div />
                 <Div>
-                    <div>Форма оплаты: {client?.opForm === "fakt" && "Нал_Карта_QR"}{client?.opForm === "postpay" && "Постоплата"}{client?.opForm === "credit" && "В долг"}{client?.opForm === "coupon" && "Талоны"}{client?.opForm === "mixed" && "Смешанная"}</div>
+                    <div>Форма оплаты: <span className="text-yellow-300">{client?.opForm === "fakt" && "Нал_Карта_QR"}{client?.opForm === "postpay" && "Постоплата"}{client?.opForm === "credit" && "В долг"}{client?.opForm === "coupon" && "Талоны"}{client?.opForm === "mixed" && "Смешанная"}</span></div>
                 </Div>
                 <div className="hidden lg:block">
                     <Div>
-                        <div className="text-red flex items-center gap-x-3">
+                        <div className="text-green-400 flex items-center gap-x-3">
                             [
-                                <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "fakt")}}>Нал_Карта_QR</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талоны</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "credit")}}>В долг</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанная</button>
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "fakt")}}>Нал_Карта_QR</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талоны</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "credit")}}>В долг</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанная</button>
                             ]
                         </div>
                     </Div>
@@ -357,19 +357,19 @@ export default function ClientPage() {
 
                 <div className="lg:hidden">
                     <Div>
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "fakt")}}>Нал_Карта_QR</button>
+                        <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "fakt")}}>Нал_Карта_QR</button>
                     </Div>
                     <Div>
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талоны</button> 
+                        <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "coupon")}}>Талоны</button> 
                     </Div>
                     <Div>
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> 
+                        <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "postpay")}}>Постоплата</button> 
                     </Div>
                     <Div>
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "credit")}}>В долг</button>
+                        <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "credit")}}>В долг</button>
                     </Div>
                     <Div>
-                        <button className="text-red hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанная</button>
+                        <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("opForm", "mixed")}}>Смешанная</button>
                     </Div>
                 </div>
 
@@ -545,17 +545,17 @@ export default function ClientPage() {
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>Выбор времени доставки: {client?.chooseTime ? "Включено" : "Отключено"}</div>
-                            <div className="flex items-center gap-x-2 flex-wrap text-red">
+                            <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                                 [
                                 <button
-                                    className="text-red hover:text-blue-500"
+                                    className="text-green-400 hover:text-blue-500"
                                     onClick={() => {updateClientData("chooseTime", true)}}
                                 >
                                     Включить
                                 </button>
                                 <div>/</div>
                                 <button
-                                    className="text-red hover:text-blue-500"
+                                    className="text-green-400 hover:text-blue-500"
                                     onClick={() => {updateClientData("chooseTime", false)}}
                                 >
                                     Отключить
@@ -567,17 +567,17 @@ export default function ClientPage() {
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>Подписка: {client?.subscription ? "Включено" : "Отключено"}</div>
-                            <div className="flex items-center gap-x-2 flex-wrap text-red">
+                            <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                                 [
                                 <button
-                                    className="text-red hover:text-blue-500"
+                                    className="text-green-400 hover:text-blue-500"
                                     onClick={() => {updateClientData("subscription", true)}}
                                 >
                                     Включить
                                 </button>
                                 <div>/</div>
                                 <button
-                                    className="text-red hover:text-blue-500"
+                                    className="text-green-400 hover:text-blue-500"
                                     onClick={() => {updateClientData("subscription", false)}}
                                 >
                                     Отключить
@@ -643,7 +643,7 @@ export default function ClientPage() {
                 <Div>Действия:</Div>
                 <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
-                        <LinkButton href={`/addOrder/${client?._id}`}>Создать заказ</LinkButton>
+                        <LinkButton color="green" href={`/addOrder/${client?._id}`}>Создать заказ</LinkButton>
                         <MyButton click={getClientOrdersForExcel}>
                             Выгрузить заказы в excel
                         </MyButton>

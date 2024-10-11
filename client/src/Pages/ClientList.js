@@ -456,6 +456,7 @@ export default function ClientList() {
                                                     : "Неактивен"}
                                             </div>
                                             <LinkButton
+                                                color="green"
                                                 href={`/ClientPage/${client._id}`}
                                             >
                                                 Редактировать
@@ -489,6 +490,7 @@ export default function ClientList() {
                                                     : "Неактивен"}
                                             </div>
                                             <LinkButton
+                                                color="green"
                                                 href={`/ClientPage/${client._id}`}
                                             >
                                                 Редактировать
@@ -517,7 +519,7 @@ export default function ClientList() {
                 <Div>Действия:</Div>
                 <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
-                        <LinkButton href="/addClinet">Добавить клиента</LinkButton>
+                        <LinkButton color="green" href="/addClinet">Добавить клиента</LinkButton>
                         <MyButton click={getClientsForExcel}>
                             Экспорт в excel
                         </MyButton>
