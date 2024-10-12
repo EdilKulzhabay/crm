@@ -165,6 +165,12 @@ export default function OrderPage() {
     }, []);
 
     const updateOrder = (change, changeData) => {
+        if (change === "date" && date?.d?.length !== 10) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Добавьте дату в формате ГГГГ-ММ-ДД");
+            return ;
+        }
         api.post(
             "/updateOrder",
             { orderId: order._id, change, changeData },
