@@ -5,6 +5,7 @@ import Div from "../../Components/Div";
 import Li from "../../Components/Li";
 import LinkButton from "../../Components/LinkButton";
 import MyButton from "../../Components/MyButton";
+import OrderInfo from "../../Components/OrderInfo";
 
 export default function CourierMain() {
     const [products, setProducts] = useState({
@@ -93,7 +94,7 @@ export default function CourierMain() {
             <>
                 <Li>Наименование: {firstActiveOrder?.order?.client?.userName}</Li>
                 <Li>Адрес: <span className="text-blue-500">{firstActiveOrder?.order?.address?.actual}</span></Li>
-                <Li><p>Количество 12.5 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b12}</span></p>
+                <Li><p>Количество 12.5 - литровых бутылей: <OrderInfo>{firstActiveOrder?.order?.products?.b12}</OrderInfo></p>
                     <div>
                         [{" "}
                         <input
@@ -116,7 +117,7 @@ export default function CourierMain() {
                         ] шт
                     </div>
                 </Li>
-                <Li><p>Количество 18.9 - литровых бутылей: <span className="text-blue-500">{firstActiveOrder?.order?.products?.b19}</span></p>
+                <Li><p>Количество 18.9 - литровых бутылей: <OrderInfo>{firstActiveOrder?.order?.products?.b19}</OrderInfo></p>
                     <div>
                         [{" "}
                         <input
@@ -154,35 +155,35 @@ export default function CourierMain() {
                 </Li>
                 <div className="hidden lg:block">
                     <Li>
-                        <div className="text-red flex items-center gap-x-3">
+                        <div className="text-green-400 flex items-center gap-x-3">
                             [
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> /
-                                <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button>
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button>
                             ]
                         </div>
                     </Li>
                 </div>
                 <div className="lg:hidden">
                     <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Нал_Карта_QR</button> ]
+                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("cash")}}>Нал_Карта_QR</button> ]
                     </Li>
                     <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> ]
+                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> ]
                     </Li>
                     <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> ]
+                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> ]
                     </Li>
                     <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> ]
+                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> ]
                     </Li>
                     <Li>
-                        [ <button className="text-red hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button> ]
+                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button> ]
                     </Li>
                 </div>
-                {firstActiveOrder?.order?.date?.time !== "" && <Li>Время доставки: <span className="text-red">{firstActiveOrder?.order?.date?.time}</span></Li>}
+                {firstActiveOrder?.order?.date?.time !== "" && <Li>Время доставки: <span className="text-yellow-300">{firstActiveOrder?.order?.date?.time}</span></Li>}
                 
             </> : 
             <>

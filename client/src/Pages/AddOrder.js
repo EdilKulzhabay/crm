@@ -175,11 +175,16 @@ export default function AddOrder() {
     };
 
     const addOrder = () => {
-        const op = opForm ? opForm : client?.opForm
         if (address === null) {
             setOpen(true);
             setStatus("error");
             setMessage("Добавьте адресс");
+            return ;
+        }
+        if (date?.d?.length !== 10) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Добавьте дату в формате ГГГГ-ММ-ДД");
             return ;
         }
         api.post(

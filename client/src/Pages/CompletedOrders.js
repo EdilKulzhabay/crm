@@ -9,6 +9,7 @@ import MyButton from "../Components/MyButton"
 import MyInput from "../Components/MyInput"
 import * as XLSX from "xlsx";
 import MySnackBar from "../Components/MySnackBar"
+import OrderInfo from "../Components/OrderInfo"
 
 export default function CompletedOrders() {
     const [userData, setUserData] = useState({});
@@ -339,7 +340,7 @@ export default function CompletedOrders() {
                                     <div>{item?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                     <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                    <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) !== 0 && `12.5л: ${item?.products?.b12}`}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                    <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                     <LinkButton
                                         href={`/orderPage/${item?._id}`}
                                     >
@@ -364,7 +365,7 @@ export default function CompletedOrders() {
                                     <div>{item?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                     <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                    <div>{(item?.products?.b12 !== 0 || item?.products?.b12 !== null) !== 0 && `12.5л: ${item?.products?.b12}`}; {(item?.products?.b19 !== 0 || item?.products?.b19 !== null) !== 0 && `18.9л: ${item?.products?.b19}`}</div>
+                                    <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                     <LinkButton
                                         href={`/orderPage/${item?._id}`}
                                     >
