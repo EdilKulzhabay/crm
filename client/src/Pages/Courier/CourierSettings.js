@@ -7,9 +7,10 @@ import MySnackBar from "../../Components/MySnackBar";
 import ChangePassword from "../../Components/ChangePassword";
 import { AuthContext } from "../../AuthContext";
 import { useNavigate } from "react-router-dom";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function CourierSettings() {
-
+    const userData = useFetchUserData();
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
@@ -21,22 +22,6 @@ export default function CourierSettings() {
         setOpen(false);
     };
 
-    const getMe = () => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setInfo(data);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-    };
-
-    useEffect(() => {
-        getMe();
-    }, []);
-
     const changeSnack = (resStatus, resMessage) => {
         setOpen(true);
         setStatus(resStatus ? "success" : "error");
@@ -44,8 +29,8 @@ export default function CourierSettings() {
     };
 
     return (
-        <Container role="courier">
-            <Div>Настройки: {info?.fullName}</Div>
+        <Container role={userData?.role}>
+            <Div>Настройки: {userData?.fullName}</Div>
             <Div />
             <ChangePassword
                 responce={(resStatus, resMessage) => {

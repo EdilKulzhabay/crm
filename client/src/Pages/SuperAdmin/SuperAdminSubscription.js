@@ -9,8 +9,10 @@ import LinkButton from "../../Components/LinkButton";
 import MySnackBar from "../../Components/MySnackBar";
 import useScrollPosition from "../../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminSubscription() {
+    const userData = useFetchUserData();
     const scrollPosition = useScrollPosition();
     const [subscriptions, setSubscriptions] = useState([]);
 
@@ -104,7 +106,7 @@ export default function SuperAdminSubscription() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role="superAdmin">
+            <Container role={userData?.role}>
                 <Div>
                     <div>Настройки подписок</div>
                 </Div>

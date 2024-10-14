@@ -8,8 +8,10 @@ import MyButton from "../../Components/MyButton";
 import MySnackBar from "../../Components/MySnackBar";
 import useScrollPosition from "../../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminCoincidence() {
+    const userData = useFetchUserData();
     const scrollPosition = useScrollPosition();
     const [notifications, setNotifications] = useState([])
     const [page, setPage] = useState(1);
@@ -115,7 +117,7 @@ export default function SuperAdminCoincidence() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role="superAdmin">
+            <Container role={userData?.role}>
                 <Div>
                     Совпадение
                 </Div>

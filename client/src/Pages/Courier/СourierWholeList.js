@@ -1,15 +1,15 @@
-import api from "../../api";
 import Container from "../../Components/Container";
 import CourierActiveOrders from "../../Components/CourierActiveOrders";
 import Div from "../../Components/Div";
 import MySnackBar from "../../Components/MySnackBar";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function CourierWholeList() {
+    const userData = useFetchUserData();
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-    const [userData, setUserData] = useState({})
 
     const closeSnack = () => {
         setOpen(false);
@@ -21,17 +21,7 @@ export default function CourierWholeList() {
         setMessage(message)
     }
 
-    useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            setUserData(data)
-        }).catch((e) => {
-            console.log(e);
-        })
-    }, [])
-
-    return <Container role="courier">
+    return <Container role={userData?.role}>
         <Div>Список заказов</Div>
         <Div/>
         <Div>Очередь заказов:</Div>

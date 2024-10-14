@@ -3,8 +3,10 @@ import Container from "../../Components/Container";
 import api from "../../api";
 import { useParams } from "react-router-dom";
 import Div from "../../Components/Div";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function CourierOrderComment() {
+    const userData = useFetchUserData();
     const {id} = useParams()
     const [order, setOrder] = useState({})
 
@@ -26,7 +28,7 @@ export default function CourierOrderComment() {
         getOrderData()
     }, [id])
 
-    return <Container role="courier">
+    return <Container role={userData?.role}>
         <Div>Комментарии к заказу</Div>
 
         <Div />

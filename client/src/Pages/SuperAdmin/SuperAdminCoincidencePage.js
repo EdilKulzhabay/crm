@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 import api from "../../api"
 import useScrollPosition from "../../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminCoincidencePage() {
+    const userData = useFetchUserData();
     const scrollPosition = useScrollPosition();
     const navigate = useNavigate();
     const { id } = useParams();
@@ -71,7 +73,7 @@ export default function SuperAdminCoincidencePage() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role="superAdmin">
+            <Container role={userData?.role}>
                 <Div>Совпадение по {notification?.matchesType === "client" ? "Клиенту" : "Заказу"}</Div>
                 <Div />
                 <Div>Совпадении: {notification?.matchedField?.includes("mail") && "почта "} {notification?.matchedField?.includes("fullName") && "наименование или ФИО "} {notification?.matchedField?.includes("phone") && "номер телефона "} {notification?.matchedField?.includes("addresses") && "адрес"}</Div>

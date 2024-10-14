@@ -105,8 +105,6 @@ app.get("/getAllUsersNCouriers", OtherController.getAllUsersNCouriers);
 app.get("/getMainPageInfo", checkAuth, OtherController.getMainPageInfo);
 app.post("/deleteUser", checkAuth, OtherController.deleteUser);
 
-////MAIN
-
 /////USER
 app.get("/getMe", checkAuth, UserController.getMe);
 app.get("/getAllFranchisee", UserController.getAllFranchisee);
