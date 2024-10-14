@@ -11,10 +11,13 @@ import ChooseCourierModal from "../Components/ChooseCourierModal";
 import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx";
 import OrderInfo from "../Components/OrderInfo";
+import useFetchUserData from "../customHooks/useFetchUserData";
+import useScrollPosition from "../customHooks/useScrollPosition";
 
 export default function OrdersWholeList() {
+    const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const [orders, setOrders] = useState([]);
-    const [userData, setUserData] = useState({});
     const [search, setSearch] = useState("");
     const [searchF, setSearchF] = useState("");
     const [searchStatus, setSearchStatus] = useState(false);
@@ -37,22 +40,6 @@ export default function OrdersWholeList() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-
-    const [scrollPosition, setScrollPosition] = useState(0);
-
-    const handleScroll = useCallback(() => {
-        setScrollPosition(window.scrollY);
-        console.log("Scroll Y position:", window.scrollY);
-    }, []);
-
-    useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        
-        // Удаление обработчика при размонтировании компонента
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [handleScroll]);
 
     const closeCouriersModal = () => {
         setCouriersModal(false);
@@ -100,14 +87,6 @@ export default function OrdersWholeList() {
             loadMoreOrders(1, dates, search, searchStatus, "")
         }
     };
-
-    useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
-    }, []);
 
     const updateOrderTransfer = () => {
         api.post("/updateOrderTransfer", {orderId: order, change: "transferredFranchise", changeData: franchisee?.fullName}, {
@@ -251,7 +230,7 @@ export default function OrdersWholeList() {
                     scrollPosition={scrollPosition}
                 />
             )}
-            <Container role={userData.role || "admin"}>
+            <Container role={userData?.role}>
                 
                 <Div>Список заказов</Div>
                 <Div />
@@ -324,8 +303,8 @@ export default function OrdersWholeList() {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>
-                                                {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo> {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
-                                                {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo> {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
+                                                {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
+                                                {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
                                             </div>
                                             {/* <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div> */}
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
@@ -375,8 +354,8 @@ export default function OrdersWholeList() {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>
-                                                {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo> {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
-                                                {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo> {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
+                                                {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
+                                                {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
                                             </div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                             <LinkButton

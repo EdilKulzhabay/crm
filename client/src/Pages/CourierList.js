@@ -8,13 +8,13 @@ import MyInput from "../Components/MyInput";
 import LinkButton from "../Components/LinkButton";
 import api from "../api";
 import Container from "../Components/Container";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function CourierList() {
+    const userData = useFetchUserData();
     const [search, setSearch] = useState("");
     const [total, setTotal] = useState(0);
     const [couriers, setCouriers] = useState([]);
-    const [role, setRole] = useState("superAdmin");
-
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
@@ -77,15 +77,6 @@ export default function CourierList() {
     };
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setRole(data.role);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
         getFreeInfo();
     }, []);
 
@@ -140,7 +131,7 @@ export default function CourierList() {
     );
 
     return (
-        <Container role={role}>
+        <Container role={userData?.role}>
             <Div>
                 <div>Курьеры</div>
             </Div>

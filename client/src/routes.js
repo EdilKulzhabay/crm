@@ -37,6 +37,7 @@ import CourierActiveOrders from "./Components/CourierActiveOrders";
 import CourierOrderComment from "./Pages/Courier/CourierOrderComment";
 import OrdersWholeList from "./Pages/OrdersWholeList";
 import AdditionalOrdersWholeList from "./Pages/AdditionalOrdersWholeList";
+import Analytics from "./Pages/Analytics";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
     { path: "/additionalOrdersWholeList", element: <AdditionalOrdersWholeList /> },
     { path: "/courierActiveOrders/:id", element: <CourierActiveOrders /> },
     { path: "/courierOrderComment/:id", element: <CourierOrderComment /> },
+    { path: "/analytics", element: <Analytics /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },

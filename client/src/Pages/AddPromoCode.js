@@ -7,9 +7,10 @@ import Li from "../Components/Li";
 import MyInput from "../Components/MyInput";
 import { useNavigate } from "react-router-dom";
 import MySnackBar from "../Components/MySnackBar";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function AddPromoCode() {
-    const [userData, setUserData] = useState({});
+    const userData = useFetchUserData();
     const navigate = useNavigate();
 
     const [open, setOpen] = useState(false);
@@ -49,11 +50,6 @@ export default function AddPromoCode() {
 
     useEffect(() => {
         generateCode();
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
     }, []);
 
     const addPromoCode = () => {
@@ -96,7 +92,7 @@ export default function AddPromoCode() {
     };
 
     return (
-        <Container role={userData.role || "admin"}>
+        <Container role={userData?.role}>
             <Div>Создание нового промокода</Div>
             <Div />
             <Div>Основне данные:</Div>

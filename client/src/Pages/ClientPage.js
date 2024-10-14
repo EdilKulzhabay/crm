@@ -12,12 +12,13 @@ import LinkButton from "../Components/LinkButton";
 import * as XLSX from "xlsx";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function ClientPage() {
     const scrollPosition = useScrollPosition();
     const { id } = useParams();
     const navigate = useNavigate();
-    const [role, setRole] = useState("");
+    const userData = useFetchUserData();
     const [client, setClient] = useState({});
 
     const [open, setOpen] = useState(false);
@@ -99,16 +100,6 @@ export default function ClientPage() {
     };
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setRole(data.role);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-
         getClientData();
     }, []);
 
@@ -294,7 +285,7 @@ export default function ClientPage() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role={role}>
+            <Container role={userData?.role}>
                 <Div>Карточка клиента</Div>
                 <Div />
                 <Div>Личные данные:</Div>

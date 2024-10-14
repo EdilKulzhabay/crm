@@ -10,11 +10,14 @@ import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
 import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx";
 import OrderInfo from "../Components/OrderInfo";
+import useFetchUserData from "../customHooks/useFetchUserData";
+import useScrollPosition from "../customHooks/useScrollPosition";
 
 export default function OrderList() {
+    const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const [orders, setOrders] = useState([]);
     const [additionalOrders, setAdditionalOrders] = useState([])
-    const [userData, setUserData] = useState({});
     const [search, setSearch] = useState("");
     const [searchF, setSearchF] = useState("");
     const [searchStatus, setSearchStatus] = useState(false);
@@ -26,7 +29,6 @@ export default function OrderList() {
     const [franchisee, setFranchisee] = useState(null);
     const [order, setOrder] = useState(null)
     const [totalOrders, setTotalOrders] = useState(0)
-    const [again, setAgain] = useState(0)
 
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -35,22 +37,6 @@ export default function OrderList() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-
-    const [scrollPosition, setScrollPosition] = useState(0);
-
-    const handleScroll = useCallback(() => {
-        setScrollPosition(window.scrollY);
-        console.log("Scroll Y position:", window.scrollY);
-    }, []);
-
-    useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        
-        // Удаление обработчика при размонтировании компонента
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [handleScroll]);
 
     const closeSnack = () => {
         setOpen(false);
@@ -99,11 +85,6 @@ export default function OrderList() {
     }
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
         getAdditionalOrders()
     }, []);
 
@@ -116,7 +97,7 @@ export default function OrderList() {
                 setMessage(data.message)
                 setStatus("success")
                 const temporaryOrders = [...orders]
-                temporaryOrders.map((item) => {
+                temporaryOrders.forEach((item) => {
                     if (item._id === order) {
                         item.transferred = true
                         item.transferredFranchise = franchisee?.fullName
@@ -136,7 +117,7 @@ export default function OrderList() {
                 setMessage(data.message)
                 setStatus("success")
                 const temporaryOrders = [...orders]
-                temporaryOrders.map((item) => {
+                temporaryOrders.forEach((item) => {
                     if (item._id === id) {
                         item.transferred = false
                         item.transferredFranchise = ""
@@ -171,6 +152,8 @@ export default function OrderList() {
             }
         )
             .then(({ data }) => {
+                console.log(data);
+                
                 setTotalOrders(data.totalOrders)
                 if (data.orders.length === 0) {
                     setHasMore(false);
@@ -221,7 +204,7 @@ export default function OrderList() {
                         scrollPosition={scrollPosition}
                     />
                 )}
-            <Container role={userData.role || "admin"}>
+            <Container role={userData?.role}>
                 
                 <Div>Список заказов</Div>
                 <Div />

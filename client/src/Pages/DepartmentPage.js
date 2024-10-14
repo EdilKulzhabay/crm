@@ -8,9 +8,11 @@ import MySnackBar from "../Components/MySnackBar";
 import UpdateClientData from "../Components/UpdateClientData";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function DepartmentPage() {
     const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const navigate = useNavigate();
     const { id } = useParams();
     const [department, setDepartment] = useState({});
@@ -115,7 +117,7 @@ export default function DepartmentPage() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role="superAdmin">
+            <Container role={userData?.role}>
                 <Div>Карточка сотрудника</Div>
                 <Div />
                 <Div>Личные данные:</Div>

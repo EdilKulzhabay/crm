@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
@@ -15,6 +15,7 @@ import DownIcon from "../icons/DownIcon";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 import Info from "../Components/Info";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 const adjustDateByDays = (dateStr, days) => {
     const currentDate = new Date(dateStr);
@@ -27,9 +28,9 @@ const adjustDateByDays = (dateStr, days) => {
 
 export default function OrderPage() {
     const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const { id } = useParams();
     const navigate = useNavigate();
-    const [role, setRole] = useState("");
     const [order, setOrder] = useState(null);
     const [orderStatus, setOrderStatus] = useState("");
     const [orderCourier, setOrderCourier] = useState(null);
@@ -151,16 +152,6 @@ export default function OrderPage() {
     };
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setRole(data.role);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-
         getOrderData();
     }, []);
 
@@ -216,7 +207,7 @@ export default function OrderPage() {
                     confirmDelete={confirmDelete}
                     scrollPosition={scrollPosition}
                 />}
-            <Container role={role}>
+            <Container role={userData?.role}>
                 {couriersModal && (
                     <ChooseCourierModal
                         closeCouriersModal={closeCouriersModal}
@@ -519,7 +510,7 @@ export default function OrderPage() {
                         : "Клиент не оставил отзыва"}
                 </Li>
 
-                {role === "superAdmin" && <>
+                {userData?.role === "superAdmin" && <>
                     <Div />
                     <Div>Действия:</Div>
                     <Div>

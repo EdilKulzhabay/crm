@@ -10,12 +10,13 @@ import CourierDeliveredOrders from "../Components/CourierDeliveredOrders";
 import LinkButton from "../Components/LinkButton";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function CourierPage() {
     const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const navigate = useNavigate();
     const { id } = useParams();
-    const [role, setRole] = useState("");
     const [courier, setCourier] = useState({});
 
     const [open, setOpen] = useState(false);
@@ -71,16 +72,6 @@ export default function CourierPage() {
     };
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setRole(data.role);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-
         getCourierData();
     }, []);
 
@@ -136,7 +127,7 @@ export default function CourierPage() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role={role}>
+            <Container role={userData?.role}>
                 <Div>Карточка курьера</Div>
                 <Div />
                 <Div>Личные данные:</Div>

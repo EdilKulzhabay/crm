@@ -9,10 +9,11 @@ import MySnackBar from "../Components/MySnackBar";
 import clsx from "clsx";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
 import OrderInfo from "../Components/OrderInfo";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function AdditionalOrdersWholeList() {
+    const userData = useFetchUserData();
     const [additionalOrders, setAdditionalOrders] = useState([])
-    const [userData, setUserData] = useState({});
     const [orderCourier, setOrderCourier] = useState(null);
     const [couriersModal, setCouriersModal] = useState(false);
     const [orderCourierChange, setOrderCourierChange] = useState(null)
@@ -61,11 +62,6 @@ export default function AdditionalOrdersWholeList() {
     }
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
         getAdditionalOrders()
     }, []);
 
@@ -91,7 +87,7 @@ export default function AdditionalOrdersWholeList() {
     }, [orderCourier])
 
     return (
-        <Container role={userData.role || "admin"}>
+        <Container role={userData?.role}>
             {couriersModal && (
                 <ChooseCourierModal
                     closeCouriersModal={closeCouriersModal}

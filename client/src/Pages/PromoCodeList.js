@@ -9,10 +9,11 @@ import MySnackBar from "../Components/MySnackBar";
 import LinkButton from "../Components/LinkButton";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function PromoCodeList() {
     const scrollPosition = useScrollPosition();
-    const [userData, setUserData] = useState({});
+    const userData = useFetchUserData();
     const [promoCodes, setPromoCodes] = useState([]);
 
     const [open, setOpen] = useState(false);
@@ -68,14 +69,6 @@ export default function PromoCodeList() {
                 console.log(e);
             });
     };
-
-    useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
-    }, []);
 
     const loadMorePromoCodes = useCallback(async () => {
         if (loading || !hasMore) return;
@@ -155,7 +148,7 @@ export default function PromoCodeList() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role={userData.role}>
+            <Container role={userData?.role}>
                 <Div>Список промокодов</Div>
                 <Div />
                 <Div>
