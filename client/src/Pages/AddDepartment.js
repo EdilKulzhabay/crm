@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Container from "../Components/Container";
@@ -7,9 +7,11 @@ import Li from "../Components/Li";
 import MyButton from "../Components/MyButton";
 import MyInput from "../Components/MyInput";
 import MySnackBar from "../Components/MySnackBar";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function AddDepartment() {
     const navigate = useNavigate();
+    const userData = useFetchUserData();
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
@@ -64,7 +66,7 @@ export default function AddDepartment() {
         navigate(-1);
     };
 
-    return <Container role="superAdmin">
+    return <Container role={userData?.role}>
         <Div>Добавление сотрудника</Div>
         <Div />
 

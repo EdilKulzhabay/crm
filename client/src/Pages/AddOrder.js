@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import ChooseClientModal from "../Components/ChooseClientModal";
@@ -14,6 +14,7 @@ import clsx from "clsx";
 import UpIcon from "../icons/UpIcon";
 import DownIcon from "../icons/DownIcon";
 import useScrollPosition from "../customHooks/useScrollPosition";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 const getCurrentDate = () => {
     const today = new Date();
@@ -35,9 +36,9 @@ const adjustDateByDays = (dateStr, days) => {
 
 export default function AddOrder() {
     const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const navigate = useNavigate();
     const {id} = useParams()
-    const [userData, setUserData] = useState({});
     const [clientsModal, setClientsModal] = useState(false);
     const [client, setClient] = useState(null);
     const [address, setAddress] = useState(null);
@@ -110,11 +111,6 @@ export default function AddOrder() {
     };
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
         if (id && id !== "") {
             api.post(
                 "/getClientDataForId",
@@ -206,7 +202,7 @@ export default function AddOrder() {
     };
 
     return (
-        <Container role={userData.role}>
+        <Container role={userData?.role}>
             {clientsModal && (
                 <ChooseClientModal
                     closeClientsModal={closeClientsModal}

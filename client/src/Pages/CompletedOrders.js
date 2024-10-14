@@ -10,9 +10,10 @@ import MyInput from "../Components/MyInput"
 import * as XLSX from "xlsx";
 import MySnackBar from "../Components/MySnackBar"
 import OrderInfo from "../Components/OrderInfo"
+import useFetchUserData from "../customHooks/useFetchUserData"
 
 export default function CompletedOrders() {
-    const [userData, setUserData] = useState({});
+    const userData = useFetchUserData();
     const [completedOrders, setCompletedOrders] = useState([])
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -96,14 +97,6 @@ export default function CompletedOrders() {
         setHasMore(true)
         loadMoreCompletedOrders(1, dates, search, searchStatus, searchF)
     }
-
-    useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        });
-    }, []);
 
     const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF) => {
         if (loading || !hasMore) return;
@@ -229,7 +222,7 @@ export default function CompletedOrders() {
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
 
-    return <Container role={userData?.role || ""}>
+    return <Container role={userData?.role}>
         <Div>Завершенные заказы</Div>
         <Div />
         <Div>

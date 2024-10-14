@@ -12,13 +12,14 @@ import Container from "../Components/Container";
 import * as XLSX from "xlsx";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 import useScrollPosition from "../customHooks/useScrollPosition";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function ClientList() {
     const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const [search, setSearch] = useState("");
     const [clients, setClients] = useState([]);
     const [filterClientStatus, setFilterClientStatus] = useState("all");
-    const [role, setRole] = useState("superAdmin");
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -108,15 +109,6 @@ export default function ClientList() {
     };
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setRole(data.role);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
         getFreeInfo();
     }, []);
 
@@ -301,7 +293,7 @@ export default function ClientList() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role={role}>
+            <Container role={userData?.role}>
                 <Div>
                     <div>Клиенты</div>
                 </Div>
@@ -470,7 +462,7 @@ export default function ClientList() {
                                             >
                                                 Удалить
                                             </MyButton>
-                                            {role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
+                                            {userData?.role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
                                         </div>
                                     </Li>
                                 </div>
@@ -504,7 +496,7 @@ export default function ClientList() {
                                             >
                                                 Удалить
                                             </MyButton>
-                                            {role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
+                                            {userData?.role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
                                         </div>
                                     </Li>
                                 </div>

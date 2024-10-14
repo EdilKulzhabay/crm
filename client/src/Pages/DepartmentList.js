@@ -3,9 +3,10 @@ import Container from "../Components/Container";
 import Div from "../Components/Div";
 import api from "../api";
 import LinkButton from "../Components/LinkButton";
+import useFetchUserData from "../customHooks/useFetchUserData"
 
 export default function DepartmentList() {
-
+    const userData = useFetchUserData();
     const [departments, setDepartments] = useState([])
 
     useEffect(() => {
@@ -18,7 +19,7 @@ export default function DepartmentList() {
         })
     }, [])
 
-    return <Container role="superAdmin">
+    return <Container role={userData?.role}>
         <Div>Сотрудники цеха</Div>
         <Div />
 

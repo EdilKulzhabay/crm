@@ -5,7 +5,12 @@ export default (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.SecretKey);
-            const userId = decoded._id;
+            let userId;
+            if (decoded.client) {
+                userId = decoded.client._id;
+            } else {
+                userId = decoded._id;
+            }
             req.userId = userId;
             next();
         } catch (e) {
