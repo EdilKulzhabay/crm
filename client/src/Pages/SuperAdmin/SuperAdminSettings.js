@@ -12,8 +12,10 @@ import { AuthContext } from "../../AuthContext";
 import { useNavigate } from "react-router-dom";
 import useScrollPosition from "../../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminSettings() {
+    const userData = useFetchUserData();
     const scrollPosition = useScrollPosition();
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
@@ -137,24 +139,24 @@ export default function SuperAdminSettings() {
         setMessage(resStatus ? "Пароль успешно изменен" : resMessage);
     };
 
-    const updateNotificationStatus = (status) => {
-        api.post(
-            "/updateNotificationStatus",
-            { status },
-            {
-                headers: { "Content-Type": "application/json" },
-            }
-        )
-            .then(({ data }) => {
-                setOpen(true);
-                setMessage(data.message);
-                setStatus("success");
-                getMe();
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-    };
+    // const updateNotificationStatus = (status) => {
+    //     api.post(
+    //         "/updateNotificationStatus",
+    //         { status },
+    //         {
+    //             headers: { "Content-Type": "application/json" },
+    //         }
+    //     )
+    //         .then(({ data }) => {
+    //             setOpen(true);
+    //             setMessage(data.message);
+    //             setStatus("success");
+    //             getMe();
+    //         })
+    //         .catch((e) => {
+    //             console.log(e);
+    //         });
+    // };
 
     return (
         <div className="relative">
@@ -163,7 +165,7 @@ export default function SuperAdminSettings() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role="superAdmin">
+            <Container role={userData?.role}>
                 <Div>Настройки: {info?.fullName}</Div>
                 <Div />
                 <Div>Управление пользователями:</Div>

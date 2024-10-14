@@ -7,9 +7,11 @@ import Li from "../../Components/Li";
 import MyButton from "../../Components/MyButton";
 import MyInput from "../../Components/MyInput";
 import MySnackBar from "../../Components/MySnackBar";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminAddFranchizer() {
     const navigate = useNavigate();
+    const userData = useFetchUserData();
 
     const [form, setForm] = useState({
         userName: "",
@@ -76,7 +78,7 @@ export default function SuperAdminAddFranchizer() {
     };
 
     return (
-        <Container role="superAdmin">
+        <Container role={userData?.role}>
             <Div>
                 <div>Добавление нового франчайзера</div>
             </Div>

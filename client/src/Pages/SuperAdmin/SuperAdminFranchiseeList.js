@@ -7,8 +7,10 @@ import LinkButton from "../../Components/LinkButton";
 import MyButton from "../../Components/MyButton";
 import MyInput from "../../Components/MyInput";
 import MySnackBar from "../../Components/MySnackBar";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminFranchiseeList() {
+    const userData = useFetchUserData();
     const [search, setSearch] = useState("");
     const [franchisees, setFranchisees] = useState([]);
 
@@ -91,7 +93,7 @@ export default function SuperAdminFranchiseeList() {
     };
 
     return (
-        <Container role="superAdmin">
+        <Container role={userData?.role}>
             <Div>
                 <div>Управление франчайзи</div>
             </Div>

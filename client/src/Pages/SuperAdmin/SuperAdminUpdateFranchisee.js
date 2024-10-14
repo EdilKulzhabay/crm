@@ -5,15 +5,16 @@ import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import Info from "../../Components/Info";
 import Li from "../../Components/Li";
-import LinkButton from "../../Components/LinkButton";
 import MyButton from "../../Components/MyButton";
 import MySnackBar from "../../Components/MySnackBar";
 import UpdateFranchiseeData from "../../Components/UpdateFranchiseeData";
 import useScrollPosition from "../../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminUpdateFranchisee() {
     const scrollPosition = useScrollPosition();
+    const userData = useFetchUserData();
     const navigate = useNavigate();
 
     const { id } = useParams();
@@ -216,7 +217,7 @@ export default function SuperAdminUpdateFranchisee() {
                 confirmDelete={confirmDelete}
                 scrollPosition={scrollPosition}
             />}
-            <Container role="superAdmin">
+            <Container role={userData?.role}>
                 <Div>
                     <div>Франчайзи: {franchisee.fullName}</div>
                 </Div>

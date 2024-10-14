@@ -3,7 +3,6 @@ import { router } from "./routes";
 import { AuthContext } from "./AuthContext";
 import { useAuth } from "./auth.hook";
 import NotificationComponent from "./Components/NotificationComponent";
-import { useEffect } from "react";
 
 function App() {
     const { token, login, logout } = useAuth();

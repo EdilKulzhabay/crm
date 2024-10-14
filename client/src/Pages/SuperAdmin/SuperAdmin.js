@@ -5,9 +5,11 @@ import Div from "../../Components/Div";
 import Info from "../../Components/Info";
 import Li from "../../Components/Li";
 import LinkButton from "../../Components/LinkButton";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdmin() {
     const [info, setInfo] = useState({});
+    const userData = useFetchUserData();
 
     useEffect(() => {
         api.get("/getMainPageInfo", {
@@ -31,7 +33,7 @@ export default function SuperAdmin() {
     };
 
     return (
-        <Container role="superAdmin">
+        <Container role={userData?.role}>
             <Div>
                 <div>Главная панель</div>
             </Div>

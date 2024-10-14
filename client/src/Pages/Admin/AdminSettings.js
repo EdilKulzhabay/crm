@@ -7,8 +7,10 @@ import MySnackBar from "../../Components/MySnackBar";
 import ChangePassword from "../../Components/ChangePassword";
 import { AuthContext } from "../../AuthContext";
 import { useNavigate } from "react-router-dom";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function AdminSettings() {
+    const userData = useFetchUserData();
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
@@ -43,7 +45,7 @@ export default function AdminSettings() {
     };
 
     return (
-        <Container role="admin">
+        <Container role={userData?.role}>
             <Div>Настройки: {info?.fullName}</Div>
             <Div />
             <ChangePassword

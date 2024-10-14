@@ -281,10 +281,13 @@ export const updateOrder = async (req, res) => {
         const user = await User.findById(id);
 
         if (!user) {
-            return res.json({
-                success: false,
-                message: "Не удалось найти пользователя",
-            });
+            const client = await Client.findById(id)
+            if (!client) {
+                return res.json({
+                    success: false,
+                    message: "Не удалось найти пользователя",
+                });
+            }
         }
 
         const order = await Order.findById(orderId);

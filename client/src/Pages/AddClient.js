@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Container from "../Components/Container";
@@ -8,12 +8,11 @@ import Li2 from "../Components/Li2";
 import MyButton from "../Components/MyButton";
 import MyInput from "../Components/MyInput";
 import MySnackBar from "../Components/MySnackBar";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function AddClient() {
     const navigate = useNavigate();
-
-    const [userData, setUserData] = useState({});
-
+    const userData = useFetchUserData();
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
@@ -64,16 +63,6 @@ export default function AddClient() {
         const encodedAddress = encodeURIComponent(address);
         return `https://2gis.kz/almaty/search/${encodedAddress}`;
     };
-
-    useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({ data }) => {
-            setUserData(data);
-        }).catch((e) => {
-            navigate("/login")
-        })
-    }, []);
 
     const addClient = () => {
         const { mail, ...formWithoutMail } = form;
@@ -127,7 +116,7 @@ export default function AddClient() {
     };
 
     return (
-        <Container role={userData.role || "admin"}>
+        <Container role={userData?.role}>
             <Div>
                 <div>Добавление нового клиента</div>
             </Div>

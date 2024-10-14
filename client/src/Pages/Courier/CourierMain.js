@@ -6,14 +6,15 @@ import Li from "../../Components/Li";
 import LinkButton from "../../Components/LinkButton";
 import MyButton from "../../Components/MyButton";
 import OrderInfo from "../../Components/OrderInfo";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function CourierMain() {
+    const userData = useFetchUserData();
     const [products, setProducts] = useState({
         b12: "",
         b19: "",
     });
     const [opForm, setOpForm] = useState("")
-    const [userData, setUserData] = useState({})
 
     const [firstActiveOrder, setFirstActiveOrder] = useState([])
 
@@ -37,13 +38,6 @@ export default function CourierMain() {
     }
 
     useEffect(() => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            setUserData(data)
-        }).catch((e) => {
-            console.log(e);
-        })
         getFirstOrderForToday()
     }, [])
 
@@ -77,7 +71,7 @@ export default function CourierMain() {
     }
 
     return (
-        <Container role="courier">
+        <Container role={userData?.role}>
             <Div>
                 Главная панель
             </Div>

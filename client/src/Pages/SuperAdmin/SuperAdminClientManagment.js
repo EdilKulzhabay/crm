@@ -7,8 +7,10 @@ import Li2 from "../../Components/Li2";
 import MyButton from "../../Components/MyButton";
 import MyInput from "../../Components/MyInput";
 import MySnackBar from "../../Components/MySnackBar";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdminClientManagment() {
+    const userData = useFetchUserData();
     const [search, setSearch] = useState("");
     const [clients, setClients] = useState([]);
     const [modal, setModal] = useState(false);
@@ -172,7 +174,7 @@ export default function SuperAdminClientManagment() {
     };
 
     return (
-        <Container role="superAdmin">
+        <Container role={userData?.role}>
             {modal && (
                 <div
                     onClick={() => {
