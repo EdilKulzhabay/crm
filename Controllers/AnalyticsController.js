@@ -272,13 +272,13 @@ export const getAnalyticsData2 = async (req, res) => {
                 if (item.products.b12 && item.products.b12 > 0) {
                     stats.totalRegularB12Bottles += item.products.b12
                     stats.regularB12Revenue += item.products.b12 * (item.client.price12 - 170)
-                    stats.regularB12Expense += 170
+                    stats.regularB12Expense += item.products.b12 * 170
                     stats.regularB12Amount += item.products.b12 * item.client.price12
                 }
                 if (item.products.b19 && item.products.b19 > 0) {
                     stats.totalRegularB19Bottles += item.products.b19
                     stats.regularB19Revenue += item.products.b19 * (item.client.price19 - 250)
-                    stats.regularB19Expense += 250
+                    stats.regularB19Expense += item.products.b19 * 250
                     stats.regularB19Amount += item.products.b19 * item.client.price19
                 }
             }
@@ -287,22 +287,33 @@ export const getAnalyticsData2 = async (req, res) => {
                 if (item.products.b12 && item.products.b12 > 0) {
                     stats.totalAdditionalB12Bottles += item.products.b12
                     stats.additionalB12Revenue += item.products.b12 * (item.client.price12 - 270)
-                    stats.additionalB12Expense += 270
+                    stats.additionalB12Expense += item.products.b12 * 270
                     stats.additionalB12Amount += item.products.b12 * item.client.price12
                 }
                 if (item.products.b19 && item.products.b19 > 0) {
                     stats.totalAdditionalB19Bottles += item.products.b19
                     stats.additionalB19Revenue += item.products.b19 * (item.client.price12 - 400)
-                    stats.additionalB19Expense += 400
+                    stats.additionalB19Expense += item.products.b19 * 400
                     stats.additionalB19Amount += item.products.b19 * item.client.price19
                 }
             }
         })
 
-        stats.regularAverageCostB12 = stats.totalRegularB12Bottles > 0 ? stats.regularB12Amount / stats.totalRegularB12Bottles : 0
-        stats.regularAverageCostB19 = stats.totalRegularB19Bottles > 0 ? stats.regularB19Amount / stats.totalRegularB19Bottles : 0
-        stats.additionalAverageCostB12 = stats.totalAdditionalB12Bottles > 0 ? stats.additionalB12Amount / stats.totalAdditionalB12Bottles : 0
-        stats.additionalAverageCostB19 = stats.totalAdditionalB19Bottles > 0 ? stats.additionalB19Amount / stats.totalAdditionalB19Bottles : 0
+        stats.regularAverageCostB12 = stats.totalRegularB12Bottles > 0 
+            ? Math.round(stats.regularB12Amount / stats.totalRegularB12Bottles) 
+            : 0;
+
+        stats.regularAverageCostB19 = stats.totalRegularB19Bottles > 0 
+            ? Math.round(stats.regularB19Amount / stats.totalRegularB19Bottles) 
+            : 0;
+
+        stats.additionalAverageCostB12 = stats.totalAdditionalB12Bottles > 0 
+            ? Math.round(stats.additionalB12Amount / stats.totalAdditionalB12Bottles) 
+            : 0;
+
+        stats.additionalAverageCostB19 = stats.totalAdditionalB19Bottles > 0 
+            ? Math.round(stats.additionalB19Amount / stats.totalAdditionalB19Bottles) 
+            : 0;
 
         res.json({ stats });
     } catch (error) {
