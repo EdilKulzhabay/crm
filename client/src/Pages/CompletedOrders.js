@@ -320,7 +320,7 @@ export default function CompletedOrders() {
         </Li>
         
         <Div />
-        <div className="max-h-[180px] overflow-scroll">
+        <div className="max-h-[380px] overflow-scroll">
             {completedOrders.map((item, index) => {
                 if (completedOrders.length === index + 1) {
                     return (
@@ -330,9 +330,9 @@ export default function CompletedOrders() {
                                     <div className="bg-red">
                                         Заказ: 
                                     </div>
+                                    <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                     <div>{item?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
-                                    <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                     <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                     <LinkButton
                                         href={`/orderPage/${item?._id}`}
@@ -355,9 +355,9 @@ export default function CompletedOrders() {
                                     <div className="bg-red">
                                         Заказ: 
                                     </div>
+                                    <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                     <div>{item?.client?.userName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
-                                    <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                     <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                     <LinkButton
                                         href={`/orderPage/${item?._id}`}

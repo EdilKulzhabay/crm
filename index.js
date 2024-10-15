@@ -17,6 +17,7 @@ import {
     MobileController,
     NotificationController,
     DepartmentController,
+    AnalyticsController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -226,6 +227,10 @@ app.post("/addBonus", MobileController.addBonus);
 app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
+
+////////ANALYTICS
+app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
+app.post("/getAnalyticsData2", AnalyticsController.getAnalyticsData2)
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);

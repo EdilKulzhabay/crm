@@ -139,10 +139,15 @@ export const getOrders = async (req, res) => {
             const franchiseeIds = franchisees.map(franchisee => franchisee._id);
         
             // Добавляем ID франчайзи в фильтр заказов
-            filter.$or = [
-                { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
-                { transferredFranchise: { $regex: searchF, $options: "i" } } // Фильтр по transferredFranchise
-            ];
+            if (searchF === "empty") {
+                filter.franchisee = id
+                filter.transferred = false
+            } else {
+                filter.$or = [
+                    { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
+                    { transferredFranchise: { $regex: searchF, $options: "i" } } // Фильтр по transferredFranchise
+                ];
+            }
         }
         
 
@@ -164,6 +169,8 @@ export const getOrders = async (req, res) => {
             ]
         }
 
+        console.log(filter);
+        
         const totalOrders = await Order.countDocuments(filter)
 
         // Execute the query with the updated filter

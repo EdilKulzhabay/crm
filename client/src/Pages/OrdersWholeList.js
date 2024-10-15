@@ -274,6 +274,14 @@ export default function OrdersWholeList() {
                                 setLoading(false)
                                 loadMoreOrders(1, dates, search, searchStatus, searchF)
                             }}>Найти</MyButton>
+                            <MyButton click={() => {
+                                setOrders([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)
+                                loadMoreOrders(1, dates, search, searchStatus, "empty")
+                                setSearchF("empty")
+                            }}>Свободные</MyButton>
                         </div>
                     </Div>
                 </>
@@ -297,11 +305,11 @@ export default function OrdersWholeList() {
                                             })}>
                                                 Заказ: 
                                             </div>
-                                            <div>{item?.client?.userName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                            <div>{item?.client?.userName}</div>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div>
                                                 {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
                                                 {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
@@ -348,11 +356,11 @@ export default function OrdersWholeList() {
                                             })}>
                                                 Заказ: 
                                             </div>
-                                            <div>{item?.client?.userName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
+                                            <div>{item?.client?.userName}</div>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div>
                                                 {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
                                                 {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
