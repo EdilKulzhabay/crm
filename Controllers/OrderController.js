@@ -104,20 +104,13 @@ export const getOrders = async (req, res) => {
         const { page, startDate, endDate, search, searchStatus, searchF } =
             req.body;
 
-        const sDate = startDate !== ""
-            ? new Date(`${startDate}T00:00:00.000Z`)
-            : new Date("2024-01-01T00:00:00.000Z");
-        const eDate = endDate !== ""
-            ? new Date(`${endDate}T23:59:59.999Z`)
-            : new Date("2026-01-01T23:59:59.999Z");
-
         const limit = 5;
         const skip = (page - 1) * limit;
 
         const user = await User.findById(id);
 
         const filter = {
-            createdAt: { $gte: sDate, $lte: eDate },
+            "date.d": { $gte: startDate, $lte: endDate },
             status: { $nin: ["delivered", "cancelled"] },
         }
 
@@ -169,8 +162,6 @@ export const getOrders = async (req, res) => {
             ]
         }
 
-        console.log(filter);
-        
         const totalOrders = await Order.countDocuments(filter)
 
         // Execute the query with the updated filter
