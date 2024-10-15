@@ -292,7 +292,7 @@ export const getAnalyticsData2 = async (req, res) => {
                 }
                 if (item.products.b19 && item.products.b19 > 0) {
                     stats.totalAdditionalB19Bottles += item.products.b19
-                    stats.additionalB19Revenue += item.products.b19 * (item.client.price12 - 400)
+                    stats.additionalB19Revenue += item.products.b19 * (item.client.price19 - 400)
                     stats.additionalB19Expense += item.products.b19 * 400
                     stats.additionalB19Amount += item.products.b19 * item.client.price19
                 }
