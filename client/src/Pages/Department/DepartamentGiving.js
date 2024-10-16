@@ -36,7 +36,6 @@ export default function DepartamentGiving() {
             headers: {"Content-Type": "application/json"}
         }).then(({ data }) => {
             console.log(data);
-            
             if (data.success) {
                 setChFranchisee(data.franchisee)
             }
@@ -99,6 +98,12 @@ export default function DepartamentGiving() {
                 setOpen(true);
                 setStatus("success");
                 setMessage("Все прошло успешно");
+                setData({
+                    b121kol: 0,
+                    b191kol: 0,
+                    b197kol: 0,
+                })
+                setChFranchisee(null)
             }
         })
     }
@@ -111,6 +116,12 @@ export default function DepartamentGiving() {
             <Div />
             {chFranchisee !== null ? <>
                 <Div>{chFranchisee.fullName}</Div>
+                <Div />
+                {chFranchisee?.b121kol !== 9999 && 
+                    <Li>Количество 12,5 л: {chFranchisee?.b121kol}</Li>
+                }
+                <Li>Количество 18,9 л. (1): {chFranchisee?.b191kol}</Li>
+                <Li>Количество 18,9 л. (7): {chFranchisee?.b197kol}</Li>
                 <Div />
                 {chFranchisee?.b121kol !== 9999 && 
                     <Li>
