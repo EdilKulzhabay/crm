@@ -192,6 +192,8 @@ app.post("/addDepartment", DepartmentController.addDepartment)
 app.post("/getDepartmentData", DepartmentController.getDepartmentData)
 app.post("/updateDepartmentData", DepartmentController.updateDepartmentData)
 app.post("/deleteDepartment", DepartmentController.deleteDepartment)
+app.post("/departmentAction", DepartmentController.departmentAction)
+app.get("/getFirstQueue", DepartmentController.getFirstQueue)
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);

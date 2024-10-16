@@ -1,9 +1,11 @@
 import Department from "../Models/Department.js";
+import Queue from "../Models/Queue.js";
+import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 
 export const addDepartment = async (req, res) => {
     try {
-        const { fullName, userName } = req.body;
+        const { fullName, userName, receiving } = req.body;
 
         const candidate = await Department.findOne({ userName });
 
@@ -20,7 +22,8 @@ export const addDepartment = async (req, res) => {
         const doc = new Department({
             fullName,
             password: hash,
-            userName
+            userName,
+            receiving
         });
 
         await doc.save();
@@ -107,6 +110,78 @@ export const deleteDepartment = async (req, res) => {
         res.json({
             success: true,
         });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const departmentAction = async (req, res) => {
+    try {
+        const {id, franchisee, type, data} = req.body
+        console.log(req.body);
+        
+
+        const deparment = await Department.findById(id)
+
+        deparment.history.push({franchisee, type, data})
+        if (type) {
+            const queue = new Queue({
+                franchisee
+            })
+            await queue.save()
+        } else {
+            await Queue.findOneAndDelete({franchisee})
+        }
+        
+        deparment.save()
+
+        const fran = await User.findById(franchisee)
+        if (type) {
+            fran.b121kol = fran.b121kol + data.b121kol
+            fran.b191kol = fran.b191kol + data.b191kol
+            fran.b197kol = fran.b197kol + data.b197kol
+        } else {
+            fran.b121kol = fran.b121kol - data.b121kol
+            fran.b191kol = fran.b191kol - data.b191kol
+            fran.b197kol = fran.b197kol - data.b197kol
+        }
+
+        fran.save()
+
+        res.json({
+            success: true
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getFirstQueue = async (req, res) => {
+    try {
+        const queue = await Queue.findOne({})
+
+        let franchisee = null
+        if (queue) {
+            const id = queue.franchisee
+            franchisee = await User.findById(id)
+        }
+
+        if (franchisee === null) {
+            return res.json({
+                success: false
+            })
+        }
+
+        res.json({
+            success: true,
+            franchisee
+        })
     } catch (error) {
         console.log(error);
         res.status(500).json({

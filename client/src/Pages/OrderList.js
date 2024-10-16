@@ -371,7 +371,7 @@ export default function OrderList() {
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                            <div>{item?.client?.userName}</div>
+                                            <div>{item?.client?.fullName}</div>
                                             <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             
                                             <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
@@ -413,7 +413,7 @@ export default function OrderList() {
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                            <div>{item?.client?.userName}</div>
+                                            <div>{item?.client?.fullName}</div>
                                             <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             
                                             <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
@@ -456,7 +456,7 @@ export default function OrderList() {
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                            <div>{item?.client?.userName}</div>
+                                            <div>{item?.client?.fullName}</div>
                                             <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>

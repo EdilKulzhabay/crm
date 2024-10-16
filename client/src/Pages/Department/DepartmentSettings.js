@@ -1,41 +1,24 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import MyButton from "../../Components/MyButton";
-import api from "../../api";
 import MySnackBar from "../../Components/MySnackBar";
 import ChangePassword from "../../Components/ChangePassword";
 import { AuthContext } from "../../AuthContext";
 import { useNavigate } from "react-router-dom";
+import useFetchUserData from "../../customHooks/useFetchUserData"
 
 export default function DepartmentSettings() {
-
+    const userData = useFetchUserData()
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-    const [info, setInfo] = useState({});
 
     const closeSnack = () => {
         setOpen(false);
     };
-
-    const getMe = () => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setInfo(data);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-    };
-
-    useEffect(() => {
-        getMe();
-    }, []);
 
     const changeSnack = (resStatus, resMessage) => {
         setOpen(true);
@@ -43,8 +26,8 @@ export default function DepartmentSettings() {
         setMessage(resStatus ? "Пароль успешно изменен" : resMessage);
     };
 
-    return <Container role="department">
-        <Div>Настройки</Div>
+    return <Container role={userData?.role}>
+        <Div>Настройки {userData?.fullName}</Div>
         <Div />
         <ChangePassword
             responce={(resStatus, resMessage) => {
