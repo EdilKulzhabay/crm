@@ -38,6 +38,8 @@ import CourierOrderComment from "./Pages/Courier/CourierOrderComment";
 import OrdersWholeList from "./Pages/OrdersWholeList";
 import AdditionalOrdersWholeList from "./Pages/AdditionalOrdersWholeList";
 import Analytics from "./Pages/Analytics";
+import DepartamentGiving from "./Pages/Department/DepartamentGiving";
+import DepartamentReceiving from "./Pages/Department/DepartamentReceiving";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -93,5 +95,7 @@ export const router = createBrowserRouter([
 
     /////DEPARTMENT
     { path: "/department", element: <DepartmentMain />},
-    { path: "/departmentSettings", element: <DepartmentSettings />}
+    { path: "/departmentSettings", element: <DepartmentSettings />},
+    { path: "/departamentGiving", element: <DepartamentGiving />},
+    { path: "/departamentReceiving", element: <DepartamentReceiving />}
 ]);

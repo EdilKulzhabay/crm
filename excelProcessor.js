@@ -16,14 +16,42 @@ export const processExcelFile = async (filePath, id) => {
                 const phone = row.phone || "";
                 const mail = row.mail || "";
                 const franchisee = id;
+                const addresses = [
+                    {
+                        street: row.adress || "",
+                        house: row.house || ""
+                    }
+                ];
         
                 // Условие для поиска существующего клиента
-                let orConditions = [
-                    { fullName: fullName, franchisee: { $ne: franchisee } },
-                    { userName: userName, franchisee: { $ne: franchisee } },
-                    { phone: phone, franchisee: { $ne: franchisee } },
-                    { mail: mail, franchisee: { $ne: franchisee } },
-                ];
+                let orConditions = [];
+
+                if (fullName) {
+                    orConditions.push({ fullName: fullName, franchisee: { $ne: franchisee } });
+                }
+                if (userName) {
+                    orConditions.push({ userName: userName, franchisee: { $ne: franchisee } });
+                }
+                if (phone) {
+                    orConditions.push({ phone: phone, franchisee: { $ne: franchisee } });
+                }
+                if (mail) {
+                    orConditions.push({ mail: mail, franchisee: { $ne: franchisee } });
+                }
+
+                if (addresses.length > 0) {
+                    addresses.forEach((address) => {
+                        orConditions.push({
+                            addresses: {
+                                $elemMatch: {
+                                    street: address.street,
+                                    house: address.house,
+                                },
+                            },
+                            franchisee: { $ne: franchisee },
+                        });
+                    });
+                }
         
                 const existingClient = await Client.findOne({ $or: orConditions });
         
@@ -47,7 +75,8 @@ export const processExcelFile = async (filePath, id) => {
                     price12: row.price12 || "",
                     status: row.status || "",
                     franchisee: id || "",
-                    opForm: row.opForm || ""
+                    opForm: row.opForm || "",
+                    type: row.type === "ЮЛ" ? false : true
                 };
         
                 await Client.create(newClient);

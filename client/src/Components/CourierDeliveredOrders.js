@@ -88,7 +88,7 @@ export default function CourierDeliveredOrders(props) {
                             <div className="bg-red">
                                 Заказ: 
                             </div>
-                            <div>{item?.order?.client?.userName}</div>
+                            <div>{item?.order?.client?.fullName}</div>
                             <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                             <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                             <div>
@@ -112,7 +112,7 @@ export default function CourierDeliveredOrders(props) {
                             <div className="bg-red">
                                 Заказ: 
                             </div>
-                            <div>{item?.order?.client?.userName}</div>
+                            <div>{item?.order?.client?.fullName}</div>
                             <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                             <div>{item?.order?.date?.d} {item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                             <div>

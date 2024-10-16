@@ -68,8 +68,28 @@ export default function SuperAdmin() {
                 </Li>
                 <Li>
                     <div className="">
-                        Сумма:
+                        Количество 12,5 л:
                         <Info>{formatCurrency(info?.totalSum)}</Info>
+                    </div>
+                </Li>
+                {userData?.b121kol !== 9999 && 
+                    <Li>
+                        <div className="">
+                            Количество 12,5 л:
+                            <Info>{userData?.b191kol}</Info>
+                        </div>
+                    </Li>
+                }
+                <Li>
+                    <div className="">
+                        Количество 18,9 л. (1):
+                        <Info>{userData?.b191kol}</Info>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="">
+                        Количество 18,9 л. (7):
+                        <Info>{userData?.b197kol}</Info>
                     </div>
                 </Li>
             </>

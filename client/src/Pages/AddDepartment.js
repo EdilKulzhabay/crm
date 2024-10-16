@@ -24,6 +24,7 @@ export default function AddDepartment() {
         fullName: "",
         userName: "",
         password: "",
+        receiving: true
     });
 
     const changeHandler = (event) => {
@@ -32,7 +33,7 @@ export default function AddDepartment() {
 
     const addDepartment = () => {
         const formComplete = Object.values(form).every(
-            (value) => value.trim() !== ""
+            (value) => typeof value === "string" ? value.trim() !== "" : true
         );
 
         if (!formComplete) {
@@ -57,6 +58,7 @@ export default function AddDepartment() {
                     fullName: "",
                     userName: "",
                     password: "",
+                    receiving: true
                 });
             }
         });
@@ -118,6 +120,23 @@ export default function AddDepartment() {
                     </div>
                 </Li>
             </>
+        <Div />
+        <Div>
+            Кто?: {form.receiving ? "Принимающий" : "Отдающий"}
+        </Div>
+        <Li>
+            <div className="text-green-400 flex items-center">
+                [
+                    <button className="hover:text-blue-600" onClick={() => {setForm({...form, ["receiving"]: true})}}>
+                        Принимающий
+                    </button>
+                    <div className="mx-2">/</div>
+                    <button className="hover:text-blue-600" onClick={() => {setForm({...form, ["receiving"]: false})}}>
+                        Отдающий
+                    </button>
+                ]
+            </div>
+        </Li>
         <Div />
         <Div>Действия:</Div>
         <Div>

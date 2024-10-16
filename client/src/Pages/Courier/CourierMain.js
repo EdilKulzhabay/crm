@@ -86,7 +86,7 @@ export default function CourierMain() {
             </Div>
             {firstActiveOrder !== null ? 
             <>
-                <Li>Наименование: {firstActiveOrder?.order?.client?.userName}</Li>
+                <Li>Наименование: {firstActiveOrder?.order?.client?.fullName}</Li>
                 <Li>Адрес: <span className="text-blue-500">{firstActiveOrder?.order?.address?.actual}</span></Li>
                 <Li><p>Количество 12.5 - литровых бутылей: <OrderInfo>{firstActiveOrder?.order?.products?.b12}</OrderInfo></p>
                     <div>

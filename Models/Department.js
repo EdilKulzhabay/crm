@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import moment from "moment-timezone";
 
 const DepartmentSchema = new mongoose.Schema(
     {
@@ -18,7 +19,38 @@ const DepartmentSchema = new mongoose.Schema(
             type: String,
             default: "active",
         },
-        history: [String]
+        receiving: {
+            type: Boolean,
+        },
+        history: [
+            {
+                franchisee: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                },
+                type: {
+                    type: Boolean
+                },
+                data: {
+                    b121kol: {
+                        type: Number,
+                        default: 0
+                    },
+                    b191kol: {
+                        type: Number,
+                        default: 0
+                    },
+                    b197kol: {
+                        type: Number,
+                        default: 0
+                    },
+                },
+                date: {
+                    type: Date,
+                    default: () => moment.tz("Asia/Almaty").toDate()
+                }
+            }
+        ]
     },
     {
         timestamps: true,
