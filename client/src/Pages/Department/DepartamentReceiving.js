@@ -93,6 +93,12 @@ export default function DepartamentReceiving() {
                 setOpen(true);
                 setStatus("success");
                 setMessage("Все прошло успешно");
+                setData({
+                    b121kol: 0,
+                    b191kol: 0,
+                    b197kol: 0,
+                })
+                setChFranchisee(null)
             }
         })
     }
