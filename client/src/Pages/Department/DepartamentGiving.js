@@ -4,9 +4,8 @@ import useFetchUserData from "../../customHooks/useFetchUserData";
 import api from "../../api";
 import MyButton from "../../Components/MyButton";
 import Div from "../../Components/Div";
-import UpIcon from "../../icons/UpIcon";
-import DownIcon from "../../icons/DownIcon";
-import Info from "../../Components/Info";
+import PlusIcon from "../../icons/PlusIcon";
+import MinusIcon from "../../icons/MinusIcon";
 import Li from "../../Components/Li";
 import MySnackBar from "../../Components/MySnackBar";
 
@@ -26,10 +25,6 @@ export default function DepartamentGiving() {
     const closeSnack = () => {
         setOpen(false);
     };
-    
-    // Хранение идентификаторов таймера для увеличения и уменьшения
-    const [increaseTimer, setIncreaseTimer] = useState(null);
-    const [decreaseTimer, setDecreaseTimer] = useState(null);
 
     const getFirst = () => {
         api.get("/getFirstQueue", {
@@ -52,7 +47,7 @@ export default function DepartamentGiving() {
     const increaseValue = (key) => {
         setData(prevData => ({
             ...prevData,
-            [key]: prevData[key] + 1,
+            [key]: prevData[key] < chFranchisee[key] ? Number(prevData[key]) + 1 : prevData[key],
         }));
     };
 
@@ -60,38 +55,17 @@ export default function DepartamentGiving() {
     const decreaseValue = (key) => {
         setData(prevData => ({
             ...prevData,
-            [key]: prevData[key] > 0 ? prevData[key] - 1 : 0,
+            [key]: prevData[key] > 0 ? Number(prevData[key]) - 1 : 0,
         }));
     };
 
-    // Функция для начала увеличения значения
-    const startIncrease = (key) => {
-        increaseValue(key); // Увеличиваем значение сразу
-        const timer = setInterval(() => increaseValue(key), 1000); // Увеличиваем значение каждые 0.5 сек
-        setIncreaseTimer(timer); // Сохраняем таймер
-    };
-
-    // Функция для начала уменьшения значения
-    const startDecrease = (key) => {
-        decreaseValue(key); // Уменьшаем значение сразу
-        const timer = setInterval(() => decreaseValue(key), 1000); // Уменьшаем значение каждые 0.5 сек
-        setDecreaseTimer(timer); // Сохраняем таймер
-    };
-
-    // Функция для остановки таймеров
-    const stopTimers = () => {
-        if (increaseTimer) {
-            clearInterval(increaseTimer); // Останавливаем таймер увеличения
-            setIncreaseTimer(null);
-        }
-        if (decreaseTimer) {
-            clearInterval(decreaseTimer); // Останавливаем таймер уменьшения
-            setDecreaseTimer(null);
-        }
-    };
-
     const receive = () => {
-        api.post("/departmentAction", {id:userData._id, franchisee: chFranchisee._id, type: userData.receiving, data}, {
+        const sendData = {
+            b121kol: Number(data.b121kol),
+            b191kol: Number(data.b191kol),
+            b197kol: Number(data.b197kol),
+        }
+        api.post("/departmentAction", {id:userData._id, franchisee: chFranchisee._id, type: userData.receiving, data: sendData}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
             if (data.success) {
@@ -107,6 +81,14 @@ export default function DepartamentGiving() {
             }
         })
     }
+
+    const changeData = (event) => {
+        if (Number(event.target.value) > Number(chFranchisee[event.target.name])) {
+            setData({ ...data, [event.target.name]: chFranchisee[event.target.name] });
+        } else {
+            setData({ ...data, [event.target.name]: event.target.value });
+        }
+    };
 
     return (
         <Container role={userData?.role}>
@@ -128,25 +110,37 @@ export default function DepartamentGiving() {
                         <div className="flex items-center gap-x-2">
                             <div>Количество 12,5 л:</div>
                             <button 
-                                onMouseDown={() => startDecrease("b121kol")} 
-                                onMouseUp={stopTimers} 
-                                onMouseLeave={stopTimers} 
-                                onTouchStart={() => startDecrease("b121kol")}
-                                onTouchEnd={stopTimers} 
+                                onClick={() => {decreaseValue("b121kol")}}
                                 className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
                             >
-                                <DownIcon className="w-6 h-6 text-white" />
+                                <MinusIcon className="w-6 h-6 text-white" />
                             </button>
-                            <Info>{data.b121kol}</Info>
+                            <div>
+                                [{" "}
+                                <input
+                                    size={13}
+                                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                    name="b121kol"
+                                    value={data.b121kol}
+                                    style={{ fontSize: '16px' }}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        changeData(event)
+                                    }}
+                                />{" "}
+                                ]
+                            </div>
                             <button 
-                                onMouseDown={() => startIncrease("b121kol")} 
-                                onMouseUp={stopTimers} 
-                                onMouseLeave={stopTimers}
-                                onTouchStart={() => startIncrease("b121kol")}
-                                onTouchEnd={stopTimers} 
+                                onClick={() => {increaseValue("b121kol")}}
                                 className="ml-3 w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
                             >
-                                <UpIcon className="w-6 h-6 text-white" />
+                                <PlusIcon className="w-6 h-6 text-white" />
                             </button>
                         </div>
                     </Li>
@@ -155,25 +149,37 @@ export default function DepartamentGiving() {
                     <div className="flex items-center gap-x-2">
                         <div>Количество 18,9 л. (1):</div>
                         <button 
-                            onMouseDown={() => startDecrease("b191kol")} 
-                            onMouseUp={stopTimers} 
-                            onMouseLeave={stopTimers} 
-                            onTouchStart={() => startDecrease("b191kol")}
-                            onTouchEnd={stopTimers} 
+                            onClick={() => {decreaseValue("b191kol")}}
                             className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
                         >
-                            <DownIcon className="w-6 h-6 text-white" />
+                            <MinusIcon className="w-6 h-6 text-white" />
                         </button>
-                        <Info>{data.b191kol}</Info>
+                        <div>
+                            [{" "}
+                            <input
+                                size={13}
+                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                name="b191kol"
+                                value={data.b191kol}
+                                style={{ fontSize: '16px' }}
+                                inputMode="numeric"
+                                pattern="\d*"
+                                onKeyPress={(event) => {
+                                    if (!/[0-9]/.test(event.key)) {
+                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                    }
+                                }}
+                                onChange={(event) => {
+                                    changeData(event)
+                                }}
+                            />{" "}
+                            ]
+                        </div>
                         <button 
-                            onMouseDown={() => startIncrease("b191kol")} 
-                            onMouseUp={stopTimers} 
-                            onMouseLeave={stopTimers} 
-                            onTouchStart={() => startIncrease("b191kol")}
-                            onTouchEnd={stopTimers} 
+                            onClick={() => {increaseValue("b191kol")}}
                             className="ml-3 w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
                         >
-                            <UpIcon className="w-6 h-6 text-white" />
+                            <PlusIcon className="w-6 h-6 text-white" />
                         </button>
                     </div>
                 </Li>
@@ -181,25 +187,37 @@ export default function DepartamentGiving() {
                     <div className="flex items-center gap-x-2">
                         <div>Количество 18,9 л. (7):</div>
                         <button 
-                            onMouseDown={() => startDecrease("b197kol")} 
-                            onMouseUp={stopTimers} 
-                            onMouseLeave={stopTimers} 
-                            onTouchStart={() => startDecrease("b197kol")}
-                            onTouchEnd={stopTimers} 
+                            onClick={() => {decreaseValue("b197kol")}}
                             className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
                         >
-                            <DownIcon className="w-6 h-6 text-white" />
+                            <MinusIcon className="w-6 h-6 text-white" />
                         </button>
-                        <Info>{data.b197kol}</Info>
+                        <div>
+                            [{" "}
+                            <input
+                                size={13}
+                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                name="b197kol"
+                                value={data.b197kol}
+                                style={{ fontSize: '16px' }}
+                                inputMode="numeric"
+                                pattern="\d*"
+                                onKeyPress={(event) => {
+                                    if (!/[0-9]/.test(event.key)) {
+                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                    }
+                                }}
+                                onChange={(event) => {
+                                    changeData(event)
+                                }}
+                            />{" "}
+                            ]
+                        </div>
                         <button 
-                            onMouseDown={() => startIncrease("b197kol")} 
-                            onMouseUp={stopTimers} 
-                            onMouseLeave={stopTimers} 
-                            onTouchStart={() => startIncrease("b197kol")}
-                            onTouchEnd={stopTimers} 
+                            onClick={() => {increaseValue("b197kol")}}
                             className="ml-3 w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
                         >
-                            <UpIcon className="w-6 h-6 text-white" />
+                            <PlusIcon className="w-6 h-6 text-white" />
                         </button>
                     </div>
                 </Li>
