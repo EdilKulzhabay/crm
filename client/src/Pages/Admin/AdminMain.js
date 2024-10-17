@@ -68,7 +68,7 @@ export default function SuperAdmin() {
                 </Li>
                 <Li>
                     <div className="">
-                        Количество 12,5 л:
+                        Сумма:
                         <Info>{formatCurrency(info?.totalSum)}</Info>
                     </div>
                 </Li>
