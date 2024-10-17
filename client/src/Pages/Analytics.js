@@ -51,7 +51,7 @@ export default function Analytics() {
 
     const getAnalytics = () => {
         const id = userData?._id
-        api.post("/getAnalyticsData2", {id, ...dates}, {
+        api.post("/getAnalyticsData", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
             setStats(data.stats)
