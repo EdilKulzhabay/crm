@@ -28,7 +28,7 @@ export default function AddClient() {
         mail: "",
         price19: "",
         price12: "",
-        opForm: "cash"
+        opForm: "fakt"
     });
     const [addresses, setAddresses] = useState([
         {
