@@ -119,7 +119,7 @@ export const getMainPageInfo = async (req, res) => {
             ]
         }
 
-        const clients = await Client.countDocuments({ ...filter });
+        const clients = await Client.countDocuments(filter);
         const activeOrders = await Order.countDocuments({
             ...filter,
             'date.d': todayDate,
@@ -142,15 +142,15 @@ export const getMainPageInfo = async (req, res) => {
 
         if (orders.length > 0) {
             orders.forEach(order => {
-                const client = order.client;
+                const client = order?.client;
     
                 // Цены продажи (price19 и price12) взятые из клиента
-                const sellingPrice19 = client.price19 || 0;
-                const sellingPrice12 = client.price12 || 0;
+                const sellingPrice19 = client?.price19 || 0;
+                const sellingPrice12 = client?.price12 || 0;
     
                 // Проданные объемы
-                const quantity19 = order.products.b19 || 0;
-                const quantity12 = order.products.b12 || 0;
+                const quantity19 = order.products?.b19 || 0;
+                const quantity12 = order.products?.b12 || 0;
     
                 // Выручка с 19 литровых бутылок
                 const revenue19 = (sellingPrice19 - costPrice19) * quantity19;
