@@ -141,7 +141,7 @@ export default function DepartmentPage() {
                         updateClientData={updateDepartmentData}
                     />
                 </>
-                <Div />
+                {/* <Div />
                 <Div>История:</Div>
                 <div className="max-h-[180px] overflow-y-scroll">
                     {department.history && department.history.length > 0 && department.history.map((item, index) => {
@@ -149,7 +149,7 @@ export default function DepartmentPage() {
                             <Div>{item}</Div>
                         </div>
                     })}
-                </div>
+                </div> */}
                 
 
                 <Div />

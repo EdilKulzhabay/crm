@@ -26,11 +26,11 @@ export default function DepartmentList() {
         <Div>Список сотрудников цеха:</Div>
         <div className="min-h-180 overflow-y-scroll">
             {departments && departments.length > 0 && departments.map((item) => {
-                return <div key={item._id}>
+                return <div key={item?._id}>
                     <Div>
                         <div className="flex items-center gap-x-2">
-                            <div>{item.userName}</div>
-                            <LinkButton href={`/departmentPage/${item._id}`}>Перейти</LinkButton>
+                            <div>{item?.userName}</div>
+                            <LinkButton href={`/departmentPage/${item?._id}`}>Перейти</LinkButton>
                         </div>
                     </Div>
                 </div>

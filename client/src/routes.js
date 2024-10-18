@@ -40,6 +40,8 @@ import AdditionalOrdersWholeList from "./Pages/AdditionalOrdersWholeList";
 import Analytics from "./Pages/Analytics";
 import DepartamentGiving from "./Pages/Department/DepartamentGiving";
 import DepartamentReceiving from "./Pages/Department/DepartamentReceiving";
+import Charts from "./Pages/Charts";
+import ClientsByOpForm from "./Pages/ClientsByOpForm";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -63,6 +65,8 @@ export const router = createBrowserRouter([
     { path: "/courierActiveOrders/:id", element: <CourierActiveOrders /> },
     { path: "/courierOrderComment/:id", element: <CourierOrderComment /> },
     { path: "/analytics", element: <Analytics /> },
+    { path: "/charts", element: <Charts /> },
+    { path: "/clientsByOpForm/:opForm", element: <ClientsByOpForm /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },
