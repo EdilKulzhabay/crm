@@ -7,6 +7,7 @@ import Info from "../Components/Info";
 import Li from "../Components/Li";
 import DataInput from "../Components/DataInput";
 import MyButton from "../Components/MyButton";
+import LinkButton from "../Components/LinkButton";
 
 export default function Analytics() {
     const userData = useFetchUserData()
@@ -158,7 +159,9 @@ export default function Analytics() {
                     <Div />
                     <Div>Действия:</Div>
                     <Div>---------------------</Div>
-                    <Div></Div>
+                    <Div>
+                        <LinkButton href="/charts">Графики</LinkButton>
+                    </Div>
                     <Div />
                 </>
                 )

@@ -300,7 +300,7 @@ export default function ClientPage() {
                         updateClientData={updateClientData}
                     />
                     <UpdateClientData
-                        title="Имя пользователя"
+                        title="Контактное лицо"
                         open={updates.userNameOpen}
                         str={updates.userNameStr}
                         name="userName"

@@ -132,7 +132,7 @@ export default function ChooseClientModal(props) {
                                     <Li>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-x-2 flex-wrap">
-                                                <div>{client.userName}</div>
+                                                <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                                 <div>|</div>
                                                 <div>{client.phone}</div>
                                             </div>
@@ -143,8 +143,8 @@ export default function ChooseClientModal(props) {
                                                     }}
                                                 >
                                                     <span className="text-green-400">
-                                Выбрать
-                            </span>
+                                                        Выбрать
+                                                    </span>
                                                 </MyButton>
                                             </div>
                                         </div>
@@ -157,7 +157,7 @@ export default function ChooseClientModal(props) {
                                     <Li>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-x-2 flex-wrap">
-                                                <div>{client.userName}</div>
+                                                <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                                 <div>|</div>
                                                 <div>{client.phone}</div>
                                             </div>
@@ -168,8 +168,8 @@ export default function ChooseClientModal(props) {
                                                     }}
                                                 >
                                                     <span className="text-green-400">
-                                Выбрать
-                            </span>
+                                                        Выбрать
+                                                    </span>
                                                 </MyButton>
                                             </div>
                                         </div>
