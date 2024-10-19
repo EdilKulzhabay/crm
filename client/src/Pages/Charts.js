@@ -7,6 +7,7 @@ import DataInput from "../Components/DataInput";
 import MyButton from "../Components/MyButton";
 import Li from "../Components/Li";
 import { Link } from "react-router-dom";
+import Info from "../Components/Info";
 
 export default function Charts() {
     const userData = useFetchUserData()
@@ -54,6 +55,8 @@ export default function Charts() {
     })
     const [totalOrders, setTotalOrders] = useState(0)
     const [additionalTotal, setAdditionalTotal] = useState(0)
+    const [totalRevenue, setTotalRevenue] = useState(0)
+    const [totalFaktRevenue, setTotalFaktRevenue] = useState(0)
     
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
@@ -79,16 +82,34 @@ export default function Charts() {
         api.post("/getChartByOp", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
+            if (data.success) {
+                setTotalOrders(data.totalOrders)
+                setAdditionalTotal(data.additionalTotal)
+                data.stats.length > 0 && data.stats.forEach((item) => {
+                    setStats(prevStats => ({
+                        ...prevStats,
+                        [item.opForm]: {count: item.count, percentage: item.percentage}
+                    }));
+                })
+            } else {
+                setAdditionalTotal(data.additionalTotal)
+            }
+        }).catch((e) => {
+            console.log(e);
+        })
+    }
+
+    const getAdditionalRevenue = () => {
+        const id = userData?._id
+        api.post("/getAdditionalRevenue", {id, ...dates}, {
+            headers: {"Content-Type": "application/json"}
+        }).then(({data}) => {
             console.log(data);
             
-            setTotalOrders(data.totalOrders)
-            setAdditionalTotal(data.additionalTotal)
-            data.stats.length > 0 && data.stats.forEach((item) => {
-                setStats(prevStats => ({
-                    ...prevStats,
-                    [item.opForm]: {count: item.count, percentage: item.percentage}
-                }));
-            })
+            if (data.success) {
+                setTotalRevenue(data.stats.totalRevenue)
+                setTotalFaktRevenue(data.stats.totalFaktRevenue)
+            }
         }).catch((e) => {
             console.log(e);
         })
@@ -97,8 +118,18 @@ export default function Charts() {
     useEffect(() => {
         if (userData?._id) {
             getChartByOp()
+            getAdditionalRevenue()
         }
     }, [userData])
+
+    const formatCurrency = (amount) => {
+        if (amount === undefined || amount === null) {
+            return "0 тенге"; // Или любое другое значение по умолчанию
+        }
+    
+        // Преобразуем число в строку и форматируем его
+        return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
+    };
 
     return <Container role={userData?.role}>
         {stats === null ? <Div>Загрузка данных...</Div> : (
@@ -131,7 +162,10 @@ export default function Charts() {
                                     />
                                     ]
                                 </div>
-                                <MyButton click={getChartByOp}>
+                                <MyButton click={() => {
+                                    getChartByOp()
+                                    getAdditionalRevenue()
+                                }}>
                                     <span className="text-green-400">
                                         Применить
                                     </span>
@@ -181,6 +215,15 @@ export default function Charts() {
                                 <div className="text-red">]</div>
                             </div>
                             <div>{((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(2)}%</div>
+                        </Div>
+                    <Div>---------------------</Div>
+                    <Div />
+                    <Div>---------------------</Div>
+                        <Div>
+                            Общая прибль от доп. заказов: <Info>{formatCurrency(totalRevenue)}</Info>
+                        </Div>
+                        <Div>
+                            Общая прибль от доп. заказов по нал.: <Info>{formatCurrency(totalFaktRevenue)}</Info>
                         </Div>
                     <Div>---------------------</Div>
                     <Div />

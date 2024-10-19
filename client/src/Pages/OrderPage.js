@@ -223,7 +223,7 @@ export default function OrderPage() {
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>Имя:</div>
-                            <div>{order?.client?.fullName || ""}</div>
+                            <div>{order?.client?.fullName} {order?.client?.fullName || order?.client?.userName} </div>
                         </div>
                     </Li>
                     <Li>

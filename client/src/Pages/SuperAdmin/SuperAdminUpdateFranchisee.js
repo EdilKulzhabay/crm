@@ -286,10 +286,14 @@ export default function SuperAdminUpdateFranchisee() {
                                     name="b121kol"
                                     value={bottles.b121kol}
                                     inputMode="numeric"
-                                    pattern="\d*"
+                                    pattern="-?\d*" // обновленный паттерн для поддержки минуса
                                     onKeyPress={(event) => {
-                                        if (!/[0-9]/.test(event.key)) {
-                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        // Разрешаем ввод только цифр и знака минуса
+                                        const key = event.key;
+                                        const value = event.target.value;
+
+                                        if (!/[0-9]/.test(key) && key !== '-' || (key === '-' && value.length > 0)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса в начале
                                         }
                                     }}
                                     onChange={(event) => {
@@ -313,10 +317,14 @@ export default function SuperAdminUpdateFranchisee() {
                                     name="b191kol"
                                     value={bottles.b191kol}
                                     inputMode="numeric"
-                                    pattern="\d*"
+                                    pattern="-?\d*" // обновленный паттерн для поддержки минуса
                                     onKeyPress={(event) => {
-                                        if (!/[0-9]/.test(event.key)) {
-                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        // Разрешаем ввод только цифр и знака минуса
+                                        const key = event.key;
+                                        const value = event.target.value;
+
+                                        if (!/[0-9]/.test(key) && key !== '-' || (key === '-' && value.length > 0)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса в начале
                                         }
                                     }}
                                     onChange={(event) => {
@@ -340,10 +348,14 @@ export default function SuperAdminUpdateFranchisee() {
                                     name="b197kol"
                                     value={bottles.b197kol}
                                     inputMode="numeric"
-                                    pattern="\d*"
+                                    pattern="-?\d*" // обновленный паттерн для поддержки минуса
                                     onKeyPress={(event) => {
-                                        if (!/[0-9]/.test(event.key)) {
-                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        // Разрешаем ввод только цифр и знака минуса
+                                        const key = event.key;
+                                        const value = event.target.value;
+
+                                        if (!/[0-9]/.test(key) && key !== '-' || (key === '-' && value.length > 0)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса в начале
                                         }
                                     }}
                                     onChange={(event) => {
