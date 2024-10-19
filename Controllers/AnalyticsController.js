@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import Order from "../Models/Order.js";
-import Client from "../Models/Client.js"
 import User from "../Models/User.js";
 
 export const getAnalyticsData = async (req, res) => {
@@ -180,6 +179,22 @@ export const getChartByOp = async (req, res) => {
             }
         ]);
 
+        const filterAdditional = {
+            status: { $in: ["delivered", "cancelled"] },
+            "date.d": { $gte: startDate, $lte: endDate },
+            transferredFranchise: user.fullName
+        };
+
+        const additionalTotal = await Order.countDocuments(filterAdditional)
+
+        if (stats.length === 0) {
+            return res.json({
+                success: false,
+                additionalTotal,
+                message: "Нет данных для выбранного периода"
+            });
+        }
+
         // Теперь stats содержит один объект, из которого можно вытащить totalOrders и ordersByOpForm
         const { totalOrders, ordersByOpForm } = stats[0]; // Извлекаем общее количество и данные по оплатам
 
@@ -190,16 +205,9 @@ export const getChartByOp = async (req, res) => {
             percentage: ((order.count / totalOrders) * 100).toFixed(2)
         }));
 
-        const filterAdditional = {
-            status: { $in: ["delivered", "cancelled"] },
-            "date.d": { $gte: startDate, $lte: endDate },
-            transferredFranchise: user.fullName
-        };
-
-        const additionalTotal = await Order.countDocuments(filterAdditional)
-
         // Возвращаем totalOrders отдельно и форматированные данные
         res.json({
+            success: true,
             totalOrders,        // Общее количество заказов
             stats: formattedStats, // Данные по формам оплаты
             additionalTotal
@@ -280,6 +288,73 @@ export const getClientsByOpForm = async (req, res) => {
             totalOrdersSum
         });
         
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getAdditionalRevenue = async (req, res) => {
+    try {
+        const {id, startDate, endDate} = req.body;
+
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const filter = {
+            status: { $in: ["delivered", "cancelled"] },
+            "date.d": { $gte: startDate, $lte: endDate },
+            transferredFranchise: user.fullName,
+        };
+
+        const stats = await Order.aggregate([
+            { $match: filter },
+            { 
+                $lookup: {
+                    from: "clients",
+                    localField: "client",
+                    foreignField: "_id",
+                    as: "clientData"
+                }
+            },
+            { $unwind: "$clientData" }, 
+            {
+                $group: {
+                    _id: null, // Группируем заказы по клиентам
+                    B19Revenue: { $sum: { $multiply: ["$products.b19", { $subtract: ["$clientData.price19", 400] }] } },
+                    B12Revenue: { $sum: { $multiply: ["$products.b12", { $subtract: ["$clientData.price12", 270] }] } },
+                    B19FaktRevenue: {
+                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b19", { $subtract: ["$clientData.price19", 400] }] } }, 0] }
+                    },
+                    B12FaktRevenue: {
+                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b12", { $subtract: ["$clientData.price12", 270] }] } }, 0] }
+                    }
+                }
+            },
+            {
+                $project: {
+                    totalRevenue: { $add: ["$B19Revenue", "$B12Revenue"] },
+                    totalFaktRevenue: { $add: ["$B19FaktRevenue", "$B12FaktRevenue"] }
+                }
+            },
+        ]);
+
+        if (stats.length === 0) {
+            return res.json({
+                success: false,
+                message: "Нет данных для выбранного периода"
+            });
+        }
+
+        res.json({ success: true, stats: stats[0] || {} });
     } catch (error) {
         console.log(error);
         res.status(500).json({

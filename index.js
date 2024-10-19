@@ -234,6 +234,7 @@ app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)
 app.post("/getClientsByOpForm", AnalyticsController.getClientsByOpForm)
+app.post("/getAdditionalRevenue", AnalyticsController.getAdditionalRevenue)
 app.post("/getAnalyticsData2", AnalyticsController.getAnalyticsData2)
 
 server.listen(process.env.PORT, () => {
