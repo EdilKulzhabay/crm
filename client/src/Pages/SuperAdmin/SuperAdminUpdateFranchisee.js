@@ -292,7 +292,7 @@ export default function SuperAdminUpdateFranchisee() {
                                         const key = event.key;
                                         const value = event.target.value;
 
-                                        if (!/[0-9]/.test(key) && key !== '-' || (key === '-' && value.length > 0)) {
+                                        if ((!/[0-9]/.test(key) && key !== '-') || (key === '-' && value.length > 0)) {
                                             event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса в начале
                                         }
                                     }}
@@ -323,7 +323,7 @@ export default function SuperAdminUpdateFranchisee() {
                                         const key = event.key;
                                         const value = event.target.value;
 
-                                        if (!/[0-9]/.test(key) && key !== '-' || (key === '-' && value.length > 0)) {
+                                        if ((!/[0-9]/.test(key) && key !== '-') || (key === '-' && value.length > 0)) {
                                             event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса в начале
                                         }
                                     }}
@@ -354,7 +354,7 @@ export default function SuperAdminUpdateFranchisee() {
                                         const key = event.key;
                                         const value = event.target.value;
 
-                                        if (!/[0-9]/.test(key) && key !== '-' || (key === '-' && value.length > 0)) {
+                                        if ((!/[0-9]/.test(key) && key !== '-') || (key === '-' && value.length > 0)) {
                                             event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса в начале
                                         }
                                     }}

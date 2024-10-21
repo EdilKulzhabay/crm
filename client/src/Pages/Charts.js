@@ -8,6 +8,7 @@ import MyButton from "../Components/MyButton";
 import Li from "../Components/Li";
 import { Link } from "react-router-dom";
 import Info from "../Components/Info";
+import MySnackBar from "../Components/MySnackBar";
 
 export default function Charts() {
     const userData = useFetchUserData()
@@ -57,6 +58,14 @@ export default function Charts() {
     const [additionalTotal, setAdditionalTotal] = useState(0)
     const [totalRevenue, setTotalRevenue] = useState(0)
     const [totalFaktRevenue, setTotalFaktRevenue] = useState(0)
+
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [status, setStatus] = useState("");
+
+    const closeSnack = () => {
+        setOpen(false);
+    };
     
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
@@ -78,6 +87,12 @@ export default function Charts() {
     };
 
     const getChartByOp = () => {
+        if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
         const id = userData?._id
         api.post("/getChartByOp", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
@@ -100,6 +115,12 @@ export default function Charts() {
     }
 
     const getAdditionalRevenue = () => {
+        if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
         const id = userData?._id
         api.post("/getAdditionalRevenue", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
@@ -199,35 +220,38 @@ export default function Charts() {
                             <div className="flex items-center gap-x-2">
                                 <div className="text-red">[</div>
                                 <div className="w-[80px]">
-                                    <div className={`bg-red h-5`} style={{width: `${((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(2)}%`}}></div>
+                                    <div className={`bg-red h-5`} style={{width: `${((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(0)}%`}}></div>
                                 </div>
                                 <div className="text-red">]</div>
                             </div>
-                            <div>{((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(2)}%</div>
+                            <div>{((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(0)}%</div>
                         </Div>
                         <Div >
                             <div className="w-[100px] lg:w-[200px]">Доп. заказы:</div>
                             <div className="flex items-center gap-x-2">
                                 <div className="text-red">[</div>
                                 <div className="w-[80px]">
-                                    <div className={`bg-red h-5`} style={{width: `${((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(2)}%`}}></div>
+                                    <div className={`bg-red h-5`} style={{width: `${((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(0)}%`}}></div>
                                 </div>
                                 <div className="text-red">]</div>
                             </div>
-                            <div>{((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(2)}%</div>
+                            <div>{((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(0)}%</div>
                         </Div>
                     <Div>---------------------</Div>
                     <Div />
                     <Div>---------------------</Div>
                         <Div>
-                            Общая прибль от доп. заказов: <Info>{formatCurrency(totalRevenue)}</Info>
-                        </Div>
-                        <Div>
-                            Общая прибль от доп. заказов по нал.: <Info>{formatCurrency(totalFaktRevenue)}</Info>
+                            Сальдо: <Info>{formatCurrency(totalRevenue - totalFaktRevenue)}</Info>
                         </Div>
                     <Div>---------------------</Div>
                     <Div />
                 </>)
         }
+        <MySnackBar
+            open={open}
+            text={message}
+            status={status}
+            close={closeSnack}
+        />
     </Container>
 }

@@ -42,6 +42,7 @@ import DepartamentGiving from "./Pages/Department/DepartamentGiving";
 import DepartamentReceiving from "./Pages/Department/DepartamentReceiving";
 import Charts from "./Pages/Charts";
 import ClientsByOpForm from "./Pages/ClientsByOpForm";
+import DepartmentHistory from "./Pages/DepartmentHistory";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -85,6 +86,7 @@ export const router = createBrowserRouter([
     { path: "/departmentList", element: <DepartmentList /> },
     { path: "/addDepartment", element: <AddDepartment /> },
     { path: "/departmentPage/:id", element: <DepartmentPage /> },
+    { path: "/departmentHistory", element: <DepartmentHistory /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },

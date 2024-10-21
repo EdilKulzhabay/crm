@@ -8,6 +8,7 @@ import Li from "../Components/Li";
 import DataInput from "../Components/DataInput";
 import MyButton from "../Components/MyButton";
 import LinkButton from "../Components/LinkButton";
+import MySnackBar from "../Components/MySnackBar";
 
 export default function Analytics() {
     const userData = useFetchUserData()
@@ -31,6 +32,15 @@ export default function Analytics() {
         endDate: getCurrentDate()     // Сегодняшняя дата
     });
     const [stats, setStats] = useState(null)
+
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [status, setStatus] = useState("");
+
+    const closeSnack = () => {
+        setOpen(false);
+    };
+    
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
         if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
@@ -51,6 +61,12 @@ export default function Analytics() {
     };
 
     const getAnalytics = () => {
+        if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
         const id = userData?._id
         api.post("/getAnalyticsData", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
@@ -166,7 +182,12 @@ export default function Analytics() {
                 </>
                 )
             }
-            
+            <MySnackBar
+                open={open}
+                text={message}
+                status={status}
+                close={closeSnack}
+            />
         </Container>
     )
 }

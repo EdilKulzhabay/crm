@@ -1,3 +1,6 @@
+import moment from "moment-timezone";
+import mongoose from "mongoose";
+
 const DepartmentHistorySchema = new mongoose.Schema(
     {
         department: {
@@ -25,10 +28,6 @@ const DepartmentHistorySchema = new mongoose.Schema(
                 type: Number,
                 default: 0,
             },
-        },
-        date: {
-            type: Date,
-            default: () => moment.tz("Asia/Almaty").toDate(),
         },
     },
     {

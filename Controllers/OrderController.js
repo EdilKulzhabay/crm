@@ -183,13 +183,18 @@ export const getOrders = async (req, res) => {
 
 export const getClientOrders = async (req, res) => {
     try {
-        const { page, clientId } = req.body;
+        const { page, clientId, startDate, endDate } = req.body;
 
         const limit = 3;
         const skip = (page - 1) * limit;
 
+        const filter = {
+            client: clientId,
+            "date.d": { $gte: startDate, $lte: endDate }
+        }
+
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
-        const orders = await Order.find({client: clientId})
+        const orders = await Order.find(filter)
             .populate("franchisee")
             .populate("courier")
             .populate("client")
