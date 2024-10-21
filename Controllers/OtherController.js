@@ -151,12 +151,18 @@ export const getMainPageInfo = async (req, res) => {
                 // Проданные объемы
                 const quantity19 = order.products?.b19 || 0;
                 const quantity12 = order.products?.b12 || 0;
+
+                let revenue19 = 0
+                let revenue12 = 0
     
-                // Выручка с 19 литровых бутылок
-                const revenue19 = (sellingPrice19 - costPrice19) * quantity19;
-    
-                // Выручка с 12 литровых бутылок
-                const revenue12 = (sellingPrice12 - costPrice12) * quantity12;
+                if (order.transferred) {
+                    revenue19 = (sellingPrice19 - 400) * quantity19;
+                    revenue12 = (sellingPrice12 - 270) * quantity12;
+                } else {
+                    revenue19 = (sellingPrice19 - costPrice19) * quantity19;
+                    revenue12 = (sellingPrice12 - costPrice12) * quantity12;
+                }
+                
     
                 // Суммарная выручка по заказу
                 totalRevenue += revenue19 + revenue12;

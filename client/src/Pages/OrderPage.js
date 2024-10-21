@@ -494,7 +494,7 @@ export default function OrderPage() {
                 <Div />
                 <Div>Комментарии к заказу:</Div>
                 <Li>
-                    <textarea value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                    <textarea size={13} style={{ fontSize: '16px' }} value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
                 </Li>
                 {order?.comment !== comment && <Div>
                     <MyButton click={() => {updateOrder("comment", comment)}}><span className="text-green-500">Применить</span></MyButton>

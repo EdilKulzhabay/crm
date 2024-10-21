@@ -447,7 +447,7 @@ export default function AddOrder() {
                 </Li>
                 <Li>Комментарии к заказу:</Li>
                 <Li2>
-                    <textarea value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                    <textarea size={13} style={{ fontSize: '16px' }} value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
                 </Li2>
             </>
 
