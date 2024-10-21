@@ -188,12 +188,13 @@ app.post("/deleteOrder", checkAuth, OrderController.deleteOrder)
 
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
+app.get("/getFirstQueue", DepartmentController.getFirstQueue)
 app.post("/addDepartment", DepartmentController.addDepartment)
 app.post("/getDepartmentData", DepartmentController.getDepartmentData)
 app.post("/updateDepartmentData", DepartmentController.updateDepartmentData)
 app.post("/deleteDepartment", DepartmentController.deleteDepartment)
 app.post("/departmentAction", DepartmentController.departmentAction)
-app.get("/getFirstQueue", DepartmentController.getFirstQueue)
+app.post("/getDepartmentHistory", DepartmentController.getDepartmentHistory)
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);

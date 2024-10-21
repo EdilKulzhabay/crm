@@ -1,4 +1,5 @@
 import Department from "../Models/Department.js";
+import DepartmentHistory from "../Models/DepartmentHistory.js";
 import Queue from "../Models/Queue.js";
 import User from "../Models/User.js";
 import bcrypt from "bcrypt";
@@ -121,12 +122,18 @@ export const deleteDepartment = async (req, res) => {
 export const departmentAction = async (req, res) => {
     try {
         const {id, franchisee, type, data} = req.body
-        console.log(req.body);
-        
 
-        const deparment = await Department.findById(id)
+        const department = await Department.findById(id)
 
-        deparment.history.push({franchisee, type, data})
+        const history = new DepartmentHistory({
+            department: id,
+            franchisee,
+            type,
+            data
+        })
+
+        await history.save()
+
         if (type) {
             const queue = new Queue({
                 franchisee
@@ -136,7 +143,7 @@ export const departmentAction = async (req, res) => {
             await Queue.findOneAndDelete({franchisee})
         }
         
-        deparment.save()
+        department.save()
 
         const fran = await User.findById(franchisee)
         if (type) {
@@ -182,6 +189,37 @@ export const getFirstQueue = async (req, res) => {
             success: true,
             franchisee
         })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getDepartmentHistory = async (req, res) => {
+    try {
+        const {startDate, endDate, franchisee, status} = req.body
+        const eDate = new Date(`${endDate}T23:59:59`)
+
+        const filter = {
+            "createdAt": { $gte: startDate, $lte: eDate },
+        };
+
+        if (franchisee !== "all") {
+            filter.franchisee = franchisee
+        }
+
+        if (status !== "all") {
+            const type = status === "receiving" ? true : false
+            filter.type = type
+        }
+
+        const history = await DepartmentHistory.find(filter)
+        .populate("department")
+        .populate("franchisee")
+
+        res.json({history})
     } catch (error) {
         console.log(error);
         res.status(500).json({

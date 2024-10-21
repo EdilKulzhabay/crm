@@ -13,6 +13,15 @@ import * as XLSX from "xlsx";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 import useFetchUserData from "../customHooks/useFetchUserData";
+import DataInput from "../Components/DataInput";
+
+const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 export default function ClientPage() {
     const scrollPosition = useScrollPosition();
@@ -20,6 +29,11 @@ export default function ClientPage() {
     const navigate = useNavigate();
     const userData = useFetchUserData();
     const [client, setClient] = useState({});
+
+    const [dates, setDates] = useState({
+        startDate: "2024-01-01", // Начало месяца
+        endDate: getCurrentDate()     // Сегодняшняя дата
+    });
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -31,6 +45,7 @@ export default function ClientPage() {
     const [orders, setOrders] = useState([])
 
     const [deleteModal, setDeleteModal] = useState(false)
+    const [deleteModalClient, setDeleteModalClient] = useState(false)
     const [deleteObject, setDeleteObject] = useState(null)
 
     const closeSnack = () => {
@@ -59,6 +74,25 @@ export default function ClientPage() {
         link: "",
         house: "",
     });
+
+    const handleDateChange = (e) => {
+        let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
+        if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
+
+        const year = input.substring(0, 4);
+        const month = input.substring(4, 6);
+        const day = input.substring(6, 8);
+
+        let formattedValue = year;
+        if (input.length >= 5) {
+            formattedValue += "-" + month;
+        }
+        if (input.length >= 7) {
+            formattedValue += "-" + day;
+        }
+
+        setDates({ ...dates, [e.target.name]: formattedValue });
+    };
 
     const addressChangeHandler = (event) => {
         const streetValue = event.target.value;
@@ -93,6 +127,20 @@ export default function ClientPage() {
         )
             .then(({ data }) => {
                 setClient(data);
+                setUpdates({
+                    fullNameOpen: false,
+                    fullNameStr: data?.fullName,
+                    userNameOpen: false,
+                    userNameStr: data?.userName,
+                    phoneOpen: false,
+                    phoneStr: data?.phone,
+                    mailOpen: false,
+                    mailStr: data?.mail,
+                    price12Open: false,
+                    price12Str: data?.price12,
+                    price19Open: false,
+                    price19Str: data?.price19,
+                })
             })
             .catch((e) => {
                 console.log(e);
@@ -158,6 +206,7 @@ export default function ClientPage() {
         )
             .then(({ data }) => {
                 if (data.success) {
+                    setDeleteModalClient(false)
                     navigate(-1)
                 }
             })
@@ -166,21 +215,31 @@ export default function ClientPage() {
             });
     };
 
-    const loadMoreOrders = useCallback(async () => {
-        if (loading || !hasMore || Object.keys(client).length === 0) return;
+    const loadMoreOrders = useCallback(async (page, dates, isDate) => {
+        if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
+        if (isDate) {
+            if (loading || !hasMore || Object.keys(client).length === 0) return;
+        } else {
+            setHasMore(true)
+        }
         setLoading(true);
         api.post(
             "/getClientOrders",
             {
                 page,
-                clientId: client?._id
+                clientId: client?._id,
+                ...dates
             },
             {
                 headers: { "Content-Type": "application/json" },
             }
         )
             .then(({ data }) => {
-                console.log(data);
                 if (data.orders.length === 0) {
                     setHasMore(false);
                 } else {
@@ -196,7 +255,7 @@ export default function ClientPage() {
 
     useEffect(() => {
         if (hasMore && Object.keys(client).length > 0) {
-            loadMoreOrders();
+            loadMoreOrders(1, dates, true);
         }
     }, [client, hasMore]);
 
@@ -207,7 +266,7 @@ export default function ClientPage() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreOrders();
+                    loadMoreOrders(1, dates, true);
                 }
             });
             if (node) observer.current.observe(node);
@@ -273,9 +332,17 @@ export default function ClientPage() {
         setDeleteObject(null)
     }
 
+    const confirmDeleteClient = () => {
+        deleteClient()
+    }
+
     const closeConfirmModal = () => {
         setDeleteModal(false)
         setDeleteObject(null)
+    }
+
+    const closeConfirmModalClient = () => {
+        setDeleteModalClient(false)
     }
 
     return (
@@ -283,6 +350,11 @@ export default function ClientPage() {
             {deleteModal && <ConfirmDeleteModal
                 closeConfirmModal={closeConfirmModal}
                 confirmDelete={confirmDelete}
+                scrollPosition={scrollPosition}
+            />}
+            {deleteModalClient && <ConfirmDeleteModal
+                closeConfirmModal={closeConfirmModalClient}
+                confirmDelete={confirmDeleteClient}
                 scrollPosition={scrollPosition}
             />}
             <Container role={userData?.role}>
@@ -447,6 +519,10 @@ export default function ClientPage() {
                                                 ...client.addresses,
                                                 newAdress,
                                             ]);
+                                            setNewAdress({
+                                                street: "",
+                                                house: ""
+                                            })
                                         }}
                                     >
                                         <span className="text-green-400">
@@ -456,6 +532,10 @@ export default function ClientPage() {
                                     <MyButton
                                         click={() => {
                                             setAddAdress(false);
+                                            setNewAdress({
+                                                street: "",
+                                                house: ""
+                                            })
                                         }}
                                     >
                                         <span className="text-green-400">
@@ -580,6 +660,44 @@ export default function ClientPage() {
                 </>
 
                 <Div />
+                <Div>Фильтры:</Div>
+                <>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Дата:</div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    value={dates.startDate}
+                                    name="startDate"
+                                    change={handleDateChange}
+                                />
+                                ]
+                            </div>
+                            <div> - </div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    value={dates.endDate}
+                                    name="endDate"
+                                    change={handleDateChange}
+                                />
+                                ]
+                            </div>
+                            <MyButton click={() => {
+                                console.log("click");
+                                
+                                loadMoreOrders(1, dates, false)
+                            }}>
+                                <span className="text-green-400">
+                                    Применить
+                                </span>
+                            </MyButton>
+                        </div>
+                    </Li>
+                </>
                 <Div>История заказов:</Div>
                 <div className="max-h-[100px] overflow-scroll">
                     {orders.map((item, index) => {
@@ -638,7 +756,7 @@ export default function ClientPage() {
                         <MyButton click={getClientOrdersForExcel}>
                             Выгрузить заказы в excel
                         </MyButton>
-                        <MyButton click={deleteClient}>Удалить клиента</MyButton>
+                        <MyButton click={() => {setDeleteModalClient(true)}}>Удалить клиента</MyButton>
                     </div>
                 </Div>
                 <Div />

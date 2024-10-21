@@ -78,6 +78,7 @@ export default function DepartamentGiving() {
                     b197kol: 0,
                 })
                 setChFranchisee(null)
+                getFirst()
             }
         })
     }

@@ -298,6 +298,38 @@ export default function OrdersWholeList() {
                     </div>
                 </Div>
 
+                {userData?.role === "superAdmin" && <>
+                    <Div />
+                    <Div>
+                        Фильтрация по франчайзи:
+                    </Div>
+                    <Div>
+                        <div className="flex items-center flex-wrap gap-x-4">
+                            <MyInput
+                                value={searchF}
+                                change={handleSearchF}
+                                color="white"
+                            />
+                            <MyButton click={() => {
+                                setOrders([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)
+                                loadMoreOrders(1, dates, search, searchStatus, searchF)
+                            }}>Найти</MyButton>
+                            <MyButton click={() => {
+                                setOrders([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)
+                                loadMoreOrders(1, dates, search, searchStatus, "empty")
+                                setSearchF("empty")
+                            }}>Свободные</MyButton>
+                        </div>
+                    </Div>
+                </>
+                }
+
                 <Div />
                 <Div>Фильтры:</Div>
                 <>
@@ -333,38 +365,6 @@ export default function OrdersWholeList() {
                         </div>
                     </Li>
                 </>
-
-                {userData?.role === "superAdmin" && <>
-                    <Div />
-                    <Div>
-                        Фильтрация по франчайзи:
-                    </Div>
-                    <Div>
-                        <div className="flex items-center flex-wrap gap-x-4">
-                            <MyInput
-                                value={searchF}
-                                change={handleSearchF}
-                                color="white"
-                            />
-                            <MyButton click={() => {
-                                setOrders([]);
-                                setPage(1);
-                                setHasMore(true);
-                                setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, searchF)
-                            }}>Найти</MyButton>
-                            <MyButton click={() => {
-                                setOrders([]);
-                                setPage(1);
-                                setHasMore(true);
-                                setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, "empty")
-                                setSearchF("empty")
-                            }}>Свободные</MyButton>
-                        </div>
-                    </Div>
-                </>
-                }
 
                 <Div />
                 <Div>

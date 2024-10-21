@@ -202,7 +202,7 @@ export const getChartByOp = async (req, res) => {
         const formattedStats = ordersByOpForm.map(order => ({
             opForm: order.opForm,
             count: order.count,
-            percentage: ((order.count / totalOrders) * 100).toFixed(2)
+            percentage: ((order.count / totalOrders) * 100).toFixed(0)
         }));
 
         // Возвращаем totalOrders отдельно и форматированные данные

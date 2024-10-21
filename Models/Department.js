@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import moment from "moment-timezone";
 
 const DepartmentSchema = new mongoose.Schema(
     {
