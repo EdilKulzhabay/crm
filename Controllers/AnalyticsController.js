@@ -408,7 +408,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         $sum: { 
                             $cond: [
                                 "$transferred", 
-                                { $add: [ {$multiply: [ "$products.b19", "$clientData.price19" ] }, {$multiply: [ "$products.b12", "$clientData.price19" ] } ] },
+                                { $add: [ {$multiply: [ "$products.b19", "$clientData.price19" ] }, {$multiply: [ "$products.b12", "$clientData.price12" ] } ] },
                                 0
                             ] 
                         } 
@@ -417,7 +417,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         $sum: {
                             $cond: [
                                 "$fakt",
-                                { $add: [ {$multiply: [ "$products.b19", "$clientData.price19" ] }, {$multiply: [ "$products.b12", "$clientData.price19" ] } ] },
+                                { $add: [ {$multiply: [ "$products.b19", "$clientData.price19" ] }, {$multiply: [ "$products.b12", "$clientData.price12" ] } ] },
                                 0
                             ]
                         }
