@@ -43,6 +43,7 @@ import DepartamentReceiving from "./Pages/Department/DepartamentReceiving";
 import Charts from "./Pages/Charts";
 import ClientsByOpForm from "./Pages/ClientsByOpForm";
 import DepartmentHistory from "./Pages/DepartmentHistory";
+import SAAnalytics from "./Pages/SAAnalytics";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
     { path: "/addDepartment", element: <AddDepartment /> },
     { path: "/departmentPage/:id", element: <DepartmentPage /> },
     { path: "/departmentHistory", element: <DepartmentHistory /> },
+    { path: "/sAAnalytics", element: <SAAnalytics /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },

@@ -28,7 +28,7 @@ const SAButtons = [
         title: "Совпадение",
     },
     {
-        href: "/analytics",
+        href: "/sAAnalytics",
         title: "Аналитика",
     },
     {

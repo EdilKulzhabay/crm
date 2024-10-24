@@ -236,7 +236,8 @@ app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)
 app.post("/getClientsByOpForm", AnalyticsController.getClientsByOpForm)
 app.post("/getAdditionalRevenue", AnalyticsController.getAdditionalRevenue)
-app.post("/getAnalyticsData2", AnalyticsController.getAnalyticsData2)
+app.post("/getFranchiseeAnalytics", AnalyticsController.getFranchiseeAnalytics)
+// app.post("/getAnalyticsData2", AnalyticsController.getAnalyticsData2)
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
