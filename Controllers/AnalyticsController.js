@@ -129,7 +129,7 @@ export const getAnalyticsData = async (req, res) => {
             }
         ]);
 
-        res.json({ stats: stats[0] || {} });
+        res.json({ stats: stats|| {} });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -354,7 +354,7 @@ export const getAdditionalRevenue = async (req, res) => {
             });
         }
 
-        res.json({ success: true, stats: stats[0] || {} });
+        res.json({ success: true, stats: stats|| {} });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -363,108 +363,122 @@ export const getAdditionalRevenue = async (req, res) => {
     }
 }
 
-export const getAnalyticsData2 = async (req, res) => {
+export const getFranchiseeAnalytics = async (req, res) => {
     try {
-        const {id, startDate, endDate} = req.body
+        const { startDate, endDate } = req.body;
 
-        const user = await User.findById(id);
-
-        if (!user) {
-            return res.json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
+        // Фильтр по диапазону дат
         const filter = {
-            status: { $in: ["delivered", "cancelled"] },
-            "date.d": { $gte: startDate, $lte: endDate },
+            status: "delivered",
+            "date.d": { $gte: startDate, $lte: endDate }
         };
 
-        if (user.role === "admin") {
-            filter.$or = [
-                {franchisee: new mongoose.Types.ObjectId(id)},
-                {transferredFranchise: user.fullName}
-            ];
-        }
+        const franchisee = await User.find({ role: "admin" }).select("_id fullName");
 
-        const orders = await Order.find(filter).populate("client", "price12 price19")
-        const stats = {
-            totalRegularOrders: 0,
-            totalRegularB12Bottles: 0,
-            regularB12Revenue: 0,
-            regularB12Expense: 0,
-            regularB12Amount: 0,
-            regularAverageCostB12: 0,
-            totalRegularB19Bottles: 0,
-            regularB19Revenue: 0,
-            regularB19Expense: 0,
-            regularB19Amount: 0,
-            regularAverageCostB19: 0,
-
-            totalAdditionalOrders: 0,
-            totalAdditionalB12Bottles: 0,
-            additionalB12Revenue: 0,
-            additionalB12Expense: 0,
-            additionalB12Amount: 0,
-            additionalAverageCostB12: 0,
-            totalAdditionalB19Bottles: 0,
-            additionalB19Revenue: 0,
-            additionalB19Expense: 0,
-            additionalB19Amount: 0,
-            additionalAverageCostB19: 0,
-        }
-
-        orders.forEach((item) => {
-            if (item.franchisee.toString() === id) {
-                stats.totalRegularOrders++
-                if (item.products.b12 && item.products.b12 > 0) {
-                    stats.totalRegularB12Bottles += item.products.b12
-                    stats.regularB12Revenue += item.products.b12 * (item.client.price12 - 170)
-                    stats.regularB12Expense += item.products.b12 * 170
-                    stats.regularB12Amount += item.products.b12 * item.client.price12
+        const ordersStats = await Order.aggregate([
+            { $match: filter }, // Фильтр по диапазону дат
+            { 
+                $lookup: {
+                    from: "clients",
+                    localField: "client",
+                    foreignField: "_id",
+                    as: "clientData"
                 }
-                if (item.products.b19 && item.products.b19 > 0) {
-                    stats.totalRegularB19Bottles += item.products.b19
-                    stats.regularB19Revenue += item.products.b19 * (item.client.price19 - 250)
-                    stats.regularB19Expense += item.products.b19 * 250
-                    stats.regularB19Amount += item.products.b19 * item.client.price19
-                }
-            }
-            if (item?.transferredFranchise === user.fullName) {
-                stats.totalAdditionalOrders++
-                if (item.products.b12 && item.products.b12 > 0) {
-                    stats.totalAdditionalB12Bottles += item.products.b12
-                    stats.additionalB12Revenue += item.products.b12 * (item.client.price12 - 270)
-                    stats.additionalB12Expense += item.products.b12 * 270
-                    stats.additionalB12Amount += item.products.b12 * item.client.price12
-                }
-                if (item.products.b19 && item.products.b19 > 0) {
-                    stats.totalAdditionalB19Bottles += item.products.b19
-                    stats.additionalB19Revenue += item.products.b19 * (item.client.price19 - 400)
-                    stats.additionalB19Expense += item.products.b19 * 400
-                    stats.additionalB19Amount += item.products.b19 * item.client.price19
+            },
+            { $unwind: "$clientData" }, 
+            { 
+                $addFields: { fakt: { $and: [ { $eq: ["$opForm", "fakt"] }, { $eq: ["$transferred", true] } ] } }
+            },
+            {
+                $group: {
+                    _id: {
+                        transferredFranchise: {$ifNull: ["$transferredFranchise", ""]},
+                        franchiseeId: "$franchisee",
+                        transferred: "$transferred"
+                    },
+                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b12"] } },
+                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b19"] } },
+                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", "$products.b12", 0] } },
+                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", "$products.b19", 0] } },
+                    totalRgularSumB19: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b19", "$clientData.price19"] } ] } },
+                    totalRgularSumB12: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b12", "$clientData.price12"] } ] } },
+                    totalAdditionalSumB19: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b19", "$clientData.price19"] }, 0] } },
+                    totalAdditionalSumB12: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b12", "$clientData.price12"] }, 0] } },
+                    haveTo: { 
+                        $sum: { 
+                            $cond: [
+                                "$transferred", 
+                                { $add: [ {$multiply: [ "$products.b19", { $subtract: [ "$clientData.price19", 400 ] } ] }, {$multiply: [ "$products.b12", { $subtract: [ "$clientData.price19", 270 ] } ] } ] },
+                                0
+                            ] 
+                        } 
+                    },
+                    fakt: {
+                        $sum: {
+                            $cond: [
+                                "$fakt",
+                                { $add: [ {$multiply: [ "$products.b19", "$clientData.price19" ] }, {$multiply: [ "$products.b12", "$clientData.price19" ] } ] },
+                                0
+                            ]
+                        }
+                    },
+                    owe: { 
+                        $sum: { 
+                            $cond: [
+                                "$transferred", 
+                                { $add: [ {$multiply: [ "$products.b19", 400 ] }, {$multiply: [ "$products.b12", 270 ] } ] },
+                                { $add: [ {$multiply: [ "$products.b19", 250 ] }, {$multiply: [ "$products.b12", 170 ] } ] }
+                            ] 
+                        } 
+                    }
                 }
             }
-        })
+        ]);
 
-        stats.regularAverageCostB12 = stats.totalRegularB12Bottles > 0 
-            ? Math.round(stats.regularB12Amount / stats.totalRegularB12Bottles) 
-            : 0;
+        // Создаем объект для хранения статистики по франчайзи
+        const franchiseeStats = {};
+        franchisee.forEach(fran => {
+            franchiseeStats[fran._id] = {
+                _id: fran._id,
+                totalRegularB12Bottles: 0,
+                totalRegularB19Bottles: 0,
+                totalAddtitionalB12Bottles: 0,
+                totalAddtitionalB19Bottles: 0,
+                totalRgularSumB19: 0,
+                totalAdditionalSumB19: 0,
+                totalRgularSumB12: 0,
+                totalAdditionalSumB12: 0,
+                haveTo: 0,
+                fakt: 0,
+                owe: 0,
+                fullName: fran.fullName
+            };
+        });
 
-        stats.regularAverageCostB19 = stats.totalRegularB19Bottles > 0 
-            ? Math.round(stats.regularB19Amount / stats.totalRegularB19Bottles) 
-            : 0;
+        // Обрабатываем результаты агрегации
+        ordersStats.forEach(stat => {
+            const franchiseeId = stat._id.transferred ? stat._id.transferredFranchise : stat._id.franchiseeId?.toString();
+            const franchiseeEntry = franchisee.find(fran => stat._id.transferred ? fran.fullName === franchiseeId : fran._id.toString() === franchiseeId);
 
-        stats.additionalAverageCostB12 = stats.totalAdditionalB12Bottles > 0 
-            ? Math.round(stats.additionalB12Amount / stats.totalAdditionalB12Bottles) 
-            : 0;
+            if (franchiseeEntry) {
+                franchiseeStats[franchiseeEntry._id].totalRegularB12Bottles += stat.totalRegularB12Bottles;
+                franchiseeStats[franchiseeEntry._id].totalRegularB19Bottles += stat.totalRegularB19Bottles;
+                franchiseeStats[franchiseeEntry._id].totalAddtitionalB19Bottles += stat.totalAddtitionalB19Bottles;
+                franchiseeStats[franchiseeEntry._id].totalAddtitionalB12Bottles += stat.totalAddtitionalB12Bottles;
+                franchiseeStats[franchiseeEntry._id].totalRgularSumB19 += stat.totalRgularSumB19;
+                franchiseeStats[franchiseeEntry._id].totalRgularSumB12 += stat.totalRgularSumB12;
+                franchiseeStats[franchiseeEntry._id].totalAdditionalSumB19 += stat.totalAdditionalSumB19;
+                franchiseeStats[franchiseeEntry._id].totalAdditionalSumB12 += stat.totalAdditionalSumB12;
+                franchiseeStats[franchiseeEntry._id].haveTo += stat.haveTo;
+                franchiseeStats[franchiseeEntry._id].fakt += stat.fakt;
+                franchiseeStats[franchiseeEntry._id].owe += stat.owe;
+            }
+        });
 
-        stats.additionalAverageCostB19 = stats.totalAdditionalB19Bottles > 0 
-            ? Math.round(stats.additionalB19Amount / stats.totalAdditionalB19Bottles) 
-            : 0;
-
-        res.json({ stats });
+        res.json({
+            success: true,
+            stats: Object.values(franchiseeStats) // Преобразуем объект в массив
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -472,3 +486,4 @@ export const getAnalyticsData2 = async (req, res) => {
         });
     }
 }
+
