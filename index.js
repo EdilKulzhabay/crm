@@ -195,6 +195,8 @@ app.post("/updateDepartmentData", DepartmentController.updateDepartmentData)
 app.post("/deleteDepartment", DepartmentController.deleteDepartment)
 app.post("/departmentAction", DepartmentController.departmentAction)
 app.post("/getDepartmentHistory", DepartmentController.getDepartmentHistory)
+app.post("/getDepartmentInfo", DepartmentController.getDepartmentInfo)
+app.post("/getDepartmentInfoFranchisee", DepartmentController.getDepartmentInfoFranchisee)
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);

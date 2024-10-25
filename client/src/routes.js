@@ -44,6 +44,8 @@ import Charts from "./Pages/Charts";
 import ClientsByOpForm from "./Pages/ClientsByOpForm";
 import DepartmentHistory from "./Pages/DepartmentHistory";
 import SAAnalytics from "./Pages/SAAnalytics";
+import DepartmentInfo from "./Pages/DepartmentInfo";
+import DepartmentInfoFranchisee from "./Pages/DepartmentInfoFranchisee";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -88,6 +90,8 @@ export const router = createBrowserRouter([
     { path: "/addDepartment", element: <AddDepartment /> },
     { path: "/departmentPage/:id", element: <DepartmentPage /> },
     { path: "/departmentHistory", element: <DepartmentHistory /> },
+    { path: "/departmentInfo", element: <DepartmentInfo /> },
+    { path: "/departmentInfoFranchisee/:id", element: <DepartmentInfoFranchisee /> },
     { path: "/sAAnalytics", element: <SAAnalytics /> },
 
     ////ADMINLINKS

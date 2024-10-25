@@ -106,6 +106,22 @@ export default function SAAnalytics() {
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
 
+    const saldo = (stat) => {
+        let sum = 0
+        if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles + stat.totalRegularB12Bottles) {
+            sum += (stat.tookAwayB12 - (stat.totalAddtitionalB12Bottles + stat.totalRegularB12Bottles)) * 170
+        }
+        if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles + stat.totalRegularB19Bottles) {
+            sum += (stat.tookAwayB19 - (stat.totalAddtitionalB19Bottles + stat.totalRegularB19Bottles)) * 250
+        }
+        sum += stat.owe - (stat.haveTo - stat.fakt)
+        if (sum > 0) {
+            return (<p>Франчайзи должен вам: <Info>{formatCurrency(sum)}</Info></p>)
+        } else {
+            return (<p>Вы должны франчайзи: <Info>{formatCurrency(-sum)}</Info></p>)
+        }
+    }
+
     return (
         <Container role={userData?.role}>
             {stats === null ? <Div>Загрузка данных...</Div> : (
@@ -197,6 +213,22 @@ export default function SAAnalytics() {
                                     <Info>{formatCurrency(item.totalRgularSumB12)}</Info>
                                 </Div>
                                 <Div />
+                                <Div>Кол бутылей:</Div>
+                                <Li>
+                                    12: <Info>{item.tookAwayB12}</Info>
+                                    <p>*</p>
+                                    <Info>170</Info>
+                                    <p>=</p>
+                                    <Info>{formatCurrency(item.tookAwayB12 * 170)}</Info>
+                                </Li>
+                                <Li>
+                                    19: <Info>{item.tookAwayB19}</Info>
+                                    <p>*</p>
+                                    <Info>250</Info>
+                                    <p>=</p>
+                                    <Info>{formatCurrency(item.tookAwayB19 * 250)}</Info>
+                                </Li>
+                                <Div />
                                 <Div>Задолженность:</Div>
                                 <Li>
                                     Sum: <Info>{formatCurrency(item.haveTo)}</Info>
@@ -208,9 +240,7 @@ export default function SAAnalytics() {
                                     Owe: <Info>{formatCurrency(item.owe)}</Info>
                                 </Li>
                                 <Li>
-                                    Сальдо = Owe - (Sum - Fakt) {item.owe - (item.haveTo - item.fakt) > 0 ? 
-                                    <p>Франчайзи должен вам: <Info>{formatCurrency(item.owe - item.haveTo + item.fakt)}</Info></p> : 
-                                    <p>Вы должны франчайзи: <Info>{formatCurrency(item.haveTo - item.owe - item.fakt)}</Info></p>}
+                                    Сальдо = Owe - (Sum - Fakt) {saldo(item)}
                                 </Li>
                                 <Div>
                                     <button
