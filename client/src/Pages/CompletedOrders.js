@@ -11,6 +11,8 @@ import * as XLSX from "xlsx";
 import MySnackBar from "../Components/MySnackBar"
 import OrderInfo from "../Components/OrderInfo"
 import useFetchUserData from "../customHooks/useFetchUserData"
+import clsx from "clsx"
+import Info from "../Components/Info"
 
 export default function CompletedOrders() {
     const userData = useFetchUserData();
@@ -21,8 +23,14 @@ export default function CompletedOrders() {
     const [info, setInfo] = useState({
         totalB12: 0,
         totalB19: 0,
-        totalSum: 0
+        totalSum: 0,
+        totalFakt: 0,
+        totalCoupon: 0,
+        totalPostpay: 0,
+        totalCredit: 0,
+        totalMixed: 0
     })
+    const [opForm, setOpForm] = useState("all")
 
     const [search, setSearch] = useState("");
     const [searchF, setSearchF] = useState("");
@@ -31,7 +39,6 @@ export default function CompletedOrders() {
         startDate: "",
         endDate: "",
     });
-    const [again, setAgain] = useState(0)
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -68,7 +75,7 @@ export default function CompletedOrders() {
             setHasMore(true);
             setLoading(false)
             setSearchStatus(false)
-            loadMoreCompletedOrders(1, dates, "", false, searchF)
+            loadMoreCompletedOrders(1, dates, "", false, searchF, opForm)
         }
     };
 
@@ -79,7 +86,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            loadMoreCompletedOrders(1, dates, search, searchStatus, "")
+            loadMoreCompletedOrders(1, dates, search, searchStatus, "", opForm)
         }
     };
 
@@ -95,10 +102,10 @@ export default function CompletedOrders() {
         setPage(1)
         setLoading(false)
         setHasMore(true)
-        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF)
+        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm)
     }
 
-    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF) => {
+    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF, opForm) => {
         if (loading || !hasMore) return;
 
         setLoading(true);
@@ -106,7 +113,7 @@ export default function CompletedOrders() {
         api.post(
             "/getCompletedOrders",
             {
-                page, ...dates, search, searchStatus, searchF
+                page, ...dates, search, searchStatus, searchF, opForm
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -114,9 +121,14 @@ export default function CompletedOrders() {
         )
             .then(({ data }) => {
                 setInfo({
-                    totalB12: data.totalB12,
-                    totalB19: data.totalB19,
-                    totalSum: data.totalSum
+                    totalB12: data.result.totalB12,
+                    totalB19: data.result.totalB19,
+                    totalSum: data.result.totalSum,
+                    totalFakt: data.result.totalFakt,
+                    totalCoupon: data.result.totalCoupon,
+                    totalPostpay: data.result.totalPostpay,
+                    totalCredit: data.result.totalCredit,
+                    totalMixed: data.result.totalMixed
                 })
                 if (data.orders.length === 0) {
                     setHasMore(false);
@@ -135,7 +147,7 @@ export default function CompletedOrders() {
         console.log("useEffect triggered with hasMore:", hasMore);
         
         if (hasMore) {
-            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF);
+            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm);
         }
     }, [hasMore]);
 
@@ -147,7 +159,7 @@ export default function CompletedOrders() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF);
+                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm);
                 }
             });
             if (node) observer.current.observe(node);
@@ -241,7 +253,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    loadMoreCompletedOrders(1, dates, search, true, searchF)
+                    loadMoreCompletedOrders(1, dates, search, true, searchF, opForm)
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -263,7 +275,7 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, true, searchF)
+                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm)
                     }}>Найти</MyButton>
                 </div>
             </Div>
@@ -309,15 +321,135 @@ export default function CompletedOrders() {
         <Div>
             Сводная информация:
         </Div>
-        <Li>
-            12,5 литровая бутыль: <span className="text-red">[ <span className="text-white">{info.totalB12}</span> ]</span> шт.
-        </Li>
-        <Li>
-            18,9 литровая бутыль: <span className="text-red">[ <span className="text-white">{info.totalB19}</span> ]</span> шт.
-        </Li>
-        <Li>
-            Сумма: <span className="text-red">[ <span className="text-white">{formatCurrency(info.totalSum)}</span> ]</span>
-        </Li>
+        <>
+            <Li>
+                12,5 литровая бутыль: <span className="text-red">[ <span className="text-white">{info?.totalB12}</span> ]</span> шт.
+            </Li>
+            <Li>
+                18,9 литровая бутыль: <span className="text-red">[ <span className="text-white">{info?.totalB19}</span> ]</span> шт.
+            </Li>
+            <Li>
+                Сумма: <span className="text-red">[ <span className="text-white">{formatCurrency(info?.totalSum)}</span> ]</span>
+            </Li>
+            {["fakt", "coupon", "postpay", "credit", "mixed"].map((item) => {
+                return <div key={item}>
+                    <Li>
+                        <button onClick={() => {
+                                const newOpForm = opForm === "all" ? item : "all"
+                                setOpForm(newOpForm)
+                                setCompletedOrders([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)
+                                loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm)
+                            }}
+                            className={clsx("hover:text-blue-500", {
+                                "text-green-400": opForm !== item,
+                                "text-yellow-300": opForm === item
+                            })}
+                        >[ {item === "fakt" ? "Нал_Карта_QR" : item === "coupon" ? "Талон" : item === "postpay" ? "Постоплата" : item === "credit" ? "В долг" : "Смешанная"} ]</button>
+                        <Info>
+                            {
+                                item === "fakt"
+                                ? info?.totalFakt
+                                : item === "coupon"
+                                ? info?.totalCoupon
+                                : item === "postpay"
+                                ? info?.totalPostpay
+                                : item === "credit"
+                                ? info?.totalCredit
+                                : info?.totalMixed
+                            }
+                        </Info> шт.
+                    </Li>
+                </div>
+            })}
+            {/* <Li>
+                <button onClick={() => {
+                        if (opForm === "all") {
+                            setOpForm("fakt")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "fakt")
+                        } else {
+                            setOpForm("all")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
+                        }
+                    }}
+                    className={clsx("hover:text-blue-500", {
+                        "text-green-400": opForm !== "fakt",
+                        "text-yellow-300": opForm === "fakt"
+                    })}
+                >[ Нал_Карта_QR ]</button>
+                <Info>{info?.totalFakt}</Info> шт.
+            </Li>
+            <Li>
+                <button onClick={() => {
+                        if (opForm === "all") {
+                            setOpForm("coupon")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "coupon")
+                        } else {
+                            setOpForm("all")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
+                        }
+                    }}
+                    className={clsx("hover:text-blue-500", {
+                        "text-green-400": opForm !== "coupon",
+                        "text-yellow-300": opForm === "coupon"
+                    })}
+                >[ Талоны ]</button>
+                <Info>{info?.totalCoupon}</Info> шт.
+            </Li>
+            <Li>
+                <button onClick={() => {
+                        if (opForm === "all") {
+                            setOpForm("postpay")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "postpay")
+                        } else {
+                            setOpForm("all")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
+                        }
+                    }}
+                    className={clsx("hover:text-blue-500", {
+                        "text-green-400": opForm !== "postpay",
+                        "text-yellow-300": opForm === "postpay"
+                    })}
+                >[ Постоплата ]</button>
+                <Info>{info?.totalPostpay}</Info> шт.
+            </Li>
+            <Li>
+                <button onClick={() => {
+                        if (opForm === "all") {
+                            setOpForm("credit")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "credit")
+                        } else {
+                            setOpForm("all")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
+                        }
+                    }}
+                    className={clsx("hover:text-blue-500", {
+                        "text-green-400": opForm !== "credit",
+                        "text-yellow-300": opForm === "credit"
+                    })}
+                >[ В долг ]</button>
+                <Info>{info?.totalCredit}</Info> шт.
+            </Li>
+            <Li>
+                <button onClick={() => {
+                        if (opForm === "all") {
+                            setOpForm("mixed")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "mixed")
+                        } else {
+                            setOpForm("all")
+                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
+                        }
+                    }}
+                    className={clsx("hover:text-blue-500", {
+                        "text-green-400": opForm !== "mixed",
+                        "text-yellow-300": opForm === "mixed"
+                    })}
+                >[ Смешанная ]</button>
+                <Info>{info?.totalMixed}</Info> шт.
+            </Li> */}
+        </>
         
         <Div />
         <div className="max-h-[380px] overflow-scroll">

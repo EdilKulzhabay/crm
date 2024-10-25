@@ -567,7 +567,7 @@ export const getAdditionalOrders = async (req, res) => {
 export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const {page, startDate, endDate, search, searchStatus, searchF} = req.body
+        const {page, startDate, endDate, search, searchStatus, searchF, opForm} = req.body
         const user = await User.findById(id)
         const limit = 5;
         const skip = (page - 1) * limit;
@@ -593,6 +593,10 @@ export const getCompletedOrders = async (req, res) => {
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
             "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
+        }
+
+        if (opForm !== "all") {
+            filter.opForm = opForm
         }
 
         if (user.role === "admin") {
@@ -644,14 +648,27 @@ export const getCompletedOrders = async (req, res) => {
             }
         }
 
+        let aggregateFilter = {}
+        if (filter.opForm) {
+            const { opForm, ...otherFilters } = filter;
+            aggregateFilter = { ...otherFilters };
+        } else {
+            aggregateFilter = { ...filter };
+        }
+
         const ordersResult = await Order.aggregate([
-            { $match: filter },
+            { $match: aggregateFilter },
             {
                 $group: {
                     _id: null,
-                    totalB12: { $sum: "$products.b12" },
-                    totalB19: { $sum: "$products.b19" },
-                    totalSum: { $sum: "$sum" },
+                    totalB12: { $sum: { $ifNull: ["$products.b12", 0] } },
+                    totalB19: { $sum: { $ifNull: ["$products.b19", 0] } },
+                    totalSum: { $sum: { $ifNull: ["$sum", 0] } },
+                    totalFakt: { $sum: { $cond: [ { $eq: ["$opForm", "fakt"] }, 1, 0 ] } },
+                    totalCoupon: { $sum: { $cond: [ { $eq: ["$opForm", "coupon"] }, 1, 0 ] } },
+                    totalPostpay: { $sum: { $cond: [ { $eq: ["$opForm", "postpay"] }, 1, 0 ] } },
+                    totalCredit: { $sum: { $cond: [ { $eq: ["$opForm", "credit"] }, 1, 0 ] } },
+                    totalMixed: { $sum: { $cond: [ { $eq: ["$opForm", "mixed"] }, 1, 0 ] } },
                     orders: { $push: "$$ROOT" }, // Push all orders
                 },
             },
@@ -662,14 +679,12 @@ export const getCompletedOrders = async (req, res) => {
             .limit(limit)
             .skip(skip)
 
-        const result = ordersResult.length > 0 ? ordersResult[0] : { totalB12: 0, totalB19: 0, totalSum: 0 };
+        const result = ordersResult.length > 0 ? ordersResult[0] : { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0 };
 
         // Ответ сервера
         res.json({
             orders: orders ? orders : [],
-            totalB12: result.totalB12,
-            totalB19: result.totalB19,
-            totalSum: result.totalSum,
+            result
         })
     } catch (error) {
         console.log(error);
