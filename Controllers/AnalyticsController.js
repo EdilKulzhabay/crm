@@ -129,7 +129,7 @@ export const getAnalyticsData = async (req, res) => {
             }
         ]);
 
-        res.json({ stats: stats|| {} });
+        res.json({ stats: stats[0] || {} });
     } catch (error) {
         console.log(error);
         res.status(500).json({
