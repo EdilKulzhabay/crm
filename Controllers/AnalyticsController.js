@@ -355,7 +355,7 @@ export const getAdditionalRevenue = async (req, res) => {
             });
         }
 
-        res.json({ success: true, stats: stats|| {} });
+        res.json({ success: true, stats: stats[0] || {} });
     } catch (error) {
         console.log(error);
         res.status(500).json({
