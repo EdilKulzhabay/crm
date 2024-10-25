@@ -88,56 +88,52 @@ export default function CourierMain() {
             <>
                 <Li>Наименование: {firstActiveOrder?.order?.client?.fullName}</Li>
                 <Li>Адрес: <span className="text-blue-500">{firstActiveOrder?.order?.address?.actual}</span></Li>
-                {firstActiveOrder?.order?.products?.b12 !== 0 && firstActiveOrder?.order?.products?.b12 !== null &&
-                    <Li><p>Количество 12.5 - литровых бутылей: <OrderInfo>{firstActiveOrder?.order?.products?.b12}</OrderInfo></p>
-                        <div>
-                            [{" "}
-                            <input
-                                size={13}
-                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
-                                name="b12"
-                                value={products.b12}
-                                style={{ fontSize: '16px' }}
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    changeProducts(event);
-                                }}
-                            />{" "}
-                            ] шт
-                        </div>
-                    </Li>
-                }
-                {firstActiveOrder?.order?.products?.b19 !== 0 && firstActiveOrder?.order?.products?.b19 !== null && 
-                    <Li><p>Количество 18.9 - литровых бутылей: <OrderInfo>{firstActiveOrder?.order?.products?.b19}</OrderInfo></p>
-                        <div>
-                            [{" "}
-                            <input
-                                size={13}
-                                className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
-                                name="b19"
-                                value={products.b19}
-                                style={{ fontSize: '16px' }}
-                                inputMode="numeric"
-                                pattern="\d*"
-                                onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                    }
-                                }}
-                                onChange={(event) => {
-                                    changeProducts(event);
-                                }}
-                            />{" "}
-                            ] шт
-                        </div>
-                    </Li>
-                }
+                <Li><p>Количество 12.5 - литровых бутылей: <OrderInfo>{firstActiveOrder?.order?.products?.b12}</OrderInfo></p>
+                    <div>
+                        [{" "}
+                        <input
+                            size={13}
+                            className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                            name="b12"
+                            value={products.b12}
+                            style={{ fontSize: '16px' }}
+                            inputMode="numeric"
+                            pattern="\d*"
+                            onKeyPress={(event) => {
+                                if (!/[0-9]/.test(event.key)) {
+                                    event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                }
+                            }}
+                            onChange={(event) => {
+                                changeProducts(event);
+                            }}
+                        />{" "}
+                        ] шт
+                    </div>
+                </Li>
+                <Li><p>Количество 18.9 - литровых бутылей: <OrderInfo>{firstActiveOrder?.order?.products?.b19}</OrderInfo></p>
+                    <div>
+                        [{" "}
+                        <input
+                            size={13}
+                            className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                            name="b19"
+                            value={products.b19}
+                            style={{ fontSize: '16px' }}
+                            inputMode="numeric"
+                            pattern="\d*"
+                            onKeyPress={(event) => {
+                                if (!/[0-9]/.test(event.key)) {
+                                    event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                }
+                            }}
+                            onChange={(event) => {
+                                changeProducts(event);
+                            }}
+                        />{" "}
+                        ] шт
+                    </div>
+                </Li>
                 
                 {firstActiveOrder?.order?.comment && <Li>
                     <LinkButton href={`/courierOrderComment/${firstActiveOrder?.order?._id}`}>Есть комм.</LinkButton>
