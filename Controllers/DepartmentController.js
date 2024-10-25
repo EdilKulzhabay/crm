@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Department from "../Models/Department.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
 import Queue from "../Models/Queue.js";
@@ -220,6 +221,70 @@ export const getDepartmentHistory = async (req, res) => {
         .populate("franchisee")
 
         res.json({history})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getDepartmentInfo = async (req, res) => {
+    try {
+        const {startDate, endDate} = req.body
+
+        const franchisees = await User.find({role: "admin"}).select("_id fullName b121kol b191kol b197kol")
+
+        res.json({franchisees})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getDepartmentInfoFranchisee = async (req, res) => {
+    try {
+        const {id, date} = req.body
+
+        const today = new Date(date);
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const franchisee = await User.findById(id)
+
+        const filter = {
+            franchisee: new mongoose.Types.ObjectId(id),
+            createdAt: { $gte: today, $lte: tomorrow },
+        }
+
+        const stats = await DepartmentHistory.aggregate([
+            { $match: filter },
+            { 
+                $group: {
+                    _id: null,
+                    totalB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
+                    totalB191: { $sum: { $cond: ["$type", 0, "$data.b191kol"] } },
+                    totalB197: { $sum: { $cond: ["$type", 0, "$data.b197kol"] } },
+                }
+            }
+        ])
+
+        const history = await DepartmentHistory.find(filter)
+        .populate("department")
+        .populate("franchisee")
+
+        if (stats.length > 0){
+            const {_id, ...bottles} = stats[0]
+            const info = {...franchisee._doc, ...bottles}
+            return res.json({info, history})
+        }
+
+        res.json({info: franchisee, history})
     } catch (error) {
         console.log(error);
         res.status(500).json({

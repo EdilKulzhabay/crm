@@ -40,7 +40,8 @@ export default function DepartmentList() {
         <Div/>
         <Div>
             <LinkButton color="green" href="/addDepartment">Создать сотрудника</LinkButton>
-            <LinkButton href="/departmentHistory">История</LinkButton>
+            {/* <LinkButton href="/departmentHistory">История</LinkButton> */}
+            <LinkButton href="/departmentInfo">Инфо</LinkButton>
         </Div>
 
         <Div />

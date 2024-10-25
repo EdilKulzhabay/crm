@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Order from "../Models/Order.js";
 import User from "../Models/User.js";
+import DepartmentHistory from "../Models/DepartmentHistory.js";
 
 export const getAnalyticsData = async (req, res) => {
     try {
@@ -55,23 +56,23 @@ export const getAnalyticsData = async (req, res) => {
                     _id: null,
                     totalRegularOrders: { $sum: { $cond: ["$isRegular", 1, 0] } },
                     totalRegularB12Bottles: { $sum: { $cond: ["$isRegular", "$products.b12", 0] } },
-                    regularB12Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $subtract: ["$clientData.price12", 170] }] }, 0] } },
+                    regularB12Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 170] }] }, 0] } },
                     regularB12Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", 170] }, 0] } },
-                    regularB12Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", "$clientData.price12"] }, 0] } },
+                    regularB12Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
                     totalRegularB19Bottles: { $sum: { $cond: ["$isRegular", "$products.b19", 0] } },
-                    regularB19Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $subtract: ["$clientData.price19", 250] }] }, 0] } },
+                    regularB19Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 250] }] }, 0] } },
                     regularB19Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", 250] }, 0] } },
-                    regularB19Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", "$clientData.price19"] }, 0] } },
+                    regularB19Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
 
                     totalAdditionalOrders: { $sum: { $cond: ["$isAdditional", 1, 0] } },
                     totalAdditionalB12Bottles: { $sum: { $cond: ["$isAdditional", "$products.b12", 0] } },
-                    additionalB12Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $subtract: ["$clientData.price12", 270] }] }, 0] } },
+                    additionalB12Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 270] }] }, 0] } },
                     additionalB12Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", 270] }, 0] } },
-                    additionalB12Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", "$clientData.price12"] }, 0] } },
+                    additionalB12Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
                     totalAdditionalB19Bottles: { $sum: { $cond: ["$isAdditional", "$products.b19", 0] } },
-                    additionalB19Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $subtract: ["$clientData.price19", 400] }] }, 0] } },
+                    additionalB19Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] }, 0] } },
                     additionalB19Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", 400] }, 0] } },
-                    additionalB19Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", "$clientData.price19"] }, 0] } },
+                    additionalB19Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
                 }
             },
 
@@ -329,13 +330,13 @@ export const getAdditionalRevenue = async (req, res) => {
             {
                 $group: {
                     _id: null, // Группируем заказы по клиентам
-                    B19Revenue: { $sum: { $multiply: ["$products.b19", { $subtract: ["$clientData.price19", 400] }] } },
-                    B12Revenue: { $sum: { $multiply: ["$products.b12", { $subtract: ["$clientData.price12", 270] }] } },
+                    B19Revenue: { $sum: { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] } },
+                    B12Revenue: { $sum: { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 270] }] } },
                     B19FaktRevenue: {
-                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b19", { $subtract: ["$clientData.price19", 400] }] } }, 0] }
+                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] } }, 0] }
                     },
                     B12FaktRevenue: {
-                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b12", { $subtract: ["$clientData.price12", 270] }] } }, 0] }
+                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 270] }] } }, 0] }
                     }
                 }
             },
@@ -373,7 +374,31 @@ export const getFranchiseeAnalytics = async (req, res) => {
             "date.d": { $gte: startDate, $lte: endDate }
         };
 
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
+
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+
+        const filterDH = {
+            createdAt: {$gte: sDate, $lte: eDate}
+        }
+
         const franchisee = await User.find({ role: "admin" }).select("_id fullName");
+
+        const departmentHistoryStats = await DepartmentHistory.aggregate([
+            { $match: filterDH },
+            {
+                $group: {
+                    _id: {
+                        franchiseeId: "$franchisee",
+                    },
+                    totalTookAwayB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
+                    totalTookAwayB191: { $sum: { $cond: ["$type", 0, "$data.b191kol"] } },
+                    totalTookAwayB197: { $sum: { $cond: ["$type", 0, "$data.b197kol"] } }
+                }
+            }  
+        ])
 
         const ordersStats = await Order.aggregate([
             { $match: filter }, // Фильтр по диапазону дат
@@ -400,15 +425,15 @@ export const getFranchiseeAnalytics = async (req, res) => {
                     totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b19"] } },
                     totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", "$products.b12", 0] } },
                     totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", "$products.b19", 0] } },
-                    totalRgularSumB19: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b19", "$clientData.price19"] } ] } },
-                    totalRgularSumB12: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b12", "$clientData.price12"] } ] } },
-                    totalAdditionalSumB19: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b19", "$clientData.price19"] }, 0] } },
-                    totalAdditionalSumB12: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b12", "$clientData.price12"] }, 0] } },
+                    totalRgularSumB19: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] } ] } },
+                    totalRgularSumB12: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] } ] } },
+                    totalAdditionalSumB19: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
+                    totalAdditionalSumB12: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
                     haveTo: { 
                         $sum: { 
                             $cond: [
                                 "$transferred", 
-                                { $add: [ {$multiply: [ "$products.b19", "$clientData.price19" ] }, {$multiply: [ "$products.b12", "$clientData.price12" ] } ] },
+                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
                                 0
                             ] 
                         } 
@@ -417,7 +442,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         $sum: {
                             $cond: [
                                 "$fakt",
-                                { $add: [ {$multiply: [ "$products.b19", "$clientData.price19" ] }, {$multiply: [ "$products.b12", "$clientData.price12" ] } ] },
+                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
                                 0
                             ]
                         }
@@ -451,6 +476,8 @@ export const getFranchiseeAnalytics = async (req, res) => {
                 haveTo: 0,
                 fakt: 0,
                 owe: 0,
+                tookAwayB12: 0,
+                tookAwayB19: 0,
                 fullName: fran.fullName
             };
         });
@@ -474,6 +501,14 @@ export const getFranchiseeAnalytics = async (req, res) => {
                 franchiseeStats[franchiseeEntry._id].owe += stat.owe;
             }
         });
+
+        departmentHistoryStats.forEach(stat => {
+            const franchiseeEntry = franchisee.find(fran => fran._id.toString() === stat._id.franchiseeId.toString())
+            if (franchiseeEntry) {
+                franchiseeStats[franchiseeEntry._id].tookAwayB12 += stat.totalTookAwayB121
+                franchiseeStats[franchiseeEntry._id].tookAwayB19 += stat.totalTookAwayB191 + stat.totalTookAwayB197
+            }
+        })
 
         res.json({
             success: true,
