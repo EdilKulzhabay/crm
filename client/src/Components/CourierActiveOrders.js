@@ -11,9 +11,11 @@ import { useParams } from "react-router-dom";
 import MySnackBar from "./MySnackBar";
 import clsx from "clsx";
 import OrderInfo from "./OrderInfo";
+import useFetchUserData from "../customHooks/useFetchUserData";
 
 export default function CourierActiveOrders() {
     const { id } = useParams();
+    const userData = useFetchUserData()
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -24,7 +26,6 @@ export default function CourierActiveOrders() {
 
     const [activeOrders, setActiveOrders] = useState([])
     const [totalOrders, setTotalOrders] = useState(0)
-    const [userData, setUserData] = useState({})
 
     const [draggingOrderId, setDraggingOrderId] = useState(null);
     const [isUpdate, setIsUpdate] = useState(false)
@@ -38,6 +39,7 @@ export default function CourierActiveOrders() {
             "/getActiveOrdersCourier",
             {
                 id,
+                role: userData?.role
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -52,23 +54,11 @@ export default function CourierActiveOrders() {
             });
     }
 
-    const getMe = () => {
-        api.get("/getMe", {
-            headers: { "Content-Type": "application/json" },
-        })
-            .then(({ data }) => {
-                setUserData(data)
-                console.log(data);
-            })
-            .catch((e) => {
-                console.log(e);
-            });
-    }
-
     useEffect(() => {
-        getMe()
-        getActiveOrdersCourier()
-    }, [id]);
+        if (userData?.role === "superAdmin" || userData?.role === "admin" || userData?.role === "courier") {
+            getActiveOrdersCourier()
+        }
+    }, [id, userData]);
 
     // const loadMoreActiveOrders = useCallback(async () => {
     //     if (loading || !hasMore) return;
@@ -240,10 +230,10 @@ export default function CourierActiveOrders() {
                                     <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                                     <div>{item?.order?.date?.d} {item?.order?.date?.time && item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                                     <div>
-                                        {(item?.order?.products?.b12 !== 0 && item?.order?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.order?.products?.b12}</OrderInfo> {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.order?.client?.price12}тг)</span>};</>}
-                                        {(item?.order?.products?.b19 !== 0 && item?.order?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.order?.products?.b19}</OrderInfo> {(userData.role === "admin" || userData.role === "superAdmin") && <span>({item?.order?.client?.price19}тг)</span>};</>}
+                                        {(item?.order?.products?.b12 !== 0 && item?.order?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.order?.products?.b12}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.order?.client?.price12}тг)</span>};</>}
+                                        {(item?.order?.products?.b19 !== 0 && item?.order?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.order?.products?.b19}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.order?.client?.price19}тг)</span>};</>}
                                     </div>
-                                    {(userData.role === "admin" || userData.role === "superAdmin") && <LinkButton
+                                    {(userData?.role === "admin" || userData?.role === "superAdmin") && <LinkButton
                                         href={`/orderPage/${item?.order?._id}`}
                                     >
                                         Просмотр

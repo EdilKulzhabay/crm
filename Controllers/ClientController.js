@@ -391,6 +391,7 @@ export const getClientsForExcel = async (req, res) => {
 
         // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
         const clients = await Client.find(filter)
+            .populate("franchisee", "fullName")
             .sort({ createdAt: 1 });
 
         res.json({ clients });

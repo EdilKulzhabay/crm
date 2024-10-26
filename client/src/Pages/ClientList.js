@@ -260,6 +260,7 @@ export default function ClientList() {
                             item.status === "active" ? "Раб." : "Не раб.",
                         "Дата добавления": item.createdAt.slice(0, 10),
                         Бонусы: item.bonus,
+                        Франчайзи: item.franchisee?.fullName
                     };
                 });
 

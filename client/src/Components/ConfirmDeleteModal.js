@@ -1,6 +1,7 @@
 import MyButton from "./MyButton";
 
 export default function ConfirmDeleteModal(props) {
+    const add = props.add || false
     return <>
         <div
             onClick={() => {
@@ -21,7 +22,7 @@ export default function ConfirmDeleteModal(props) {
                 >
                     <div>
                         <MyButton click={() => {props.confirmDelete()}}>
-                            <span className="text-green-400">Подтверить удаление</span>
+                            <span className="text-green-400">{add ? "Подтвердить добавление" : "Подтвердить удаление"}</span>
                         </MyButton>
                     </div>
                 </div>
