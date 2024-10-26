@@ -189,6 +189,7 @@ app.post("/deleteOrder", checkAuth, OrderController.deleteOrder)
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
 app.get("/getFirstQueue", DepartmentController.getFirstQueue)
+app.get("/departmentSkip", DepartmentController.departmentSkip)
 app.post("/addDepartment", DepartmentController.addDepartment)
 app.post("/getDepartmentData", DepartmentController.getDepartmentData)
 app.post("/updateDepartmentData", DepartmentController.updateDepartmentData)

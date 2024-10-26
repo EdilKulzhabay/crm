@@ -125,6 +125,11 @@ export const getMainPageInfo = async (req, res) => {
             'date.d': todayDate,
             status: { $in: ["awaitingOrder", "onTheWay"] },
         });
+        const unfinishedOrders = await Order.countDocuments({
+            ...filter,
+            'date.d': { $lt: todayDate }, // Find orders with a date earlier than today
+            status: { $in: ["awaitingOrder", "onTheWay"] },
+        });
         const deliveredOrders = await Order.countDocuments({
             ...filter,
             'date.d': todayDate,
@@ -173,6 +178,7 @@ export const getMainPageInfo = async (req, res) => {
         res.json({
             clients,
             activeOrders,
+            unfinishedOrders,
             deliveredOrders,
             totalRevenue,
             totalSum

@@ -43,9 +43,16 @@ export default function SuperAdmin() {
             </Div>
             <>
                 <Li>
-                    <div className="">
+                    <div className="flex items-center gap-x-2">
+                        <div>
                         Активные заказы:
                         <Info>{info?.activeOrders}</Info>
+                        </div>
+                        <div className="flex items-center gap-x-1">
+                            <div className="text-red">[</div>    
+                            <div className="bg-red text-white px-1.5">{info?.unfinishedOrders}</div>
+                            <div className="text-red">]</div>    
+                        </div>                        
                     </div>
                 </Li>
                 <Li>

@@ -756,7 +756,9 @@ export default function ClientPage() {
                         <MyButton click={getClientOrdersForExcel}>
                             Выгрузить заказы в excel
                         </MyButton>
-                        <MyButton click={() => {setDeleteModalClient(true)}}>Удалить клиента</MyButton>
+                        {userData?.role === "superAdmin" && 
+                            <MyButton click={() => {setDeleteModalClient(true)}}>Удалить клиента</MyButton>
+                        }
                     </div>
                 </Div>
                 <Div />
