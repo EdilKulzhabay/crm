@@ -37,7 +37,7 @@ export default function DepartmentInfo() {
                 </Div>
                 {item?.b121kol !== 9999 && <Li>Кол 12(1): {item?.b121kol}</Li>}
                 <Li>Кол 19(1): {item?.b191kol}</Li>
-                <Li>Кол 19(9): {item?.b197kol}</Li>
+                <Li>Кол 19(7): {item?.b197kol}</Li>
             </div>
         })}
         <Div />

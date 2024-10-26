@@ -32,7 +32,6 @@ export default function DepartamentReceiving() {
             headers: {"Content-Type": "application/json"}
         }).then(({ data }) => {
             setFranchisees(data.franchisees);
-            console.log(data);
         }).catch((e) => {
             console.log(e);
         });
@@ -54,13 +53,13 @@ export default function DepartamentReceiving() {
         }));
     };
 
-    const receive = () => {
+    const receive = (receivingFinish) => {
         const sendData = {
             b121kol: Number(data.b121kol),
             b191kol: Number(data.b191kol),
             b197kol: Number(data.b197kol),
         }
-        api.post("/departmentAction", {id: userData._id, franchisee: chFranchisee._id, type: userData.receiving, data: sendData}, {
+        api.post("/departmentAction", {id: userData._id, franchisee: chFranchisee._id, type: userData.receiving, data: sendData, receivingFinish}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
             if (data.success) {
@@ -68,9 +67,9 @@ export default function DepartamentReceiving() {
                 setStatus("success");
                 setMessage("Все прошло успешно");
                 setData({
-                    b121kol: 0,
-                    b191kol: 0,
-                    b197kol: 0,
+                    b121kol: "",
+                    b191kol: "",
+                    b197kol: "",
                 })
                 setChFranchisee(null)
             }
@@ -224,7 +223,8 @@ export default function DepartamentReceiving() {
                 </Li>
                 <Div />
                 <Div>
-                    <MyButton click={receive}>Принять</MyButton>
+                    <MyButton click={() => {receive(false)}}>Принять</MyButton>
+                    <MyButton click={() => {receive(true)}}>Завершить</MyButton>
                 </Div>
             </>}
             <Div />

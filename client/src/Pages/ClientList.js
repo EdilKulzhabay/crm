@@ -454,15 +454,17 @@ export default function ClientList() {
                                             >
                                                 Редактировать
                                             </LinkButton>
-                                            <MyButton
-                                                click={() => {
-                                                    setDeleteObject(client._id)
-                                                    setDeleteModal(true)
-                                                    // deleteClient(client._id);
-                                                }}
-                                            >
-                                                Удалить
-                                            </MyButton>
+                                            {userData?.role === "superAdmin" && 
+                                                <MyButton
+                                                    click={() => {
+                                                        setDeleteObject(client._id)
+                                                        setDeleteModal(true)
+                                                        // deleteClient(client._id);
+                                                    }}
+                                                >
+                                                    Удалить
+                                                </MyButton>
+                                            }
                                             {userData?.role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
                                         </div>
                                     </Li>
@@ -488,15 +490,17 @@ export default function ClientList() {
                                             >
                                                 Редактировать
                                             </LinkButton>
-                                            <MyButton
-                                                click={() => {
-                                                    setDeleteObject(client._id)
-                                                    setDeleteModal(true)
-                                                    // deleteClient(client._id);
-                                                }}
-                                            >
-                                                Удалить
-                                            </MyButton>
+                                            {userData?.role === "superAdmin" && 
+                                                <MyButton
+                                                    click={() => {
+                                                        setDeleteObject(client._id)
+                                                        setDeleteModal(true)
+                                                        // deleteClient(client._id);
+                                                    }}
+                                                >
+                                                    Удалить
+                                                </MyButton>
+                                            }
                                             {userData?.role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
                                         </div>
                                     </Li>

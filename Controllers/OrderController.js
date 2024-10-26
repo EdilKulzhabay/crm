@@ -648,16 +648,16 @@ export const getCompletedOrders = async (req, res) => {
             }
         }
 
-        let aggregateFilter = {}
-        if (filter.opForm) {
-            const { opForm, ...otherFilters } = filter;
-            aggregateFilter = { ...otherFilters };
-        } else {
-            aggregateFilter = { ...filter };
-        }
+        // let aggregateFilter = {}
+        // if (filter.opForm) {
+        //     const { opForm, ...otherFilters } = filter;
+        //     aggregateFilter = { ...otherFilters };
+        // } else {
+        //     aggregateFilter = { ...filter };
+        // }
 
         const ordersResult = await Order.aggregate([
-            { $match: aggregateFilter },
+            { $match: filter },
             {
                 $group: {
                     _id: null,

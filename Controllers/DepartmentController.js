@@ -122,7 +122,7 @@ export const deleteDepartment = async (req, res) => {
 
 export const departmentAction = async (req, res) => {
     try {
-        const {id, franchisee, type, data} = req.body
+        const {id, franchisee, type, data, receivingFinish} = req.body
 
         const department = await Department.findById(id)
 
@@ -135,17 +135,17 @@ export const departmentAction = async (req, res) => {
 
         await history.save()
 
-        if (type) {
-            const queue = new Queue({
-                franchisee
-            })
-            await queue.save()
-        } else {
-            await Queue.findOneAndDelete({franchisee})
+        if (!receivingFinish) {
+            if (type) {
+                const queue = new Queue({
+                    franchisee
+                })
+                await queue.save()
+            } else {
+                await Queue.findOneAndDelete({franchisee})
+            }
         }
         
-        department.save()
-
         const fran = await User.findById(franchisee)
         if (type) {
             fran.b121kol = fran.b121kol + data.b121kol
@@ -158,6 +158,33 @@ export const departmentAction = async (req, res) => {
         }
 
         fran.save()
+
+        res.json({
+            success: true
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const departmentSkip = async (req, res) => {
+    try {
+        const firstDoc = await Queue.findOne() // Assuming sorting by _id brings the oldest to the top
+
+        if (!firstDoc) {
+            console.log("No document found in the queue.");
+            return res.json({
+                success: false
+            });
+        }
+
+        await Queue.deleteOne({ _id: firstDoc._id });
+
+        const newDoc = new Queue(firstDoc.toObject());
+        await newDoc.save();
 
         res.json({
             success: true

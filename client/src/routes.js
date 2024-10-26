@@ -45,6 +45,7 @@ import DepartmentHistory from "./Pages/DepartmentHistory";
 import SAAnalytics from "./Pages/SAAnalytics";
 import DepartmentInfo from "./Pages/DepartmentInfo";
 import DepartmentInfoFranchisee from "./Pages/DepartmentInfoFranchisee";
+import DepartamentGivingSingle from "./Pages/Department/DepartamentGivingSingle";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -108,5 +109,6 @@ export const router = createBrowserRouter([
     { path: "/department", element: <DepartmentMain />},
     { path: "/departmentSettings", element: <DepartmentSettings />},
     { path: "/departamentGiving", element: <DepartamentGiving />},
-    { path: "/departamentReceiving", element: <DepartamentReceiving />}
+    { path: "/departamentReceiving", element: <DepartamentReceiving />},
+    { path: "/departamentGivingSingle", element: <DepartamentGivingSingle />},
 ]);

@@ -277,6 +277,14 @@ export default function CompletedOrders() {
                         setLoading(false)
                         loadMoreCompletedOrders(1, dates, search, true, searchF, opForm)
                     }}>Найти</MyButton>
+                    <MyButton click={() => {
+                        setCompletedOrders([]);
+                        setPage(1);
+                        setHasMore(true);
+                        setLoading(false)
+                        loadMoreCompletedOrders(1, dates, search, true, userData?.fullName, opForm)
+                        setSearchF(userData?.fullName)
+                    }}>admin</MyButton>
                 </div>
             </Div>
         </>
@@ -343,7 +351,7 @@ export default function CompletedOrders() {
                                 setLoading(false)
                                 loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm)
                             }}
-                            className={clsx("hover:text-blue-500", {
+                            className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
                                 "text-green-400": opForm !== item,
                                 "text-yellow-300": opForm === item
                             })}
@@ -459,7 +467,7 @@ export default function CompletedOrders() {
                         <div key={item?._id} ref={lastOrderElementRef}>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div className="bg-red">
+                                    <div>
                                         Заказ: 
                                     </div>
                                     <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
@@ -484,7 +492,7 @@ export default function CompletedOrders() {
                         <div key={item?._id}>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div className="bg-red">
+                                    <div>
                                         Заказ: 
                                     </div>
                                     <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>

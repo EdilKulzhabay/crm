@@ -8,12 +8,13 @@ import PlusIcon from "../../icons/PlusIcon";
 import MinusIcon from "../../icons/MinusIcon";
 import Li from "../../Components/Li";
 import MySnackBar from "../../Components/MySnackBar";
-import LinkButton from "../../Components/LinkButton";
+import { useNavigate } from "react-router-dom";
 
-export default function DepartamentGiving() {
+export default function DepartamentGivingSingle() {
     const userData = useFetchUserData();
-    const [chFranchisee, setChFranchisee] = useState(null);
+    const navigate = useNavigate()
     const [franchisees, setFranchisees] = useState([]);
+    const [chFranchisee, setChFranchisee] = useState(null);
     const [data, setData] = useState({
         b121kol: "",
         b191kol: "",
@@ -28,7 +29,7 @@ export default function DepartamentGiving() {
         setOpen(false);
     };
 
-    const getFranchiseesList = () => {
+    useEffect(() => {
         api.get("/getAllFranchisee", {
             headers: {"Content-Type": "application/json"}
         }).then(({ data }) => {
@@ -36,22 +37,6 @@ export default function DepartamentGiving() {
         }).catch((e) => {
             console.log(e);
         });
-    }
-
-    const getFirst = () => {
-        api.get("/getFirstQueue", {
-            headers: {"Content-Type": "application/json"}
-        }).then(({ data }) => {
-            if (data.success) {
-                setChFranchisee(data.franchisee)
-            }
-        }).catch((e) => {
-            console.log(e);
-        });
-    }
-
-    useEffect(() => {
-        getFirst()
     }, []);
 
     // Функция для увеличения значения
@@ -70,51 +55,27 @@ export default function DepartamentGiving() {
         }));
     };
 
-    const give = () => {
+    const give = (receivingFinish) => {
         const sendData = {
             b121kol: Number(data.b121kol),
             b191kol: Number(data.b191kol),
             b197kol: Number(data.b197kol),
         }
-        api.post("/departmentAction", {id:userData._id, franchisee: chFranchisee._id, type: userData.receiving, data: sendData, receivingFinish: false}, {
+        api.post("/departmentAction", {id: userData._id, franchisee: chFranchisee._id, type: userData.receiving, data: sendData, receivingFinish}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
             if (data.success) {
                 setOpen(true);
                 setStatus("success");
                 setMessage("Все прошло успешно");
-                setData({
-                    b121kol: "",
-                    b191kol: "",
-                    b197kol: "",
-                })
-                setChFranchisee(null)
-                getFirst()
-            }
+                navigate(-1)
+            }   
         })
     }
 
     const changeData = (event) => {
         setData({ ...data, [event.target.name]: event.target.value });
-        // if (Number(event.target.value) > Number(chFranchisee[event.target.name])) {
-        //     setData({ ...data, [event.target.name]: chFranchisee[event.target.name] });
-        // } else {
-        //     setData({ ...data, [event.target.name]: event.target.value });
-        // }
     };
-
-    const skip = () => {
-        api.get("/departmentSkip", {
-            headers: {"Content-Type": "application/json"}
-        }).then(({data}) => {
-            if (data.success) {
-                setOpen(true);
-                setStatus("success");
-                setMessage("Все прошло успешно");
-                getFirst()
-            }
-        })
-    }
 
     return (
         <Container role={userData?.role}>
@@ -122,15 +83,25 @@ export default function DepartamentGiving() {
                 Отпустить бутыли
             </Div>
             <Div />
-            {chFranchisee !== null ? <>
-                <Div>{chFranchisee.fullName} <MyButton click={skip}>Пропустить</MyButton> </Div>
-                <Div />
-                {chFranchisee?.b121kol !== 9999 && 
-                    <Li>Количество 12,5 л: {chFranchisee?.b121kol}</Li>
-                }
-                <Li>Количество 18,9 л. (1): {chFranchisee?.b191kol}</Li>
-                <Li>Количество 18,9 л. (7): {chFranchisee?.b197kol}</Li>
-                <Div />
+            {chFranchisee === null ? <>
+                <Div>
+                    Список франчайзи
+                </Div>
+                {franchisees.map((item) => {
+                    return (
+                        <div key={item._id}>
+                            <Div>
+                                {item.fullName}
+                                <MyButton click={() => {setChFranchisee(item)}}>Выбрать</MyButton>
+                            </Div>
+                        </div>
+                    );
+                })}
+            </> : <>
+                <Div>{chFranchisee.fullName} <MyButton click={() => {setChFranchisee(null)}}>Отменить</MyButton></Div>
+            </>}
+
+            {chFranchisee !== null && <>
                 {chFranchisee?.b121kol !== 9999 && 
                     <Li>
                         <div className="flex items-center gap-x-2">
@@ -249,11 +220,8 @@ export default function DepartamentGiving() {
                 </Li>
                 <Div />
                 <Div>
-                    <MyButton click={give}>Отпустить</MyButton>
+                    <MyButton click={() => {give(true)}}>Завершить</MyButton>
                 </Div>
-            </> : <>
-                <Div>В очереди никого нет <LinkButton color="green" href="/departamentGivingSingle">Начать</LinkButton></Div>
-
             </>}
             <Div />
             <MySnackBar

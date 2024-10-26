@@ -320,61 +320,71 @@ export default function OrderPage() {
 
                 <Div />
                 <Div>Дата и время заказа:</Div>
-                <>
-                    <Li>
-                        <div className="flex items-center gap-x-3 flex-wrap">
-                            <div>Дата:</div>
-                            <div className="text-red">
-                                [
-                                <DataInput
-                                    color="red"
-                                    value={date.d}
-                                    name="d"
-                                    change={handleDateChange}
-                                />
-                                ]
+                {order?.transferred && userData?.role === "admin" ? 
+                    <>
+                        <Li>
+                            Дата: <Info>{order.date.d}</Info>
+                        </Li>
+                        <Li>
+                            Время: <Info>{order.date.time !== "" ? order.date.time : "HH:MM - HH:MM"}</Info>
+                        </Li>
+                    </> : 
+                    <>
+                        <Li>
+                            <div className="flex items-center gap-x-3 flex-wrap">
+                                <div>Дата:</div>
+                                <div className="text-red">
+                                    [
+                                    <DataInput
+                                        color="red"
+                                        value={date.d}
+                                        name="d"
+                                        change={handleDateChange}
+                                    />
+                                    ]
+                                </div>
+                                <div className="flex items-center gap-x-2">
+                                    <button onClick={incrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                        <UpIcon className="w-6 h-6 text-white" />
+                                    </button>
+                                    <button onClick={decrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
+                                        <DownIcon className="w-6 h-6 text-white" />
+                                    </button>
+                                </div>
+                                {/* <div className="text-red">{order?.date?.d}</div> */}
                             </div>
-                            <div className="flex items-center gap-x-2">
-                                <button onClick={incrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                    <UpIcon className="w-6 h-6 text-white" />
-                                </button>
-                                <button onClick={decrementDate} className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1">
-                                    <DownIcon className="w-6 h-6 text-white" />
-                                </button>
+                        </Li>
+                        <Li>
+                            <div className="flex items-center gap-x-3 flex-wrap">
+                                <div>Время:</div>
+                                <div className="text-red">
+                                    [
+                                    <input
+                                        className="bg-black outline-none border-b border-red border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm"
+                                        value={date.time}
+                                        size={13}
+                                        style={{ fontSize: '16px' }}
+                                        name="time"
+                                        inputMode="numeric"
+                                        pattern="\d*"
+                                        onKeyPress={(event) => {
+                                            if (!/[0-9]/.test(event.key)) {
+                                                event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                            }
+                                        }}
+                                        onChange={(event) => {
+                                            handleTimeChange(event);
+                                        }}
+                                        placeholder=" HH:MM - HH:MM"
+                                    />
+                                    ]
+                                </div>
+                                {/* <div className="text-red">{order?.date?.time}</div> */}
                             </div>
-                            {/* <div className="text-red">{order?.date?.d}</div> */}
-                        </div>
-                    </Li>
-                    <Li>
-                        <div className="flex items-center gap-x-3 flex-wrap">
-                            <div>Время:</div>
-                            <div className="text-red">
-                                [
-                                <input
-                                    className="bg-black outline-none border-b border-red border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm"
-                                    value={date.time}
-                                    size={13}
-                                    style={{ fontSize: '16px' }}
-                                    name="time"
-                                    inputMode="numeric"
-                                    pattern="\d*"
-                                    onKeyPress={(event) => {
-                                        if (!/[0-9]/.test(event.key)) {
-                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
-                                        }
-                                    }}
-                                    onChange={(event) => {
-                                        handleTimeChange(event);
-                                    }}
-                                    placeholder=" HH:MM - HH:MM"
-                                />
-                                ]
-                            </div>
-                            {/* <div className="text-red">{order?.date?.time}</div> */}
-                        </div>
-                    </Li>
-                    {(date?.d !== order?.date?.d || date?.time !== order?.date?.time) && <Div><MyButton click={() => {updateOrder("date", date)}}>Применить</MyButton></Div>}
-                </>
+                        </Li>
+                        {(date?.d !== order?.date?.d || date?.time !== order?.date?.time) && <Div><MyButton click={() => {updateOrder("date", date)}}>Применить</MyButton></Div>}
+                    </>
+                }
 
                 <Div />
                 <Div>
