@@ -308,6 +308,14 @@ export default function OrderList() {
                                 loadMoreOrders(1, dates, search, searchStatus, "empty")
                                 setSearchF("empty")
                             }}>Свободные</MyButton>
+                            <MyButton click={() => {
+                                setOrders([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)
+                                loadMoreOrders(1, dates, search, searchStatus, userData?.fullName)
+                                setSearchF(userData?.fullName)
+                            }}>admin</MyButton>
                         </div>
                     </Div>
                 </>

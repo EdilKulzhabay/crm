@@ -214,7 +214,15 @@ export const deleteCourier = async (req, res) => {
 
 export const getActiveOrdersCourier = async (req, res) => {
     try {
-        const { id } = req.body;
+        const { id, role } = req.body;
+        console.log(role);
+        
+
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayDate = `${year}-${month}-${day}`;
 
         if (!id) {
             return res.status(400).json({ message: "ID курьера не предоставлен" });
@@ -240,7 +248,14 @@ export const getActiveOrdersCourier = async (req, res) => {
         );
 
         // Убираем заказы, где поле order равно null
-        const filteredOrders = activeOrders.filter(item => item.order !== null);
+        const filteredOrders = activeOrders.filter(item => {
+            return item.order !== null && (
+                role !== "courier" || 
+                item.order.date.d === today
+            );
+        });
+
+
 
         // Возвращаем только нужные заказы для текущей страницы
         res.json({ activeOrders: filteredOrders, totalOrders: filteredOrders.length });

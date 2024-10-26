@@ -47,7 +47,7 @@ export default function DepartamentGiving() {
     const increaseValue = (key) => {
         setData(prevData => ({
             ...prevData,
-            [key]: prevData[key] < chFranchisee[key] ? Number(prevData[key]) + 1 : prevData[key],
+            [key]: Number(prevData[key]) + 1,
         }));
     };
 
@@ -84,17 +84,18 @@ export default function DepartamentGiving() {
     }
 
     const changeData = (event) => {
-        if (Number(event.target.value) > Number(chFranchisee[event.target.name])) {
-            setData({ ...data, [event.target.name]: chFranchisee[event.target.name] });
-        } else {
-            setData({ ...data, [event.target.name]: event.target.value });
-        }
+        setData({ ...data, [event.target.name]: event.target.value });
+        // if (Number(event.target.value) > Number(chFranchisee[event.target.name])) {
+        //     setData({ ...data, [event.target.name]: chFranchisee[event.target.name] });
+        // } else {
+        //     setData({ ...data, [event.target.name]: event.target.value });
+        // }
     };
 
     return (
         <Container role={userData?.role}>
             <Div>
-                Принять бутыли
+                Отпустить бутыли
             </Div>
             <Div />
             {chFranchisee !== null ? <>

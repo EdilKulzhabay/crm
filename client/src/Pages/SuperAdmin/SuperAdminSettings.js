@@ -269,22 +269,48 @@ export default function SuperAdminSettings() {
                 />
                 <Div />
                 <Div>Действия:</Div>
-                <Div>
-                    <LinkButton href="/superAdminAddFranchizer">
-                        Добавить франчайзера
-                    </LinkButton>
-                    <LinkButton href="/superAdminClientManagment">
-                        Управление клиентами
-                    </LinkButton>
+                <div className="hidden lg:block">
+                    <Div>
+                        <LinkButton href="/superAdminClientManagment">
+                            Управление клиентами
+                        </LinkButton>
+                        <LinkButton color="green" href="/superAdminAddFranchizer">
+                            Добавить франчайзера
+                        </LinkButton>
+                        <MyButton
+                            click={() => {
+                                auth.logout();
+                                navigate("/login");
+                            }}
+                        >
+                            Выйти
+                        </MyButton>
+                    </Div>
+                </div>
+
+                <div className="lg:hidden">
+                    <Div>
+                        <LinkButton href="/superAdminClientManagment">
+                            Управление клиентами
+                        </LinkButton>
+                    </Div>
+                    <Div>
+                        <LinkButton color="green" href="/superAdminAddFranchizer">
+                            Добавить франчайзера
+                        </LinkButton>
+                    </Div>
+                    <Div>
                     <MyButton
-                        click={() => {
-                            auth.logout();
-                            navigate("/login");
-                        }}
-                    >
-                        Выйти
-                    </MyButton>
-                </Div>
+                            click={() => {
+                                auth.logout();
+                                navigate("/login");
+                            }}
+                        >
+                            Выйти
+                        </MyButton>
+                    </Div>
+                </div>
+                
                 <Div />
                 <MySnackBar
                     open={open}
