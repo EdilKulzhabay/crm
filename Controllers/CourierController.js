@@ -248,14 +248,14 @@ export const getActiveOrdersCourier = async (req, res) => {
 
         // console.log(activeOrders);
         
-        const filteredOrders = activeOrders.filter(item => item.order !== null);
+        // const filteredOrders = activeOrders.filter(item => item.order !== null);
         // Убираем заказы, где поле order равно null
-        // const filteredOrders = activeOrders.filter(item => {
-        //     return item.order !== null && (
-        //         role !== "courier" || 
-        //         item.order.date.d === todayDate
-        //     );
-        // });
+        const filteredOrders = activeOrders.filter(item => {
+            return item.order !== null && (
+                role !== "courier" || 
+                item.order.date.d === todayDate
+            );
+        });
 
         // console.log(filteredOrders);
         
