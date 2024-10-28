@@ -333,7 +333,7 @@ export default function OrdersWholeList() {
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, userData?.fullName, saStatus)
+                                loadMoreOrders(1, dates, search, searchStatus, searchF, saStatus)
                                 setSa(saStatus)
                             }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
                         </div>
