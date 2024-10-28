@@ -567,7 +567,7 @@ export default function ClientPage() {
                                     setModal(true)
                                 }}
                             >
-                                Добавить
+                                Добавить еще один адрес
                             </MyButton>
                         </Li>
                     )}

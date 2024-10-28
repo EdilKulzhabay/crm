@@ -366,7 +366,7 @@ export default function AddClient() {
                                 setModal(true)
                             }}
                         >
-                            Добавить адрес
+                            Добавить еще один адрес
                         </MyButton>
                     </Div>
                 </>
