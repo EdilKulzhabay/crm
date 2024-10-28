@@ -271,8 +271,7 @@ export const getMainPageInfoSA = async (req, res) => {
             {
                 $group: {
                     _id: null,
-                    total12: { $sum: "$data.b121kol" },
-                    total19: { $sum: { $add: ["$data.b191kol", "$data.b197kol"] }}
+                    totalBottles: { $sum: { $add: [ "$data.b121kol", { $add: ["$data.b191kol", "$data.b197kol"] } ] } }
                 }
             }
         ])
