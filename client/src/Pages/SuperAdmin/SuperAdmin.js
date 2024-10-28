@@ -57,9 +57,11 @@ export default function SuperAdmin() {
                     </div>
                 </Li>
                 <Li>
-                    <div className="">
-                        Отпущено бутылей:
-                        <LinkButton href="/departmentInfo">{info?.bottles?.totalBottles || 0} шт.</LinkButton>
+                    <div className="flex items-center gap-x-3">
+                        <div>Отпущено бутылей: </div>
+                        <div>
+                            <LinkButton href="/departmentInfo">{info?.bottles?.totalBottles || 0} шт.</LinkButton>
+                        </div>
                     </div>
                 </Li>
                 <Li>
