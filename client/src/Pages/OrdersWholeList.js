@@ -29,6 +29,7 @@ export default function OrdersWholeList() {
     const [orders, setOrders] = useState([]);
     const [search, setSearch] = useState("");
     const [searchF, setSearchF] = useState("");
+    const [sa, setSa] = useState(false)
     const [searchStatus, setSearchStatus] = useState(false);
     const [dates, setDates] = useState({
         startDate: getCurrentDate(),
@@ -105,7 +106,7 @@ export default function OrdersWholeList() {
         setPage(1);
         setHasMore(true);
         setLoading(false)
-        loadMoreOrders(1, dates, search, searchStatus, searchF)
+        loadMoreOrders(1, dates, search, searchStatus, searchF, sa)
     }
 
     const handleSearch = (e) => {
@@ -116,7 +117,7 @@ export default function OrdersWholeList() {
             setHasMore(true);
             setSearchStatus(false)
             setLoading(false)
-            loadMoreOrders(1, dates, "", false, searchF)
+            loadMoreOrders(1, dates, "", false, searchF, sa)
         }
     };
 
@@ -127,7 +128,7 @@ export default function OrdersWholeList() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            loadMoreOrders(1, dates, search, searchStatus, "")
+            loadMoreOrders(1, dates, search, searchStatus, "", sa)
         }
     };
 
@@ -198,7 +199,7 @@ export default function OrdersWholeList() {
         }
     }, [franchisee])
 
-    const loadMoreOrders = useCallback(async (page, dates, search, searchStatus, searchF) => {
+    const loadMoreOrders = useCallback(async (page, dates, search, searchStatus, searchF, sa) => {
         if (loading || !hasMore) return;
         setLoading(true);
 
@@ -209,7 +210,8 @@ export default function OrdersWholeList() {
                 ...dates,
                 searchStatus,
                 search,
-                searchF
+                searchF, 
+                sa
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -237,7 +239,7 @@ export default function OrdersWholeList() {
     useEffect(() => {
         console.log("useEffect triggered with hasMore:", hasMore);
         if (hasMore) {
-            loadMoreOrders(page, dates, search, searchStatus, searchF);
+            loadMoreOrders(page, dates, search, searchStatus, searchF, sa);
         }
     }, [hasMore]);
 
@@ -249,7 +251,7 @@ export default function OrdersWholeList() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreOrders(page, dates, search, searchStatus, searchF);
+                    loadMoreOrders(page, dates, search, searchStatus, searchF, sa);
                 }
             });
             if (node) observer.current.observe(node);
@@ -293,7 +295,7 @@ export default function OrdersWholeList() {
                             setHasMore(true);
                             setSearchStatus(true)
                             setLoading(false)
-                            loadMoreOrders(1, dates, search, true, searchF)
+                            loadMoreOrders(1, dates, search, true, searchF, sa)
                         }}>Найти</MyButton>
                     </div>
                 </Div>
@@ -315,14 +317,14 @@ export default function OrdersWholeList() {
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, searchF)
+                                loadMoreOrders(1, dates, search, searchStatus, searchF, sa)
                             }}>Найти</MyButton>
                             <MyButton click={() => {
                                 setOrders([]);
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, "empty")
+                                loadMoreOrders(1, dates, search, searchStatus, "empty", sa)
                                 setSearchF("empty")
                             }}>Свободные</MyButton>
                             <MyButton click={() => {
@@ -330,9 +332,9 @@ export default function OrdersWholeList() {
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, userData?.fullName)
-                                setSearchF(userData?.fullName)
-                            }}>admin</MyButton>
+                                loadMoreOrders(1, dates, search, searchStatus, userData?.fullName, true)
+                                setSa(true)
+                            }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
                         </div>
                     </Div>
                 </>
