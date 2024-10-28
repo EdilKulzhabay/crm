@@ -245,6 +245,9 @@ export const getActiveOrdersCourier = async (req, res) => {
         const activeOrders = courier.orders.filter(
             (item) => item.orderStatus === "inLine" || item.orderStatus === "onTheWay"
         );
+
+        console.log(activeOrders);
+        
         
         // Убираем заказы, где поле order равно null
         const filteredOrders = activeOrders.filter(item => {
@@ -254,7 +257,8 @@ export const getActiveOrdersCourier = async (req, res) => {
             );
         });
 
-
+        console.log(filteredOrders);
+        
 
         // Возвращаем только нужные заказы для текущей страницы
         res.json({ activeOrders: filteredOrders, totalOrders: filteredOrders.length });
