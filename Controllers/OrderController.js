@@ -618,7 +618,7 @@ export const getCompletedOrders = async (req, res) => {
         }
 
         if (sa) {
-            filter.franchisee = id
+            filter.franchisee = new mongoose.Types.ObjectId(id)
         }
 
         if (user.role === "superAdmin" && searchF !== "") {
