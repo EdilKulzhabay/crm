@@ -104,6 +104,9 @@ export const getOrders = async (req, res) => {
         const { page, startDate, endDate, search, searchStatus, searchF, sa } =
             req.body;
 
+        console.log("req.body", req.body);
+        
+
         const limit = 5;
         const skip = (page - 1) * limit;
 
@@ -169,6 +172,9 @@ export const getOrders = async (req, res) => {
                 { "address.actual": { $regex: search, $options: "i" } }
             ]
         }
+
+        console.log("filter", filter);
+        
 
         const totalOrders = await Order.countDocuments(filter)
 
