@@ -101,7 +101,7 @@ export const addOrder = async (req, res) => {
 export const getOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const { page, startDate, endDate, search, searchStatus, searchF } =
+        const { page, startDate, endDate, search, searchStatus, searchF, sa } =
             req.body;
 
         const limit = 5;
@@ -136,10 +136,14 @@ export const getOrders = async (req, res) => {
                 filter.franchisee = id
                 filter.transferred = false
             } else {
-                filter.$or = [
-                    { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
-                    { transferredFranchise: { $regex: searchF, $options: "i" } } // Фильтр по transferredFranchise
-                ];
+                if (sa) {
+                    filter.transferredFranchise = { $regex: searchF, $options: "i" }
+                } else {
+                    filter.$or = [
+                        { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
+                        { transferredFranchise: { $regex: searchF, $options: "i" } } // Фильтр по transferredFranchise
+                    ];
+                }
             }
         }
         
@@ -647,14 +651,6 @@ export const getCompletedOrders = async (req, res) => {
                 ]
             }
         }
-
-        // let aggregateFilter = {}
-        // if (filter.opForm) {
-        //     const { opForm, ...otherFilters } = filter;
-        //     aggregateFilter = { ...otherFilters };
-        // } else {
-        //     aggregateFilter = { ...filter };
-        // }
 
         const ordersResult = await Order.aggregate([
             { $match: filter },
