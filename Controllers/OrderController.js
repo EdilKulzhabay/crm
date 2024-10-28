@@ -576,6 +576,9 @@ export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
         const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa} = req.body
+
+        console.log("req.body", req.body);
+        
         const user = await User.findById(id)
         const limit = 5;
         const skip = (page - 1) * limit;
@@ -677,6 +680,8 @@ export const getCompletedOrders = async (req, res) => {
                 },
             },
         ]);
+
+        console.log("filter", filter);
 
         const orders = await Order.find(filter)
             .populate("client")
