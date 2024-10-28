@@ -2,6 +2,8 @@ import User from "../Models/User.js";
 import Courier from "../Models/Courier.js";
 import Client from "../Models/Client.js";
 import Order from "../Models/Order.js";
+import DepartmentHistory from "../Models/DepartmentHistory.js";
+import mongoose from "mongoose";
 
 export const getAllUsersNCouriers = async (req, res) => {
     try {
@@ -182,6 +184,103 @@ export const getMainPageInfo = async (req, res) => {
             deliveredOrders,
             totalRevenue,
             totalSum
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getMainPageInfoSA = async (req, res) => {
+    try {
+        const id = req.userId;
+        const user = await User.findById(id);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayDate = `${year}-${month}-${day}`;
+
+        // Фильтр для сегодняшней даты
+        const filter = { 'date.d': todayDate };
+
+        // Считаем общее количество клиентов на сегодня
+        const clients = await Client.countDocuments();
+
+        // Считаем статистику по заказам
+        const stats = await Order.aggregate([
+            { $match: filter },
+            {
+                $addFields: {
+                    isMyOrder: { $eq: ["$franchisee", new mongoose.Types.ObjectId(id)] },
+                    isCompleted: { $in: ["$status", ["delivered", "cancelled"]] },
+                    orderRevenue: {
+                        $cond: [
+                            { $eq: ["$franchisee", new mongoose.Types.ObjectId(id)] },
+                            { 
+                                $add: [
+                                    { $multiply: ["$products.b12", 270] },
+                                    { $multiply: ["$products.b19", 400] }
+                                ]
+                            },
+                            { 
+                                $add: [
+                                    { $multiply: ["$products.b12", 170] },
+                                    { $multiply: ["$products.b19", 250] }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$orderRevenue" },
+                    totalSum: { $sum: "$sum" },
+                    myActiveOrders: {
+                        $sum: {
+                            $cond: [{ $and: [{ $eq: ["$isMyOrder", true] }, { $not: "$isCompleted" }] }, 1, 0]
+                        }
+                    },
+                    otherActiveOrders: {
+                        $sum: {
+                            $cond: [{ $and: [{ $eq: ["$isMyOrder", false] }, { $not: "$isCompleted" }] }, 1, 0]
+                        }
+                    },
+                    myCompletedOrders: {
+                        $sum: {
+                            $cond: [{ $and: [{ $eq: ["$isMyOrder", true] }, "$isCompleted"] }, 1, 0]
+                        }
+                    },
+                    otherCompletedOrders: {
+                        $sum: {
+                            $cond: [{ $and: [{ $eq: ["$isMyOrder", false] }, "$isCompleted"] }, 1, 0]
+                        }
+                    }
+                }
+            }
+        ]);
+
+        today.setHours(0, 0, 0, 0);
+
+        const bottles = await DepartmentHistory.aggregate([
+            { $match: {type: false, createdAt: today} },
+            {
+                $group: {
+                    _id: null,
+                    total12: { $sum: "$data.b121kol" },
+                    total19: { $sum: { $add: ["$data.b191kol", "$data.b197kol"] }}
+                }
+            }
+        ])
+
+        res.json({
+            clients,
+            stats: stats[0],
+            bottles: bottles[0]
         });
     } catch (error) {
         console.log(error);
