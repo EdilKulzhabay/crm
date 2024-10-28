@@ -322,7 +322,7 @@ export const updateOrder = async (req, res) => {
             await order.save();
             
             const client = await Client.findById(order.client)
-            const clientId = client._id
+            const clientId = client._id.toHexString();
             global.io.to(clientId).emit("orderStatusChanged", {
                 orderId: order._id,
                 status: changeData,
