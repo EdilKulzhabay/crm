@@ -216,7 +216,6 @@ export const getActiveOrdersCourier = async (req, res) => {
     try {
         const { id, role } = req.body;
         console.log(role);
-        
 
         const today = new Date();
         const year = today.getFullYear();
@@ -246,12 +245,12 @@ export const getActiveOrdersCourier = async (req, res) => {
         const activeOrders = courier.orders.filter(
             (item) => item.orderStatus === "inLine" || item.orderStatus === "onTheWay"
         );
-
+        
         // Убираем заказы, где поле order равно null
         const filteredOrders = activeOrders.filter(item => {
             return item.order !== null && (
                 role !== "courier" || 
-                item.order.date.d === today
+                item.order.date.d === todayDate
             );
         });
 
