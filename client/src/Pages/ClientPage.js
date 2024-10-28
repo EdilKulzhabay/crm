@@ -29,7 +29,7 @@ export default function ClientPage() {
     const navigate = useNavigate();
     const userData = useFetchUserData();
     const [client, setClient] = useState({});
-
+    const [modal, setModal] = useState(false)
     const [dates, setDates] = useState({
         startDate: "2024-01-01", // Начало месяца
         endDate: getCurrentDate()     // Сегодняшняя дата
@@ -102,6 +102,15 @@ export default function ClientPage() {
             link: generate2GISLink(streetValue),
         });
     };
+
+    const closeConfirmModalAdd = () => {
+        setModal(false)
+    }
+
+    const confirmDeleteAdd = () => {
+        setAddAdress(true)
+        setModal(false)
+    }
 
     const addressChangeHandlerHouse = (event) => {
         setNewAdress({ ...newAdress, ["house"]: event.target.value });
@@ -357,6 +366,12 @@ export default function ClientPage() {
                 confirmDelete={confirmDeleteClient}
                 scrollPosition={scrollPosition}
             />}
+            {modal && <ConfirmDeleteModal
+                closeConfirmModal={closeConfirmModalAdd}
+                confirmDelete={confirmDeleteAdd}
+                scrollPosition={scrollPosition}
+                add={true}
+            />}
             <Container role={userData?.role}>
                 <Div>Карточка клиента</Div>
                 <Div />
@@ -549,7 +564,7 @@ export default function ClientPage() {
                         <Li>
                             <MyButton
                                 click={() => {
-                                    setAddAdress(true);
+                                    setModal(true)
                                 }}
                             >
                                 Добавить
