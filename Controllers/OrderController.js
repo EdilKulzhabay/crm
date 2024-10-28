@@ -119,6 +119,10 @@ export const getOrders = async (req, res) => {
             filter.franchisee = id
         }
 
+        if (sa) {
+            filter.franchisee = id
+        }
+
         if (user.role === "superAdmin" && searchF !== "") {
             // Сначала ищем франчайзи по имени или логину
             const franchisees = await User.find({

@@ -328,12 +328,13 @@ export default function OrdersWholeList() {
                                 setSearchF("empty")
                             }}>Свободные</MyButton>
                             <MyButton click={() => {
+                                const saStatus = !sa
                                 setOrders([]);
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, userData?.fullName, true)
-                                setSa(true)
+                                loadMoreOrders(1, dates, search, searchStatus, userData?.fullName, saStatus)
+                                setSa(saStatus)
                             }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
                         </div>
                     </Div>
