@@ -246,18 +246,18 @@ export const getActiveOrdersCourier = async (req, res) => {
             (item) => item.orderStatus === "inLine" || item.orderStatus === "onTheWay"
         );
 
-        console.log(activeOrders);
+        // console.log(activeOrders);
         
-        
+        const filteredOrders = activeOrders.filter(item => item.order !== null);
         // Убираем заказы, где поле order равно null
-        const filteredOrders = activeOrders.filter(item => {
-            return item.order !== null && (
-                role !== "courier" || 
-                item.order.date.d === todayDate
-            );
-        });
+        // const filteredOrders = activeOrders.filter(item => {
+        //     return item.order !== null && (
+        //         role !== "courier" || 
+        //         item.order.date.d === todayDate
+        //     );
+        // });
 
-        console.log(filteredOrders);
+        // console.log(filteredOrders);
         
 
         // Возвращаем только нужные заказы для текущей страницы
