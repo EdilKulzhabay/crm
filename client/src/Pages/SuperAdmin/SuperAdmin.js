@@ -59,8 +59,7 @@ export default function SuperAdmin() {
                 <Li>
                     <div className="">
                         Отпущено бутылей:
-                        12л:<Info>{info?.bottles?.total12 || 0}</Info>
-                        {"  19л:"}<Info>{info?.bottles?.total19 || 0}</Info>
+                        <LinkButton href="/departmentInfo">{info?.bottles?.totalBottles || 0} шт.</LinkButton>
                     </div>
                 </Li>
                 <Li>

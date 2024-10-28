@@ -5,6 +5,7 @@ import useFetchUserData from "../customHooks/useFetchUserData";
 import api from "../api";
 import Li from "../Components/Li";
 import LinkButton from "../Components/LinkButton";
+import Info from "../Components/Info";
 
 export default function DepartmentInfo() {
     const userData = useFetchUserData()
@@ -35,9 +36,9 @@ export default function DepartmentInfo() {
                 <Div>
                     {item?.fullName} <LinkButton href={`/departmentInfoFranchisee/${item?._id}`}>Просмотр</LinkButton>
                 </Div>
-                {item?.b121kol !== 9999 && <Li>Кол 12,5: {item?.b121kol}</Li>}
-                <Li>Кол 18,9 (1): {item?.b191kol}</Li>
-                <Li>Кол 18,9 (7): {item?.b197kol}</Li>
+                {item?.b121kol !== 9999 && <Li>Кол 12,5: <Info>{item?.b121kol}</Info></Li>}
+                <Li>Кол 18,9 (1): <Info>{item?.b191kol}</Info></Li>
+                <Li>Кол 18,9 (7): <Info>{item?.b197kol}</Info></Li>
             </div>
         })}
         <Div />
