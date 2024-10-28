@@ -104,9 +104,6 @@ export const getOrders = async (req, res) => {
         const { page, startDate, endDate, search, searchStatus, searchF, sa } =
             req.body;
 
-        console.log("req.body", req.body);
-        
-
         const limit = 5;
         const skip = (page - 1) * limit;
 
@@ -172,9 +169,6 @@ export const getOrders = async (req, res) => {
                 { "address.actual": { $regex: search, $options: "i" } }
             ]
         }
-
-        console.log("filter", filter);
-        
 
         const totalOrders = await Order.countDocuments(filter)
 
@@ -581,7 +575,7 @@ export const getAdditionalOrders = async (req, res) => {
 export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const {page, startDate, endDate, search, searchStatus, searchF, opForm} = req.body
+        const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa} = req.body
         const user = await User.findById(id)
         const limit = 5;
         const skip = (page - 1) * limit;
@@ -618,6 +612,10 @@ export const getCompletedOrders = async (req, res) => {
                 {franchisee: new mongoose.Types.ObjectId(id)},
                 {transferredFranchise: user.fullName}
             ]
+        }
+
+        if (sa) {
+            filter.franchisee = id
         }
 
         if (user.role === "superAdmin" && searchF !== "") {

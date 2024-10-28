@@ -31,7 +31,7 @@ export default function CompletedOrders() {
         totalMixed: 0
     })
     const [opForm, setOpForm] = useState("all")
-
+    const [sa, setSa] = useState(false)
     const [search, setSearch] = useState("");
     const [searchF, setSearchF] = useState("");
     const [searchStatus, setSearchStatus] = useState(false);
@@ -75,7 +75,7 @@ export default function CompletedOrders() {
             setHasMore(true);
             setLoading(false)
             setSearchStatus(false)
-            loadMoreCompletedOrders(1, dates, "", false, searchF, opForm)
+            loadMoreCompletedOrders(1, dates, "", false, searchF, opForm, sa)
         }
     };
 
@@ -86,7 +86,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            loadMoreCompletedOrders(1, dates, search, searchStatus, "", opForm)
+            loadMoreCompletedOrders(1, dates, search, searchStatus, "", opForm, sa)
         }
     };
 
@@ -102,10 +102,10 @@ export default function CompletedOrders() {
         setPage(1)
         setLoading(false)
         setHasMore(true)
-        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm)
+        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa)
     }
 
-    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF, opForm) => {
+    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF, opForm, sa) => {
         if (loading || !hasMore) return;
 
         setLoading(true);
@@ -113,7 +113,7 @@ export default function CompletedOrders() {
         api.post(
             "/getCompletedOrders",
             {
-                page, ...dates, search, searchStatus, searchF, opForm
+                page, ...dates, search, searchStatus, searchF, opForm, sa
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -147,7 +147,7 @@ export default function CompletedOrders() {
         console.log("useEffect triggered with hasMore:", hasMore);
         
         if (hasMore) {
-            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm);
+            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa);
         }
     }, [hasMore]);
 
@@ -159,7 +159,7 @@ export default function CompletedOrders() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm);
+                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa);
                 }
             });
             if (node) observer.current.observe(node);
@@ -253,7 +253,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    loadMoreCompletedOrders(1, dates, search, true, searchF, opForm)
+                    loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa)
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -275,16 +275,17 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm)
+                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa)
                     }}>Найти</MyButton>
                     <MyButton click={() => {
+                        const saStatus = !sa
                         setCompletedOrders([]);
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, true, userData?.fullName, opForm)
-                        setSearchF(userData?.fullName)
-                    }}>admin</MyButton>
+                        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, saStatus)
+                        setSa(saStatus)
+                    }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
                 </div>
             </Div>
         </>
@@ -349,7 +350,7 @@ export default function CompletedOrders() {
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm)
+                                loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm, sa)
                             }}
                             className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
                                 "text-green-400": opForm !== item,
@@ -372,91 +373,6 @@ export default function CompletedOrders() {
                     </Li>
                 </div>
             })}
-            {/* <Li>
-                <button onClick={() => {
-                        if (opForm === "all") {
-                            setOpForm("fakt")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "fakt")
-                        } else {
-                            setOpForm("all")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
-                        }
-                    }}
-                    className={clsx("hover:text-blue-500", {
-                        "text-green-400": opForm !== "fakt",
-                        "text-yellow-300": opForm === "fakt"
-                    })}
-                >[ Нал_Карта_QR ]</button>
-                <Info>{info?.totalFakt}</Info> шт.
-            </Li>
-            <Li>
-                <button onClick={() => {
-                        if (opForm === "all") {
-                            setOpForm("coupon")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "coupon")
-                        } else {
-                            setOpForm("all")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
-                        }
-                    }}
-                    className={clsx("hover:text-blue-500", {
-                        "text-green-400": opForm !== "coupon",
-                        "text-yellow-300": opForm === "coupon"
-                    })}
-                >[ Талоны ]</button>
-                <Info>{info?.totalCoupon}</Info> шт.
-            </Li>
-            <Li>
-                <button onClick={() => {
-                        if (opForm === "all") {
-                            setOpForm("postpay")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "postpay")
-                        } else {
-                            setOpForm("all")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
-                        }
-                    }}
-                    className={clsx("hover:text-blue-500", {
-                        "text-green-400": opForm !== "postpay",
-                        "text-yellow-300": opForm === "postpay"
-                    })}
-                >[ Постоплата ]</button>
-                <Info>{info?.totalPostpay}</Info> шт.
-            </Li>
-            <Li>
-                <button onClick={() => {
-                        if (opForm === "all") {
-                            setOpForm("credit")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "credit")
-                        } else {
-                            setOpForm("all")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
-                        }
-                    }}
-                    className={clsx("hover:text-blue-500", {
-                        "text-green-400": opForm !== "credit",
-                        "text-yellow-300": opForm === "credit"
-                    })}
-                >[ В долг ]</button>
-                <Info>{info?.totalCredit}</Info> шт.
-            </Li>
-            <Li>
-                <button onClick={() => {
-                        if (opForm === "all") {
-                            setOpForm("mixed")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "mixed")
-                        } else {
-                            setOpForm("all")
-                            loadMoreCompletedOrders(1, dates, search, true, searchF, "all")
-                        }
-                    }}
-                    className={clsx("hover:text-blue-500", {
-                        "text-green-400": opForm !== "mixed",
-                        "text-yellow-300": opForm === "mixed"
-                    })}
-                >[ Смешанная ]</button>
-                <Info>{info?.totalMixed}</Info> шт.
-            </Li> */}
         </>
         
         <Div />
