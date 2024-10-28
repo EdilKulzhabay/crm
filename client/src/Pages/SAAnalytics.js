@@ -188,7 +188,6 @@ export default function SAAnalytics() {
                             {chooseFr === item._id ? 
                             <>
                                 <Div>{item.fullName}</Div>
-                                <Div />
                                 <Div>Собст. заказы</Div>
                                 <Div>
                                     <div>18,9 л: </div>
@@ -255,8 +254,10 @@ export default function SAAnalytics() {
                             </> : 
                             <>
                                 <Div>{item.fullName}</Div>
-                                <Div />
-                                <Div>
+                                <Li>
+                                    {saldo(item)}
+                                </Li>
+                                {/* <Div>
                                     <div>18,9 л: </div>
                                     <Info>{item.totalRegularB19Bottles + item.totalAddtitionalB19Bottles} бут.</Info>
                                     <Info>{formatCurrency(item.totalRgularSumB19 + item.totalAdditionalSumB19)}</Info>
@@ -265,7 +266,7 @@ export default function SAAnalytics() {
                                     <div>12,5 л: </div>
                                     <Info>{item.totalRegularB12Bottles + item.totalAddtitionalB12Bottles} бут.</Info>
                                     <Info>{formatCurrency(item.totalRgularSumB12 + item.totalAdditionalSumB12)}</Info>
-                                </Div>
+                                </Div> */}
                                 <Div>
                                     <button
                                     onClick={() => {setChooseFr(item._id)}}

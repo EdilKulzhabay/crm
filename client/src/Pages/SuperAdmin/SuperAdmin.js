@@ -12,11 +12,11 @@ export default function SuperAdmin() {
     const userData = useFetchUserData();
 
     useEffect(() => {
-        api.get("/getMainPageInfo", {
+        api.get("/getMainPageInfoSA", {
             headers: { "Content-Type": "application/json" },
         })
             .then(({ data }) => {
-                setInfo(data);
+                setInfo(data)
             })
             .catch((e) => {
                 console.log(e);
@@ -45,13 +45,22 @@ export default function SuperAdmin() {
                 <Li>
                     <div className="">
                         Активные заказы:
-                        <Info>{info?.activeOrders}</Info>
+                        <Info>{info?.stats?.myActiveOrders}</Info>
+                        <Info>{info?.stats?.otherActiveOrders}</Info>
                     </div>
                 </Li>
                 <Li>
                     <div className="">
                         Завершенные заказы:
-                        <Info>{info?.deliveredOrders}</Info>
+                        <Info>{info?.stats?.myCompletedOrders}</Info>
+                        <Info>{info?.stats?.otherCompletedOrders}</Info>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="">
+                        Отпущено бутылей:
+                        12л:<Info>{info?.bottles?.total12 || 0}</Info>
+                        {"  19л:"}<Info>{info?.bottles?.total19 || 0}</Info>
                     </div>
                 </Li>
                 <Li>
@@ -63,13 +72,13 @@ export default function SuperAdmin() {
                 <Li>
                     <div className="">
                         Общая прибыль:
-                        <Info>{formatCurrency(info?.totalRevenue)}</Info>
+                        <Info>{formatCurrency(info?.stats?.totalRevenue)}</Info>
                     </div>
                 </Li>
                 <Li>
                     <div className="">
                         Общая сумма:
-                        <Info>{formatCurrency(info?.totalSum)}</Info>
+                        <Info>{formatCurrency(info?.stats?.totalSum)}</Info>
                     </div>
                 </Li>
             </>
