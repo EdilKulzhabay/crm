@@ -36,9 +36,9 @@ export default function DepartmentInfo() {
                 <Div>
                     {item?.fullName} <LinkButton href={`/departmentInfoFranchisee/${item?._id}`}>Просмотр</LinkButton>
                 </Div>
-                {item?.b121kol !== 9999 && <Li>Кол 12,5: <Info>{item?.b121kol} шт.</Info></Li>}
-                <Li>Кол 18,9 (1): <Info>{item?.b191kol} шт.</Info></Li>
-                <Li>Кол 18,9 (7): <Info>{item?.b197kol} шт.</Info></Li>
+                {item?.b121kol !== 9999 && <Li><div className="w-[120px]">Кол 12,5:</div> <Info>{item?.b121kol} шт.</Info></Li>}
+                <Li><div className="w-[120px]">Кол 18,9 (1):</div> <Info>{item?.b191kol} шт.</Info></Li>
+                <Li><div className="w-[120px]">Кол 18,9 (7):</div> <Info>{item?.b197kol} шт.</Info></Li>
             </div>
         })}
         <Div />
