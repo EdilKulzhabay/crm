@@ -69,8 +69,6 @@ export default function OrdersWholeList() {
     };
 
     const chooseFranchisee = (chFranchisee) => {
-        console.log(chFranchisee);
-        
         setFranchisee(chFranchisee);
         setFranchiseesModal(false);
     };

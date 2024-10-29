@@ -125,8 +125,6 @@ export default function Charts() {
         api.post("/getAdditionalRevenue", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
-            console.log(data);
-            
             if (data.success) {
                 setTotalRevenue(data.stats.totalRevenue)
                 setTotalFaktRevenue(data.stats.totalFaktRevenue)

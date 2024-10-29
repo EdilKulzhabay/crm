@@ -135,7 +135,8 @@ export const clientRegister = async (req, res) => {
             },
             price12: 900,
             price19: 1300,
-            dailyWater: 2
+            dailyWater: 2,
+            opForm: "fakt"
         });
 
         const client = await doc.save();
@@ -208,8 +209,6 @@ export const clientLogin = async (req, res) => {
             refreshToken,
             ...clientData
         } = candidate._doc;
-
-        console.log(clientData);
 
         const accessToken = jwt.sign(
             { client: clientData },

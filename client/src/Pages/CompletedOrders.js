@@ -144,8 +144,6 @@ export default function CompletedOrders() {
     }, [page, loading, hasMore]);
 
     useEffect(() => {
-        console.log("useEffect triggered with hasMore:", hasMore);
-        
         if (hasMore) {
             loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa);
         }

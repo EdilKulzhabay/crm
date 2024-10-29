@@ -65,6 +65,14 @@ export default function SuperAdmin() {
                     </div>
                 </Li>
                 <Li>
+                    <div className="flex items-center gap-x-3">
+                        <div>Остаток в цеху: </div>
+                        <div>
+                            <Info>{info?.balance?.balance || 0} шт.</Info>
+                        </div>
+                    </div>
+                </Li>
+                <Li>
                     <div className="">
                         Клиенты:
                         <Info>{info?.clients}</Info>

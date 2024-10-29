@@ -198,8 +198,6 @@ export default function OrderList() {
             }
         )
             .then(({ data }) => {
-                console.log(data);
-                
                 setTotalOrders(data.totalOrders)
                 if (data.orders.length === 0) {
                     setHasMore(false);

@@ -10,9 +10,6 @@ export const register = async (req, res) => {
     try {
         const { userName, fullName, phone, mail, role } = req.body;
 
-        console.log(userName);
-        
-
         const candidate = await User.findOne({ userName });
 
         if (candidate) {
@@ -75,8 +72,6 @@ export const login = async (req, res) => {
                 }
 
                 if (department) {
-                    console.log(department.password);
-                    
                     const isValidPassC = await bcrypt.compare(password, department.password);
     
                     if (!isValidPassC) {

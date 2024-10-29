@@ -65,14 +65,12 @@ export default function Login() {
                     }
                 })
                 .catch((e) => {
-                    console.log("slkdfmsldkfmlsd");
+                    console.log(e);
                 });
         }
     }, []);
 
     useEffect(() => {
-        console.log(isAuth);
-        
         if (isAuth._id) {
             const { role } = isAuth;
             if (role === "superAdmin") {

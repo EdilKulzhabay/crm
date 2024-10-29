@@ -378,10 +378,6 @@ export const getFirstOrderForToday = async (req, res) => {
 export const updateOrderList = async (req, res) => {
     try {
         const {id, orders} = req.body
-        console.log(id);
-        console.log(orders);
-        
-        
 
         const courier = await Courier.findById(id)
 
@@ -431,6 +427,16 @@ export const updateCourierOrderStatus = async (req, res) => {
         const order = await Order.findOne({_id: trueOrder})
 
         order.status = newStatus
+        const clientId = order.client.toHexString()
+        console.log(clientId);
+        
+        console.log("orderStatusChanged");
+        
+        global.io.to(clientId).emit("orderStatusChanged", {
+            orderId: trueOrder,
+            status: newStatus,
+            message: `Статус заказа #${trueOrder} был изменен на ${newStatus}`,
+        });
         if (newStatus === "delivered") {
             order.products = products
             order.opForm = opForm

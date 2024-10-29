@@ -175,7 +175,6 @@ export default function SAAnalytics() {
                             />
                             <MyButton click={() => {
                                 const searchStats = stats.filter((item) => item.fullName.toLowerCase().includes(search.toLowerCase()))
-                                console.log("searchStats", searchStats);
                                 
                                 setStats(searchStats)
                             }}>Найти</MyButton>
