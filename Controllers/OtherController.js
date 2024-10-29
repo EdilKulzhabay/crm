@@ -267,7 +267,10 @@ export const getMainPageInfoSA = async (req, res) => {
         today.setHours(0, 0, 0, 0);
 
         const bottles = await DepartmentHistory.aggregate([
-            { $match: { createdAt: today } },
+            { $match: { createdAt: { 
+                $gte: new Date(today.setHours(0, 0, 0, 0)), // Начало дня
+                $lt: new Date(today.setHours(23, 59, 59, 999)) // Конец дня
+            }  } },
             {
                 $group: {
                     _id: null,
