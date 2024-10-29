@@ -481,7 +481,6 @@ export default function OrderPage() {
                         </MyButton>
 
                         {orderCourier &&
-                            orderCourier?._id !== order?.courier?._id && (
                                 <MyButton
                                     click={() => {
                                         updateOrder("courier", orderCourier);
@@ -491,7 +490,7 @@ export default function OrderPage() {
                                     Применить
                                     </span>
                                 </MyButton>
-                            )}
+                            }
                         {orderCourier &&
                             orderCourier?._id !== order?.courier?._id && (
                                 <div className="flex items-center gap-x-3 flex-wrap">
