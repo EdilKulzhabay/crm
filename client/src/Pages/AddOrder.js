@@ -132,7 +132,6 @@ export default function AddOrder() {
 
     const chooseClient = (chClient) => {
         setClient(chClient);
-        console.log(chClient);
         
         setClientsModal(false);
     };

@@ -267,11 +267,43 @@ export const getMainPageInfoSA = async (req, res) => {
         today.setHours(0, 0, 0, 0);
 
         const bottles = await DepartmentHistory.aggregate([
-            { $match: {type: false, createdAt: today} },
+            { $match: { createdAt: today } },
             {
                 $group: {
                     _id: null,
-                    totalBottles: { $sum: { $add: [ "$data.b121kol", { $add: ["$data.b191kol", "$data.b197kol"] } ] } }
+                    totalBottles: {
+                        $sum: {
+                            $cond: [
+                                { $eq: ["$type", false] },
+                                {
+                                    $add: [
+                                        { $cond: [{ $ne: ["$data.b121kol", 9999] }, { $ifNull: ["$data.b121kol", 0] }, 0] },
+                                        { $ifNull: ["$data.b191kol", 0] },
+                                        { $ifNull: ["$data.b197kol", 0] }
+                                    ]
+                                },
+                                0
+                            ]
+                        }
+                    }
+                }
+            }
+        ]);
+
+        const balance = await User.aggregate([
+            { $match: { role: "admin" } },
+            {
+                $group: {
+                    _id: null,
+                    balance: {
+                        $sum: {
+                            $add: [
+                                { $cond: [{ $ne: ["$b121kol", 9999] }, { $ifNull: ["$b121kol", 0] }, 0] },
+                                { $ifNull: ["$b191kol", 0] },
+                                { $ifNull: ["$b197kol", 0] }
+                            ]
+                        }
+                    }
                 }
             }
         ])
@@ -279,7 +311,8 @@ export const getMainPageInfoSA = async (req, res) => {
         res.json({
             clients,
             stats: stats[0],
-            bottles: bottles[0]
+            bottles: bottles[0],
+            balance: balance[0]
         });
     } catch (error) {
         console.log(error);

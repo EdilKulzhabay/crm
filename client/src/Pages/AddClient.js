@@ -127,11 +127,6 @@ export default function AddClient() {
         });
     };
 
-    useEffect(() => {
-        console.log(scrollPosition);
-        
-    }, [scrollPosition])
-
     const cancel = () => {
         navigate(-1);
     };

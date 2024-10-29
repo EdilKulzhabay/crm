@@ -340,8 +340,6 @@ export const updateOrder = async (req, res) => {
                 await lCourier.save()
             }
             const courier = await Courier.findById(changeData._id)
-            console.log("courier", courier);
-            
             
             const courierOrder = {order: order._id, orderStatus: "inLine"}
             courier?.orders?.push(courierOrder)

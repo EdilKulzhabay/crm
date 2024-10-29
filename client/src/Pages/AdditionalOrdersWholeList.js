@@ -10,8 +10,10 @@ import clsx from "clsx";
 import ChooseCourierModal from "../Components/ChooseCourierModal";
 import OrderInfo from "../Components/OrderInfo";
 import useFetchUserData from "../customHooks/useFetchUserData";
+import useScrollPosition from "../customHooks/useScrollPosition";
 
 export default function AdditionalOrdersWholeList() {
+    const scrollPosition = useScrollPosition()
     const userData = useFetchUserData();
     const [additionalOrders, setAdditionalOrders] = useState([])
     const [orderCourier, setOrderCourier] = useState(null);
@@ -21,22 +23,6 @@ export default function AdditionalOrdersWholeList() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-
-    const [scrollPosition, setScrollPosition] = useState(0);
-
-    const handleScroll = useCallback(() => {
-        setScrollPosition(window.scrollY);
-        console.log("Scroll Y position:", window.scrollY);
-    }, []);
-
-    useEffect(() => {
-        window.addEventListener("scroll", handleScroll);
-        
-        // Удаление обработчика при размонтировании компонента
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [handleScroll]);
 
     const closeCouriersModal = () => {
         setCouriersModal(false);

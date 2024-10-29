@@ -93,8 +93,6 @@ export default function SuperAdminClientManagment() {
             }
         )
             .then(({ data }) => {
-                console.log(data);
-                
                 if (data.clients.length === 0) {
                     setHasMore(false);
                 } else {

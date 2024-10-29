@@ -53,7 +53,6 @@ export default function SuperAdminAddFranchisee() {
             }
         )
             .then(({ data }) => {
-                console.log(data);
                 setOpen(true);
                 setMessage(`Фрачайзи ${form.userName} был добавлен`);
                 setStatus("success");
