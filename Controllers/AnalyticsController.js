@@ -358,10 +358,10 @@ export const getAdditionalRevenue = async (req, res) => {
             {
                 $group: {
                     _id: null, // Группируем заказы по клиентам
-                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b12"] } },
-                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b19"] } },
-                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", "$products.b12", 0] } },
-                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", "$products.b19", 0] } },
+                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b12", 0] }] } },
+                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b19", 0] }] } },
+                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b12", 0] }, 0] } },
+                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b19", 0] }, 0] } },
                     haveTo: { 
                         $sum: { 
                             $cond: [
@@ -399,6 +399,9 @@ export const getAdditionalRevenue = async (req, res) => {
                 message: "Нет данных для выбранного периода"
             });
         }
+
+        console.log("stats", stats[0]);
+        
 
         res.json({ success: true, stats: stats[0] || {}, bottles: departmentHistoryStats[0] || {} });
     } catch (error) {
