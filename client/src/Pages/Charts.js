@@ -177,7 +177,7 @@ export default function Charts() {
         //     sum += (saldoData?.tookAwayB19 - (saldoData?.totalAddtitionalB19Bottles + saldoData?.totalRegularB19Bottles)) * 250
         // }
         sum += saldoData?.haveTo - saldoData?.owe - saldoData?.fakt
-        if (sum > 0) {
+        if (sum < 0) {
             return (<p>Вы должны франчайзеру: <Info>{formatCurrency(sum)}</Info></p>)
         } else {
             return (<p>Франчайзер должен вам: <Info>{formatCurrency(-sum)}</Info></p>)
