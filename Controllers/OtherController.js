@@ -221,19 +221,25 @@ export const getMainPageInfoSA = async (req, res) => {
             {
                 $group: {
                     _id: null,
-                    totalRevenue: { $sum: {
-                        $cond: {
-                            $eq: ["$transferred", true],
-                            $add: [
-                                { $multiply: [{ $ifNull: ["$products.b12", 0] }, 270] },
-                                { $multiply: [{ $ifNull: ["$products.b19", 0] }, 400] }
-                            ],
-                            $add: [
-                                { $multiply: [{ $ifNull: ["$products.b12", 0] }, 170] },
-                                { $multiply: [{ $ifNull: ["$products.b19", 0] }, 250] }
-                            ]
+                    totalRevenue: { 
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ["$transferred", true] }, 
+                                then: { 
+                                    $add: [
+                                        { $multiply: [{ $ifNull: ["$products.b12", 0] }, 270] },
+                                        { $multiply: [{ $ifNull: ["$products.b19", 0] }, 400] }
+                                    ]
+                                },
+                                else: { 
+                                    $add: [
+                                        { $multiply: [{ $ifNull: ["$products.b12", 0] }, 170] },
+                                        { $multiply: [{ $ifNull: ["$products.b19", 0] }, 250] }
+                                    ]
+                                }
+                            }
                         }
-                    } },
+                    },
                     totalSum: { $sum: "$sum" },
                     myActiveOrders: {
                         $sum: {
