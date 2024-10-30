@@ -240,7 +240,15 @@ export const getMainPageInfoSA = async (req, res) => {
                             }
                         }
                     },
-                    totalSum: { $sum: "$sum" },
+                    totalSum: { 
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ["$status", "delivered"] }, 
+                                then: "$sum", // Заменяем "$sum" на "$totalRevenue" или на нужное поле
+                                else: 0
+                            }
+                        }
+                    },
                     myActiveOrders: {
                         $sum: {
                             $cond: [{ $and: [{ $eq: ["$isMyOrder", true] }, { $not: "$isCompleted" }] }, 1, 0]
