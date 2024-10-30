@@ -638,8 +638,11 @@ export const getCompletedOrders = async (req, res) => {
                     result: { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0 }
                 })
             }
+
+            const franchiseeIds = franchisee.map(f => f._id);
+
             filter.$or = [
-                {franchisee: franchisee._id},
+                {franchisee: { $in: franchiseeIds }},
                 {transferredFranchise: { $regex: searchF, $options: "i" }}
             ]
         }
