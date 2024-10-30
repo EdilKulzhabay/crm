@@ -317,7 +317,7 @@ export default function OrderList() {
                                 setLoading(false)
                                 loadMoreOrders(1, dates, search, searchStatus, searchF, saStatus)
                                 setSa(saStatus)
-                            }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
+                            }}><span className={clsx("", {"text-yellow-300": sa})}>Pagoda</span></MyButton>
                         </div>
                     </Div>
                 </>
