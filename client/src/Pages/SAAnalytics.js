@@ -251,7 +251,7 @@ export default function SAAnalytics() {
                                     Owe: <Info>{formatCurrency(item.owe)}</Info>
                                 </Li>
                                 <Li>
-                                    Сальдо = Owe - (Sum - Fakt) {saldo(item)}
+                                    Сальдо = Sum - Fakt - Owe {saldo(item)}
                                 </Li>
                                 <Div>
                                     <button
