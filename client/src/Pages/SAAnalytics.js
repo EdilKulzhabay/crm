@@ -108,11 +108,11 @@ export default function SAAnalytics() {
 
     const formatCurrencyTG = (amount) => {
         if (amount === undefined || amount === null || amount === 0) {
-            return "0 тенге"; // Или любое другое значение по умолчанию
+            return "0 ₸"; // Или любое другое значение по умолчанию
         }
     
         // Преобразуем число в строку и форматируем его
-        return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тг`;
+        return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} ₸`;
     };
 
     const saldo = (stat) => {
@@ -200,13 +200,13 @@ export default function SAAnalytics() {
                                 <Div>
                                     <div>18,9 л: </div>
                                     <Info ml="ml-1">{item.totalAddtitionalB19Bottles} б.</Info> * 
-                                    <Info ml="ml-1">400</Info> = 
+                                    <Info ml="ml-1">400 ₸</Info> = 
                                     <Info ml="ml-1">{formatCurrencyTG(item.totalAddtitionalB19Bottles * 400)}</Info>
                                 </Div>
                                 <Div>
                                     <div>12,5 л: </div>
                                     <Info ml="ml-1">{item.totalAddtitionalB12Bottles} б.</Info> * 
-                                    <Info ml="ml-1">270</Info> = 
+                                    <Info ml="ml-1">270 ₸</Info> = 
                                     <Info ml="ml-1">{formatCurrencyTG(item.totalAddtitionalB12Bottles * 270)}</Info>
                                 </Div>
                                 <Div />
@@ -214,13 +214,13 @@ export default function SAAnalytics() {
                                 <Div>
                                     <div>18,9 л: </div>
                                     <Info ml="ml-1">{item.totalRegularB19Bottles} б.</Info> * 
-                                    <Info ml="ml-1">250</Info> = 
+                                    <Info ml="ml-1">250 ₸</Info> = 
                                     <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB19Bottles * 250)}</Info>
                                 </Div>
                                 <Div>
                                     <div>12,5 л: </div>
                                     <Info ml="ml-1">{item.totalRegularB12Bottles} б.</Info> * 
-                                    <Info ml="ml-1">170</Info> = 
+                                    <Info ml="ml-1">170 ₸</Info> = 
                                     <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB12Bottles * 170)}</Info>
                                 </Div>
                                 <Div />
@@ -228,14 +228,14 @@ export default function SAAnalytics() {
                                 <Li>
                                     12: <Info ml="ml-1">{item.tookAwayB12}</Info>
                                     <p>*</p>
-                                    <Info ml="ml-1">170</Info>
+                                    <Info ml="ml-1">170 ₸</Info>
                                     <p>=</p>
                                     <Info ml="ml-1">{formatCurrencyTG(item.tookAwayB12 * 170)}</Info>
                                 </Li>
                                 <Li>
                                     19: <Info ml="ml-1">{item.tookAwayB19}</Info>
                                     <p>*</p>
-                                    <Info ml="ml-1">250</Info>
+                                    <Info ml="ml-1">250 ₸</Info>
                                     <p>=</p>
                                     <Info ml="ml-1">{formatCurrencyTG(item.tookAwayB19 * 250)}</Info>
                                 </Li>
@@ -251,7 +251,7 @@ export default function SAAnalytics() {
                                     Owe: <Info>{formatCurrency(item.owe)}</Info>
                                 </Li>
                                 <Li>
-                                    Сальдо = Sum - Fakt - Owe {saldo(item)}
+                                    Сальдо = {saldo(item)}
                                 </Li>
                                 <Div>
                                     <button
