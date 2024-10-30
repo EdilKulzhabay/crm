@@ -204,7 +204,7 @@ export const getMainPageInfoSA = async (req, res) => {
         const todayDate = `${year}-${month}-${day}`;
 
         // Фильтр для сегодняшней даты
-        const filter = { 'date.d': todayDate, status: "delivered" };
+        const filter = { 'date.d': todayDate };
 
         // Считаем общее количество клиентов на сегодня
         const clients = await Client.countDocuments();
@@ -224,7 +224,7 @@ export const getMainPageInfoSA = async (req, res) => {
                     totalRevenue: { 
                         $sum: {
                             $cond: {
-                                if: { $eq: ["$transferred", true] }, 
+                                if: { $and: [ { $eq: ["$transferred", true] }, { $eq: ["$status", "delivered"] } ] }, 
                                 then: { 
                                     $add: [
                                         { $multiply: [{ $ifNull: ["$products.b12", 0] }, 270] },
