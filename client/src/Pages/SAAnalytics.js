@@ -116,9 +116,9 @@ export default function SAAnalytics() {
         // }
         sum += stat.haveTo - stat.owe - stat.fakt
         if (sum < 0) {
-            return (<p>Франчайзи должен вам: <Info>{formatCurrency(sum)}</Info></p>)
+            return (<p>Франчайзи должен вам: <Info>{formatCurrency(-sum)}</Info></p>)
         } else {
-            return (<p>Вы должны франчайзи: <Info>{formatCurrency(-sum)}</Info></p>)
+            return (<p>Вы должны франчайзи: <Info>{formatCurrency(sum)}</Info></p>)
         }
     }
 
