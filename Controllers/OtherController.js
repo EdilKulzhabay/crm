@@ -214,25 +214,8 @@ export const getMainPageInfoSA = async (req, res) => {
             { $match: filter },
             {
                 $addFields: {
-                    isMyOrder: { $eq: ["$franchisee", new mongoose.Types.ObjectId(id)] },
-                    isCompleted: { $in: ["$status", ["delivered", "cancelled"]] },
-                    orderRevenue: {
-                        $cond: [
-                            { $eq: ["$franchisee", new mongoose.Types.ObjectId(id)] },
-                            { 
-                                $add: [
-                                    { $multiply: ["$products.b12", 270] },
-                                    { $multiply: ["$products.b19", 400] }
-                                ]
-                            },
-                            { 
-                                $add: [
-                                    { $multiply: ["$products.b12", 170] },
-                                    { $multiply: ["$products.b19", 250] }
-                                ]
-                            }
-                        ]
-                    }
+                    isMyOrder: { $eq: ["$franchisee", user._id] },
+                    isCompleted: { $in: ["$status", ["delivered", "cancelled"]] }
                 }
             },
             {
