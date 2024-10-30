@@ -106,6 +106,15 @@ export default function SAAnalytics() {
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
 
+    const formatCurrencyTG = (amount) => {
+        if (amount === undefined || amount === null || amount === 0) {
+            return "0 тенге"; // Или любое другое значение по умолчанию
+        }
+    
+        // Преобразуем число в строку и форматируем его
+        return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тг`;
+    };
+
     const saldo = (stat) => {
         let sum = 0
         // if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles + stat.totalRegularB12Bottles) {
@@ -190,45 +199,45 @@ export default function SAAnalytics() {
                                 <Div>Переданные. заказы</Div>
                                 <Div>
                                     <div>18,9 л: </div>
-                                    <Info>{item.totalAddtitionalB19Bottles} бут.</Info> * 
-                                    <Info>400</Info> = 
-                                    <Info>{formatCurrency(item.totalAddtitionalB19Bottles * 400)}</Info>
+                                    <Info ml="ml-1">{item.totalAddtitionalB19Bottles} б.</Info> * 
+                                    <Info ml="ml-1">400</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalAddtitionalB19Bottles * 400)}</Info>
                                 </Div>
                                 <Div>
                                     <div>12,5 л: </div>
-                                    <Info>{item.totalAddtitionalB12Bottles} бут.</Info> * 
-                                    <Info>270</Info> = 
-                                    <Info>{formatCurrency(item.totalAddtitionalB12Bottles * 270)}</Info>
+                                    <Info ml="ml-1">{item.totalAddtitionalB12Bottles} б.</Info> * 
+                                    <Info ml="ml-1">270</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalAddtitionalB12Bottles * 270)}</Info>
                                 </Div>
                                 <Div />
                                 <Div>Доп. заказы</Div>
                                 <Div>
                                     <div>18,9 л: </div>
-                                    <Info>{item.totalRegularB19Bottles} бут.</Info> * 
-                                    <Info>250</Info> = 
-                                    <Info>{formatCurrency(item.totalRegularB19Bottles * 250)}</Info>
+                                    <Info ml="ml-1">{item.totalRegularB19Bottles} б.</Info> * 
+                                    <Info ml="ml-1">250</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB19Bottles * 250)}</Info>
                                 </Div>
                                 <Div>
                                     <div>12,5 л: </div>
-                                    <Info>{item.totalRegularB12Bottles} бут.</Info> * 
-                                    <Info>170</Info> = 
-                                    <Info>{formatCurrency(item.totalRegularB12Bottles * 170)}</Info>
+                                    <Info ml="ml-1">{item.totalRegularB12Bottles} б.</Info> * 
+                                    <Info ml="ml-1">170</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB12Bottles * 170)}</Info>
                                 </Div>
                                 <Div />
-                                <Div>Кол бутылей:</Div>
+                                <Div>Кол отпущенных:</Div>
                                 <Li>
-                                    12: <Info>{item.tookAwayB12}</Info>
+                                    12: <Info ml="ml-1">{item.tookAwayB12}</Info>
                                     <p>*</p>
-                                    <Info>170</Info>
+                                    <Info ml="ml-1">170</Info>
                                     <p>=</p>
-                                    <Info>{formatCurrency(item.tookAwayB12 * 170)}</Info>
+                                    <Info ml="ml-1">{formatCurrencyTG(item.tookAwayB12 * 170)}</Info>
                                 </Li>
                                 <Li>
-                                    19: <Info>{item.tookAwayB19}</Info>
+                                    19: <Info ml="ml-1">{item.tookAwayB19}</Info>
                                     <p>*</p>
-                                    <Info>250</Info>
+                                    <Info ml="ml-1">250</Info>
                                     <p>=</p>
-                                    <Info>{formatCurrency(item.tookAwayB19 * 250)}</Info>
+                                    <Info ml="ml-1">{formatCurrencyTG(item.tookAwayB19 * 250)}</Info>
                                 </Li>
                                 <Div />
                                 <Div>Задолженность:</Div>
