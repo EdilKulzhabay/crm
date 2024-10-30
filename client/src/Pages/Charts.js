@@ -56,8 +56,17 @@ export default function Charts() {
     })
     const [totalOrders, setTotalOrders] = useState(0)
     const [additionalTotal, setAdditionalTotal] = useState(0)
-    const [totalRevenue, setTotalRevenue] = useState(0)
-    const [totalFaktRevenue, setTotalFaktRevenue] = useState(0)
+    const [saldoData, setSaldoData] = useState({
+        haveTo: 0,
+        fakt: 0,
+        owe: 0,
+        tookAwayB12: 0,
+        tookAwayB19: 0,
+        totalRegularB12Bottles: 0,
+        totalRegularB19Bottles: 0,
+        totalAddtitionalB12Bottles: 0,
+        totalAddtitionalB19Bottles: 0
+    })
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -126,8 +135,17 @@ export default function Charts() {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
             if (data.success) {
-                setTotalRevenue(data.stats.totalRevenue)
-                setTotalFaktRevenue(data.stats.totalFaktRevenue)
+                setSaldoData({
+                    haveTo: data.stats.haveTo,
+                    fakt: data.stats.fakt,
+                    owe: data.stats.owe,
+                    totalAddtitionalB12Bottles: data.stats.totalAddtitionalB12Bottles,
+                    totalAddtitionalB19Bottles: data.stats.totalAddtitionalB19Bottles,
+                    totalRegularB12Bottles: data.stats.totalRegularB12Bottles,
+                    totalRegularB19Bottles: data.stats.totalRegularB19Bottles,
+                    tookAwayB12: data.bottles.totalTookAwayB121,
+                    tookAwayB19: data.bottles.totalTookAwayB191 + data.bottles.totalTookAwayB197
+                })
             }
         }).catch((e) => {
             console.log(e);
@@ -149,6 +167,22 @@ export default function Charts() {
         // Преобразуем число в строку и форматируем его
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
+
+    const saldo = () => {
+        let sum = 0
+        // if (saldoData?.tookAwayB12 > saldoData?.totalAddtitionalB12Bottles + saldoData?.totalRegularB12Bottles) {
+        //     sum += (saldoData?.tookAwayB12 - (saldoData?.totalAddtitionalB12Bottles + saldoData?.totalRegularB12Bottles)) * 170
+        // }
+        // if (saldoData?.tookAwayB19 > saldoData?.totalAddtitionalB19Bottles + saldoData?.totalRegularB19Bottles) {
+        //     sum += (saldoData?.tookAwayB19 - (saldoData?.totalAddtitionalB19Bottles + saldoData?.totalRegularB19Bottles)) * 250
+        // }
+        sum += saldoData?.haveTo - saldoData?.owe - saldoData?.fakt
+        if (sum > 0) {
+            return (<p>Вы должны франчайзеру: <Info>{formatCurrency(sum)}</Info></p>)
+        } else {
+            return (<p>Франчайзер должен вам: <Info>{formatCurrency(-sum)}</Info></p>)
+        }
+    }
 
     return <Container role={userData?.role}>
         {stats === null ? <Div>Загрузка данных...</Div> : (
@@ -239,7 +273,7 @@ export default function Charts() {
                     <Div />
                     <Div>---------------------</Div>
                         <Div>
-                            Сальдо: <Info>{formatCurrency(totalRevenue - totalFaktRevenue)}</Info>
+                            Сальдо: {saldo()}
                         </Div>
                     <Div>---------------------</Div>
                     <Div />
