@@ -115,7 +115,7 @@ export default function SAAnalytics() {
         //     sum += (stat.tookAwayB19 - (stat.totalAddtitionalB19Bottles + stat.totalRegularB19Bottles)) * 250
         // }
         sum += stat.haveTo - stat.owe - stat.fakt
-        if (sum > 0) {
+        if (sum < 0) {
             return (<p>Франчайзи должен вам: <Info>{formatCurrency(sum)}</Info></p>)
         } else {
             return (<p>Вы должны франчайзи: <Info>{formatCurrency(-sum)}</Info></p>)
