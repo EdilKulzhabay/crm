@@ -214,7 +214,7 @@ export const getMainPageInfoSA = async (req, res) => {
             { $match: filter },
             {
                 $addFields: {
-                    isMyOrder: { $eq: ["$franchisee", user._id] },
+                    isMyOrder: { $eq: ["$franchisee", new mongoose.Types.ObjectId(id)] },
                     isCompleted: { $in: ["$status", ["delivered", "cancelled"]] }
                 }
             },
