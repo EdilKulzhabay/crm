@@ -187,28 +187,32 @@ export default function SAAnalytics() {
                             {chooseFr === item._id ? 
                             <>
                                 <Div>{item.fullName}</Div>
-                                <Div>Собст. заказы</Div>
+                                <Div>Переданные. заказы</Div>
                                 <Div>
                                     <div>18,9 л: </div>
-                                    <Info>{item.totalAddtitionalB19Bottles} бут.</Info>
-                                    <Info>{formatCurrency(item.totalAdditionalSumB19)}</Info>
+                                    <Info>{item.totalAddtitionalB19Bottles} бут.</Info> * 
+                                    <Info>400</Info> = 
+                                    <Info>{formatCurrency(item.totalAddtitionalB19Bottles * 400)}</Info>
                                 </Div>
                                 <Div>
                                     <div>12,5 л: </div>
-                                    <Info>{item.totalAddtitionalB12Bottles} бут.</Info>
-                                    <Info>{formatCurrency(item.totalAdditionalSumB12)}</Info>
+                                    <Info>{item.totalAddtitionalB12Bottles} бут.</Info> * 
+                                    <Info>270</Info> = 
+                                    <Info>{formatCurrency(item.totalAddtitionalB12Bottles * 270)}</Info>
                                 </Div>
                                 <Div />
                                 <Div>Доп. заказы</Div>
                                 <Div>
                                     <div>18,9 л: </div>
-                                    <Info>{item.totalRegularB19Bottles} бут.</Info>
-                                    <Info>{formatCurrency(item.totalRgularSumB19)}</Info>
+                                    <Info>{item.totalRegularB19Bottles} бут.</Info> * 
+                                    <Info>250</Info> = 
+                                    <Info>{formatCurrency(item.totalRegularB19Bottles * 250)}</Info>
                                 </Div>
                                 <Div>
                                     <div>12,5 л: </div>
-                                    <Info>{item.totalRegularB12Bottles} бут.</Info>
-                                    <Info>{formatCurrency(item.totalRgularSumB12)}</Info>
+                                    <Info>{item.totalRegularB12Bottles} бут.</Info> * 
+                                    <Info>170</Info> = 
+                                    <Info>{formatCurrency(item.totalRegularB12Bottles * 170)}</Info>
                                 </Div>
                                 <Div />
                                 <Div>Кол бутылей:</Div>

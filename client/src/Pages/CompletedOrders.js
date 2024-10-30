@@ -379,7 +379,7 @@ export default function CompletedOrders() {
                 if (completedOrders.length === index + 1) {
                     return (
                         <div key={item?._id} ref={lastOrderElementRef}>
-                            <Li>
+                            <Li icon={item?.transferred}>
                                 <div className="flex items-center gap-x-3 flex-wrap">
                                     <div>
                                         Заказ: 
@@ -407,7 +407,7 @@ export default function CompletedOrders() {
                 } else {
                     return (
                         <div key={item?._id}>
-                            <Li>
+                            <Li icon={item?.transferred}>
                                 <div className="flex items-center gap-x-3 flex-wrap">
                                     <div>
                                         Заказ: 

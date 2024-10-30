@@ -413,7 +413,7 @@ export default function OrderList() {
                         if (orders.length === index + 1) {
                             return (
                                 <div key={item?._id} ref={lastOrderElementRef}>
-                                    <Li>
+                                    <Li icon={item?.transferred}>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div className={clsx("", {
                                                 "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
@@ -456,7 +456,7 @@ export default function OrderList() {
                         } else {
                             return (
                                 <div key={item._id}>
-                                    <Li>
+                                    <Li icon={item?.transferred}>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div className={clsx("", {
                                                 "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
