@@ -6,7 +6,7 @@ export default function Li(props) {
     return (
         <Div>
             <div className="flex items-center gap-x-3">
-                {icon ? <Pagada className="w-3 h-3 shrink-0" /> : <div className="h-px w-2 lg:w-3 bg-white" />}
+                {icon ? <Pagada className="w-[20px] h-[20px] shrink-0" /> : <div className="h-px w-2 lg:w-3 bg-white" />}
                 
                 {props.children}
             </div>
