@@ -311,10 +311,35 @@ export const getAdditionalRevenue = async (req, res) => {
         }
 
         const filter = {
-            status: { $in: ["delivered", "cancelled"] },
+            status: { $in: ["delivered"] },
             "date.d": { $gte: startDate, $lte: endDate },
-            transferredFranchise: user.fullName,
+            $or: [
+                {transferredFranchise: user.fullName},
+                {franchisee: user._id}
+            ]
         };
+
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
+
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+        const filterDH = {
+            createdAt: {$gte: sDate, $lte: eDate},
+            franchisee: user._id
+        }
+
+        const departmentHistoryStats = await DepartmentHistory.aggregate([
+            { $match: filterDH },
+            {
+                $group: {
+                    _id: null,
+                    totalTookAwayB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
+                    totalTookAwayB191: { $sum: { $cond: ["$type", 0, "$data.b191kol"] } },
+                    totalTookAwayB197: { $sum: { $cond: ["$type", 0, "$data.b197kol"] } }
+                }
+            }  
+        ])
 
         const stats = await Order.aggregate([
             { $match: filter },
@@ -327,23 +352,43 @@ export const getAdditionalRevenue = async (req, res) => {
                 }
             },
             { $unwind: "$clientData" }, 
+            { 
+                $addFields: { fakt: { $and: [ { $eq: ["$opForm", "fakt"] }, { $eq: ["$transferred", true] } ] } }
+            },
             {
                 $group: {
                     _id: null, // Группируем заказы по клиентам
-                    B19Revenue: { $sum: { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] } },
-                    B12Revenue: { $sum: { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 270] }] } },
-                    B19FaktRevenue: {
-                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] } }, 0] }
+                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b12"] } },
+                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b19"] } },
+                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", "$products.b12", 0] } },
+                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", "$products.b19", 0] } },
+                    haveTo: { 
+                        $sum: { 
+                            $cond: [
+                                "$transferred", 
+                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                0
+                            ] 
+                        } 
                     },
-                    B12FaktRevenue: {
-                        $sum: { $cond: [{ $eq: ["$opForm", "fakt"] }, { $sum: { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 270] }] } }, 0] }
-                    }
-                }
-            },
-            {
-                $project: {
-                    totalRevenue: { $add: ["$B19Revenue", "$B12Revenue"] },
-                    totalFaktRevenue: { $add: ["$B19FaktRevenue", "$B12FaktRevenue"] }
+                    fakt: {
+                        $sum: {
+                            $cond: [
+                                "$fakt",
+                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                0
+                            ]
+                        }
+                    },
+                    owe: { 
+                        $sum: { 
+                            $cond: [
+                                "$transferred", 
+                                { $add: [ {$multiply: [ "$products.b19", 400 ] }, {$multiply: [ "$products.b12", 270 ] } ] },
+                                { $add: [ {$multiply: [ "$products.b19", 250 ] }, {$multiply: [ "$products.b12", 170 ] } ] }
+                            ] 
+                        } 
+                    },
                 }
             },
         ]);
@@ -355,7 +400,7 @@ export const getAdditionalRevenue = async (req, res) => {
             });
         }
 
-        res.json({ success: true, stats: stats[0] || {} });
+        res.json({ success: true, stats: stats[0] || {}, bottles: departmentHistoryStats[0] || {} });
     } catch (error) {
         console.log(error);
         res.status(500).json({

@@ -14,6 +14,19 @@ export const addOrder = async (req, res) => {
             Number(products.b12) * Number(client.price12) +
             Number(products.b19) * Number(client.price19);
 
+        const filter = {
+            "address.actual": address.actual,
+            "date.d": date.d
+        }
+
+        const findOrder = await Order.find(filter)
+
+        if (findOrder.length !== 0) {
+            return res.json({
+                success: false,
+            });
+        }
+
         const order = new Order({
             franchisee: client.franchisee,
             client,
@@ -618,7 +631,17 @@ export const getCompletedOrders = async (req, res) => {
         }
 
         if (user.role === "superAdmin" && searchF !== "") {
-            filter.transferredFranchise = { $regex: searchF, $options: "i" }
+            const franchisee = await User.find({fullName: { $regex: searchF, $options: "i" }})
+            if (franchisee.length === 0) {
+                return res.json({
+                    orders: [],
+                    result: { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0 }
+                })
+            }
+            filter.$or = [
+                {franchisee: franchisee._id},
+                {transferredFranchise: { $regex: searchF, $options: "i" }}
+            ]
         }
 
         if (searchStatus && search) {

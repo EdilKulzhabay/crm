@@ -190,10 +190,16 @@ export default function AddOrder() {
             }
         )
             .then(({ data }) => {
-                setOpen(true);
-                setStatus("success");
-                setMessage("Заказ успешно добавлен");
-                clear();
+                if (data.success) {
+                    setOpen(true);
+                    setStatus("success");
+                    setMessage("Заказ успешно добавлен");
+                    clear();
+                } else {
+                    setOpen(true);
+                    setStatus("error");
+                    setMessage("Такой заказ уже существует");
+                }
             })
             .catch((e) => {
                 console.log(e);

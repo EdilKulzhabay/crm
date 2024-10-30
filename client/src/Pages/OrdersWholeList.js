@@ -318,12 +318,13 @@ export default function OrdersWholeList() {
                                 loadMoreOrders(1, dates, search, searchStatus, searchF, sa)
                             }}>Найти</MyButton>
                             <MyButton click={() => {
+                                const free = searchF === "empty" ? "" : "empty"
                                 setOrders([]);
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreOrders(1, dates, search, searchStatus, "empty", sa)
-                                setSearchF("empty")
+                                loadMoreOrders(1, dates, search, searchStatus, free, sa)
+                                setSearchF(free)
                             }}>Свободные</MyButton>
                             <MyButton click={() => {
                                 const saStatus = !sa
