@@ -144,6 +144,7 @@ export default function SuperAdmin() {
             <Div styles="hidden lg:flex">
                 <div className="flex items-center gap-x-3">
                     <LinkButton color="green" href="/addOrder">Добавить заказ</LinkButton>
+                    <LinkButton color="green" href="/addOrder2">Добавить завершенный заказ</LinkButton>
                     <LinkButton color="green" href="/addClinet">Добавить клиента</LinkButton>
                     <LinkButton color="green" href="/addPromoCode">
                         Создать промокод
