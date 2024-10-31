@@ -31,6 +31,8 @@ const codes = {};
 
 export const sendMail = async (req, res) => {
     const { mail } = req.body;
+    console.log("mail: ", mail);
+    
 
     const candidate = await Client.findOne({ mail });
 
@@ -53,10 +55,10 @@ export const sendMail = async (req, res) => {
 
     transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
-            //console.log(error);
+            console.log(error);
             res.status(500).send("Ошибка при отправке письма");
         } else {
-            //console.log("Email sent: " + info.response);
+            console.log("Email sent: " + info.response);
             res.status(200).send("Письмо успешно отправлено");
         }
     });
