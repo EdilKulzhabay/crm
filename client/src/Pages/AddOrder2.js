@@ -35,7 +35,7 @@ const adjustDateByDays = (dateStr, days) => {
     return `${year}-${month}-${day}`;
 };
 
-export default function AddOrder() {
+export default function AddOrder2() {
     const scrollPosition = useScrollPosition();
     const userData = useFetchUserData();
     const navigate = useNavigate();

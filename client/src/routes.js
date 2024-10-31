@@ -46,6 +46,7 @@ import SAAnalytics from "./Pages/SAAnalytics";
 import DepartmentInfo from "./Pages/DepartmentInfo";
 import DepartmentInfoFranchisee from "./Pages/DepartmentInfoFranchisee";
 import DepartamentGivingSingle from "./Pages/Department/DepartamentGivingSingle";
+import AddOrder2 from "./Pages/AddOrder2";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
     { path: "/addPromoCode", element: <AddPromoCode /> },
     { path: "/promoCodeList", element: <PromoCodeList /> },
     { path: "/addOrder", element: <AddOrder /> },
+    { path: "/addOrder2", element: <AddOrder2 /> },
     { path: "/addOrder/:id", element: <AddOrder /> },
     { path: "/orderList", element: <OrderList /> },
     { path: "/orderPage/:id", element: <OrderPage /> },

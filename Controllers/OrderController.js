@@ -7,8 +7,16 @@ import mongoose from "mongoose";
 
 export const addOrder = async (req, res) => {
     try {
-        const { client, address, products, courier, date, clientNotes, opForm, comment } =
+        const { franchisee, client, address, products, courier, date, clientNotes, opForm, comment } =
             req.body;
+
+        let transferred = false;
+        let transferredFranchise = "";
+
+        if (franchisee !== null) {
+            transferred = true;
+            transferredFranchise = franchisee.fullName
+        }
 
         const sum =
             Number(products.b12) * Number(client.price12) +
@@ -37,7 +45,9 @@ export const addOrder = async (req, res) => {
             sum,
             clientNotes: clientNotes || "",
             opForm,
-            comment: comment || ""
+            comment: comment || "",
+            transferred,
+            transferredFranchise
         });
 
         await order.save();
@@ -99,6 +109,75 @@ export const addOrder = async (req, res) => {
             }
         }
         
+
+        res.json({
+            success: true,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const addOrder2 = async (req, res) => {
+    try {
+        const { franchisee, client, address, products, courier, date, clientNotes, opForm, comment } =
+            req.body;
+
+        let transferred = false;
+        let transferredFranchise = "";
+
+        if (franchisee !== null) {
+            transferred = true;
+            transferredFranchise = franchisee.fullName
+        }
+
+        const sum =
+            Number(products.b12) * Number(client.price12) +
+            Number(products.b19) * Number(client.price19);
+
+        const filter = {
+            "address.actual": address.actual,
+            "date.d": date.d
+        }
+
+        const findOrder = await Order.find(filter)
+
+        if (findOrder.length !== 0) {
+            return res.json({
+                success: false,
+            });
+        }
+
+        const order = new Order({
+            franchisee: client.franchisee,
+            client,
+            address,
+            products,
+            date,
+            courier,
+            sum,
+            clientNotes: clientNotes || "",
+            opForm,
+            comment: comment || "",
+            transferred,
+            transferredFranchise,
+            status: "delivered"
+        });
+
+        await order.save();
+
+        if (courier) {
+            const cour = await Courier.findById(courier)
+
+            const courierOrder = {order: order._id, orderStatus: "inLine"}
+
+            cour.orders.push(courierOrder)
+
+            await cour.save()
+        }
 
         res.json({
             success: true,
