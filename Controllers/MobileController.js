@@ -88,18 +88,19 @@ export const sendMailRecovery = async (req, res) => {
 
         transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
-                //console.log(error);
                 return res.status(500).json({
                     message: "Ошибка при отправке письма",
                 })
             } else {
-                //console.log("Email sent: " + info.response);
                 return res.status(200).json({
                     message: "Письмо успешно отправлено",
                 })
             }
         });
     }
+
+    console.log("cadidate no found", candidate);
+    
 
     res.status(500).json({
         message: "Пользователя с такой почтой не сушествует",
