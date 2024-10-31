@@ -88,7 +88,7 @@ export const sendMailRecovery = async (req, res) => {
             text: confirmCode,
         };
 
-        transporter.sendMail(mailOptions, function (error, info) {
+        await transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
                 console.log(error);
                 return res.status(500).send("Ошибка при отправке письма");
