@@ -65,9 +65,14 @@ export const sendMail = async (req, res) => {
 };
 
 export const sendMailRecovery = async (req, res) => {
+    console.log("sendMailRecovery");
     const { mail } = req.body;
+    console.log("req.body", req.body);
 
     const candidate = await Client.findOne({ mail });
+
+    console.log("candidate", candidate);
+    
 
     if (candidate) {
         const confirmCode = generateCode();
@@ -84,15 +89,21 @@ export const sendMailRecovery = async (req, res) => {
         transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
                 //console.log(error);
-                return res.status(500).send("Ошибка при отправке письма");
+                return res.status(500).json({
+                    message: "Ошибка при отправке письма",
+                })
             } else {
                 //console.log("Email sent: " + info.response);
-                return res.status(200).send("Письмо успешно отправлено");
+                return res.status(200).json({
+                    message: "Письмо успешно отправлено",
+                })
             }
         });
     }
 
-    res.status(500).send("Пользователя с такой почтой не сушествует")
+    res.status(500).json({
+        message: "Пользователя с такой почтой не сушествует",
+    })
 };
 
 export const codeConfirm = async (req, res) => {
