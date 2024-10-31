@@ -91,10 +91,10 @@ export const sendMailRecovery = async (req, res) => {
         transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
                 console.log(error);
-                res.status(500).send("Ошибка при отправке письма");
+                return res.status(500).send("Ошибка при отправке письма");
             } else {
                 console.log("Email sent: " + info.response);
-                res.status(200).send("Письмо успешно отправлено");
+                return res.status(200).send("Письмо успешно отправлено");
             }
         });
         console.log("end transproter");
