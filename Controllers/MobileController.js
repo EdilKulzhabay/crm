@@ -31,7 +31,7 @@ const codes = {};
 
 export const sendMail = async (req, res) => {
     const { mail } = req.body;
-    console.log("mail: ", mail);
+    console.log("req.body: ", req.body);
     
 
     const candidate = await Client.findOne({ mail });
