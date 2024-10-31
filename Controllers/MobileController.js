@@ -69,44 +69,40 @@ export const sendMailRecovery = async (req, res) => {
     const { mail } = req.body;
     console.log("req.body", req.body);
 
+    // Проверка наличия кандидата
     const candidate = await Client.findOne({ mail });
-
     console.log("candidate", candidate);
-    
 
-    if (candidate) {
-        const confirmCode = generateCode();
-        console.log("in transporter");
-        
-
-        codes[mail] = confirmCode;
-
-        const mailOptions = {
-            from: "kzautonex@mail.ru",
-            to: mail,
-            subject: "Подтвердждение электронной почты",
-            text: confirmCode,
-        };
-
-        await transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-                return res.status(500).send("Ошибка при отправке письма");
-            } else {
-                console.log("Email sent: " + info.response);
-                return res.status(200).send("Письмо успешно отправлено");
-            }
+    if (!candidate) {
+        // Возвращаем ответ, если кандидат не найден
+        return res.status(404).json({
+            message: "Пользователь с такой почтой не существует",
         });
-        console.log("end transproter");
-        
     }
 
-    console.log("cadidate no found", candidate);
-    
+    // Генерация кода подтверждения
+    const confirmCode = generateCode();
+    console.log("in transporter");
 
-    res.status(500).json({
-        message: "Пользователя с такой почтой не сушествует",
-    })
+    // Сохранение кода подтверждения
+    codes[mail] = confirmCode;
+
+    const mailOptions = {
+        from: "kzautonex@mail.ru",
+        to: mail,
+        subject: "Подтверждение электронной почты",
+        text: confirmCode,
+    };
+
+    // Отправка письма
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Email sent: " + info.response);
+        return res.status(200).send("Письмо успешно отправлено");
+    } catch (error) {
+        console.log("Ошибка при отправке письма:", error);
+        return res.status(500).send("Ошибка при отправке письма");
+    }
 };
 
 export const codeConfirm = async (req, res) => {
