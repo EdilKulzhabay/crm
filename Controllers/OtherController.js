@@ -224,19 +224,25 @@ export const getMainPageInfoSA = async (req, res) => {
                     totalRevenue: { 
                         $sum: {
                             $cond: {
-                                if: { $and: [ { $eq: ["$transferred", true] }, { $eq: ["$status", "delivered"] } ] }, 
-                                then: { 
-                                    $add: [
-                                        { $multiply: [{ $ifNull: ["$products.b12", 0] }, 270] },
-                                        { $multiply: [{ $ifNull: ["$products.b19", 0] }, 400] }
-                                    ]
+                                if: { $eq: ["$status", "delivered"] },
+                                then: {
+                                    $cond: {
+                                        if: { $eq: ["$transferred", true] },
+                                        then: { 
+                                            $add: [
+                                                { $multiply: [{ $ifNull: ["$products.b12", 0] }, 270] },
+                                                { $multiply: [{ $ifNull: ["$products.b19", 0] }, 400] }
+                                            ]
+                                        },
+                                        else: { 
+                                            $add: [
+                                                { $multiply: [{ $ifNull: ["$products.b12", 0] }, 170] },
+                                                { $multiply: [{ $ifNull: ["$products.b19", 0] }, 250] }
+                                            ]
+                                        }
+                                    }
                                 },
-                                else: { 
-                                    $add: [
-                                        { $multiply: [{ $ifNull: ["$products.b12", 0] }, 170] },
-                                        { $multiply: [{ $ifNull: ["$products.b19", 0] }, 250] }
-                                    ]
-                                }
+                                else: 0
                             }
                         }
                     },
@@ -272,10 +278,6 @@ export const getMainPageInfoSA = async (req, res) => {
                 }
             }
         ]);
-
-        console.log("filter", filter);
-        console.log("stats", stats);
-        
 
         today.setHours(0, 0, 0, 0);
 
