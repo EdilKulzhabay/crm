@@ -65,13 +65,10 @@ export const sendMail = async (req, res) => {
 };
 
 export const sendMailRecovery = async (req, res) => {
-    console.log("sendMailRecovery");
     const { mail } = req.body;
-    console.log("req.body", req.body);
 
     // Проверка наличия кандидата
     const candidate = await Client.findOne({ mail });
-    console.log("candidate", candidate);
 
     if (!candidate) {
         // Возвращаем ответ, если кандидат не найден
@@ -82,7 +79,6 @@ export const sendMailRecovery = async (req, res) => {
 
     // Генерация кода подтверждения
     const confirmCode = generateCode();
-    console.log("in transporter");
 
     // Сохранение кода подтверждения
     codes[mail] = confirmCode;

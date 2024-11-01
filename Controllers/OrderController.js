@@ -24,7 +24,8 @@ export const addOrder = async (req, res) => {
 
         const filter = {
             "address.actual": address.actual,
-            "date.d": date.d
+            "date.d": date.d,
+            client: client
         }
 
         const findOrder = await Order.find(filter)
