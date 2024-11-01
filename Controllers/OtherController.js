@@ -273,6 +273,10 @@ export const getMainPageInfoSA = async (req, res) => {
             }
         ]);
 
+        console.log("filter", filter);
+        console.log("stats", stats);
+        
+
         today.setHours(0, 0, 0, 0);
 
         const bottles = await DepartmentHistory.aggregate([
