@@ -135,6 +135,7 @@ export default function AddOrder2() {
 
     const chooseClient = (chClient) => {
         setClient(chClient);
+        setOpForm(chClient?.opForm)
         setClientsModal(false);
     };
 
@@ -195,7 +196,7 @@ export default function AddOrder2() {
         }
         api.post(
             "/addOrder2",
-            { franchisee, client, address, products, courier, date, clientNotes: "", opForm: client.opForm, comment },
+            { franchisee, client, address, products, courier, date, clientNotes: "", opForm, comment },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -484,14 +485,64 @@ export default function AddOrder2() {
                 <Li>
                     <div>
                         Форма оплаты:{" "}
-                        {client?.opForm === "fakt" && "Нал_Карта_QR"}
-                        {client?.opForm === "credit" && "В долг"}
-                        {client?.opForm === "coupon" && "Талоны"}
-                        {client?.opForm === "postpay" && "Постоплата"}
-                        {client?.opForm === "mixed" && "Смешанная"}
+                        {opForm === "fakt" && "Нал_Карта_QR"}
+                        {opForm === "credit" && "В долг"}
+                        {opForm === "coupon" && "Талоны"}
+                        {opForm === "postpay" && "Постоплата"}
+                        {opForm === "mixed" && "Смешанная"}
 
                     </div>
                 </Li>
+                <div className="hidden lg:block">
+                    <Li>
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button> /
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> /
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> /
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> /
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button>
+                            ]
+                        </div>
+                    </Li>
+                </div>
+                <div className="lg:hidden">
+                    <Li>
+                        <div className="text-green-400">
+                            [
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="text-green-400">
+                            [
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> 
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="text-green-400">
+                            [
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="text-green-400">
+                            [
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="text-green-400">
+                            [
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button>
+                            ]
+                        </div>
+                    </Li>
+                </div>
                 <Li>Комментарии к заказу:</Li>
                 <Li2>
                     <textarea size={13} style={{ fontSize: '16px' }} value={comment} onChange={(e) => {setComment(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
