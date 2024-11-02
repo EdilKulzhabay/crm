@@ -243,6 +243,31 @@ export default function AddOrder() {
             <Div />
             <Div>Данные заказа:</Div>
             <>
+                <Li>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <div>Выберите клиента:</div>
+                        <MyButton
+                            click={() => {
+                                setClientsModal(true);
+                            }}
+                        >
+                            <span className={clsx("", {
+                                "text-green-400": client === null,
+                                "text-red": client !== null
+                            })}>
+                                Выбрать
+                            </span>
+                        </MyButton>
+                        {client && (
+                            <div className="flex items-center gap-x-3 flex-wrap">
+                                <div>|</div>{" "}
+                                <div>
+                                    {client.fullName} {client.phone}
+                                </div>{" "}
+                            </div>
+                        )}
+                    </div>
+                </Li>
                 {userData?.role === "superAdmin" && 
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
@@ -285,31 +310,6 @@ export default function AddOrder() {
                         {courier && (
                             <div className="flex items-center gap-x-3 flex-wrap">
                                 <div>|</div> <div>{courier.fullName}</div>{" "}
-                            </div>
-                        )}
-                    </div>
-                </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Выберите клиента:</div>
-                        <MyButton
-                            click={() => {
-                                setClientsModal(true);
-                            }}
-                        >
-                            <span className={clsx("", {
-                                "text-green-400": client === null,
-                                "text-red": client !== null
-                            })}>
-                                Выбрать
-                            </span>
-                        </MyButton>
-                        {client && (
-                            <div className="flex items-center gap-x-3 flex-wrap">
-                                <div>|</div>{" "}
-                                <div>
-                                    {client.fullName} {client.phone}
-                                </div>{" "}
                             </div>
                         )}
                     </div>
