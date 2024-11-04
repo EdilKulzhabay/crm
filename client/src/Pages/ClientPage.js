@@ -302,20 +302,13 @@ export default function ClientPage() {
                     return {
                         "Имя Клиента": item?.client?.fullName,
                         "Имя Пользователя": item?.client?.userName,
-                        Адрес: item.address.actual,
-                        Кол19: item.products.b19,
-                        Кол12: item.products.b12,
-                        Сумма: item.sum,
+                        Адрес: item?.address?.actual,
+                        "Кол18,9": item?.products?.b19 && item?.products?.b19 !== 0 ? item?.products?.b19 : "",
+                        "Кол12,5": item?.products?.b12 && item?.products?.b12 !== 0 ? item?.products?.b12 : "",
+                        Сумма: item?.sum,
                         Курьер: item?.courier?.fullName,
-                        Статус:
-                            item?.status === "awaitingOrder"
-                                ? "Ожидает заказ"
-                                : item?.status === "onTheWay"
-                                ? "В пути"
-                                : item?.status === "delivered"
-                                ? "Доставлен"
-                                : "Отменен",
-                        "Дата добавления": item.date.d,
+                        Статус: "Доставлен",
+                        "Дата доставки": item.date.d,
                     };
                 });
 
