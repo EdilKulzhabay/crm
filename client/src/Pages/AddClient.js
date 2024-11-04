@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Container from "../Components/Container";
@@ -34,15 +34,9 @@ export default function AddClient() {
         price12: "",
         opForm: ""
     });
-    const [addresses, setAddresses] = useState([
-        {
-            street: "",
-            link: "",
-            house: "",
-        },
-    ]);
+    const [addresses, setAddresses] = useState([]);
 
-    const confirmDelete = () => {
+    const confirmAddAddress = () => {
         setAddresses([
             ...addresses,
             { street: "", link: "", house: "" },
@@ -69,9 +63,9 @@ export default function AddClient() {
         setAddresses(newAddresses);
     };
 
-    const addressChangeHandlerHouse = (index, event) => {
+    const addressChangeHandlerHouse = (index, event, name) => {
         const newAddresses = [...addresses];
-        newAddresses[index].house = event.target.value;
+        newAddresses[index][name] = event.target.value;
         setAddresses(newAddresses);
     };
 
@@ -97,9 +91,17 @@ export default function AddClient() {
             return;
         }
 
+        const sendAddresses = addresses.map((item) => {
+            return {
+                street: item.street,
+                house: item.house,
+                link: item.exactLink
+            }
+        })
+
         api.post(
             "/addClient",
-            { ...form, addresses, franchisee: userData._id },
+            { ...form, addresses: sendAddresses, franchisee: userData._id },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -116,13 +118,7 @@ export default function AddClient() {
                     price19: "",
                     price12: "",
                 });
-                setAddresses([
-                    {
-                        street: "",
-                        link: "",
-                        house: "",
-                    },
-                ]);
+                setAddresses([]);
             }
         });
     };
@@ -135,7 +131,7 @@ export default function AddClient() {
         <div className="relative">
             {modal && <ConfirmDeleteModal
                 closeConfirmModal={closeConfirmModal}
-                confirmDelete={confirmDelete}
+                confirmDelete={confirmAddAddress}
                 scrollPosition={scrollPosition}
                 add={true}
             />}
@@ -307,11 +303,11 @@ export default function AddClient() {
                     <div>Адреса доставки:</div>
                 </Div>
                 <>
-                    {addresses.map((item, index) => {
+                    {addresses.length > 0 &&  addresses.map((item, index) => {
                         return (
                             <div key={index}>
                                 <Li>
-                                    <div>Адресс {index + 1}:</div>
+                                    <div>Адресс доставки {index + 1}:</div>
                                 </Li>
                                 <Li2>
                                     <div className="flex items-center gap-x-3 flex-wrap gap-y-2">
@@ -345,7 +341,25 @@ export default function AddClient() {
                                             change={(event) =>
                                                 addressChangeHandlerHouse(
                                                     index,
-                                                    event
+                                                    event,
+                                                    "house"
+                                                )
+                                            }
+                                            color="white"
+                                        />
+                                    </div>
+                                </Li2>
+                                <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Точная ссылка:</div>
+                                        <MyInput
+                                            name={`exactLink${index}`}
+                                            value={addresses[index].exactLink}
+                                            change={(event) =>
+                                                addressChangeHandlerHouse(
+                                                    index,
+                                                    event,
+                                                    "exactLink"
                                                 )
                                             }
                                             color="white"
@@ -358,10 +372,18 @@ export default function AddClient() {
                     <Div>
                         <MyButton
                             click={() => {
-                                setModal(true)
+                                console.log(addresses);
+                                
+                                if (addresses.length === 0) {
+                                    setAddresses([
+                                        { street: "", link: "", house: "", exactLink: "" },
+                                    ])
+                                } else {
+                                    setModal(true)
+                                }
                             }}
                         >
-                            Добавить еще один адрес
+                            {addresses.length === 0 ? "Добавить адрес" : "Добавить еще один адрес"}
                         </MyButton>
                     </Div>
                 </>

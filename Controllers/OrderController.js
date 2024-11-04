@@ -633,7 +633,7 @@ export const getClientOrdersForExcel = async (req, res) => {
 
         const orders = await Order.find(filter)
             .populate("courier", "fullName")
-            .populate("client", "userName")
+            .populate("client", "fullName userName")
             .sort({createdAt: 1});
 
         res.json({ orders });
