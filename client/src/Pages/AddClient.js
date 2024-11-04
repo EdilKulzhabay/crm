@@ -80,10 +80,12 @@ export default function AddClient() {
         const formComplete = Object.values(formWithoutMail).every(
             (value) => value.trim() !== ""
         );
+        const addressIncomplete = addresses.some((address) => !address.exactLink || address.exactLink.trim() === "");
 
         if (
             !formComplete ||
-            addresses[0].street === ""
+            addresses[0].street === "" || 
+            addressIncomplete
         ) {
             setOpen(true);
             setStatus("error");
