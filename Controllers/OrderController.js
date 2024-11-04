@@ -619,10 +619,19 @@ export const getOrdersForExcel = async (req, res) => {
 
 export const getClientOrdersForExcel = async (req, res) => {
     try {
-        const { clientId } = req.body;
+        const { clientId, startDate, endDate } = req.body;
 
-        // Выполняем запрос с фильтрацией, сортировкой, пропуском и лимитом
-        const orders = await Order.find({client: clientId})
+        const filter = {
+            client: clientId,
+            $expr: {
+                $and: [
+                    { $gte: [{ $toDate: "$date.d" }, new Date(startDate)] },
+                    { $lte: [{ $toDate: "$date.d" }, new Date(endDate)] }
+                ]
+            }
+        }
+
+        const orders = await Order.find(filter)
             .populate("courier", "fullName")
             .populate("client", "userName")
             .sort({createdAt: 1});
