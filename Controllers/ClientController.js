@@ -50,8 +50,7 @@ export const addClient = async (req, res) => {
                 orConditions.push({
                     addresses: {
                         $elemMatch: {
-                            street: address.street,
-                            house: address.house,
+                            link: address.link
                         },
                     },
                     franchisee: { $ne: franchisee },
@@ -59,10 +58,13 @@ export const addClient = async (req, res) => {
             });
         }
 
-        const existingClients = await Client.findOne({ $or: orConditions });
+        let existingClients = null
+        if (orConditions.length > 0) {
+            existingClients = await Client.findOne({ $or: orConditions });
+        }
 
         if (existingClients) {
-            let matchedField;
+            let matchedField = "";
             if (existingClients.mail === mail && mail !== "")
                 matchedField = "mail ";
             if (existingClients.fullName === fullName)
@@ -71,12 +73,11 @@ export const addClient = async (req, res) => {
                 matchedField += "userName ";
             if (existingClients.phone === phone) matchedField += "phone ";
             if (
+                existingClients.addresses &&
+                addresses &&
                 existingClients.addresses.some((addr) =>
                     addresses.some(
-                        (newAddr) =>
-                            addr.street === newAddr.street &&
-                            addr.house === newAddr.house &&
-                            addr.link === newAddr.link
+                        (newAddr) => addr.link === newAddr.link
                     )
                 )
             ) {
