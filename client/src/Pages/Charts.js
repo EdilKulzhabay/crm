@@ -68,6 +68,15 @@ export default function Charts() {
         totalAddtitionalB19Bottles: 0
     })
 
+    const [generalData, setGeneralData] = useState({
+        totalB12: 0,
+        totalB19: 0,
+        totalSum: 0,
+        totalRegularB12: 0,
+        totalRegularB19: 0,
+        totalRegularSum: 0,
+    })
+
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
@@ -152,20 +161,44 @@ export default function Charts() {
         })
     }
 
+    const getSAGeneralInfo = () => {
+        if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
+        api.post("/getSAGeneralInfo", { ...dates }, {
+            headers: {"Content-Type": "application/json"}
+        }).then(({data}) => {
+            setGeneralData({
+                totalB12: data.stats.totalB12,
+                totalB19: data.stats.totalB19,
+                totalSum: data.stats.totalSum,
+                totalRegulaB12: data.stats.totalRegulaB12,
+                totalRegulaB19: data.stats.totalRegulaB19,
+                totalRegulaSum: data.stats.totalRegulaSum,
+            })
+        })
+    }
+
     useEffect(() => {
         if (userData?._id) {
             getChartByOp()
             getAdditionalRevenue()
+            if (userData?.role === "superAdmin") {
+                getSAGeneralInfo()
+            }
         }
     }, [userData])
 
     const formatCurrency = (amount) => {
         if (amount === undefined || amount === null) {
-            return "0 тенге"; // Или любое другое значение по умолчанию
+            return "0"; // Или любое другое значение по умолчанию
         }
     
         // Преобразуем число в строку и форматируем его
-        return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
+        return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")}`;
     };
 
     const saldo = () => {
@@ -178,106 +211,121 @@ export default function Charts() {
         // }
         sum += saldoData?.haveTo - saldoData?.owe - saldoData?.fakt
         if (sum < 0) {
-            return (<p>Вы должны франчайзеру: <Info>{formatCurrency(-sum)}</Info></p>)
+            return (<p>Вы должны франчайзеру: <Info>{formatCurrency(-sum)} тенге</Info></p>)
         } else {
-            return (<p>Франчайзер должен вам: <Info>{formatCurrency(sum)}</Info></p>)
+            return (<p>Франчайзер должен вам: <Info>{formatCurrency(sum)} тенге</Info></p>)
         }
     }
 
     return <Container role={userData?.role}>
         {stats === null ? <Div>Загрузка данных...</Div> : (
+            <>
+                <Div>Графики по форме оплаты</Div>
+                <Div />
+                <Div>Фильтры:</Div>
                 <>
-                    <Div>Графики по форме оплаты</Div>
-                    <Div />
-                    <Div>Фильтры:</Div>
-                    <>
-                        <Li>
-                            <div className="flex items-center gap-x-3 flex-wrap">
-                                <div>Дата:</div>
-                                <div className="text-red">
-                                    [
-                                    <DataInput
-                                        color="red"
-                                        value={dates.startDate}
-                                        name="startDate"
-                                        change={handleDateChange}
-                                    />
-                                    ]
-                                </div>
-                                <div> - </div>
-                                <div className="text-red">
-                                    [
-                                    <DataInput
-                                        color="red"
-                                        value={dates.endDate}
-                                        name="endDate"
-                                        change={handleDateChange}
-                                    />
-                                    ]
-                                </div>
-                                <MyButton click={() => {
-                                    getChartByOp()
-                                    getAdditionalRevenue()
-                                }}>
-                                    <span className="text-green-400">
-                                        Применить
-                                    </span>
-                                </MyButton>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Дата:</div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    value={dates.startDate}
+                                    name="startDate"
+                                    change={handleDateChange}
+                                />
+                                ]
                             </div>
-                        </Li>
-                    </>
-                    <Div />
-                    <Div>---------------------</Div>
-                    {Object.keys(stats).map((key) => (
-                        <div key={key}>
-                            <Div >
-                                <div className="w-[110px] lg:w-[200px]">{key === "fakt" ? "Нал_Карта_QR" : key === "coupon" ? "Талоны" : key === "postpay" ? "Постоплата" : key === "credit" ? "В долг" : "Смешанная"}:</div>
-                                <Link to={`/clientsByOpForm/${key}`} className="flex items-center gap-x-2">
-                                    <div className="text-red">[</div>
-                                    <div className="w-[80px]">
-                                        <div className={`bg-red h-5`} style={{width: `${stats[key].percentage}%`}}></div>
-                                    </div>
-                                    <div className="text-red">]</div>
-                                </Link>
-                                <div>{stats[key].percentage}%</div>
-                            </Div>
-                            <div className="h-2" />
+                            <div> - </div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    value={dates.endDate}
+                                    name="endDate"
+                                    change={handleDateChange}
+                                />
+                                ]
+                            </div>
+                            <MyButton click={() => {
+                                getChartByOp()
+                                getAdditionalRevenue()
+                            }}>
+                                <span className="text-green-400">
+                                    Применить
+                                </span>
+                            </MyButton>
                         </div>
-                    ))}
-                    <Div>---------------------</Div>
-                    <Div />
-                    <Div>---------------------</Div>
+                    </Li>
+                </>
+                <Div />
+                <Div>---------------------</Div>
+                {Object.keys(stats).map((key) => (
+                    <div key={key}>
                         <Div >
-                            <div className="w-[100px] lg:w-[200px]">Соб. заказы:</div>
-                            <div className="flex items-center gap-x-2">
+                            <div className="w-[110px] lg:w-[200px]">{key === "fakt" ? "Нал_Карта_QR" : key === "coupon" ? "Талоны" : key === "postpay" ? "Постоплата" : key === "credit" ? "В долг" : "Смешанная"}:</div>
+                            <Link to={`/clientsByOpForm/${key}`} className="flex items-center gap-x-2">
                                 <div className="text-red">[</div>
                                 <div className="w-[80px]">
-                                    <div className={`bg-red h-5`} style={{width: `${((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(0)}%`}}></div>
+                                    <div className={`bg-red h-5`} style={{width: `${stats[key].percentage}%`}}></div>
                                 </div>
                                 <div className="text-red">]</div>
-                            </div>
-                            <div>{((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(0)}%</div>
+                            </Link>
+                            <div>{stats[key].percentage}%</div>
                         </Div>
-                        <Div >
-                            <div className="w-[100px] lg:w-[200px]">Доп. заказы:</div>
-                            <div className="flex items-center gap-x-2">
-                                <div className="text-red">[</div>
-                                <div className="w-[80px]">
-                                    <div className={`bg-red h-5`} style={{width: `${((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(0)}%`}}></div>
-                                </div>
-                                <div className="text-red">]</div>
+                        <div className="h-2" />
+                    </div>
+                ))}
+                <Div>---------------------</Div>
+                <Div />
+                <Div>---------------------</Div>
+                    <Div >
+                        <div className="w-[100px] lg:w-[200px]">Соб. заказы:</div>
+                        <div className="flex items-center gap-x-2">
+                            <div className="text-red">[</div>
+                            <div className="w-[80px]">
+                                <div className={`bg-red h-5`} style={{width: `${((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(0)}%`}}></div>
                             </div>
-                            <div>{((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(0)}%</div>
-                        </Div>
-                    <Div>---------------------</Div>
-                    <Div />
-                    <Div>---------------------</Div>
+                            <div className="text-red">]</div>
+                        </div>
+                        <div>{((totalOrders * 100) / (totalOrders + additionalTotal)).toFixed(0)}%</div>
+                    </Div>
+                    <Div >
+                        <div className="w-[100px] lg:w-[200px]">Доп. заказы:</div>
+                        <div className="flex items-center gap-x-2">
+                            <div className="text-red">[</div>
+                            <div className="w-[80px]">
+                                <div className={`bg-red h-5`} style={{width: `${((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(0)}%`}}></div>
+                            </div>
+                            <div className="text-red">]</div>
+                        </div>
+                        <div>{((additionalTotal * 100) / (totalOrders + additionalTotal)).toFixed(0)}%</div>
+                    </Div>
+                <Div>---------------------</Div>
+                <Div />
+                <Div>---------------------</Div>
+                    {userData?.role === "admin" ? 
                         <Div>
                             Сальдо: {saldo()}
                         </Div>
-                    <Div>---------------------</Div>
-                    <Div />
-                </>)
+                        :
+                        <>
+                            <Div>
+                                Gross: 18,9 л. <Info ml="ml-0">{formatCurrency(generalData?.totalB19)} бт.</Info>{" "}
+                                12,5 л. <Info ml="ml-0">{formatCurrency(generalData?.totalB12)} бт.</Info> {" "}
+                                <Info ml="ml-0">{formatCurrency(generalData?.totalSum)} тенге</Info>
+                            </Div>
+                            <Div>
+                                Net: 18,9 л. <Info ml="ml-0">{formatCurrency(generalData?.totalRegularB19)} бт.</Info>{" "}
+                                12,5 л. <Info ml="ml-0">{formatCurrency(generalData?.totalRegularB12)} бт.</Info> {" "}
+                                <Info ml="ml-0">{formatCurrency(generalData?.totalRegularSum)} тенге</Info>
+                            </Div>
+                        </>
+                    }
+                <Div>---------------------</Div>
+                <Div />
+            </>)
         }
         <MySnackBar
             open={open}

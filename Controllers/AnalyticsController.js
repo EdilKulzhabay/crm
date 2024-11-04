@@ -183,8 +183,14 @@ export const getChartByOp = async (req, res) => {
         const filterAdditional = {
             status: { $in: ["delivered", "cancelled"] },
             "date.d": { $gte: startDate, $lte: endDate },
-            transferredFranchise: user.fullName
+            
         };
+
+        if (user.role === "superAdmin") {
+            filterAdditional.transferred = false
+        } else {
+            filterAdditional.transferredFranchise = user.fullName
+        }
 
         const additionalTotal = await Order.countDocuments(filterAdditional)
 
@@ -400,9 +406,6 @@ export const getAdditionalRevenue = async (req, res) => {
             });
         }
 
-        console.log("stats", stats[0]);
-        
-
         res.json({ success: true, stats: stats[0] || {}, bottles: departmentHistoryStats[0] || {} });
     } catch (error) {
         console.log(error);
@@ -570,3 +573,58 @@ export const getFranchiseeAnalytics = async (req, res) => {
     }
 }
 
+export const getSAGeneralInfo = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.body;
+
+        // Фильтр по диапазону дат
+        const filter = {
+            status: "delivered",
+            "date.d": { $gte: startDate, $lte: endDate }
+        };
+
+        const stats = await Order.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalB12: { $sum: 
+                        { $ifNull: ["$products.b12", 0] },
+                    },
+                    totalB19: { $sum: 
+                        { $ifNull: ["$products.b19", 0] },
+                    },
+                    totalSum: { $sum: "$sum" },
+                    totalRegularB12: { $sum: {
+                        $cond: [
+                            "$transferred",
+                            { $ifNull: ["$products.b12", 0] },
+                            0
+                        ]
+                    } },
+                    totalRegularB19: { $sum: {
+                        $cond: [
+                            "$transferred",
+                            { $ifNull: ["$products.b19", 0] },
+                            0
+                        ]
+                    } },
+                    totalRegularSum: { $sum: {
+                        $cond: [
+                            "$transferred",
+                            "$sum",
+                            0
+                        ]
+                    } }
+                }
+            }
+        ])
+
+        res.json({ success: true, stats: stats[0] || {} })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

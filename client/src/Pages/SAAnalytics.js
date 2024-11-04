@@ -295,7 +295,7 @@ export default function SAAnalytics() {
                         </div>)
                     })}
                     <Div>
-                        <LinkButton href="/">Должники</LinkButton>
+                        <LinkButton href="/charts">Графики</LinkButton>
                     </Div>
                     <Div />
                 </>
