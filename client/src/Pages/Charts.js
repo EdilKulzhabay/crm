@@ -175,9 +175,9 @@ export default function Charts() {
                 totalB12: data.stats.totalB12,
                 totalB19: data.stats.totalB19,
                 totalSum: data.stats.totalSum,
-                totalRegulaB12: data.stats.totalRegulaB12,
-                totalRegulaB19: data.stats.totalRegulaB19,
-                totalRegulaSum: data.stats.totalRegulaSum,
+                totalRegularB12: data.stats.totalRegularB12,
+                totalRegularB19: data.stats.totalRegularB19,
+                totalRegularSum: data.stats.totalRegularSum,
             })
         })
     }
