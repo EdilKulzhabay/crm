@@ -623,12 +623,7 @@ export const getClientOrdersForExcel = async (req, res) => {
 
         const filter = {
             client: clientId,
-            $expr: {
-                $and: [
-                    { $gte: [{ $toDate: "$date.d" }, new Date(startDate)] },
-                    { $lte: [{ $toDate: "$date.d" }, new Date(endDate)] }
-                ]
-            }
+            "date.d": { $gte: startDate, $lte: endDate }
         }
 
         const orders = await Order.find(filter)
