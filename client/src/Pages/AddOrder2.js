@@ -378,7 +378,7 @@ export default function AddOrder2() {
                 <>
                     <Li2>
                         <div className="flex items-center gap-x-3 flex-wrap">
-                            <div>12,5-литровая бутыль:</div>
+                            <div>12,5 л.;({client?.price12} тг):</div>
                             <div>
                                 [{" "}
                                 <input
@@ -404,7 +404,7 @@ export default function AddOrder2() {
                     </Li2>
                     <Li2>
                         <div className="flex items-center gap-x-3 flex-wrap">
-                            <div>18,9-литровая бутыль:</div>
+                            <div>18,9 л.;({client?.price19} тг):</div>
                             <div>
                                 [{" "}
                                 <input

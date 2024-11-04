@@ -224,17 +224,12 @@ export default function ClientPage() {
             });
     };
 
-    const loadMoreOrders = useCallback(async (page, dates, isDate) => {
+    const loadMoreOrders = useCallback(async (page, dates) => {
         if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
             setOpen(true)
             setStatus("error")
             setMessage("Введите даты в формате ГГГГ-ММ-ДД")
             return
-        }
-        if (isDate) {
-            if (loading || !hasMore || Object.keys(client).length === 0) return;
-        } else {
-            setHasMore(true)
         }
         setLoading(true);
         api.post(
@@ -264,7 +259,7 @@ export default function ClientPage() {
 
     useEffect(() => {
         if (hasMore && Object.keys(client).length > 0) {
-            loadMoreOrders(1, dates, true);
+            loadMoreOrders(page, dates);
         }
     }, [client, hasMore]);
 
@@ -275,7 +270,7 @@ export default function ClientPage() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreOrders(1, dates, true);
+                    loadMoreOrders(page, dates);
                 }
             });
             if (node) observer.current.observe(node);
@@ -287,7 +282,8 @@ export default function ClientPage() {
         api.post(
             "/getClientOrdersForExcel",
             {
-                clientId: client._id
+                clientId: client._id,
+                ...dates
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -702,9 +698,11 @@ export default function ClientPage() {
                                 ]
                             </div>
                             <MyButton click={() => {
-                                console.log("click");
-                                
-                                loadMoreOrders(1, dates, false)
+                                setOrders([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)                                
+                                // loadMoreOrders(1, dates)
                             }}>
                                 <span className="text-green-400">
                                     Применить
