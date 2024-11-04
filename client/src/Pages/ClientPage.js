@@ -226,38 +226,43 @@ export default function ClientPage() {
 
     const loadMoreOrders = useCallback(async (page, dates) => {
         if (dates.startDate.length !== 10 || dates.endDate.length !== 10) {
-            setOpen(true)
-            setStatus("error")
-            setMessage("Введите даты в формате ГГГГ-ММ-ДД")
-            return
+            setOpen(true);
+            setStatus("error");
+            setMessage("Введите даты в формате ГГГГ-ММ-ДД");
+            return;
         }
         setLoading(true);
-        api.post(
-            "/getClientOrders",
-            {
-                page,
-                clientId: client?._id,
-                ...dates
-            },
-            {
-                headers: { "Content-Type": "application/json" },
-            }
-        )
-            .then(({ data }) => {
-                if (data.orders.length === 0) {
-                    setHasMore(false);
-                } else {
-                    setOrders((prevOrders) => [...prevOrders, ...data.orders]);
-                    setPage(page + 1);
+        try {
+            const { data } = await api.post(
+                "/getClientOrders",
+                {
+                    page,
+                    clientId: client?._id,
+                    ...dates
+                },
+                {
+                    headers: { "Content-Type": "application/json" },
                 }
-            })
-            .catch((e) => {
-                console.log(e);
-            });
+            );
+    
+            if (data.orders.length === 0) {
+                setHasMore(false);
+            } else {
+                setOrders((prevOrders) => {
+                    const existingOrderIds = new Set(prevOrders.map(order => order._id));
+                    const newOrders = data.orders.filter(order => !existingOrderIds.has(order._id));
+                    return [...prevOrders, ...newOrders];
+                });
+                setPage(page + 1);
+            }
+        } catch (e) {
+            console.log(e);
+        }
         setLoading(false);
     }, [page, loading, hasMore, client]);
 
     useEffect(() => {
+        console.log("useEffect triggered with hasMore:", hasMore);
         if (hasMore && Object.keys(client).length > 0) {
             loadMoreOrders(page, dates);
         }
@@ -702,7 +707,7 @@ export default function ClientPage() {
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)                                
-                                // loadMoreOrders(1, dates)
+                                loadMoreOrders(1, dates)
                             }}>
                                 <span className="text-green-400">
                                     Применить
