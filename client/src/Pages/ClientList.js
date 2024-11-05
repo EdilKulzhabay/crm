@@ -250,12 +250,14 @@ export default function ClientList() {
                         addresses += address;
                     });
                     return {
-                        "Имя Клиента": item.userName,
+                        "Имя Клиента": item.fullName,
+                        "Контактное лицо": item.userName,
                         Адрес: addresses,
                         Номер: item.phone,
                         Почта: item.mail,
                         Цена19: item.price19,
                         Цена12: item.price12,
+                        "Форма оплаты": item?.opForm === "fakt" ? "Нал_Карта_QR" : item?.opForm === "credit" ? "В долг" : item?.opForm === "coupon" ? "Талоны" : item?.opForm === "postpay" ? "Постоплата" : item?.opForm === "mixed" ? "Смешанная" : "",
                         "Статус клиента":
                             item.status === "active" ? "Раб." : "Не раб.",
                         "Дата добавления": item.createdAt.slice(0, 10),

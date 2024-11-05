@@ -73,6 +73,7 @@ export default function ClientPage() {
         street: "",
         link: "",
         house: "",
+        exactLink: ""
     });
 
     const handleDateChange = (e) => {
@@ -182,6 +183,15 @@ export default function ClientPage() {
     };
 
     const updateClientData = (field, value) => {
+        if (field === "addresses") {
+            const sendAddress = {
+                street: value.street,
+                house: value.house,
+                link: value.exactLink
+            }
+
+            value = [...client.addresses, sendAddress]
+        }
         api.post(
             "/updateClientData",
             { clientId: client._id, field, value },
@@ -522,15 +532,25 @@ export default function ClientPage() {
                             </Li>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
+                                    <div>Точная ссылка:</div>
+                                    <MyInput
+                                        value={newAdress.exactLink}
+                                        change={(event) =>
+                                            setNewAdress({ ...newAdress, ["exactLink"]: event.target.value })
+                                        }
+                                        color="white"
+                                    />
+                                </div>
+                            </Li>
+                            <Li>
+                                <div className="flex items-center gap-x-3 flex-wrap">
                                     <MyButton
                                         click={() => {
-                                            updateClientData("addresses", [
-                                                ...client.addresses,
-                                                newAdress,
-                                            ]);
+                                            updateClientData("addresses", newAdress);
                                             setNewAdress({
                                                 street: "",
-                                                house: ""
+                                                house: "",
+                                                exactLink: ""
                                             })
                                         }}
                                     >
@@ -543,7 +563,8 @@ export default function ClientPage() {
                                             setAddAdress(false);
                                             setNewAdress({
                                                 street: "",
-                                                house: ""
+                                                house: "",
+                                                exactLink: ""
                                             })
                                         }}
                                     >
