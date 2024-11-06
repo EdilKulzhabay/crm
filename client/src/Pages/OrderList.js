@@ -317,7 +317,7 @@ export default function OrderList() {
                                 setLoading(false)
                                 loadMoreOrders(1, dates, search, searchStatus, searchF, saStatus)
                                 setSa(saStatus)
-                            }}><span className={clsx("", {"text-yellow-300": sa})}>Pagoda</span></MyButton>
+                            }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
                         </div>
                     </Div>
                 </>
@@ -384,7 +384,7 @@ export default function OrderList() {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>{item?.client?.fullName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.link.includes("/search") ? <>{item?.address?.actual}</> : <>{item?.address?.link}</>}</a>
                                             
                                             <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
@@ -426,7 +426,7 @@ export default function OrderList() {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>{item?.client?.fullName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.link.includes("/search") ? <>{item?.address?.actual}</> : <>{item?.address?.link}</>}</a>
                                             
                                             <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
@@ -469,7 +469,7 @@ export default function OrderList() {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>{item?.client?.fullName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.link.includes("/search") ? <>{item?.address?.actual}</> : <>{item?.address?.link}</>}</a>
                                             <div>{(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <span>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo></span>}; {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <span>18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo></span>}</div>
                                             <div>{item?.comment && <span className="text-yellow-300">Есть комм.</span>}</div>
                                             <LinkButton

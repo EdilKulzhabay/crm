@@ -346,7 +346,7 @@ export default function AddOrder() {
                                         target="_blank" rel="noreferrer"
                                         className="text-blue-500 hover:text-blue-500"
                                     >
-                                        link%%{adress.street}
+                                        {adress?.link.includes("/search") ? <>link%%{adress?.street}</> : <>{adress?.link}</>}
                                     </a>
                                     <MyButton
                                         click={() => {

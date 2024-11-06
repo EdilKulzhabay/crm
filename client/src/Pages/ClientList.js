@@ -436,20 +436,22 @@ export default function ClientList() {
                 <Div>Список клиентов:</Div>
                 <div className="max-h-[180px] overflow-scroll">
                     {clients.map((client, index) => {
+                        let link = false
+                        if (client.addresses.length > 0) {
+                            client.addresses.forEach((address) => {
+                                if (address.link.includes("/search")) {
+                                    link = true
+                                }
+                            })
+                        }
                         if (clients.length === index + 1) {
                             return (
                                 <div key={client._id} ref={lastClientElementRef}>
-                                    <Li>
+                                    <Li link={link}>
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                             <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                             <div>|</div>
                                             <div>{client.phone}</div>
-                                            <div>|</div>
-                                            <div>
-                                                {client.status === "active"
-                                                    ? "Активен"
-                                                    : "Неактивен"}
-                                            </div>
                                             <LinkButton
                                                 color="green"
                                                 href={`/ClientPage/${client._id}`}
@@ -475,17 +477,11 @@ export default function ClientList() {
                         } else {
                             return (
                                 <div key={client._id}>
-                                    <Li>
+                                    <Li link={link}>
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                             <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                             <div>|</div>
                                             <div>{client.phone}</div>
-                                            <div>|</div>
-                                            <div>
-                                                {client.status === "active"
-                                                    ? "Активен"
-                                                    : "Неактивен"}
-                                            </div>
                                             <LinkButton
                                                 color="green"
                                                 href={`/ClientPage/${client._id}`}
