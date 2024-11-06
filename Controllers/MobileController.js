@@ -593,6 +593,9 @@ export const addOrderClientMobile = async (req, res) => {
             await order.save();
         }
 
+        client.bonus = client.bonus + 50
+        await client.save()
+
         res.json({
             success: true,
             message: "Заказ успешно создан"
