@@ -522,7 +522,7 @@ export const updateClientDataMobile = async (req, res) => {
 
 export const addBonus = async (req, res) => {
     try {
-        const { mail } = req.body;
+        const { mail, count } = req.body;
 
         const client = await Client.findOne({ mail });
         if (!client) {
@@ -531,7 +531,7 @@ export const addBonus = async (req, res) => {
                 .json({ success: false, message: "Client not found" });
         }
 
-        client.bonus = client.bonus + 100;
+        client.bonus = client.bonus + count;
         await client.save();
 
         res.json({ success: true, message: "Бонусы были добавлены" });
