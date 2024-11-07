@@ -48,18 +48,8 @@ const ClientSchema = new mongoose.Schema(
             ref: "User",
         },
         bonus: {
-            count: {
-                type: Number,
-                default: 0,
-            },
-            pressCount: {
-                type: Number,
-                default: 0,
-            },
-            currentAmount: {
-                type: Number,
-                default: 0,
-            },
+            type: Number,
+            default: 0,
         },
         cart: {
             b12: {
