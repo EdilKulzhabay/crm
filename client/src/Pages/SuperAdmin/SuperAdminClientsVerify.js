@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import api from "../../api"
-import Container from "../Components/Container";
+import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import Li from "../../Components/Li";
-import Li2 from "../../Components/Li2";
-import MyButton from "../../Components/MyButton";
-import MyInput from "../../Components/MyInput";
-import MySnackBar from "../../Components/MySnackBar";
 import useFetchUserData from "../../customHooks/useFetchUserData";
+import LinkButton from "../../Components/LinkButton";
 
 export default function SuperAdminClientsVerify() {
     const userData = useFetchUserData()
@@ -51,17 +48,6 @@ export default function SuperAdminClientsVerify() {
                             >
                                 Редактировать
                             </LinkButton>
-                            {userData?.role === "superAdmin" && 
-                                <MyButton
-                                    click={() => {
-                                        setDeleteObject(client._id)
-                                        setDeleteModal(true)
-                                        // deleteClient(client._id);
-                                    }}
-                                >
-                                    Удалить
-                                </MyButton>
-                            }
                             {userData?.role === "superAdmin" && <span>{client?.franchisee?.fullName}</span>}
                         </div>
                     </Li>
