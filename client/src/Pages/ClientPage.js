@@ -587,6 +587,15 @@ export default function ClientPage() {
                         </Li>
                     )}
                 </>
+                {userData?.role === "superAdmin" && <>
+                    <Div />
+                    <Div>
+                        Верифицирован: {client?.verify && client?.verify === true ? "Да" : "Нет"}
+                    </Div>
+                    <Div>
+                        <MyButton click={() => {updateClientData("verify", true)}}>Верифицировать</MyButton>
+                    </Div>
+                </>}
 
                 <Div />
                 <Div>Цены товаров:</Div>
