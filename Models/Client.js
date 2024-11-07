@@ -48,7 +48,7 @@ const ClientSchema = new mongoose.Schema(
             ref: "User",
         },
         bonus: {
-            bonus: {
+            count: {
                 type: Number,
                 default: 0,
             },
