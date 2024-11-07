@@ -68,6 +68,10 @@ export const addOrder = async (req, res) => {
                 fullName: client.fullName,
                 franchisee: { $ne: client.franchisee },
             },
+            {
+                userName: client.userName,
+                franchisee: { $ne: client.franchisee },
+            },
             { phone: client.phone, franchisee: { $ne: client.franchisee } },
             { mail: client.mail, franchisee: { $ne: client.franchisee } },
         ];
