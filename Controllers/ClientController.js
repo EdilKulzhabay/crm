@@ -311,26 +311,101 @@ export const deleteClientAdress = async (req, res) => {
 
 export const updateClientData = async (req, res) => {
     try {
-        const { clientId, field, value } = req.body;
-
-        const client = await Client.findById(clientId);
-        if (!client) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Client not found" });
-        }
-
-        client[field] = value;
-        await client.save();
-
-        res.json({ success: true, message: "Данные успешно изменены" });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
+      const { clientId, field, value } = req.body;
+  
+      // Находим текущего клиента
+      const client = await Client.findById(clientId);
+      if (!client) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Client not found" });
+      }
+  
+      // Обновляем поле клиента
+      client[field] = value;
+      await client.save();
+  
+      // Проверяем совпадения с другими клиентами
+      let orConditions = [];
+      if (field === "fullName" && value) {
+        orConditions.push({ fullName: value, franchisee: { $ne: client.franchisee } });
+      }
+      if (field === "userName" && value) {
+        orConditions.push({ userName: value, franchisee: { $ne: client.franchisee } });
+      }
+      if (field === "phone" && value) {
+        orConditions.push({ phone: value, franchisee: { $ne: client.franchisee } });
+      }
+      if (field === "mail" && value) {
+        orConditions.push({ mail: value, franchisee: { $ne: client.franchisee } });
+      }
+      if (field === "addresses" && value.length > 0) {
+        value.forEach((address) => {
+          orConditions.push({
+            addresses: {
+              $elemMatch: {
+                link: address.link,
+              },
+            },
+            franchisee: { $ne: client.franchisee },
+          });
         });
+      }
+  
+      let existingClients = null;
+      if (orConditions.length > 0) {
+        existingClients = await Client.findOne({
+          $or: orConditions,
+          _id: { $ne: clientId }, // исключаем текущего клиента из поиска
+        });
+      }
+  
+      // Если найдены совпадения, создаем уведомление
+      if (existingClients) {
+        let matchedField = "";
+        if (existingClients.mail === value && field === "mail")
+          matchedField = "mail ";
+        if (existingClients.fullName === value && field === "fullName")
+          matchedField += "fullName ";
+        if (existingClients.userName === value && field === "userName")
+          matchedField += "userName ";
+        if (existingClients.phone === value && field === "phone")
+          matchedField += "phone ";
+        if (
+          field === "addresses" &&
+          existingClients.addresses.some((addr) =>
+            value.some((newAddr) => addr.link === newAddr.link)
+          )
+        ) {
+          matchedField += "addresses ";
+        }
+  
+        const notDoc = new Notification({
+          first: existingClients.franchisee,
+          second: client.franchisee,
+          matchesType: "client",
+          matchedField,
+          firstObject: existingClients._id,
+          secondObject: client._id,
+        });
+  
+        await notDoc.save();
+  
+        const notification = {
+          message: "Есть совпадение клиентов",
+        };
+  
+        global.io.emit("clientMatch", notification);
+      }
+  
+      res.json({ success: true, message: "Данные успешно изменены" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({
+        message: "Что-то пошло не так",
+      });
     }
-};
+  };
 
 export const updateClientFranchisee = async (req, res) => {
     try {
