@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../api";
+import api from "../../api"
 import Container from "../Components/Container";
 import Div from "../../Components/Div";
 import Li from "../../Components/Li";
