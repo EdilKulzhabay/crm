@@ -32,6 +32,10 @@ const SAButtons = [
         title: "Аналитика",
     },
     {
+        href: "/superAdminClientsVerify",
+        title: "Модерация",
+    },
+    {
         href: "/superAdminSettings",
         title: "Настройки",
     },

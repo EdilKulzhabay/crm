@@ -81,6 +81,10 @@ const ClientSchema = new mongoose.Schema(
         type: {
             type: Boolean,
             default: true
+        },
+        verify: {
+            type: Boolean,
+            default: true
         }
     },
     {

@@ -47,6 +47,7 @@ import DepartmentInfo from "./Pages/DepartmentInfo";
 import DepartmentInfoFranchisee from "./Pages/DepartmentInfoFranchisee";
 import DepartamentGivingSingle from "./Pages/Department/DepartamentGivingSingle";
 import AddOrder2 from "./Pages/AddOrder2";
+import SuperAdminClientsVerify from "./Pages/SuperAdmin/SuperAdminClientsVerify";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
     { path: "/departmentInfo", element: <DepartmentInfo /> },
     { path: "/departmentInfoFranchisee/:id", element: <DepartmentInfoFranchisee /> },
     { path: "/sAAnalytics", element: <SAAnalytics /> },
+    { path: "/superAdminClientsVerify", element: <SuperAdminClientsVerify /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
