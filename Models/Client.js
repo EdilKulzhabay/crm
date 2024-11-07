@@ -85,6 +85,10 @@ const ClientSchema = new mongoose.Schema(
         verify: {
             type: Boolean,
             default: true
+        },
+        haveCompletedOrder: {
+            type: Boolean,
+            default: false
         }
     },
     {
