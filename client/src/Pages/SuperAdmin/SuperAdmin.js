@@ -114,6 +114,12 @@ export default function SuperAdmin() {
                         <LinkButton href="/subsciption">Перейти</LinkButton>
                     </div>
                 </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
+                        <div>Модерация:</div>
+                        <LinkButton href="/superAdminClientsVerify">Перейти</LinkButton>
+                    </div>
+                </Li>
             </>
             <Div />
             <Div>
@@ -139,11 +145,6 @@ export default function SuperAdmin() {
                             Добавить курьера
                         </LinkButton>
                     </Li>
-                    <Li>
-                        <LinkButton color="green" href="/superAdminClientsVerify">
-                            Модерация
-                        </LinkButton>
-                    </Li>
                 </>
             </div>
             <Div styles="hidden lg:flex">
@@ -155,7 +156,6 @@ export default function SuperAdmin() {
                         Создать промокод
                     </LinkButton>
                     <LinkButton color="green" href="/addCourier">Добавить курьера</LinkButton>
-                    <LinkButton color="green" href="/superAdminClientsVerify">Модерация</LinkButton>
                 </div>
             </Div>
             <Div />

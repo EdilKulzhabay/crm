@@ -485,7 +485,7 @@ export const getNotVerifyClients = async (req, res) => {
         const clients = await Client.find({
             createdAt: { $gte: '2024-11-07T00:00:40.208Z' },
             verify: false
-        })
+        }).populate("franchisee", "fullName")
 
         res.json({ clients })
     } catch (error) {
