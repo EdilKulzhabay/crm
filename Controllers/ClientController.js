@@ -25,7 +25,8 @@ export const addClient = async (req, res) => {
             price19,
             price12,
             franchisee,
-            opForm
+            opForm,
+            verify: false
         });
 
         await client.save();
@@ -478,3 +479,21 @@ export const getClientsForExcel = async (req, res) => {
         });
     }
 };
+
+export const getNotVerifyClients = async (req, res) => {
+    try {
+        const startDate = new Date("2024-11-07")
+
+        const clients = await Client.find({
+            createdAt: { $gte: startDate },
+            verify: false
+        })
+
+        res.json({ clients })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
