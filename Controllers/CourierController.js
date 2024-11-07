@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../Models/User.js";
 import Order from "../Models/Order.js"
+import Client from "../Models/Client.js";
 
 export const addCourier = async (req, res) => {
     try {
@@ -428,9 +429,6 @@ export const updateCourierOrderStatus = async (req, res) => {
 
         order.status = newStatus
         const clientId = order.client.toHexString()
-        console.log(clientId);
-        
-        console.log("orderStatusChanged");
         
         global.io.to(clientId).emit("orderStatusChanged", {
             orderId: trueOrder,
@@ -444,6 +442,14 @@ export const updateCourierOrderStatus = async (req, res) => {
         }
 
         await order.save()
+
+        const clientId2 = order.client
+
+        const client = await Client.findById(clientId2)
+
+        client.haveCompletedOrder = true
+
+        await client.save()
 
         if (!updatedCourier) {
             return res.status(404).json({ message: "Курьер или заказ не найдены" });
