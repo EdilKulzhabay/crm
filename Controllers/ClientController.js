@@ -482,10 +482,8 @@ export const getClientsForExcel = async (req, res) => {
 
 export const getNotVerifyClients = async (req, res) => {
     try {
-        const startDate = new Date("2024-11-07")
-
         const clients = await Client.find({
-            createdAt: { $gte: ISODate('2024-11-07T00:00:40.208Z') },
+            createdAt: { $gte: '2024-11-07T00:00:40.208Z' },
             verify: false
         })
 
