@@ -69,6 +69,13 @@ export default function AddClient() {
         setAddresses(newAddresses);
     };
 
+    const addressChangeHandlerLink = (index, event, name) => {
+        const newAddresses = [...addresses];
+        const urlMatch = event.target.value.match(/https?:\/\/\S+/);
+        newAddresses[index][name] = urlMatch ? urlMatch[0] : event.target.value;
+        setAddresses(newAddresses);
+    };
+
     const generate2GISLink = (address) => {
         const encodedAddress = encodeURIComponent(address);
         return `https://2gis.kz/almaty/search/${encodedAddress}`;
@@ -358,7 +365,7 @@ export default function AddClient() {
                                             name={`exactLink${index}`}
                                             value={addresses[index].exactLink}
                                             change={(event) =>
-                                                addressChangeHandlerHouse(
+                                                addressChangeHandlerLink(
                                                     index,
                                                     event,
                                                     "exactLink"
