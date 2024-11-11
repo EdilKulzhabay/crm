@@ -385,7 +385,7 @@ export default function OrdersWholeList() {
                         if (orders.length === index + 1) {
                             return (
                                 <div key={item?._id} ref={lastOrderElementRef}>
-                                    <Li icon={item?.transferred}>
+                                    <Li icon={item?.franchisee === "66f15c557a27c92d447a16a0"}>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div className={clsx("", {
                                                 "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
@@ -436,7 +436,7 @@ export default function OrdersWholeList() {
                         } else {
                             return (
                                 <div key={item._id}>
-                                    <Li icon={item?.transferred}>
+                                    <Li icon={item?.franchisee === "66f15c557a27c92d447a16a0"}>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div className={clsx("", {
                                                 "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
@@ -449,7 +449,7 @@ export default function OrdersWholeList() {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>{item?.client?.fullName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.link.includes("/search") ? <>{item?.address?.actual}</> : <>{item?.address?.link}</>}</a>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div>
                                                 {(item?.products?.b12 !== 0 && item?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.products?.b12}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price12}тг)</span>};</>}
                                                 {(item?.products?.b19 !== 0 && item?.products?.b19 !== null) && <>{" "}18.9л: <OrderInfo>{item?.products?.b19}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.client?.price19}тг)</span>};</>}
