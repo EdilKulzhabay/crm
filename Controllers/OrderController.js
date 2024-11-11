@@ -63,34 +63,17 @@ export const addOrder = async (req, res) => {
             await cour.save()
         }
 
-        let orConditions = [
-            {
-                fullName: client.fullName,
-                franchisee: { $ne: client.franchisee },
-            },
-            {
-                userName: client.userName,
-                franchisee: { $ne: client.franchisee },
-            },
-            { phone: client.phone, franchisee: { $ne: client.franchisee } },
-            { mail: client.mail, franchisee: { $ne: client.franchisee } },
-        ];
+        let orConditions = []
+        if (client.phone) {
+            orConditions.push({ phone: client.phone, franchisee: { $ne: client.franchisee } })
+        }
         
         const existingOrders = await Order.findOne({ $or: orConditions });
         
         if (existingOrders) {
             let matchedField;
-        
-            // Проверка на наличие почты и совпадение
-            if (existingOrders.mail && existingOrders.mail === mail) {
-                matchedField = "mail";
-            }
-            // Проверка на совпадение имени
-            else if (existingOrders.fullName && existingOrders.fullName === fullName) {
-                matchedField = "fullName";
-            }
             // Проверка на совпадение телефона
-            else if (existingOrders.phone && existingOrders.phone === phone) {
+            if (existingOrders.phone && existingOrders.phone === phone) {
                 matchedField = "phone";
             }
         
@@ -109,11 +92,9 @@ export const addOrder = async (req, res) => {
                 const notification = {
                     message: "Есть совпадение заказов",
                 };
-        
                 global.io.emit("orderMatch", notification);
             }
         }
-        
 
         res.json({
             success: true,
@@ -425,6 +406,7 @@ export const updateOrder = async (req, res) => {
                 status: changeData,
                 message: `Статус заказа #${order._id} был изменен на ${changeData}`,
             });
+
         } 
 
         if (change === "courier") {
@@ -872,3 +854,18 @@ export const deleteOrder = async (req, res) => {
         });
     }
 }
+
+// magick TP1.PNG -resize 2064x2752! P1.PNG
+// magick TP2.PNG -resize 2064x2752! P2.PNG
+// magick TP3.PNG -resize 2064x2752! P3.PNG
+// magick TP4.PNG -resize 2064x2752! P4.PNG
+// magick TP5.PNG -resize 2064x2752! P5.PNG
+// magick TP6.PNG -resize 2064x2752! P6.PNG
+// magick TP7.PNG -resize 2064x2752! P7.PNG
+// magick TP8.PNG -resize 2064x2752! P8.PNG
+// magick TP9.PNG -resize 2064x2752! P9.PNG
+// magick TP10.PNG -resize 2064x2752! P10.PNG
+
+// ffmpeg -i p1.MOV -vf "crop=1200:1600" P11.MOV
+// ffmpeg -i p2.MP4 -vf "crop=1200:1600" P22.MP4
+// ffmpeg -i p3.MP4 -vf "crop=1200:1600" P33.MP4
