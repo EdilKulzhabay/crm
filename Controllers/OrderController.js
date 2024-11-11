@@ -866,6 +866,7 @@ export const deleteOrder = async (req, res) => {
 // magick TP9.PNG -resize 2064x2752! P9.PNG
 // magick TP10.PNG -resize 2064x2752! P10.PNG
 
-// ffmpeg -i p1.MOV -vf "crop=1200:1600" P11.MOV
-// ffmpeg -i p2.MP4 -vf "crop=1200:1600" P22.MP4
-// ffmpeg -i p3.MP4 -vf "crop=1200:1600" P33.MP4
+// ffmpeg -i 3.mp4 -vf "crop=886:1920" T3.mp4
+// ffmpeg -i t2.MOV -vf "crop=886:1920" T2.MOV
+// ffmpeg -i t3.MOV -vf "crop=886:1920" T3.MOV
+// ffmpeg -i IMG_5057.MOV -vf "scale=886:1920" scaled_T2.MOV
