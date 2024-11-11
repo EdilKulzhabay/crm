@@ -7,6 +7,7 @@ import api from "../../api"
 import useScrollPosition from "../../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
 import useFetchUserData from "../../customHooks/useFetchUserData";
+import LinkButton from "../../Components/LinkButton";
 
 export default function SuperAdminCoincidencePage() {
     const userData = useFetchUserData();
@@ -101,6 +102,9 @@ export default function SuperAdminCoincidencePage() {
                                 </div>
                             })} 
                         </Div>
+                        <Div>
+                            <LinkButton href={`/ClientPage/${notification?.firstObject?._id}}`}>Перейти</LinkButton>
+                        </Div>
                     </div>
                     <div className="lg:hidden"><Div /></div>
                     <div className="lg:w-[33%]">
@@ -124,6 +128,9 @@ export default function SuperAdminCoincidencePage() {
                                     Адрес {index + 1}: {item.street} {item.house}
                                 </div>
                             })} 
+                        </Div>
+                        <Div>
+                            <LinkButton href={`/ClientPage/${notification?.secondObject?._id}}`}>Перейти</LinkButton>
                         </Div>
                     </div>
                 </div>

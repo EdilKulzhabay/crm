@@ -33,17 +33,8 @@ export const addClient = async (req, res) => {
 
         let orConditions = [];
 
-        if (fullName) {
-            orConditions.push({ fullName: fullName, franchisee: { $ne: franchisee } });
-        }
-        if (userName) {
-            orConditions.push({ userName: userName, franchisee: { $ne: franchisee } });
-        }
         if (phone) {
             orConditions.push({ phone: phone, franchisee: { $ne: franchisee } });
-        }
-        if (mail) {
-            orConditions.push({ mail: mail, franchisee: { $ne: franchisee } });
         }
 
         if (addresses && addresses.length > 0) {
@@ -51,6 +42,7 @@ export const addClient = async (req, res) => {
                 orConditions.push({
                     addresses: {
                         $elemMatch: {
+                            street: address.street,
                             link: address.link
                         },
                     },
@@ -66,19 +58,13 @@ export const addClient = async (req, res) => {
 
         if (existingClients) {
             let matchedField = "";
-            if (existingClients.mail === mail && mail !== "")
-                matchedField = "mail ";
-            if (existingClients.fullName === fullName)
-                matchedField += "fullName ";
-            if (existingClients.userName === userName)
-                matchedField += "userName ";
             if (existingClients.phone === phone) matchedField += "phone ";
             if (
                 existingClients.addresses &&
                 addresses &&
                 existingClients.addresses.some((addr) =>
                     addresses.some(
-                        (newAddr) => addr.link === newAddr.link
+                        (newAddr) => addr.link === newAddr.link || addr.street === newAddr.street
                     )
                 )
             ) {
@@ -328,17 +314,8 @@ export const updateClientData = async (req, res) => {
   
       // Проверяем совпадения с другими клиентами
       let orConditions = [];
-      if (field === "fullName" && value) {
-        orConditions.push({ fullName: value, franchisee: { $ne: client.franchisee } });
-      }
-      if (field === "userName" && value) {
-        orConditions.push({ userName: value, franchisee: { $ne: client.franchisee } });
-      }
       if (field === "phone" && value) {
         orConditions.push({ phone: value, franchisee: { $ne: client.franchisee } });
-      }
-      if (field === "mail" && value) {
-        orConditions.push({ mail: value, franchisee: { $ne: client.franchisee } });
       }
       if (field === "addresses" && value.length > 0) {
         value.forEach((address) => {
@@ -364,12 +341,6 @@ export const updateClientData = async (req, res) => {
       // Если найдены совпадения, создаем уведомление
       if (existingClients) {
         let matchedField = "";
-        if (existingClients.mail === value && field === "mail")
-          matchedField = "mail ";
-        if (existingClients.fullName === value && field === "fullName")
-          matchedField += "fullName ";
-        if (existingClients.userName === value && field === "userName")
-          matchedField += "userName ";
         if (existingClients.phone === value && field === "phone")
           matchedField += "phone ";
         if (
