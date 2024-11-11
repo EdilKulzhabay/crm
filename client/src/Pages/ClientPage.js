@@ -751,7 +751,7 @@ export default function ClientPage() {
                                                 Заказ: 
                                             </div>
                                             <div>{item?.client?.fullName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.link.includes("/search") ? <>{item?.address?.actual}</> : <>{item?.address?.link}</>}</a>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                             <LinkButton
@@ -772,7 +772,7 @@ export default function ClientPage() {
                                                 Заказ: 
                                             </div>
                                             <div>{item?.client?.fullName}</div>
-                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.link.includes("/search") ? <>{item?.address?.actual}</> : <>{item?.address?.link}</>}</a>
+                                            <a target="_blank" rel="noreferrer" href={item?.address?.link} className="text-blue-500 hover:text-green-500">{item?.address?.actual}</a>
                                             <div>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
                                             <div>{item?.products?.b12 !== 0 && `12.5л: ${item?.products?.b12}`}; {item?.products?.b19 !== 0 && `18.9л: ${item?.products?.b19}`}</div>
                                             <LinkButton
