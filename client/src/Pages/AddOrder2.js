@@ -263,7 +263,7 @@ export default function AddOrder2() {
                             <div className="flex items-center gap-x-3 flex-wrap">
                                 <div>|</div>{" "}
                                 <div>
-                                    {client.fullName} {client.phone}
+                                    {client.fullName}
                                 </div>{" "}
                             </div>
                         )}
