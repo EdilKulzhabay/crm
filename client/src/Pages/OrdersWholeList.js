@@ -385,7 +385,7 @@ export default function OrdersWholeList() {
                         if (orders.length === index + 1) {
                             return (
                                 <div key={item?._id} ref={lastOrderElementRef}>
-                                    <Li icon={item?.franchisee?.id === "66f15c557a27c92d447a16a0"}>
+                                    <Li icon={item?.franchisee?._id === "66f15c557a27c92d447a16a0"}>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div className={clsx("", {
                                                 "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
@@ -436,7 +436,7 @@ export default function OrdersWholeList() {
                         } else {
                             return (
                                 <div key={item._id}>
-                                    <Li icon={item?.franchisee?.id === "66f15c557a27c92d447a16a0"}>
+                                    <Li icon={item?.franchisee?._id === "66f15c557a27c92d447a16a0"}>
                                         <div className="flex items-center gap-x-3 flex-wrap">
                                             <div className={clsx("", {
                                                 "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
