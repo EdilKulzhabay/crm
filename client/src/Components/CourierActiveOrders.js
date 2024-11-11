@@ -227,7 +227,7 @@ export default function CourierActiveOrders() {
                                             })}>Заказ:</span> <span className="text-green-500">{index + 1}</span>
                                     </div>
                                     <div>{item?.order?.client?.fullName}</div>
-                                    <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.link.includes("/search") ? <>{item?.order?.address?.actual}</> : <>{item?.order?.address?.link}</>}</a>
+                                    <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                                     <div>{item?.order?.date?.d} {item?.order?.date?.time && item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                                     <div>
                                         {(item?.order?.products?.b12 !== 0 && item?.order?.products?.b12 !== null) && <>12.5л: <OrderInfo>{item?.order?.products?.b12}</OrderInfo> {(userData?.role === "admin" || userData?.role === "superAdmin") && <span>({item?.order?.client?.price12}тг)</span>};</>}
