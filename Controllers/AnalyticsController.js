@@ -472,19 +472,19 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         franchiseeId: "$franchisee",
                         transferred: "$transferred"
                     },
-                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b12"] } },
-                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, "$products.b19"] } },
-                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", "$products.b12", 0] } },
-                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", "$products.b19", 0] } },
-                    totalRgularSumB19: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] } ] } },
-                    totalRgularSumB12: { $sum: {$cond: ["$transferred", 0, { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] } ] } },
-                    totalAdditionalSumB19: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
-                    totalAdditionalSumB12: { $sum: {$cond: ["$transferred", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
+                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b12", 0] }] } },
+                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b19", 0] }] } },
+                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b12", 0] }, 0] } },
+                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b19", 0] }, 0] } },
+                    totalRgularSumB19: { $sum: {$cond: ["$transferred", 0, { $multiply: [{ $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] }] } ] } },
+                    totalRgularSumB12: { $sum: {$cond: ["$transferred", 0, { $multiply: [{ $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] }] } ] } },
+                    totalAdditionalSumB19: { $sum: {$cond: ["$transferred", { $multiply: [{ $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
+                    totalAdditionalSumB12: { $sum: {$cond: ["$transferred", { $multiply: [{ $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
                     haveTo: { 
                         $sum: { 
                             $cond: [
-                                "$transferred", 
-                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                "$transferred",
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] } ] } ] },
                                 0
                             ] 
                         } 
@@ -493,7 +493,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         $sum: {
                             $cond: [
                                 "$fakt",
-                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] } ] } ] },
                                 0
                             ]
                         }
@@ -502,8 +502,8 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         $sum: { 
                             $cond: [
                                 "$transferred", 
-                                { $add: [ {$multiply: [ "$products.b19", 400 ] }, {$multiply: [ "$products.b12", 270 ] } ] },
-                                { $add: [ {$multiply: [ "$products.b19", 250 ] }, {$multiply: [ "$products.b12", 170 ] } ] }
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 270 ] } ] },
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 250 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 170 ] } ] }
                             ] 
                         } 
                     }
