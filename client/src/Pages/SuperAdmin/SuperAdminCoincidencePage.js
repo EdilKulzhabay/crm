@@ -103,7 +103,7 @@ export default function SuperAdminCoincidencePage() {
                             })} 
                         </Div>
                         <Div>
-                            <LinkButton href={`/ClientPage/${notification?.firstObject?._id}}`}>Перейти</LinkButton>
+                            <LinkButton href={`/ClientPage/${notification?.firstObject?._id}`}>Перейти</LinkButton>
                         </Div>
                     </div>
                     <div className="lg:hidden"><Div /></div>
@@ -130,7 +130,7 @@ export default function SuperAdminCoincidencePage() {
                             })} 
                         </Div>
                         <Div>
-                            <LinkButton href={`/ClientPage/${notification?.secondObject?._id}}`}>Перейти</LinkButton>
+                            <LinkButton href={`/ClientPage/${notification?.secondObject?._id}`}>Перейти</LinkButton>
                         </Div>
                     </div>
                 </div>
