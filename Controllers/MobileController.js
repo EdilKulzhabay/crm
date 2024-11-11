@@ -120,7 +120,10 @@ export const codeConfirm = async (req, res) => {
 
 export const clientRegister = async (req, res) => {
     try {
-        const { phone, mail } = req.body;
+        const { phone, mail, type } = req.body;
+
+        console.log(req.body);
+        
 
         const candidate = await Client.findOne({ phone });
 
@@ -144,12 +147,11 @@ export const clientRegister = async (req, res) => {
             price12: 900,
             price19: 1300,
             dailyWater: 2,
-            opForm: "fakt"
+            opForm: "fakt",
+            type
         });
 
         const client = await doc.save();
-
-        console.log(client);
 
         const accessToken = jwt.sign(
             { client: client },
