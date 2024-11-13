@@ -593,6 +593,7 @@ export const getOrdersForExcel = async (req, res) => {
         const orders = await Order.find(filter)
             .populate("client", "userName fullName")
             .populate("courier", "fullName")
+            .populate("franchisee", "fullName")
 
         res.json({ orders });
     } catch (error) {
