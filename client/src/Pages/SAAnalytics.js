@@ -132,6 +132,17 @@ export default function SAAnalytics() {
         }
     }
 
+    const oweEqual = (stat) => {
+        let owe = stat.owe
+        if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 170
+        }
+        if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
+            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 250
+        }
+        return formatCurrency(owe)
+    }
+
     return (
         <Container role={userData?.role}>
             {stats === null ? <Div>Загрузка данных...</Div> : (
@@ -228,17 +239,9 @@ export default function SAAnalytics() {
                                 <Div>Кол отпущенных:</Div>
                                 <Li>
                                     12: <Info ml="ml-1">{item.tookAwayB12}</Info>
-                                    <p>*</p>
-                                    <Info ml="ml-1">170 ₸</Info>
-                                    <p>=</p>
-                                    <Info ml="ml-1">{formatCurrencyTG(item.tookAwayB12 * 170)}</Info>
                                 </Li>
                                 <Li>
                                     19: <Info ml="ml-1">{item.tookAwayB19}</Info>
-                                    <p>*</p>
-                                    <Info ml="ml-1">250 ₸</Info>
-                                    <p>=</p>
-                                    <Info ml="ml-1">{formatCurrencyTG(item.tookAwayB19 * 250)}</Info>
                                 </Li>
                                 <Div />
                                 <Div>Задолженность:</Div>
@@ -249,7 +252,7 @@ export default function SAAnalytics() {
                                     Fakt: <Info>{formatCurrency(item.fakt)}</Info>
                                 </Li>
                                 <Li>
-                                    Owe: <Info>{formatCurrency(item.owe)}</Info>
+                                    Owe: <Info>{oweEqual(item)}</Info>
                                 </Li>
                                 <Li>
                                     {saldo(item)}
