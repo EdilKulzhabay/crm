@@ -372,7 +372,7 @@ export const getAdditionalRevenue = async (req, res) => {
                         $sum: { 
                             $cond: [
                                 "$transferred", 
-                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] } ] } ] },
                                 0
                             ] 
                         } 
@@ -381,7 +381,7 @@ export const getAdditionalRevenue = async (req, res) => {
                         $sum: {
                             $cond: [
                                 "$fakt",
-                                { $add: [ {$multiply: [ "$products.b19", { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ "$products.b12", { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] } ] } ] },
                                 0
                             ]
                         }
@@ -390,7 +390,7 @@ export const getAdditionalRevenue = async (req, res) => {
                         $sum: { 
                             $cond: [
                                 "$transferred", 
-                                { $add: [ {$multiply: [ "$products.b19", 400 ] }, {$multiply: [ "$products.b12", 270 ] } ] },
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 270 ] } ] },
                                 0
                             ] 
                         } 
