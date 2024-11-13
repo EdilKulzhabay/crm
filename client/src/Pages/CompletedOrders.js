@@ -187,6 +187,7 @@ export default function CompletedOrders() {
                         Кол19: item?.products?.b19 || "",
                         Кол12: item?.products?.b12 || "",
                         Сумма: item?.sum,
+                        "Форма оплаты": item?.opForm,
                         Курьер: item?.courier?.fullName,
                         Франчайзи: item?.franchisee?.fullName,
                         Статус:
