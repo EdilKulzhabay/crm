@@ -484,7 +484,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         $sum: { 
                             $cond: [
                                 "$transferred",
-                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                { $ifNull: ["$sum", 0] },
                                 0
                             ] 
                         } 
@@ -493,7 +493,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         $sum: {
                             $cond: [
                                 "$fakt",
-                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] } ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] } ] } ] },
+                                { $ifNull: ["$sum", 0] },
                                 0
                             ]
                         }
@@ -503,7 +503,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                             $cond: [
                                 "$transferred", 
                                 { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 270 ] } ] },
-                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 250 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 170 ] } ] }
+                                0
                             ] 
                         } 
                     }
