@@ -391,7 +391,7 @@ export const getAdditionalRevenue = async (req, res) => {
                             $cond: [
                                 "$transferred", 
                                 { $add: [ {$multiply: [ "$products.b19", 400 ] }, {$multiply: [ "$products.b12", 270 ] } ] },
-                                { $add: [ {$multiply: [ "$products.b19", 250 ] }, {$multiply: [ "$products.b12", 170 ] } ] }
+                                0
                             ] 
                         } 
                     },
