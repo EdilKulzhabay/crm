@@ -117,13 +117,14 @@ export default function SAAnalytics() {
 
     const saldo = (stat) => {
         let sum = 0
-        // if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles + stat.totalRegularB12Bottles) {
-        //     sum += (stat.tookAwayB12 - (stat.totalAddtitionalB12Bottles + stat.totalRegularB12Bottles)) * 170
-        // }
-        // if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles + stat.totalRegularB19Bottles) {
-        //     sum += (stat.tookAwayB19 - (stat.totalAddtitionalB19Bottles + stat.totalRegularB19Bottles)) * 250
-        // }
-        sum += stat.haveTo - stat.owe - stat.fakt
+        let owe = stat.owe
+        if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 170
+        }
+        if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
+            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 250
+        }
+        sum += stat.haveTo - owe - stat.fakt
         if (sum < 0) {
             return (<p>Франчайзи должен вам: <Info>{formatCurrency(-sum)}</Info></p>)
         } else {
