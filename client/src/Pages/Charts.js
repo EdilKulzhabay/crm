@@ -203,13 +203,14 @@ export default function Charts() {
 
     const saldo = () => {
         let sum = 0
-        // if (saldoData?.tookAwayB12 > saldoData?.totalAddtitionalB12Bottles + saldoData?.totalRegularB12Bottles) {
-        //     sum += (saldoData?.tookAwayB12 - (saldoData?.totalAddtitionalB12Bottles + saldoData?.totalRegularB12Bottles)) * 170
-        // }
-        // if (saldoData?.tookAwayB19 > saldoData?.totalAddtitionalB19Bottles + saldoData?.totalRegularB19Bottles) {
-        //     sum += (saldoData?.tookAwayB19 - (saldoData?.totalAddtitionalB19Bottles + saldoData?.totalRegularB19Bottles)) * 250
-        // }
-        sum += saldoData?.haveTo - saldoData?.owe - saldoData?.fakt
+        let owe = saldoData?.owe
+        if (saldoData?.tookAwayB12 > saldoData?.totalAddtitionalB12Bottles) {
+            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 170
+        }
+        if (saldoData?.tookAwayB19 > saldoData?.totalAddtitionalB19Bottles) {
+            owe += (saldoData?.tookAwayB19 - saldoData?.totalAddtitionalB19Bottles) * 250
+        }
+        sum += saldoData?.haveTo - owe - saldoData?.fakt
         if (sum < 0) {
             return (<p>Вы должны франчайзеру: <Info>{formatCurrency(-sum)} тенге</Info></p>)
         } else {
