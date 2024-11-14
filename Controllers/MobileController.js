@@ -3,6 +3,11 @@ import Order from "../Models/Order.js"
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import Expo from "expo-server-sdk";
+
+let expo = new Expo({
+    useFcmV1: true,
+});
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -659,3 +664,45 @@ export const getClientHistoryMobile = async (req, res) => {
         });
     }
 }
+
+export const pushNotification = async (req, res) => {
+    try {
+      const { expoToken, status } = req.body;
+  
+      // Проверяем, является ли push-токен валидным Expo push-токеном
+      if (!Expo.isExpoPushToken(expoToken)) {
+        console.error(`Push token ${expoToken} is not a valid Expo push token`);
+        return res.json({
+          success: false,
+          message: "Invalid Expo push token",
+        });
+      }
+  
+      // Создаем уведомление
+      const message = {
+        to: expoToken,
+        sound: "default",
+        title: "Обновление статуса заказа",
+        body: `Статус вашего заказа: ${status}`,
+        data: { status },
+      };
+  
+      // Отправляем уведомление
+      const ticket = await expo.sendPushNotificationsAsync([message]);
+  
+      console.log("Push notification ticket:", ticket);
+  
+      // Возвращаем успех после успешной отправки уведомления
+      res.json({
+        success: true,
+        ticket,
+      });
+    } catch (error) {
+      console.error("Error sending push notification:", error);
+      res.status(500).json({
+        success: false,
+        message: "Что-то пошло не так",
+        error: error.message,
+      });
+    }
+  };
