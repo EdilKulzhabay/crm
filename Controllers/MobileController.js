@@ -682,6 +682,7 @@ export const pushNotification = async (req, res) => {
       // Создаем уведомление
       const message = {
         to: expoToken,
+        name: "Tibetskaya",
         sound: "default",
         title: "Обновление статуса заказа",
         body: `Статус вашего заказа: ${status}`,
