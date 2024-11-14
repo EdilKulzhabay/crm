@@ -427,14 +427,18 @@ export const updateCourierOrderStatus = async (req, res) => {
 
         const order = await Order.findOne({_id: trueOrder})
 
-        order.status = newStatus
-        const clientId = order.client.toHexString()
         
-        global.io.to(clientId).emit("orderStatusChanged", {
-            orderId: trueOrder,
-            status: newStatus,
-            message: `Статус заказа #${trueOrder} был изменен на ${newStatus}`,
-        });
+        const clientId = order.client.toHexString()
+        if (order.status !== newStatus) {
+            console.log("socket orderStatusChanged");
+            
+            global.io.to(clientId).emit("orderStatusChanged", {
+                orderId: trueOrder,
+                status: newStatus,
+                message: `Статус заказа #${trueOrder} был изменен на ${newStatus}`,
+            });
+        }   
+        order.status = newStatus
         if (newStatus === "delivered") {
             order.products = products
             order.opForm = opForm
