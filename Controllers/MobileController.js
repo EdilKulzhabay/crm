@@ -678,14 +678,17 @@ export const pushNotification = async (req, res) => {
           message: "Invalid Expo push token",
         });
       }
+
+      const messageTitle = status === "bonus" ? "Пора пить воду" : "Обновление статуса заказа"
+      const messageBody = status === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${status}`
   
       // Создаем уведомление
       const message = {
         to: expoToken,
         name: "Tibetskaya",
         sound: "default",
-        title: "Обновление статуса заказа",
-        body: `Статус вашего заказа: ${status}`,
+        title: messageTitle,
+        body: messageBody,
         data: { status },
       };
   
