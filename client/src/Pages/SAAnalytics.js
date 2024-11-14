@@ -238,10 +238,10 @@ export default function SAAnalytics() {
                                 <Div />
                                 <Div>Кол отпущенных:</Div>
                                 <Li>
-                                    19: <Info ml="ml-1">{item.tookAwayB19}</Info>
+                                    18,9 л: <Info ml="ml-1">{item.tookAwayB19}</Info>
                                 </Li>
                                 <Li>
-                                    12: <Info ml="ml-1">{item.tookAwayB12}</Info>
+                                    12,5 л: <Info ml="ml-1">{item.tookAwayB12}</Info>
                                 </Li>
                                 <Div />
                                 <Div>Задолженность:</Div>
