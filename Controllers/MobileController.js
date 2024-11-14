@@ -3,11 +3,9 @@ import Order from "../Models/Order.js"
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import Expo from "expo-server-sdk";
+import {Expo} from "expo-server-sdk";
 
-let expo = new Expo({
-    useFcmV1: true,
-});
+let expo = new Expo({ useFcmV1: true });
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
