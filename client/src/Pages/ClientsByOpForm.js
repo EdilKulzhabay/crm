@@ -125,7 +125,7 @@ export default function ClientsByOpForm() {
                     <Div>
                         <div className="w-[130px] lg:w-[250px]">Имя клиента</div>
                         <div>|</div>
-                        <div className="w-[50px]">Бутыли</div>
+                        <div className="w-[65px]">Бутыли</div>
                         <div>|</div>
                         <div>Сумма</div>
                     </Div>
@@ -134,7 +134,7 @@ export default function ClientsByOpForm() {
                         return <Div key={item.clientId}>
                             <div className="w-[130px] lg:w-[250px]"><LinkButton href={`/ClientPage/${item.clientId}`}>{item.clientFullName} {item.clientFullName === "" && item.clientUserName}</LinkButton></div>
                             <div>|</div>
-                            <div className="w-[50px]"><Info>{item.totalB12 + item.totalB19}</Info></div>
+                            <div className="w-[65px]"><Info>{item.totalB12 + item.totalB19}</Info></div>
                             <div>|</div>
                             <div><Info>{formatCurrency(item.totalSum)}</Info></div>
                         </Div>
