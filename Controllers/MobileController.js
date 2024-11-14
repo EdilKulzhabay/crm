@@ -666,6 +666,9 @@ export const getClientHistoryMobile = async (req, res) => {
 export const pushNotification = async (req, res) => {
     try {
       const { expoToken, status } = req.body;
+
+      console.log("req.body: ", req.body);
+      
   
       // Проверяем, является ли push-токен валидным Expo push-токеном
       if (!Expo.isExpoPushToken(expoToken)) {
