@@ -236,6 +236,7 @@ app.post("/addBonus", MobileController.addBonus);
 app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
+app.post("/pushNotification", MobileController.pushNotification)
 
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
