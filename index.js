@@ -90,6 +90,11 @@ io.on("connection", (socket) => {
         console.log("user ", userName, " joined room ");
     });
 
+    socket.on("leave", (userId) => {
+        console.log(`User ${userId} left.`);
+        socket.leave(userId); // Убираем клиента из комнаты
+    });
+
     // Пример приёма сообщения от клиента
     socket.on("sendMessage", (message) => {
         console.log(message);
