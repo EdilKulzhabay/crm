@@ -689,6 +689,7 @@ export const pushNotification = async (req, res) => {
         sound: "default",
         title: messageTitle,
         body: messageBody,
+        priority: "high",
         data: { status },
       };
   
@@ -710,4 +711,4 @@ export const pushNotification = async (req, res) => {
         error: error.message,
       });
     }
-  };
+};
