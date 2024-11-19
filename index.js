@@ -242,6 +242,7 @@ app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
 app.post("/pushNotification", MobileController.pushNotification)
+app.post("/expoTokenCheck", MobileController.expoTokenCheck)
 
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
