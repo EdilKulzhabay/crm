@@ -712,3 +712,20 @@ export const pushNotification = async (req, res) => {
       });
     }
 };
+export const expoTokenCheck = async (req, res) => {
+    try {
+      console.log("req.body: ", req.body);
+  
+      // Возвращаем успех после успешной отправки уведомления
+      res.json({
+        success: true,
+      });
+    } catch (error) {
+      console.error("Error sending push notification:", error);
+      res.status(500).json({
+        success: false,
+        message: "Что-то пошло не так",
+        error: error.message,
+      });
+    }
+};
