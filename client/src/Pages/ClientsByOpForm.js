@@ -12,25 +12,25 @@ import LinkButton from "../Components/LinkButton";
 
 export default function ClientsByOpForm() {
     const userData = useFetchUserData()
-    const { opForm } = useParams();
-    const getCurrentDate = () => {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+    const { opForm, startDate, endDate } = useParams();
+    // const getCurrentDate = () => {
+    //     const today = new Date();
+    //     const year = today.getFullYear();
+    //     const month = String(today.getMonth() + 1).padStart(2, '0');
+    //     const day = String(today.getDate()).padStart(2, '0');
+    //     return `${year}-${month}-${day}`;
+    // };
 
-    const getStartOfMonth = () => {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        return `${year}-${month}-01`;
-    };
+    // const getStartOfMonth = () => {
+    //     const today = new Date();
+    //     const year = today.getFullYear();
+    //     const month = String(today.getMonth() + 1).padStart(2, '0');
+    //     return `${year}-${month}-01`;
+    // };
 
     const [dates, setDates] = useState({
-        startDate: getStartOfMonth(), // Начало месяца
-        endDate: getCurrentDate()     // Сегодняшняя дата
+        startDate: startDate, // Начало месяца
+        endDate: endDate     // Сегодняшняя дата
     });
     const [stats, setStats] = useState(null)
     const [totalOrdersSum, setTotalOrdersSum] = useState(0)

@@ -266,7 +266,7 @@ export default function Charts() {
                     <div key={key}>
                         <Div >
                             <div className="w-[110px] lg:w-[200px]">{key === "fakt" ? "Нал_Карта_QR" : key === "coupon" ? "Талоны" : key === "postpay" ? "Постоплата" : key === "credit" ? "В долг" : "Смешанная"}:</div>
-                            <Link to={`/clientsByOpForm/${key}`} className="flex items-center gap-x-2">
+                            <Link to={`/clientsByOpForm/${key}/${dates.startDate}/${dates.endDate}`} className="flex items-center gap-x-2">
                                 <div className="text-red">[</div>
                                 <div className="w-[80px]">
                                     <div className={`bg-red h-5`} style={{width: `${stats[key].percentage}%`}}></div>

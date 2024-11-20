@@ -388,7 +388,7 @@ export default function OrderPage() {
 
                 <Div />
                 <Div>
-                    <div>Форма оплаты: {order?.opForm === "fakt" && "Нал_Карта_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "В долг"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "смешанно"}</div>
+                    <div>Форма оплаты: <span className="text-yellow-400">{order?.opForm === "fakt" && "Нал_Карта_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "В долг"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "Cмешанно"}</span></div>
                 </Div>
 
                 <Div />
