@@ -777,6 +777,7 @@ export const getCompletedOrders = async (req, res) => {
 
         const orders = await Order.find(filter)
             .populate("client")
+            .populate("franchisee")
             .limit(limit)
             .skip(skip)
 

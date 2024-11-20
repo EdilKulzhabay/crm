@@ -399,9 +399,9 @@ export default function CompletedOrders() {
                                         Просмотр
                                     </LinkButton>
                                     {userData?.role === "superAdmin" && <>
-                                        {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                        {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
-                                    <div>{item?.courier?.fullName}</div>
+                                    
                                 </div>
                             </Li>
                         </div>
@@ -427,9 +427,9 @@ export default function CompletedOrders() {
                                         Просмотр
                                     </LinkButton>
                                     {userData?.role === "superAdmin" && <>
-                                        {item?.transferred && <div>{item?.transferredFranchise}</div>}
+                                        {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
-                                    <div>{item?.courier?.fullName}</div>
+                                    
                                 </div>
                             </Li>
                         </div>
