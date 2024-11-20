@@ -73,7 +73,7 @@ export const router = createBrowserRouter([
     { path: "/courierOrderComment/:id", element: <CourierOrderComment /> },
     { path: "/analytics", element: <Analytics /> },
     { path: "/charts", element: <Charts /> },
-    { path: "/clientsByOpForm/:opForm", element: <ClientsByOpForm /> },
+    { path: "/clientsByOpForm/:opForm/:startDate/:endDate", element: <ClientsByOpForm /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },
