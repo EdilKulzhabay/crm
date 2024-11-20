@@ -689,8 +689,10 @@ export const pushNotification = async (req, res) => {
         sound: "default",
         title: messageTitle,
         body: messageBody,
-        // priority: "high",
+        priority: "high",
         data: { status },
+        _displayInForeground: true,
+        contentAvailable: true,
       };
   
       // Отправляем уведомление
