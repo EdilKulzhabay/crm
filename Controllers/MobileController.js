@@ -685,11 +685,11 @@ export const pushNotification = async (req, res) => {
       // Создаем уведомление
       const message = {
         to: expoToken,
-        name: "Tibetskaya",
+        // name: "Tibetskaya",
         sound: "default",
         title: messageTitle,
         body: messageBody,
-        priority: "high",
+        // priority: "high",
         data: { status },
       };
   
