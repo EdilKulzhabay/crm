@@ -713,6 +713,8 @@ export const pushNotification = async (req, res) => {
     }
 };
 export const expoTokenCheck = async (req, res) => {
+    console.log("expoTokenCheck proverks na log");
+    
     try {
       console.log("req.body: ", req.body);
   
