@@ -453,31 +453,29 @@ export const updateCourierOrderStatus = async (req, res) => {
         const clientId2 = order.client
 
         const client = await Client.findById(clientId2)
-        // const expoToken = client?.expoPushToken
+        const expoToken = client?.expoPushToken || ""
 
-        // if (Expo.isExpoPushToken(expoToken)) {
-        //     console.error(`Push token ${expoToken} is not a valid Expo push token`);
-        //     const messageTitle = newStatus === "bonus" ? "Пора пить воду" : "Обновление статуса заказа"
-        //     const messageBody = newStatus === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${newStatus}`
+        if (expoToken !== "" && Expo.isExpoPushToken(expoToken)) {
+            const messageTitle = "Обновление статуса заказа"
+            const messageBody = `Статус вашего заказа: ${newStatus}`
         
-        //     // Создаем уведомление
-        //     const message = {
-        //     to: expoToken,
-        //     // name: "Tibetskaya",
-        //     sound: "default",
-        //     title: messageTitle,
-        //     body: messageBody,
-        //     priority: "high",
-        //     data: { newStatus },
-        //     _displayInForeground: true,
-        //     contentAvailable: true,
-        //     };
+            // Создаем уведомление
+            const message = {
+            to: expoToken,
+            sound: "default",
+            title: messageTitle,
+            body: messageBody,
+            priority: "high",
+            data: { newStatus },
+            _displayInForeground: true,
+            contentAvailable: true,
+            };
             
-        //     // Отправляем уведомление
-        //     const ticket = await expo.sendPushNotificationsAsync([message]);
+            // Отправляем уведомление
+            const ticket = await expo.sendPushNotificationsAsync([message]);
         
-        //     console.log("Push notification ticket:", ticket);
-        // }
+            console.log("Push notification ticket:", ticket);
+        }
 
         client.haveCompletedOrder = true
 
