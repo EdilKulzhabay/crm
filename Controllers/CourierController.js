@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 import User from "../Models/User.js";
 import Order from "../Models/Order.js"
 import Client from "../Models/Client.js";
+import {Expo} from "expo-server-sdk";
+
+let expo = new Expo({ useFcmV1: true });
 
 export const addCourier = async (req, res) => {
     try {
@@ -450,6 +453,36 @@ export const updateCourierOrderStatus = async (req, res) => {
         const clientId2 = order.client
 
         const client = await Client.findById(clientId2)
+        const expoToken = client?.expoPushToken
+
+        if (!Expo.isExpoPushToken(expoToken)) {
+            console.error(`Push token ${expoToken} is not a valid Expo push token`);
+            return res.json({
+                success: false,
+                message: "Invalid Expo push token",
+            });
+        }
+
+        const messageTitle = newStatus === "bonus" ? "Пора пить воду" : "Обновление статуса заказа"
+        const messageBody = newStatus === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${status}`
+    
+        // Создаем уведомление
+        const message = {
+        to: expoToken,
+        // name: "Tibetskaya",
+        sound: "default",
+        title: messageTitle,
+        body: messageBody,
+        priority: "high",
+        data: { newStatus },
+        _displayInForeground: true,
+        contentAvailable: true,
+        };
+        
+        // Отправляем уведомление
+        const ticket = await expo.sendPushNotificationsAsync([message]);
+    
+        console.log("Push notification ticket:", ticket);
 
         client.haveCompletedOrder = true
 
