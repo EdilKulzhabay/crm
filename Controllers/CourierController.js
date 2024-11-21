@@ -464,7 +464,7 @@ export const updateCourierOrderStatus = async (req, res) => {
         }
 
         const messageTitle = newStatus === "bonus" ? "Пора пить воду" : "Обновление статуса заказа"
-        const messageBody = newStatus === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${status}`
+        const messageBody = newStatus === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${newStatus}`
     
         // Создаем уведомление
         const message = {
