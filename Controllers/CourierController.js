@@ -455,34 +455,29 @@ export const updateCourierOrderStatus = async (req, res) => {
         const client = await Client.findById(clientId2)
         const expoToken = client?.expoPushToken
 
-        if (!Expo.isExpoPushToken(expoToken)) {
+        if (Expo.isExpoPushToken(expoToken)) {
             console.error(`Push token ${expoToken} is not a valid Expo push token`);
-            return res.json({
-                success: false,
-                message: "Invalid Expo push token",
-            });
-        }
-
-        const messageTitle = newStatus === "bonus" ? "Пора пить воду" : "Обновление статуса заказа"
-        const messageBody = newStatus === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${newStatus}`
-    
-        // Создаем уведомление
-        const message = {
-        to: expoToken,
-        // name: "Tibetskaya",
-        sound: "default",
-        title: messageTitle,
-        body: messageBody,
-        priority: "high",
-        data: { newStatus },
-        _displayInForeground: true,
-        contentAvailable: true,
-        };
+            const messageTitle = newStatus === "bonus" ? "Пора пить воду" : "Обновление статуса заказа"
+            const messageBody = newStatus === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${newStatus}`
         
-        // Отправляем уведомление
-        const ticket = await expo.sendPushNotificationsAsync([message]);
-    
-        console.log("Push notification ticket:", ticket);
+            // Создаем уведомление
+            const message = {
+            to: expoToken,
+            // name: "Tibetskaya",
+            sound: "default",
+            title: messageTitle,
+            body: messageBody,
+            priority: "high",
+            data: { newStatus },
+            _displayInForeground: true,
+            contentAvailable: true,
+            };
+            
+            // Отправляем уведомление
+            const ticket = await expo.sendPushNotificationsAsync([message]);
+        
+            console.log("Push notification ticket:", ticket);
+        }
 
         client.haveCompletedOrder = true
 
