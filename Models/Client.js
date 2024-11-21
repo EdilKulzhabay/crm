@@ -89,6 +89,10 @@ const ClientSchema = new mongoose.Schema(
         haveCompletedOrder: {
             type: Boolean,
             default: false
+        },
+        expoPushToken: {
+            type: String,
+            default: ""
         }
     },
     {
