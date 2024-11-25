@@ -457,7 +457,8 @@ export const updateCourierOrderStatus = async (req, res) => {
 
         if (expoToken !== "" && Expo.isExpoPushToken(expoToken)) {
             const messageTitle = "Обновление статуса заказа"
-            const messageBody = `Статус вашего заказа: ${newStatus}`
+
+            const messageBody = `Статус вашего заказа: ${newStatus === "delivered" ? "Доставлен" : "В пути"}`
         
             // Создаем уведомление
             const message = {
