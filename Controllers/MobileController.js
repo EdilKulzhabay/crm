@@ -506,6 +506,11 @@ export const updateClientDataMobile = async (req, res) => {
     try {
         const { mail, field, value } = req.body;
 
+        console.log("mail: ", mail);
+        console.log("field: ", field);
+        console.log("value: ", value);
+        
+
         const client = await Client.findOne({ mail });
         if (!client) {
             return res
