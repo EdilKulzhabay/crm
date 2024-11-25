@@ -548,6 +548,7 @@ export const addBonus = async (req, res) => {
             client.expoPushToken = expoPushToken
         }
         await client.save();
+        const userId = client?._id
 
         const job = scheduleJob(new Date(Date.now() + 60 * 1000), async () => {
             try {
