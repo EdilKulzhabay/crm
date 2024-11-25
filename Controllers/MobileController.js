@@ -550,7 +550,7 @@ export const addBonus = async (req, res) => {
         await client.save();
         const userId = client?._id
 
-        const job = scheduleJob(new Date(Date.now() + 60 * 1000), async () => {
+        const job = scheduleJob(new Date(Date.now() + 60 * 60 * 1000), async () => {
             try {
                 const messages = [
                     {
