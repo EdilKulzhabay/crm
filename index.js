@@ -232,6 +232,7 @@ app.post(
 );
 app.post(
     "/updateClientDataMobile",
+    checkAuth,
     MobileController.updateClientDataMobile
 );
 app.post("/refreshToken", MobileController.refreshToken);
