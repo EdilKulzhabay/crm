@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {Expo} from "expo-server-sdk";
+import { scheduleJob } from "node-schedule";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -509,7 +510,6 @@ export const updateClientDataMobile = async (req, res) => {
         console.log("mail: ", mail);
         console.log("field: ", field);
         console.log("value: ", value);
-        
 
         const client = await Client.findOne({ mail });
         if (!client) {
@@ -549,7 +549,7 @@ export const addBonus = async (req, res) => {
         }
         await client.save();
 
-        const job = schedule.scheduleJob(new Date(Date.now() + 60 * 1000), async () => {
+        const job = scheduleJob(new Date(Date.now() + 60 * 1000), async () => {
             try {
                 const messages = [
                     {
