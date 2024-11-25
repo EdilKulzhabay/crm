@@ -462,14 +462,14 @@ export const updateCourierOrderStatus = async (req, res) => {
         
             // Создаем уведомление
             const message = {
-            to: expoToken,
-            sound: "default",
-            title: messageTitle,
-            body: messageBody,
-            priority: "high",
-            data: { newStatus },
-            _displayInForeground: true,
-            contentAvailable: true,
+                to: expoToken,
+                sound: "default",
+                title: messageTitle,
+                body: messageBody,
+                priority: "high",
+                data: { newStatus },
+                _displayInForeground: true,
+                contentAvailable: true,
             };
             
             // Отправляем уведомление

@@ -530,9 +530,11 @@ export const updateClientDataMobile = async (req, res) => {
     }
 };
 
+const userNotifications = {};
+
 export const addBonus = async (req, res) => {
     try {
-        const { mail, count } = req.body;
+        const { mail, count, expoPushToken } = req.body;
 
         const client = await Client.findOne({ mail });
         if (!client) {
@@ -542,7 +544,37 @@ export const addBonus = async (req, res) => {
         }
 
         client.bonus = client.bonus + count;
+        if (client.expoPushToken !== expoPushToken) {
+            client.expoPushToken = expoPushToken
+        }
         await client.save();
+
+        const job = schedule.scheduleJob(new Date(Date.now() + 60 * 1000), async () => {
+            try {
+                const messages = [
+                    {
+                        to: expoPushToken,
+                        sound: "default",
+                        title: "Пора пить воду",
+                        body: "Не забудьте выпить стакан воды!",
+                        priority: "high",
+                        data: { newStatus: "bonus" },
+                        _displayInForeground: true,
+                        contentAvailable: true,
+                    },
+                ];
+        
+                const ticketChunk = await expo.sendPushNotificationsAsync(messages);
+                console.log("Уведомление отправлено:", ticketChunk);
+        
+                // Удаляем задачу после выполнения
+                delete userNotifications[userId];
+            } catch (error) {
+                console.error("Ошибка при отправке уведомления:", error);
+            }
+        });        
+
+        userNotifications[userId] = job;
 
         res.json({ success: true, message: "Бонусы были добавлены" });
     } catch (error) {
