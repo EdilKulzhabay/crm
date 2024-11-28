@@ -172,7 +172,7 @@ export default function PickupInfo() {
         <>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div>Всего самовывозов: </div>
+                    <div className="w-[150px]">Всего самовывозов: </div>
                     <div>
                         <Info>{pickups?.length || 0} шт.</Info>
                     </div>
@@ -180,7 +180,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div>Отпущено бутылей: </div>
+                    <div className="w-[150px]">Отпущено бутылей: </div>
                     <div>
                         <Info>{info?.totalB12 + info?.totalB19 || 0} шт.</Info>
                     </div>
@@ -188,7 +188,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div>Кол 12,5: </div>
+                    <div className="w-[150px]">Кол 12,5: </div>
                     <div>
                         <Info>{info?.totalB12 || 0} шт.</Info>
                     </div>
@@ -196,7 +196,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div>Кол 18,9: </div>
+                    <div className="w-[150px]">Кол 18,9: </div>
                     <div>
                         <Info>{info?.totalB19 || 0} шт.</Info>
                     </div>
@@ -226,7 +226,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                <button 
+                    <button 
                         onClick={() => {
                             const newOpForm = opForm === "qr" ? "all" : "qr"
                             setOpForm(newOpForm)
@@ -248,7 +248,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div>Общая сумма: </div>
+                    <div className="w-[150px]">Cумма: </div>
                     <div>
                         <Info>{formatCurrency(info?.totalSum)}</Info>
                     </div>
