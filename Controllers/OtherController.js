@@ -7,7 +7,7 @@ import Pickup from "../Models/Pickup.js";
 
 export const addPickup = async (req, res) => {
     try {
-        const {price12, price19, kol12, kol19, opForm} = req.body
+        const {price12, price19, kol12, kol19, opForm, sum} = req.body
 
         const pickup = new Pickup({
             price12,
