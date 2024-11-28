@@ -329,13 +329,13 @@ export const deleteDepartmentHistory = async (req, res) => {
         
         const fran = await User.findById(franchisee)
         if (departmentHistory.type) {
-            fran.b121kol = fran.b121kol - data.b121kol
-            fran.b191kol = fran.b191kol - data.b191kol
-            fran.b197kol = fran.b197kol - data.b197kol
+            fran.b121kol = fran.b121kol - departmentHistory.data.b121kol
+            fran.b191kol = fran.b191kol - departmentHistory.data.b191kol
+            fran.b197kol = fran.b197kol - departmentHistory.data.b197kol
         } else {
-            fran.b121kol = fran.b121kol + data.b121kol
-            fran.b191kol = fran.b191kol + data.b191kol
-            fran.b197kol = fran.b197kol + data.b197kol
+            fran.b121kol = fran.b121kol + departmentHistory.data.b121kol
+            fran.b191kol = fran.b191kol + departmentHistory.data.b191kol
+            fran.b197kol = fran.b197kol + departmentHistory.data.b197kol
         }
 
         await fran.save()
