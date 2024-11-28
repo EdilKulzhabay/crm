@@ -13,6 +13,13 @@ export default function DepartmentMain() {
         <Div>
             <LinkButton color="green" href={`/${userData?.receiving ? "departamentReceiving" : "departamentGiving"}`}>{userData?.receiving ? "Принять" : "Отпустить"}</LinkButton>
         </Div>
+
+        <Div />
+        <Div />
+        {!userData?.receiving && 
+        <Div>
+            <LinkButton color="green" href="/addPickup">Самовывоз</LinkButton>
+        </Div>}
         <Div />
     </Container>
 }

@@ -28,6 +28,10 @@ export default function PickupInfo() {
         startDate: getCurrentDate(),
         endDate: getCurrentDate(),
     });
+    const [opForm, setOpForm] = useState("all")
+    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const closeSnack = () => {
         setOpen(false);
     };
@@ -89,6 +93,57 @@ export default function PickupInfo() {
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
 
+    // const loadMorePickups = useCallback(async (page, dates, opForm) => {
+    //     if (loading || !hasMore) return;
+
+    //     setLoading(true);
+        
+    //     api.post(
+    //         "/getPickupInfo",
+    //         {
+    //             page, ...dates, opForm
+    //         },
+    //         {
+    //             headers: { "Content-Type": "application/json" },
+    //         }
+    //     )
+    //         .then(({ data }) => {
+    //             setInfo(data.stats)
+    //             if (data.pickups.length === 0) {
+    //                 setHasMore(false);
+    //             } else {
+    //                 setPickups((prevPickups) => [...prevPickups, ...data.pickups]);
+    //                 setPage(page + 1);
+    //             }
+    //         })
+    //         .catch((e) => {
+    //             console.log(e);
+    //         });
+    //     setLoading(false);
+    // }, [page, loading, hasMore]);
+
+    // useEffect(() => {
+    //     if (hasMore) {
+    //         loadMorePickups(page, dates, opForm);
+    //     }
+    // }, [hasMore]);
+
+
+    // const observer = useRef();
+    // const lastPickupElementRef = useCallback(
+    //     (node) => {
+    //         if (loading) return;
+    //         if (observer.current) observer.current.disconnect();
+    //         observer.current = new IntersectionObserver((entries) => {
+    //             if (entries[0].isIntersecting && hasMore) {
+    //                 loadMorePickups(page, dates, opForm);
+    //             }
+    //         });
+    //         if (node) observer.current.observe(node);
+    //     },
+    //     [loading, hasMore, loadMorePickups]
+    // );
+
     return <Container role={userData?.role}>
         <Div>Самовывозы</Div>
         <Div />
@@ -135,10 +190,10 @@ export default function PickupInfo() {
                 const minutes = timeInGmtPlus5.format("mm");
                 return <Li key={item?._id}>
                     <div className="flex items-center gap-x-2">
-                        <div>{index}.</div>
-                        <div>Время: [{hours}:{minutes}]</div>
-                        <div>{item?.kol12 > 0 && <span>12,5 л.: {item?.kol12}</span>} {item?.kol19 > 0 && <span>18,9 л.: {item?.kol19}</span>}</div>
-                        <div>Сумма: {item?.sum} {item?.opForm === "nal" ? "Нал." : "QR"}</div>
+                        <div>{index + 1}.</div>
+                        <div>Время: {hours}:{minutes}</div>
+                        <div>{item?.kol12 > 0 && <span>12,5 л: <Info>{item?.kol12} шт.</Info></span>} {item?.kol19 > 0 && <span>18,9 л: <Info>{item?.kol19} шт.</Info></span>}</div>
+                        <div>Сумма: <Info>{formatCurrency(item?.sum)}</Info> {item?.opForm === "nal" ? "Нал." : "QR"}</div>
                     </div>
                 </Li>
             })}
@@ -163,7 +218,37 @@ export default function PickupInfo() {
         </Li>
         <Li>
             <div className="flex items-center gap-x-3">
-                <div>Оплата наличными: </div>
+                <div>Кол 12,5: </div>
+                <div>
+                    <Info>{info?.totalB12 || 0} шт.</Info>
+                </div>
+            </div>
+        </Li>
+        <Li>
+            <div className="flex items-center gap-x-3">
+                <div>Кол 18,9: </div>
+                <div>
+                    <Info>{info?.totalB19 || 0} шт.</Info>
+                </div>
+            </div>
+        </Li>
+        {/* <Li>
+            <div className="flex items-center gap-x-3">
+                <button 
+                    onClick={() => {
+                        const newOpForm = opForm === "nal" ? "all" : "nal"
+                        setOpForm(newOpForm)
+                        setPickups([]);
+                        setPage(1);
+                        setHasMore(true);
+                        setLoading(false)
+                        loadMorePickups(1, dates, newOpForm)
+                    }}
+                    className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
+                        "text-green-400": opForm !== "nall",
+                        "text-yellow-300": opForm === "nal"
+                    })}
+                >Наличными: </button>
                 <div>
                     <Info>{formatCurrency(info?.totalNalSum)}</Info>
                 </div>
@@ -171,12 +256,26 @@ export default function PickupInfo() {
         </Li>
         <Li>
             <div className="flex items-center gap-x-3">
-                <div>Оплата QR: </div>
+            <button 
+                    onClick={() => {
+                        const newOpForm = opForm === "qr" ? "all" : "qr"
+                        setOpForm(newOpForm)
+                        setPickups([]);
+                        setPage(1);
+                        setHasMore(true);
+                        setLoading(false)
+                        loadMorePickups(1, dates, newOpForm)
+                    }}
+                    className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
+                        "text-green-400": opForm !== "qr",
+                        "text-yellow-300": opForm === "qr"
+                    })}
+                >QR: </button>
                 <div>
                     <Info>{formatCurrency(info?.totalQrSum)}</Info>
                 </div>
             </div>
-        </Li>
+        </Li> */}
         <Li>
             <div className="flex items-center gap-x-3">
                 <div>Общая сумма: </div>
