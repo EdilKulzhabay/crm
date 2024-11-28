@@ -47,7 +47,7 @@ export const getPickupInfo = async (req, res) => {
             createdAt: {$gte: sDate, $lte: eDate}
         }
 
-        const pickups = await Pickup.find({filter})
+        const pickups = await Pickup.find(filter)
 
         const pickupStats = await Pickup.aggregate([
             { $match: filter },
