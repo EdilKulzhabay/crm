@@ -33,6 +33,12 @@ export default function AddPickup() {
     };
 
     const addPickup = () => {
+        if (data.sum === 0) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Заполните все поля")
+            return
+        }
         api.post("/addPickup", {...data}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
@@ -40,6 +46,7 @@ export default function AddPickup() {
                 setOpen(true)
                 setStatus("success")
                 setMessage("Самовывоз успешно добавлен")
+                clear()
             }
         }).catch((e) => {
             console.log(e);
