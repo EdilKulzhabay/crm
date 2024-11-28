@@ -35,7 +35,10 @@ export const addPickup = async (req, res) => {
 
 export const getPickupInfo = async (req, res) => {
     try {
-        const {startDate, endDate} = req.body
+        const {startDate, endDate, page, opForm} = req.body
+
+        const limit = 5;
+        const skip = (page - 1) * limit;
 
         const sDate = new Date(startDate);
         sDate.setHours(0, 0, 0, 0);
@@ -47,7 +50,12 @@ export const getPickupInfo = async (req, res) => {
             createdAt: {$gte: sDate, $lte: eDate}
         }
 
-        const pickups = await Pickup.find(filter)
+        if (opForm !== "all") {
+            filter.opForm = opForm
+        }
+
+        const pickups = await Pickup.find(filter).limit(limit)
+        .skip(skip)
 
         const pickupStats = await Pickup.aggregate([
             { $match: filter },
