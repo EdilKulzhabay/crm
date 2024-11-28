@@ -319,3 +319,21 @@ export const getDepartmentInfoFranchisee = async (req, res) => {
         });
     }
 }
+
+export const deleteDepartmentHistory = async (req, res) => {
+    try {
+        const {id} = req.body
+
+        await DepartmentHistory.deleteOne({_id: id})
+
+        res.json({
+            success: true,
+            message: "Удаление прошло успешно"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

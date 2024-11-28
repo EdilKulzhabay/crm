@@ -75,6 +75,18 @@ export default function DepartmentInfoFranchisee() {
         getDepartmentInfoFranchisee()
     }, [])
 
+    const deleteDepartmentHistory = (id) => {
+        api.post("/deleteDepartmentHistory", {id}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            if (data.success) {
+                getDepartmentInfoFranchisee()
+            }
+        }).catch((e) => {
+            console.log(e);
+        })
+    }
+
     return <Container role={userData?.role}>
         <Div>Сводные данные цеха</Div>
         <Div />
@@ -111,6 +123,7 @@ export default function DepartmentInfoFranchisee() {
             return <div key={item?._id}>
                 <Div>
                     {item?.type ? <span className="bg-red">Принял</span> : <span className="bg-green-400">Отдал</span>}: {item?.department?.fullName}
+                    <MyButton click={() => {deleteDepartmentHistory(item?._id)}}>Удалить</MyButton>
                 </Div>
                 <Li>
                     Франчайзи: {item?.franchisee?.fullName} 
