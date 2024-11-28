@@ -328,7 +328,7 @@ export const deleteDepartmentHistory = async (req, res) => {
         const franchisee = departmentHistory.franchisee
         
         const fran = await User.findById(franchisee)
-        if (type) {
+        if (departmentHistory.type) {
             fran.b121kol = fran.b121kol - data.b121kol
             fran.b191kol = fran.b191kol - data.b191kol
             fran.b197kol = fran.b197kol - data.b197kol
