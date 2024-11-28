@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Container from "../Components/Container";
 import Div from "../Components/Div";
 import useFetchUserData from "../customHooks/useFetchUserData";
@@ -40,21 +40,6 @@ export default function PickupInfo() {
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
 
-    const getPickupInfo = () => {
-        api.post("/getPickupInfo", {...dates}, {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            setInfo(data.stats)
-            setPickups(data.pickups)
-        }).catch((e) => {
-            console.log(e);
-        })
-    }
-
-    useEffect(() => {
-        getPickupInfo()
-    }, [])
-
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
         if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
@@ -81,7 +66,7 @@ export default function PickupInfo() {
             setMessage("Введите даты в формате ГГГГ-ММ-ДД")
             return
         }
-        getPickupInfo()
+        loadMorePickups(page, dates, opForm)
     }
 
     const formatCurrency = (amount) => {
@@ -93,56 +78,56 @@ export default function PickupInfo() {
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
 
-    // const loadMorePickups = useCallback(async (page, dates, opForm) => {
-    //     if (loading || !hasMore) return;
+    const loadMorePickups = useCallback(async (page, dates, opForm) => {
+        if (loading || !hasMore) return;
 
-    //     setLoading(true);
+        setLoading(true);
         
-    //     api.post(
-    //         "/getPickupInfo",
-    //         {
-    //             page, ...dates, opForm
-    //         },
-    //         {
-    //             headers: { "Content-Type": "application/json" },
-    //         }
-    //     )
-    //         .then(({ data }) => {
-    //             setInfo(data.stats)
-    //             if (data.pickups.length === 0) {
-    //                 setHasMore(false);
-    //             } else {
-    //                 setPickups((prevPickups) => [...prevPickups, ...data.pickups]);
-    //                 setPage(page + 1);
-    //             }
-    //         })
-    //         .catch((e) => {
-    //             console.log(e);
-    //         });
-    //     setLoading(false);
-    // }, [page, loading, hasMore]);
+        api.post(
+            "/getPickupInfo",
+            {
+                page, ...dates, opForm
+            },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                setInfo(data.stats)
+                if (data.pickups.length === 0) {
+                    setHasMore(false);
+                } else {
+                    setPickups((prevPickups) => [...prevPickups, ...data.pickups]);
+                    setPage(page + 1);
+                }
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+        setLoading(false);
+    }, [page, loading, hasMore]);
 
-    // useEffect(() => {
-    //     if (hasMore) {
-    //         loadMorePickups(page, dates, opForm);
-    //     }
-    // }, [hasMore]);
+    useEffect(() => {
+        if (hasMore) {
+            loadMorePickups(page, dates, opForm);
+        }
+    }, [hasMore]);
 
 
-    // const observer = useRef();
-    // const lastPickupElementRef = useCallback(
-    //     (node) => {
-    //         if (loading) return;
-    //         if (observer.current) observer.current.disconnect();
-    //         observer.current = new IntersectionObserver((entries) => {
-    //             if (entries[0].isIntersecting && hasMore) {
-    //                 loadMorePickups(page, dates, opForm);
-    //             }
-    //         });
-    //         if (node) observer.current.observe(node);
-    //     },
-    //     [loading, hasMore, loadMorePickups]
-    // );
+    const observer = useRef();
+    const lastPickupElementRef = useCallback(
+        (node) => {
+            if (loading) return;
+            if (observer.current) observer.current.disconnect();
+            observer.current = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && hasMore) {
+                    loadMorePickups(page, dates, opForm);
+                }
+            });
+            if (node) observer.current.observe(node);
+        },
+        [loading, hasMore, loadMorePickups]
+    );
 
     return <Container role={userData?.role}>
         <Div>Самовывозы</Div>
@@ -181,6 +166,94 @@ export default function PickupInfo() {
                 </div>
             </Li>
         </>
+        <Div/>
+        <Div>Итоговая информация:</Div>
+        <>
+            <Li>
+                <div className="flex items-center gap-x-3">
+                    <div>Всего самовывозов: </div>
+                    <div>
+                        <Info>{pickups?.length || 0} шт.</Info>
+                    </div>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-3">
+                    <div>Отпущено бутылей: </div>
+                    <div>
+                        <Info>{info?.totalB12 + info?.totalB19 || 0} шт.</Info>
+                    </div>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-3">
+                    <div>Кол 12,5: </div>
+                    <div>
+                        <Info>{info?.totalB12 || 0} шт.</Info>
+                    </div>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-3">
+                    <div>Кол 18,9: </div>
+                    <div>
+                        <Info>{info?.totalB19 || 0} шт.</Info>
+                    </div>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-3">
+                    <button 
+                        onClick={() => {
+                            const newOpForm = opForm === "nal" ? "all" : "nal"
+                            setOpForm(newOpForm)
+                            setPickups([]);
+                            setPage(1);
+                            setHasMore(true);
+                            setLoading(false)
+                            loadMorePickups(1, dates, newOpForm)
+                        }}
+                        className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
+                            "text-green-400": opForm !== "nall",
+                            "text-yellow-300": opForm === "nal"
+                        })}
+                    >Наличными: </button>
+                    <div>
+                        <Info>{formatCurrency(info?.totalNalSum)}</Info>
+                    </div>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-3">
+                <button 
+                        onClick={() => {
+                            const newOpForm = opForm === "qr" ? "all" : "qr"
+                            setOpForm(newOpForm)
+                            setPickups([]);
+                            setPage(1);
+                            setHasMore(true);
+                            setLoading(false)
+                            loadMorePickups(1, dates, newOpForm)
+                        }}
+                        className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
+                            "text-green-400": opForm !== "qr",
+                            "text-yellow-300": opForm === "qr"
+                        })}
+                    >QR: </button>
+                    <div>
+                        <Info>{formatCurrency(info?.totalQrSum)}</Info>
+                    </div>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-3">
+                    <div>Общая сумма: </div>
+                    <div>
+                        <Info>{formatCurrency(info?.totalSum)}</Info>
+                    </div>
+                </div>
+            </Li>
+        </>
         <Div />
         <Div>Список самовывозов:</Div> 
         <>
@@ -188,102 +261,36 @@ export default function PickupInfo() {
                 const timeInGmtPlus5 = moment(item?.createdAt).tz("Etc/GMT-5");
                 const hours = timeInGmtPlus5.format("HH");
                 const minutes = timeInGmtPlus5.format("mm");
-                return <Li key={item?._id}>
-                    <div className="flex items-center gap-x-2">
-                        <div>{index + 1}.</div>
-                        <div>Время: {hours}:{minutes}</div>
-                        <div>{item?.kol12 > 0 && <span>12,5 л: <Info>{item?.kol12} шт.</Info></span>} {item?.kol19 > 0 && <span>18,9 л: <Info>{item?.kol19} шт.</Info></span>}</div>
-                        <div>Сумма: <Info>{formatCurrency(item?.sum)}</Info> {item?.opForm === "nal" ? "Нал." : "QR"}</div>
-                    </div>
-                </Li>
+                if (pickups.length === index + 1) {
+                    return (
+                        <div key={item?._id} ref={lastPickupElementRef}>
+                            <Li>
+                                <div className="flex items-center gap-x-2">
+                                    <div>{index + 1}.</div>
+                                    <div>Время: {hours}:{minutes}</div>
+                                    <div>{item?.kol12 > 0 && <span>12,5 л: <Info>{item?.kol12} шт.</Info></span>} {item?.kol19 > 0 && <span>18,9 л: <Info>{item?.kol19} шт.</Info></span>}</div>
+                                    <div>Сумма: <Info>{formatCurrency(item?.sum)}</Info> {item?.opForm === "nal" ? "Нал." : "QR"}</div>
+                                </div>
+                            </Li>
+                        </div>
+                    )
+                } else {
+                    return (
+                        <div key={item?._id}>
+                            <Li>
+                                <div className="flex items-center gap-x-2">
+                                    <div>{index + 1}.</div>
+                                    <div>Время: {hours}:{minutes}</div>
+                                    <div>{item?.kol12 > 0 && <span>12,5 л: <Info>{item?.kol12} шт.</Info></span>} {item?.kol19 > 0 && <span>18,9 л: <Info>{item?.kol19} шт.</Info></span>}</div>
+                                    <div>Сумма: <Info>{formatCurrency(item?.sum)}</Info> {item?.opForm === "nal" ? "Нал." : "QR"}</div>
+                                </div>
+                            </Li>
+                        </div>
+                    )
+                }
             })}
         </>
-        <Div/>
-        <Div>Итоговая информация:</Div>
-        <Li>
-            <div className="flex items-center gap-x-3">
-                <div>Всего самовывозов: </div>
-                <div>
-                    <Info>{pickups?.length || 0} шт.</Info>
-                </div>
-            </div>
-        </Li>
-        <Li>
-            <div className="flex items-center gap-x-3">
-                <div>Отпущено бутылей: </div>
-                <div>
-                    <Info>{info?.totalB12 + info?.totalB19 || 0} шт.</Info>
-                </div>
-            </div>
-        </Li>
-        <Li>
-            <div className="flex items-center gap-x-3">
-                <div>Кол 12,5: </div>
-                <div>
-                    <Info>{info?.totalB12 || 0} шт.</Info>
-                </div>
-            </div>
-        </Li>
-        <Li>
-            <div className="flex items-center gap-x-3">
-                <div>Кол 18,9: </div>
-                <div>
-                    <Info>{info?.totalB19 || 0} шт.</Info>
-                </div>
-            </div>
-        </Li>
-        {/* <Li>
-            <div className="flex items-center gap-x-3">
-                <button 
-                    onClick={() => {
-                        const newOpForm = opForm === "nal" ? "all" : "nal"
-                        setOpForm(newOpForm)
-                        setPickups([]);
-                        setPage(1);
-                        setHasMore(true);
-                        setLoading(false)
-                        loadMorePickups(1, dates, newOpForm)
-                    }}
-                    className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
-                        "text-green-400": opForm !== "nall",
-                        "text-yellow-300": opForm === "nal"
-                    })}
-                >Наличными: </button>
-                <div>
-                    <Info>{formatCurrency(info?.totalNalSum)}</Info>
-                </div>
-            </div>
-        </Li>
-        <Li>
-            <div className="flex items-center gap-x-3">
-            <button 
-                    onClick={() => {
-                        const newOpForm = opForm === "qr" ? "all" : "qr"
-                        setOpForm(newOpForm)
-                        setPickups([]);
-                        setPage(1);
-                        setHasMore(true);
-                        setLoading(false)
-                        loadMorePickups(1, dates, newOpForm)
-                    }}
-                    className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
-                        "text-green-400": opForm !== "qr",
-                        "text-yellow-300": opForm === "qr"
-                    })}
-                >QR: </button>
-                <div>
-                    <Info>{formatCurrency(info?.totalQrSum)}</Info>
-                </div>
-            </div>
-        </Li> */}
-        <Li>
-            <div className="flex items-center gap-x-3">
-                <div>Общая сумма: </div>
-                <div>
-                    <Info>{formatCurrency(info?.totalSum)}</Info>
-                </div>
-            </div>
-        </Li>
+        
         <Div/>
         <MySnackBar
             open={open}
