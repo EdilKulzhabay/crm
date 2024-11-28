@@ -48,6 +48,8 @@ import DepartmentInfoFranchisee from "./Pages/DepartmentInfoFranchisee";
 import DepartamentGivingSingle from "./Pages/Department/DepartamentGivingSingle";
 import AddOrder2 from "./Pages/AddOrder2";
 import SuperAdminClientsVerify from "./Pages/SuperAdmin/SuperAdminClientsVerify";
+import PickupInfo from "./Pages/PickupInfo";
+import AddPickup from "./Pages/AddPickup";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -97,6 +99,8 @@ export const router = createBrowserRouter([
     { path: "/departmentInfoFranchisee/:id", element: <DepartmentInfoFranchisee /> },
     { path: "/sAAnalytics", element: <SAAnalytics /> },
     { path: "/superAdminClientsVerify", element: <SuperAdminClientsVerify /> },
+    { path: "/pickupInfo", element: <PickupInfo /> },
+    { path: "/addPickup", element: <AddPickup /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
