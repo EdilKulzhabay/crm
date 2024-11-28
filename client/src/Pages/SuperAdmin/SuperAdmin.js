@@ -66,6 +66,14 @@ export default function SuperAdmin() {
                 </Li>
                 <Li>
                     <div className="flex items-center gap-x-3">
+                        <div>Самовывоз сегодня: </div>
+                        <div>
+                            <LinkButton href="/pickupInfo">{info?.pickup?.kolBottles || 0} шт.</LinkButton>
+                        </div>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center gap-x-3">
                         <div>Остаток в цеху: </div>
                         <div>
                             <Info>{info?.balance?.balance || 0} шт.</Info>
@@ -128,6 +136,9 @@ export default function SuperAdmin() {
             <div className="lg:hidden">
                 <>
                     <Li>
+                        <LinkButton color="green" href="/addPickup">Добавить самовывоз</LinkButton>
+                    </Li>
+                    <Li>
                         <LinkButton color="green" href="/addOrder">Добавить заказ</LinkButton>
                     </Li>
                     <Li>
@@ -149,6 +160,7 @@ export default function SuperAdmin() {
             </div>
             <Div styles="hidden lg:flex">
                 <div className="flex items-center gap-x-3">
+                    <LinkButton color="green" href="/addPickup">Добавить самовывоз</LinkButton>
                     <LinkButton color="green" href="/addOrder">Добавить заказ</LinkButton>
                     <LinkButton color="green" href="/addOrder2">Добавить завершенный заказ</LinkButton>
                     <LinkButton color="green" href="/addClinet">Добавить клиента</LinkButton>

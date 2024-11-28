@@ -3,7 +3,107 @@ import Courier from "../Models/Courier.js";
 import Client from "../Models/Client.js";
 import Order from "../Models/Order.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
-import mongoose from "mongoose";
+import Pickup from "../Models/Pickup.js";
+
+export const addPickup = async (req, res) => {
+    try {
+        const {price12, price19, kol12, kol19, opForm} = req.body
+
+        const pickup = new Pickup({
+            price12,
+            price19,
+            kol12,
+            kol19,
+            opForm,
+            sum
+        })
+
+        await pickup.save()
+
+        res.json({
+            success: true,
+            message: "Самовывоз успешно добаавлен"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+
+export const getPickupInfo = async (req, res) => {
+    try {
+        const {startDate, endDate} = req.body
+
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
+
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+
+        const filter = {
+            createdAt: {$gte: sDate, $lte: eDate}
+        }
+
+        const pickups = await Pickup.find({filter})
+
+        const pickupStats = await Pickup.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalSum: { 
+                        $sum: { 
+                            $add: [
+                                { $multiply: [ { $ifNull: ["$kol19", 0] }, { $ifNull: ["$price19", 0] } ] },
+                                { $multiply: [ { $ifNull: ["$kol12", 0] }, { $ifNull: ["$price12", 0] } ] }
+                            ]
+                        }
+                    },
+                    totalQrSum: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ["$opForm", "qr"] },
+                                then: { 
+                                    $add: [
+                                        { $multiply: [ { $ifNull: ["$kol19", 0] }, { $ifNull: ["$price19", 0] } ] },
+                                        { $multiply: [ { $ifNull: ["$kol12", 0] }, { $ifNull: ["$price12", 0] } ] }
+                                    ] 
+                                },
+                                else: 0
+                            }
+                        }
+                    },
+                    totalNalSum: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ["$opForm", "nal"] },
+                                then: { 
+                                    $add: [
+                                        { $multiply: [ { $ifNull: ["$kol19", 0] }, { $ifNull: ["$price19", 0] } ] },
+                                        { $multiply: [ { $ifNull: ["$kol12", 0] }, { $ifNull: ["$price12", 0] } ] }
+                                    ] 
+                                },
+                                else: 0
+                            }
+                        }
+                    },
+                    totalB19: { $sum: "$kol19" },
+                    totalB12: { $sum: "$kol12" },
+                }
+            }  
+        ]);
+
+        res.json({ stats: pickupStats[0] || {}, pickups });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
 
 export const getAllUsersNCouriers = async (req, res) => {
     try {
@@ -65,40 +165,6 @@ export const deleteUser = async (req, res) => {
         });
     }
 };
-
-// export const deleteCourier = async (req, res) => {
-//     try {
-//         const id = req.userId;
-
-//         const user = await User.findById(id);
-
-//         if (user.role !== "superAdmin") {
-//             res.json({
-//                 success: false,
-//                 message: "Не достаточно прав",
-//             });
-//         }
-
-//         const { userId } = req.body;
-
-//         const delRes = await Courier.findByIdAndDelete(userId);
-
-//         if (!delRes) {
-//             return res.json({
-//                 success: false,
-//                 message: "Не удалось удалить курьера",
-//             });
-//         }
-//         res.json({
-//             success: true,
-//         });
-//     } catch (error) {
-//         console.log(error);
-//         res.status(500).json({
-//             message: "Что-то пошло не так",
-//         });
-//     }
-// };
 
 export const getMainPageInfo = async (req, res) => {
     try {
@@ -282,10 +348,14 @@ export const getMainPageInfoSA = async (req, res) => {
         today.setHours(0, 0, 0, 0);
 
         const bottles = await DepartmentHistory.aggregate([
-            { $match: { createdAt: { 
-                $gte: new Date(today.setHours(0, 0, 0, 0)), // Начало дня
-                $lt: new Date(today.setHours(23, 59, 59, 999)) // Конец дня
-            }  } },
+            { 
+                $match: { 
+                        createdAt: { 
+                        $gte: new Date(today.setHours(0, 0, 0, 0)), // Начало дня
+                        $lt: new Date(today.setHours(23, 59, 59, 999)) // Конец дня
+                    }  
+                } 
+            },
             {
                 $group: {
                     _id: null,
@@ -326,11 +396,29 @@ export const getMainPageInfoSA = async (req, res) => {
             }
         ])
 
+        const pickup = await Pickup.aggregate([
+            { 
+                $match: { 
+                        createdAt: { 
+                        $gte: new Date(today.setHours(0, 0, 0, 0)), // Начало дня
+                        $lt: new Date(today.setHours(23, 59, 59, 999)) // Конец дня
+                    }  
+                } 
+            },
+            {
+                $group: {
+                    _id: null,
+                    kolBottles: { $sum: { $add: [ "$kol12", "$kol19" ] } }
+                }
+            }
+        ])
+
         res.json({
             clients,
             stats: stats[0],
             bottles: bottles[0],
-            balance: balance[0]
+            balance: balance[0],
+            pickup: pickup[0]
         });
     } catch (error) {
         console.log(error);
