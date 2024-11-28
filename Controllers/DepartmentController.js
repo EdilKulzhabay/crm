@@ -157,7 +157,7 @@ export const departmentAction = async (req, res) => {
             fran.b197kol = fran.b197kol - data.b197kol
         }
 
-        fran.save()
+        await fran.save()
 
         res.json({
             success: true
@@ -323,6 +323,22 @@ export const getDepartmentInfoFranchisee = async (req, res) => {
 export const deleteDepartmentHistory = async (req, res) => {
     try {
         const {id} = req.body
+        const departmentHistory = await DepartmentHistory.findById(id)
+
+        const franchisee = departmentHistory.franchisee
+        
+        const fran = await User.findById(franchisee)
+        if (type) {
+            fran.b121kol = fran.b121kol - data.b121kol
+            fran.b191kol = fran.b191kol - data.b191kol
+            fran.b197kol = fran.b197kol - data.b197kol
+        } else {
+            fran.b121kol = fran.b121kol + data.b121kol
+            fran.b191kol = fran.b191kol + data.b191kol
+            fran.b197kol = fran.b197kol + data.b197kol
+        }
+
+        await fran.save()
 
         await DepartmentHistory.deleteOne({_id: id})
 
