@@ -172,7 +172,7 @@ export default function PickupInfo() {
         <>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div className="w-[150px]">Всего самовывозов: </div>
+                    <div className="w-[150px] lg:w-[200px]">Всего самовывозов: </div>
                     <div>
                         <Info>{pickups?.length || 0} шт.</Info>
                     </div>
@@ -180,7 +180,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div className="w-[150px]">Отпущено бутылей: </div>
+                    <div className="w-[150px] lg:w-[200px]">Отпущено бутылей: </div>
                     <div>
                         <Info>{info?.totalB12 + info?.totalB19 || 0} шт.</Info>
                     </div>
@@ -188,7 +188,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div className="w-[150px]">Кол 12,5: </div>
+                    <div className="w-[150px] lg:w-[200px]">Кол 12,5: </div>
                     <div>
                         <Info>{info?.totalB12 || 0} шт.</Info>
                     </div>
@@ -196,7 +196,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div className="w-[150px]">Кол 18,9: </div>
+                    <div className="w-[150px] lg:w-[200px]">Кол 18,9: </div>
                     <div>
                         <Info>{info?.totalB19 || 0} шт.</Info>
                     </div>
@@ -214,7 +214,7 @@ export default function PickupInfo() {
                             setLoading(false)
                             loadMorePickups(1, dates, newOpForm)
                         }}
-                        className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
+                        className={clsx("lg:hover:text-blue-500 w-[150px] lg:w-[200px] text-left", {
                             "text-green-400": opForm !== "nall",
                             "text-yellow-300": opForm === "nal"
                         })}
@@ -236,7 +236,7 @@ export default function PickupInfo() {
                             setLoading(false)
                             loadMorePickups(1, dates, newOpForm)
                         }}
-                        className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
+                        className={clsx("lg:hover:text-blue-500 w-[150px] lg:w-[200px] text-left", {
                             "text-green-400": opForm !== "qr",
                             "text-yellow-300": opForm === "qr"
                         })}
@@ -248,7 +248,7 @@ export default function PickupInfo() {
             </Li>
             <Li>
                 <div className="flex items-center gap-x-3">
-                    <div className="w-[150px]">Cумма: </div>
+                    <div className="w-[150px] lg:w-[200px]">Cумма: </div>
                     <div>
                         <Info>{formatCurrency(info?.totalSum)}</Info>
                     </div>
