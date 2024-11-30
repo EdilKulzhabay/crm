@@ -114,15 +114,18 @@ export default function DepartmentInfoFranchisee() {
         </>
         <Div />
         <Div>Франчайзи {info?.fullName}:</Div>
-        <Li>Забрал 12(1): <Info>{info?.totalB121}</Info></Li>
-        <Li>Забрал 19(1): <Info>{info?.totalB191}</Info></Li>
-        <Li>Забрал 19(7): <Info>{info?.totalB197}</Info></Li>
+        <Li>Отпущено 12(1): <Info>{info?.totalB121}</Info></Li>
+        <Li>Отпущено 19(1): <Info>{info?.totalB191}</Info></Li>
+        <Li>Отпущено 19(7): <Info>{info?.totalB197}</Info></Li>
+        <Li>Принято 12(1): <Info>{info?.totalB1212}</Info></Li>
+        <Li>Принято 19(1): <Info>{info?.totalB1912}</Info></Li>
+        <Li>Принято 19(7): <Info>{info?.totalB1972}</Info></Li>
         <Div />
 
         {history && history.length > 0 && history.map((item) => {
             return <div key={item?._id}>
                 <Div>
-                    {item?.type ? <span className="bg-red">Принял</span> : <span className="bg-green-400">Отдал</span>}: {item?.department?.fullName}
+                    {item?.type ? <span className="bg-red">Принято</span> : <span className="bg-green-400">Отпущено</span>}: {item?.department?.fullName}
                     <MyButton click={() => {deleteDepartmentHistory(item?._id)}}>Удалить</MyButton>
                 </Div>
                 <Li>
