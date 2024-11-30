@@ -297,6 +297,9 @@ export const getDepartmentInfoFranchisee = async (req, res) => {
                     totalB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
                     totalB191: { $sum: { $cond: ["$type", 0, "$data.b191kol"] } },
                     totalB197: { $sum: { $cond: ["$type", 0, "$data.b197kol"] } },
+                    totalB1212: { $sum: { $cond: ["$type", "$data.b121kol", 0] } },
+                    totalB1912: { $sum: { $cond: ["$type", "$data.b191kol", 0] } },
+                    totalB1972: { $sum: { $cond: ["$type", "$data.b197kol", 0] } },
                 }
             }
         ])
