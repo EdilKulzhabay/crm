@@ -182,7 +182,7 @@ app.post("/deletePromoCode", PromoCodeController.deletePromoCode);
 
 ///////ORDER
 app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
-app.get("/getAdditionalOrders", checkAuth, OrderController.getAdditionalOrders);
+app.post("/getAdditionalOrders", checkAuth, OrderController.getAdditionalOrders);
 app.get("/getActiveOrdersKol", checkAuth, OrderController.getActiveOrdersKol)
 app.post("/addOrder", OrderController.addOrder);
 app.post("/addOrder2", OrderController.addOrder2);

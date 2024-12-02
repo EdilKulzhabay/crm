@@ -631,6 +631,7 @@ export const getClientOrdersForExcel = async (req, res) => {
 export const getAdditionalOrders = async (req, res) => {
     try {
         const id = req.userId;
+        const {startDate, endDate} = req.body
         const user = await User.findById(id)
 
         if (!user) {
@@ -642,6 +643,7 @@ export const getAdditionalOrders = async (req, res) => {
         const userName = user.fullName
         const filter = {
             transferredFranchise: userName,
+            "date.d": { $gte: startDate, $lte: endDate },
             status: { $nin: ["delivered", "cancelled"] },
         }
         const orders = await Order.find(filter).populate("client").populate("courier", "fullName")

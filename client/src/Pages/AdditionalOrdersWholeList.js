@@ -12,6 +12,14 @@ import OrderInfo from "../Components/OrderInfo";
 import useFetchUserData from "../customHooks/useFetchUserData";
 import useScrollPosition from "../customHooks/useScrollPosition";
 
+const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export default function AdditionalOrdersWholeList() {
     const scrollPosition = useScrollPosition()
     const userData = useFetchUserData();
@@ -19,7 +27,10 @@ export default function AdditionalOrdersWholeList() {
     const [orderCourier, setOrderCourier] = useState(null);
     const [couriersModal, setCouriersModal] = useState(false);
     const [orderCourierChange, setOrderCourierChange] = useState(null)
-
+    const [dates, setDates] = useState({
+        startDate: getCurrentDate(),
+        endDate: getCurrentDate(),
+    });
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
@@ -38,7 +49,7 @@ export default function AdditionalOrdersWholeList() {
     };
 
     const getAdditionalOrders = () => {
-        api.get("/getAdditionalOrders", {
+        api.post("/getAdditionalOrders", {...dates}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setAdditionalOrders(data.orders)
