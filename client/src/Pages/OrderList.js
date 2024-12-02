@@ -94,6 +94,7 @@ export default function OrderList() {
         setHasMore(true);
         setLoading(false)
         loadMoreOrders(1, dates, search, searchStatus, searchF, sa)
+        getAdditionalOrders()
     }
 
     const handleSearch = (e) => {
