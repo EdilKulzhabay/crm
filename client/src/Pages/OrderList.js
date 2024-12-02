@@ -120,7 +120,7 @@ export default function OrderList() {
     };
 
     const getAdditionalOrders = () => {
-        api.get("/getAdditionalOrders", {
+        api.post("/getAdditionalOrders", {...dates}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setAdditionalOrders(data.orders)
