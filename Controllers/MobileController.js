@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {Expo} from "expo-server-sdk";
 import { scheduleJob } from "node-schedule";
+import "dotenv/config";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -14,7 +15,7 @@ const transporter = nodemailer.createTransport({
     secure: true,
     auth: {
         user: "info@tibetskaya.kz",
-        pass: "uMRY6pis4wm3S1xMTg5t",
+        pass: process.env.MailSMTP,
     },
 });
 
