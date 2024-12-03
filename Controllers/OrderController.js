@@ -518,6 +518,9 @@ export const updateOrderTransfer = async (req, res) => {
                 .json({ success: false, message: "Order not found" });
         }
 
+        const franchiseeFullName = changeData !== "" ? changeData : order?.transferredFranchise
+        const franchisee = await User.findOne({fullName: franchiseeFullName})
+
         order[change] = changeData
         if (changeData === "") {
             order.transferred = false
@@ -531,32 +534,6 @@ export const updateOrderTransfer = async (req, res) => {
             }
         } else {
             order.transferred = true
-            const franchisee = await User.findOne({fullName: changeData})
-
-            const mail = franchisee?.mail
-            let sendText = `По адресу ${order.address.actual}, `
-            if (order.products.b12 !== null &&  Number(order.products.b12 > 0)) {
-                sendText += `кол. 12,5 л.: ${order.products.b12}, `
-            }
-            if (order.products.b19 !== null &&  Number(order.products.b19 > 0)) {
-                sendText += `кол. 18,9 л.: ${order.products.b19} `
-            }
-            const mailOptions = {
-                from: "info@tibetskaya.kz",
-                to: mail,
-                subject: "Добавлен новый заказ",
-                text: sendText,
-            };
-        
-            transporter.sendMail(mailOptions, function (error, info) {
-                if (error) {
-                    console.log(error);
-                    res.status(500).send("Ошибка при отправке письма");
-                } else {
-                    console.log("Email sent: " + info.response);
-                    res.status(200).send("Письмо успешно отправлено");
-                }
-            });
             if (order?.courier) {
                 const courierId = order?.courier
                 await Courier.updateOne(
@@ -567,6 +544,31 @@ export const updateOrderTransfer = async (req, res) => {
             }
         }
         await order.save()
+
+        const mail = franchisee?.mail
+        let sendText = `По адресу ${order.address.actual}, `
+        if (order.products.b12 !== null &&  Number(order.products.b12 > 0)) {
+            sendText += `кол. 12,5 л.: ${order.products.b12}, `
+        }
+        if (order.products.b19 !== null &&  Number(order.products.b19 > 0)) {
+            sendText += `кол. 18,9 л.: ${order.products.b19} `
+        }
+        const mailOptions = {
+            from: "info@tibetskaya.kz",
+            to: mail,
+            subject: changeData !== "" ? "Добавлен новый заказ" : "Заказ отменен",
+            text: sendText,
+        };
+    
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                res.status(500).send("Ошибка при отправке письма");
+            } else {
+                console.log("Email sent: " + info.response);
+                res.status(200).send("Письмо успешно отправлено");
+            }
+        });
 
         res.json({ success: true, message: "Данные успешно изменены" });
     } catch (error) {
