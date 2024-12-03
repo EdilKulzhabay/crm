@@ -9,8 +9,7 @@ export const addPromoCode = async (req, res) => {
             price12,
             price19,
             addData,
-            status,
-            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
+            status
         });
 
         await promoCode.save();
