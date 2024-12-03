@@ -5,6 +5,7 @@ import Client from "../Models/Client.js";
 import Courier from "../Models/Courier.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
+import "dotenv/config";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -12,7 +13,7 @@ const transporter = nodemailer.createTransport({
     secure: true,
     auth: {
         user: "info@tibetskaya.kz",
-        pass: "uMRY6pis4wm3S1xMTg5t",
+        pass: process.env.MailSMTP,
     },
 });
 
@@ -533,9 +534,9 @@ export const updateOrderTransfer = async (req, res) => {
             }
         } else {
             order.transferred = true
-            const franchisee = await User.find({fullName: changeData})
+            const franchisee = await User.findOne({fullName: changeData})
 
-            const mail = franchisee.mail
+            const mail = franchisee?.mail
             let sendText = `По адресу ${order.address.actual}, `
             if (order.products.b12 !== null &&  Number(order.products.b12 > 0)) {
                 sendText += `кол. 12,5 л.: ${order.products.b12}, `
