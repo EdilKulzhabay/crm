@@ -49,9 +49,9 @@ export const addOrder = async (req, res) => {
             comment: comment || "",
             transferred,
             transferredFranchise,
-            createdAt: new Date()
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         });
-        const time  = new Date()
+        const time  = new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         console.log(time);
         
 
