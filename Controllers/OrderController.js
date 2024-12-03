@@ -67,9 +67,9 @@ export const addOrder = async (req, res) => {
 
         if (franchisee !== null) {
             const mail = franchisee.mail
-            let sendText = `По адресу ${address.actual} `
+            let sendText = `По адресу ${address.actual}, `
             if (products.b12 !== null &&  Number(products.b12 > 0)) {
-                sendText += `кол. 12,5 л.: ${products.b12} `
+                sendText += `кол. 12,5 л.: ${products.b12}, `
             }
             if (products.b19 !== null &&  Number(products.b19 > 0)) {
                 sendText += `кол. 18,9 л.: ${products.b19} `
@@ -536,11 +536,11 @@ export const updateOrderTransfer = async (req, res) => {
             const franchisee = await User.find({fullName: changeData})
 
             const mail = franchisee.mail
-            let sendText = `По адресу ${order.address.actual} `
-            if (products.b12 !== null &&  Number(order.products.b12 > 0)) {
-                sendText += `кол. 12,5 л.: ${order.products.b12} `
+            let sendText = `По адресу ${order.address.actual}, `
+            if (order.products.b12 !== null &&  Number(order.products.b12 > 0)) {
+                sendText += `кол. 12,5 л.: ${order.products.b12}, `
             }
-            if (products.b19 !== null &&  Number(order.products.b19 > 0)) {
+            if (order.products.b19 !== null &&  Number(order.products.b19 > 0)) {
                 sendText += `кол. 18,9 л.: ${order.products.b19} `
             }
             const mailOptions = {
