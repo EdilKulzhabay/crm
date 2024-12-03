@@ -28,6 +28,7 @@ export const register = async (req, res) => {
             phone,
             mail,
             role: role || "admin",
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         });
 
         const user = await doc.save();

@@ -51,9 +51,6 @@ export const addOrder = async (req, res) => {
             transferredFranchise,
             createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         });
-        const time  = new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
-        console.log(time);
-        
 
         await order.save();
 
@@ -89,6 +86,7 @@ export const addOrder = async (req, res) => {
                     matchedField,
                     firstObject: existingOrders._id,
                     secondObject: order._doc._id,
+                    createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
                 });
         
                 await notDoc.save();
@@ -154,7 +152,8 @@ export const addOrder2 = async (req, res) => {
             comment: comment || "",
             transferred,
             transferredFranchise,
-            status: "delivered"
+            status: "delivered",
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         });
 
         await order.save();
