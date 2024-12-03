@@ -29,8 +29,7 @@ export const addCourier = async (req, res) => {
             password: hash,
             phone,
             mail,
-            franchisee,
-            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
+            franchisee
         });
 
         const courier = await doc.save();

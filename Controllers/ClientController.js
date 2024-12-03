@@ -26,8 +26,7 @@ export const addClient = async (req, res) => {
             price12,
             franchisee,
             opForm,
-            verify: false,
-            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
+            verify: false
         });
 
         await client.save();
@@ -78,8 +77,7 @@ export const addClient = async (req, res) => {
                 matchesType: "client",
                 matchedField,
                 firstObject: existingClients._id,
-                secondObject: client._doc._id,
-                createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
+                secondObject: client._doc._id
             });
 
             await notDoc.save();
@@ -360,8 +358,7 @@ export const updateClientData = async (req, res) => {
           matchesType: "client",
           matchedField,
           firstObject: existingClients._id,
-          secondObject: client._id,
-          createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
+          secondObject: client._id
         });
   
         await notDoc.save();
