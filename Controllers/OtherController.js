@@ -15,7 +15,8 @@ export const addPickup = async (req, res) => {
             kol12,
             kol19,
             opForm,
-            sum
+            sum,
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         })
 
         await pickup.save()

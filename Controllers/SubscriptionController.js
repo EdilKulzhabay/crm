@@ -9,6 +9,7 @@ export const addSubscription = async (req, res) => {
             description,
             price,
             validity,
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         });
 
         await subscription.save();

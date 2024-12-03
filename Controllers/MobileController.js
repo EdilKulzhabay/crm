@@ -152,7 +152,8 @@ export const clientRegister = async (req, res) => {
             price19: 1300,
             dailyWater: 2,
             opForm: "fakt",
-            type
+            type,
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         });
 
         const client = await doc.save();
@@ -618,7 +619,8 @@ export const addOrderClientMobile = async (req, res) => {
                 date: date || {d: "", time: ""},
                 sum,
                 clientNotes: clientNotes || "",
-                opForm
+                opForm,
+                createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
             });
     
             await order.save();
@@ -630,7 +632,8 @@ export const addOrderClientMobile = async (req, res) => {
                 date: date || {d: "", time: ""},
                 sum,
                 clientNotes: clientNotes || "",
-                opForm
+                opForm,
+                createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
             });
     
             await order.save();

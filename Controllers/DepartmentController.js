@@ -25,7 +25,8 @@ export const addDepartment = async (req, res) => {
             fullName,
             password: hash,
             userName,
-            receiving
+            receiving,
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         });
 
         await doc.save();
@@ -130,7 +131,8 @@ export const departmentAction = async (req, res) => {
             department: id,
             franchisee,
             type,
-            data
+            data,
+            createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         })
 
         await history.save()
@@ -138,7 +140,8 @@ export const departmentAction = async (req, res) => {
         if (!receivingFinish) {
             if (type) {
                 const queue = new Queue({
-                    franchisee
+                    franchisee,
+                    createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
                 })
                 await queue.save()
             } else {
