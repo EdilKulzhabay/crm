@@ -13,8 +13,8 @@ const transporter = nodemailer.createTransport({
     port: 465, // Или 587 для TLS
     secure: true,
     auth: {
-        user: "kzautonex@mail.ru",
-        pass: "t89KU4sbMMczanM54GWJ",
+        user: "info@tibetskaya.kz",
+        pass: "uMRY6pis4wm3S1xMTg5t",
     },
 });
 
@@ -51,7 +51,7 @@ export const sendMail = async (req, res) => {
     codes[mail] = confirmCode;
 
     const mailOptions = {
-        from: "kzautonex@mail.ru",
+        from: "info@tibetskaya.kz",
         to: mail,
         subject: "Подтвердждение электронной почты",
         text: confirmCode,
