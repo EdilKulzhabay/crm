@@ -48,7 +48,8 @@ export const addOrder = async (req, res) => {
             opForm,
             comment: comment || "",
             transferred,
-            transferredFranchise
+            transferredFranchise,
+            createdAt: new Date()
         });
 
         await order.save();
