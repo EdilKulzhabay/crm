@@ -51,6 +51,9 @@ export const addOrder = async (req, res) => {
             transferredFranchise,
             createdAt: new Date()
         });
+        const time  = new Date()
+        console.log(time);
+        
 
         await order.save();
 
