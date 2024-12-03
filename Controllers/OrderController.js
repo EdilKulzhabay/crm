@@ -5,6 +5,16 @@ import Client from "../Models/Client.js";
 import Courier from "../Models/Courier.js";
 import mongoose from "mongoose";
 
+const transporter = nodemailer.createTransport({
+    host: "smtp.mail.ru",
+    port: 465, // Или 587 для TLS
+    secure: true,
+    auth: {
+        user: "info@tibetskaya.kz",
+        pass: "uMRY6pis4wm3S1xMTg5t",
+    },
+});
+
 export const addOrder = async (req, res) => {
     try {
         const { franchisee, client, address, products, courier, date, clientNotes, opForm, comment } =
@@ -53,6 +63,33 @@ export const addOrder = async (req, res) => {
         });
 
         await order.save();
+
+        if (franchisee !== null) {
+            const mail = franchisee.mail
+            let sendText = `По адресу ${address.actual} `
+            if (products.b12 !== null &&  Number(products.b12 > 0)) {
+                sendText += `кол. 12,5 л.: ${products.b12} `
+            }
+            if (products.b19 !== null &&  Number(products.b19 > 0)) {
+                sendText += `кол. 18,9 л.: ${products.b19} `
+            }
+            const mailOptions = {
+                from: "info@tibetskaya.kz",
+                to: mail,
+                subject: "Добавлен новый заказ",
+                text: sendText,
+            };
+        
+            transporter.sendMail(mailOptions, function (error, info) {
+                if (error) {
+                    console.log(error);
+                    res.status(500).send("Ошибка при отправке письма");
+                } else {
+                    console.log("Email sent: " + info.response);
+                    res.status(200).send("Письмо успешно отправлено");
+                }
+            });
+        }
 
         if (courier) {
             const cour = await Courier.findById(courier)
@@ -495,6 +532,32 @@ export const updateOrderTransfer = async (req, res) => {
             }
         } else {
             order.transferred = true
+            const franchisee = await User.find({fullName: changeData})
+
+            const mail = franchisee.mail
+            let sendText = `По адресу ${order.address.actual} `
+            if (products.b12 !== null &&  Number(order.products.b12 > 0)) {
+                sendText += `кол. 12,5 л.: ${order.products.b12} `
+            }
+            if (products.b19 !== null &&  Number(order.products.b19 > 0)) {
+                sendText += `кол. 18,9 л.: ${order.products.b19} `
+            }
+            const mailOptions = {
+                from: "info@tibetskaya.kz",
+                to: mail,
+                subject: "Добавлен новый заказ",
+                text: sendText,
+            };
+        
+            transporter.sendMail(mailOptions, function (error, info) {
+                if (error) {
+                    console.log(error);
+                    res.status(500).send("Ошибка при отправке письма");
+                } else {
+                    console.log("Email sent: " + info.response);
+                    res.status(200).send("Письмо успешно отправлено");
+                }
+            });
             if (order?.courier) {
                 const courierId = order?.courier
                 await Courier.updateOne(
