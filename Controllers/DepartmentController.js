@@ -135,6 +135,10 @@ export const departmentAction = async (req, res) => {
             createdAt: new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
         })
 
+        const time  = new Date(new Date().getTime() + 5 * 60 * 60 * 1000)
+        console.log(time);
+        
+
         await history.save()
 
         if (!receivingFinish) {
