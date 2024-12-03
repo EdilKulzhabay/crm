@@ -4,6 +4,7 @@ import User from "../Models/User.js";
 import Client from "../Models/Client.js";
 import Courier from "../Models/Courier.js";
 import mongoose from "mongoose";
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
