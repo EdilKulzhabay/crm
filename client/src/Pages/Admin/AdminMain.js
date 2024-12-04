@@ -83,7 +83,7 @@ export default function SuperAdmin() {
                     <Li>
                         <div className="">
                             Количество 12,5 л:
-                            <Info>{userData?.b191kol}</Info>
+                            <Info>{userData?.b121kol}</Info>
                         </div>
                     </Li>
                 }
