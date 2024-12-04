@@ -67,6 +67,10 @@ export default function PickupInfo() {
             setMessage("Введите даты в формате ГГГГ-ММ-ДД")
             return
         }
+        setPickups([])
+        setPage(1);
+        setHasMore(true);
+        setLoading(false)
         loadMorePickups(page, dates, opForm)
     }
 
