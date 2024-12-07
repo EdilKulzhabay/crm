@@ -5,6 +5,7 @@ import User from "../Models/User.js";
 import Order from "../Models/Order.js"
 import Client from "../Models/Client.js";
 import {Expo} from "expo-server-sdk";
+import { SendEmailOrder } from "./SendEmailOrder.js";
 
 let expo = new Expo({ useFcmV1: true });
 
