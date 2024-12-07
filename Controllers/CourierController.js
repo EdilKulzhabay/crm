@@ -420,11 +420,11 @@ export const updateCourierOrderStatus = async (req, res) => {
         // Если статус заказа "delivered", увеличиваем completedOrders на 1
         if (newStatus === "delivered") {
             updateQuery.$inc = { completedOrders: 1 }; // Увеличиваем completedOrders на 1
-            
-            const franchisee = await User.findOne({_id: order.franchisee})
+            const franchiseeID = order?.franchisee
+            const franchisee = await User.findOne({_id: franchiseeID})
             const mail = franchisee.mail
             if (mail !== null && mail !== "" && mail.includes("@")) {
-                let sendText = `По адресу ${address.actual}, `
+                let sendText = `По адресу ${order?.address.actual}, `
                 if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
                     sendText += `кол. 12,5 л.: ${order?.products.b12}, `
                 }
@@ -442,9 +442,6 @@ export const updateCourierOrderStatus = async (req, res) => {
             { new: true } // Возвращаем обновленный документ
         );
 
-        
-
-        
         const clientId = order.client.toHexString()
         if (order.status !== newStatus) {
             console.log("socket orderStatusChanged");
