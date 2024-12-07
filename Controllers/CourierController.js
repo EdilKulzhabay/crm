@@ -426,13 +426,13 @@ export const updateCourierOrderStatus = async (req, res) => {
             const mail = franchisee.mail
             if (mail !== null && mail !== "" && mail.includes("@")) {
                 let sendText = `По адресу ${order?.address.actual}, `
-                if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
-                    sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                if (products.b12 !== null &&  Number(products.b12 > 0)) {
+                    sendText += `кол. 12,5 л.: ${products.b12}, `
                 }
-                if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
-                    sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                if (products.b19 !== null &&  Number(products.b19 > 0)) {
+                    sendText += `кол. 18,9 л.: ${products.b19} `
                 }
-                SendEmailOrder(mail, "cancelled", sendText)
+                SendEmailOrder(mail, "delivered", sendText)
             }
         }
 
