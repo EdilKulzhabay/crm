@@ -45,6 +45,10 @@ const CourierSchema = new mongoose.Schema(
         wholeList: {
             type: Boolean,
             default: false
+        },
+        phoneVision: {
+            type: Boolean,
+            default: false
         }
     },
     {

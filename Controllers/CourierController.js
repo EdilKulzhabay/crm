@@ -411,6 +411,7 @@ export const updateCourierOrderStatus = async (req, res) => {
         const id = req.userId
         const {orderId, trueOrder, newStatus, products, opForm, sum} = req.body
         
+        const order = await Order.findOne({_id: trueOrder})
 
         const updateQuery = {
             $set: { 'orders.$.orderStatus': newStatus } // Обновляем статус заказа в массиве orders
@@ -419,6 +420,19 @@ export const updateCourierOrderStatus = async (req, res) => {
         // Если статус заказа "delivered", увеличиваем completedOrders на 1
         if (newStatus === "delivered") {
             updateQuery.$inc = { completedOrders: 1 }; // Увеличиваем completedOrders на 1
+            
+            const franchisee = await User.findOne({_id: order.franchisee})
+            const mail = franchisee.mail
+            if (mail !== null && mail !== "" && mail.includes("@")) {
+                let sendText = `По адресу ${address.actual}, `
+                if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                    sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                }
+                if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                    sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                }
+                SendEmailOrder(mail, "cancelled", sendText)
+            }
         }
 
         // Найдем курьера и обновим статус заказа в массиве orders и при необходимости увеличим completedOrders
@@ -428,7 +442,7 @@ export const updateCourierOrderStatus = async (req, res) => {
             { new: true } // Возвращаем обновленный документ
         );
 
-        const order = await Order.findOne({_id: trueOrder})
+        
 
         
         const clientId = order.client.toHexString()
