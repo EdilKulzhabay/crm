@@ -260,9 +260,35 @@ export const getDepartmentInfo = async (req, res) => {
     try {
         const {startDate, endDate} = req.body
 
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
+
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+
+
+        const filter = {
+            createdAt: { $gte: sDate, $lte: eDate },
+        }
+
+        const stats = await DepartmentHistory.aggregate([
+            { $match: filter },
+            { 
+                $group: {
+                    _id: null,
+                    totalB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
+                    totalB191: { $sum: { $cond: ["$type", 0, "$data.b191kol"] } },
+                    totalB197: { $sum: { $cond: ["$type", 0, "$data.b197kol"] } },
+                    totalB1212: { $sum: { $cond: ["$type", "$data.b121kol", 0] } },
+                    totalB1912: { $sum: { $cond: ["$type", "$data.b191kol", 0] } },
+                    totalB1972: { $sum: { $cond: ["$type", "$data.b197kol", 0] } },
+                }
+            }
+        ])
+
         const franchisees = await User.find({role: "admin"}).select("_id fullName b121kol b191kol b197kol")
 
-        res.json({franchisees})
+        res.json({franchisees, stats: stats[0] || {}})
     } catch (error) {
         console.log(error);
         res.status(500).json({

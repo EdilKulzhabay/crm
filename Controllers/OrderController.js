@@ -4,18 +4,7 @@ import User from "../Models/User.js";
 import Client from "../Models/Client.js";
 import Courier from "../Models/Courier.js";
 import mongoose from "mongoose";
-import nodemailer from "nodemailer";
-import "dotenv/config";
-
-const transporter = nodemailer.createTransport({
-    host: "smtp.mail.ru",
-    port: 465, // Или 587 для TLS
-    secure: true,
-    auth: {
-        user: "info@tibetskaya.kz",
-        pass: process.env.MailSMTP,
-    },
-});
+import { SendEmailOrder } from "./SendEmailOrder.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -74,32 +63,29 @@ export const addOrder = async (req, res) => {
             if (products.b19 !== null &&  Number(products.b19 > 0)) {
                 sendText += `кол. 18,9 л.: ${products.b19} `
             }
-            const mailOptions = {
-                from: "info@tibetskaya.kz",
-                to: mail,
-                subject: "Добавлен новый заказ",
-                text: sendText,
-            };
-        
-            transporter.sendMail(mailOptions, function (error, info) {
-                if (error) {
-                    console.log(error);
-                    res.status(500).send("Ошибка при отправке письма");
-                } else {
-                    console.log("Email sent: " + info.response);
-                    res.status(200).send("Письмо успешно отправлено");
-                }
-            });
+            SendEmailOrder(mail, "add", sendText)
         }
 
-        if (courier) {
-            const cour = await Courier.findById(courier)
+        if (courier !== null) {
+            const courierId = courier._id
+            const cour = await Courier.findById(courierId)
 
             const courierOrder = {order: order._id, orderStatus: "inLine"}
 
             cour.orders.push(courierOrder)
 
             await cour.save()
+            const mail = cour.mail
+            if (mail !== null && mail !== "" && mail.includes("@")) {
+                let sendText = `По адресу ${address.actual}, `
+                if (products.b12 !== null &&  Number(products.b12 > 0)) {
+                    sendText += `кол. 12,5 л.: ${products.b12}, `
+                }
+                if (products.b19 !== null &&  Number(products.b19 > 0)) {
+                    sendText += `кол. 18,9 л.: ${products.b19} `
+                }
+                SendEmailOrder(mail, "add", sendText)
+            }
         }
 
         let orConditions = []
@@ -452,6 +438,17 @@ export const updateOrder = async (req, res) => {
             if (order?.courier) {
                 const courierId = order.courier
                 const lCourier = await Courier.findById(courierId)
+                const mail = lCourier.mail
+                if (mail !== null && mail !== "" && mail.includes("@")) {
+                    let sendText = `По адресу ${address.actual}, `
+                    if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                        sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                    }
+                    if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                        sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                    }
+                    SendEmailOrder(mail, "cancelled", sendText)
+                }
                 
                 const orders = lCourier.orders.filter(item => item.order.toString() !== orderId.toString());
                 lCourier.orders = orders
@@ -462,6 +459,17 @@ export const updateOrder = async (req, res) => {
             const courierOrder = {order: order._id, orderStatus: "inLine"}
             courier?.orders?.push(courierOrder)
             await courier.save()
+            const mail = courier.mail
+            if (mail !== null && mail !== "" && mail.includes("@")) {
+                let sendText = `По адресу ${address.actual}, `
+                if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                    sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                }
+                if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                    sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                }
+                SendEmailOrder(mail, "add", sendText)
+            }
 
             order.courier = changeData._id;
             await order.save();
@@ -553,22 +561,7 @@ export const updateOrderTransfer = async (req, res) => {
         if (order.products.b19 !== null &&  Number(order.products.b19 > 0)) {
             sendText += `кол. 18,9 л.: ${order.products.b19} `
         }
-        const mailOptions = {
-            from: "info@tibetskaya.kz",
-            to: mail,
-            subject: changeData !== "" ? "Добавлен новый заказ" : "Заказ отменен",
-            text: sendText,
-        };
-    
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-                res.status(500).send("Ошибка при отправке письма");
-            } else {
-                console.log("Email sent: " + info.response);
-                res.status(200).send("Письмо успешно отправлено");
-            }
-        });
+        SendEmailOrder(mail, changeData !== "" ? "add" : "cancelled", sendText)
 
         res.json({ success: true, message: "Данные успешно изменены" });
     } catch (error) {
@@ -905,6 +898,30 @@ export const deleteOrder = async (req, res) => {
                 const orders = courier.orders.filter(item => item.order !== orderId);
                 courier.orders = orders
                 await courier.save()
+                const mail = courier.mail
+                if (mail !== null && mail !== "" && mail.includes("@")) {
+                    let sendText = `По адресу ${address.actual}, `
+                    if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                        sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                    }
+                    if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                        sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                    }
+                    SendEmailOrder(mail, "cancelled", sendText)
+                }
+            }
+            
+            const franchisee = await User.findOne({_id: order.franchisee})
+            const mail = franchisee.mail
+            if (mail !== null && mail !== "" && mail.includes("@")) {
+                let sendText = `По адресу ${address.actual}, `
+                if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                    sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                }
+                if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                    sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                }
+                SendEmailOrder(mail, "cancelled", sendText)
             }
             const delRes = await Order.findByIdAndDelete(orderId);
 
@@ -925,19 +942,3 @@ export const deleteOrder = async (req, res) => {
         });
     }
 }
-
-// magick TP1.PNG -resize 2064x2752! P1.PNG
-// magick TP2.PNG -resize 2064x2752! P2.PNG
-// magick TP3.PNG -resize 2064x2752! P3.PNG
-// magick TP4.PNG -resize 2064x2752! P4.PNG
-// magick TP5.PNG -resize 2064x2752! P5.PNG
-// magick TP6.PNG -resize 2064x2752! P6.PNG
-// magick TP7.PNG -resize 2064x2752! P7.PNG
-// magick TP8.PNG -resize 2064x2752! P8.PNG
-// magick TP9.PNG -resize 2064x2752! P9.PNG
-// magick TP10.PNG -resize 2064x2752! P10.PNG
-
-// ffmpeg -i 1.mp4 -vf "crop=1200:1600" P1.mp4
-// ffmpeg -i t2.MOV -vf "crop=886:1920" T2.MOV
-// ffmpeg -i t3.MOV -vf "crop=886:1920" T3.MOV
-// ffmpeg -i IMG_5057.MOV -vf "scale=886:1920" scaled_T2.MOV

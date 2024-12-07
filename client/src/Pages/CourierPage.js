@@ -177,6 +177,12 @@ export default function CourierPage() {
                 </Div>
 
                 <Div />
+                <Div>Возможность видеть номер клиента: {courier?.phoneVision ? "Включен" : "Отключен"}</Div>
+                <Div>
+                    <MyButton click={() => {updateCourierData("phoneVision", !courier?.phoneVision)}}>{courier?.phoneVision ? "Отключить" : "Включить"}</MyButton>
+                </Div>
+
+                <Div />
                 <Div>
                     <LinkButton href={`/courierActiveOrders/${id}`}>Список активных заказов</LinkButton>
                 </Div>
