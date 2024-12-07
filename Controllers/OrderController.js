@@ -892,15 +892,29 @@ export const deleteOrder = async (req, res) => {
         const user = await User.findById(id)
         if (user.role === "superAdmin") {
             const order = await Order.findById(orderId)
-            if (order?.courier) {
-                const courierId = order.courier
-                const courier = await Courier.findById(courierId)
-                const orders = courier.orders.filter(item => item.order !== orderId);
-                courier.orders = orders
-                await courier.save()
-                const mail = courier.mail
+            if (order?.status !== "delivered" && order?.status !== "cancelled") {
+                if (order?.courier) {
+                    const courierId = order.courier
+                    const courier = await Courier.findById(courierId)
+                    const orders = courier.orders.filter(item => item.order !== orderId);
+                    courier.orders = orders
+                    await courier.save()
+                    const mail = courier.mail
+                    if (mail !== null && mail !== "" && mail.includes("@")) {
+                        let sendText = `По адресу ${order?.address.actual}, `
+                        if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                            sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                        }
+                        if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                            sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                        }
+                        SendEmailOrder(mail, "cancelled", sendText)
+                    }
+                }
+                const franchisee = await User.findOne({_id: order.franchisee})
+                const mail = franchisee.mail
                 if (mail !== null && mail !== "" && mail.includes("@")) {
-                    let sendText = `По адресу ${address.actual}, `
+                    let sendText = `По адресу ${order?.address.actual}, `
                     if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
                         sendText += `кол. 12,5 л.: ${order?.products.b12}, `
                     }
@@ -909,19 +923,6 @@ export const deleteOrder = async (req, res) => {
                     }
                     SendEmailOrder(mail, "cancelled", sendText)
                 }
-            }
-            
-            const franchisee = await User.findOne({_id: order.franchisee})
-            const mail = franchisee.mail
-            if (mail !== null && mail !== "" && mail.includes("@")) {
-                let sendText = `По адресу ${address.actual}, `
-                if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
-                    sendText += `кол. 12,5 л.: ${order?.products.b12}, `
-                }
-                if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
-                    sendText += `кол. 18,9 л.: ${order?.products.b19} `
-                }
-                SendEmailOrder(mail, "cancelled", sendText)
             }
             const delRes = await Order.findByIdAndDelete(orderId);
 
