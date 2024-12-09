@@ -440,7 +440,7 @@ export const updateOrder = async (req, res) => {
                 const lCourier = await Courier.findById(courierId)
                 const mail = lCourier.mail
                 if (mail !== null && mail !== "" && mail.includes("@")) {
-                    let sendText = `По адресу ${address.actual}, `
+                    let sendText = `По адресу ${order?.address.actual}, `
                     if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
                         sendText += `кол. 12,5 л.: ${order?.products.b12}, `
                     }
@@ -461,7 +461,7 @@ export const updateOrder = async (req, res) => {
             await courier.save()
             const mail = courier.mail
             if (mail !== null && mail !== "" && mail.includes("@")) {
-                let sendText = `По адресу ${address.actual}, `
+                let sendText = `По адресу ${order?.address.actual}, `
                 if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
                     sendText += `кол. 12,5 л.: ${order?.products.b12}, `
                 }
