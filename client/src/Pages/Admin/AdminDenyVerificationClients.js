@@ -11,7 +11,7 @@ export default function AdminDenyVerificationClients() {
     const [clients, setClients] = useState([]);
 
     useEffect(() => {
-        api.get("/getMainPageInfo", {
+        api.get("/getDenyVerfifcation", {
             headers: { "Content-Type": "application/json" },
         })
             .then(({ data }) => {
