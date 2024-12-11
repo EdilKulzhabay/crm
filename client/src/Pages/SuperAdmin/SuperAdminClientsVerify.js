@@ -27,17 +27,9 @@ export default function SuperAdminClientsVerify() {
         <Div />
         <div>
         {clients.map((client, index) => {
-            let link = false
-            if (client.addresses.length > 0) {
-                client.addresses.forEach((address) => {
-                    if (address.link.includes("/search")) {
-                        link = true
-                    }
-                })
-            }
             return (
                 <div key={client._id}>
-                    <Li link={link}>
+                    <Li link={client?.verify?.status}>
                         <div className="flex items-center gap-x-2 flex-wrap">
                             <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                             <div>|</div>

@@ -195,7 +195,8 @@ export const getMainPageInfo = async (req, res) => {
             ]
         }
 
-        const clients = await Client.countDocuments(filter);
+        const clients = await Client.countDocuments({franchisee: id});
+        const clientsWithDenyVerification = await Client.countDocuments({franchisee: id, "verify.status": "denyVerification"})
         const activeOrders = await Order.countDocuments({
             ...filter,
             'date.d': todayDate,
@@ -253,6 +254,7 @@ export const getMainPageInfo = async (req, res) => {
 
         res.json({
             clients,
+            clientsWithDenyVerification,
             activeOrders,
             unfinishedOrders,
             deliveredOrders,

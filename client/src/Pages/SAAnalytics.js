@@ -12,6 +12,8 @@ import MySnackBar from "../Components/MySnackBar";
 import MyInput from "../Components/MyInput";
 import DownIcon from "../icons/DownIcon";
 import UpIcon from "../icons/UpIcon";
+import getPreviousMonthRange from "../utils/getPreviousMonthRange";
+import clsx from "clsx";
 
 export default function SAAnalytics() {
     const userData = useFetchUserData()
@@ -38,6 +40,12 @@ export default function SAAnalytics() {
     const [temporaryStats, setTemporaryStats] = useState(null)
     const [search, setSearch] = useState("")
     const [chooseFr, setChooseFr] = useState(null)
+    const [analyticsStatus, setAnalyticsStatus] = useState("all")
+    const [summaryData, setSummaryData] = useState({
+        we: 0,
+        us: 0,
+        debtorsKol: 0
+    })
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -84,8 +92,24 @@ export default function SAAnalytics() {
         api.post("/getFranchiseeAnalytics", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
-            setStats(data.stats)
-            setTemporaryStats(data.stats)
+            const sortedStats = [...data.stats].sort((a, b) => statusSaldo(b) - statusSaldo(a));
+            setStats(sortedStats);
+            setTemporaryStats(sortedStats);
+            
+            let summaryWe = 0, summaryUs = 0, summaryDebtorsKol = 0
+            sortedStats.forEach((item) => {
+                if (statusSaldo(item) > 0) {
+                    summaryWe += statusSaldo(item)
+                } else {
+                    summaryUs += statusSaldo(item)
+                    summaryDebtorsKol++
+                }
+            })
+            setSummaryData({
+                we: summaryWe,
+                us: summaryUs,
+                debtorsKol: summaryDebtorsKol
+            })
         }).catch((e) => {
             console.log(e);
         })
@@ -132,6 +156,19 @@ export default function SAAnalytics() {
         }
     }
 
+    const statusSaldo = (stat) => {
+        let sum = 0
+        let owe = stat.owe
+        if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 170
+        }
+        if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
+            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 250
+        }
+        sum += stat.haveTo - owe - stat.fakt
+        return sum
+    }
+
     const oweEqual = (stat) => {
         let owe = stat.owe
         if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
@@ -149,7 +186,19 @@ export default function SAAnalytics() {
                 <>
                     <Div>Аналитика</Div>
                     <Div />
-                    <Div>Фильтры:</Div>
+                    <Div>
+                        <div>Фильтры:</div>
+                        <MyButton click={() => {
+                            const { start, end } = getPreviousMonthRange();
+                            setDates({ startDate: start, endDate: end });
+                        }}>Предыдущий месяц</MyButton>
+                        <MyButton click={() => {
+                            setDates({
+                                startDate: getStartOfMonth(), // Начало месяца
+                                endDate: getCurrentDate()
+                            })
+                        }}>Текущий месяц</MyButton>
+                    </Div>
                     <>
                         <Li>
                             <div className="flex items-center gap-x-3 flex-wrap">
@@ -183,6 +232,53 @@ export default function SAAnalytics() {
                             </div>
                         </Li>
                     </>
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Сальдо:</div>
+                            <button 
+                                className={clsx("hover:text-blue-500", {
+                                    "text-yellow-300": analyticsStatus === "all",
+                                    "text-green-400": analyticsStatus !== "all"
+                                })}
+                                onClick={() => {
+                                    setAnalyticsStatus("all")
+                                    setStats(temporaryStats)
+                            }}>[ Все ]</button>
+                            <button 
+                                className={clsx("hover:text-blue-500", {
+                                    "text-yellow-300": analyticsStatus === "we",
+                                    "text-green-400": analyticsStatus !== "we"
+                                })}
+                                onClick={() => {
+                                    setAnalyticsStatus("we")
+                                    const statusStats = temporaryStats.filter((item) => statusSaldo(item) > 0)
+                                    setStats(statusStats)
+                            }}>[ Мы ]</button>
+                            <button 
+                                className={clsx("hover:text-blue-500", {
+                                    "text-yellow-300": analyticsStatus === "us",
+                                    "text-green-400": analyticsStatus !== "us"
+                                })}
+                                onClick={() => {
+                                    setAnalyticsStatus("us")
+                                    const statusStats = temporaryStats.filter((item) => statusSaldo(item) < 0)
+                                    setStats(statusStats)
+                            }}>[ Нам ]</button>
+                        </div>
+                    </Li>
+                    <Div />
+                    <Div>
+                        Обобщенные данные по франчайзи:
+                    </Div>
+                    <Li>
+                        Вы должны франчайзи: <Info>{formatCurrency(summaryData.we)}</Info>
+                    </Li>
+                    <Li>
+                        Франчайзи должны вам: <Info>{formatCurrency(summaryData.us)}</Info>
+                    </Li>
+                    <Li>
+                        Количество франчайзи с долгом: <Info>{summaryData.debtorsKol}</Info>
+                    </Li>
                     <Div />
                     <Div>
                         Поиск по франчайзи:

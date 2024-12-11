@@ -26,7 +26,7 @@ export const addClient = async (req, res) => {
             price12,
             franchisee,
             opForm,
-            verify: false
+            verify: {status: "waitingVerification", message: ""}
         });
 
         await client.save();
@@ -455,8 +455,26 @@ export const getNotVerifyClients = async (req, res) => {
     try {
         const clients = await Client.find({
             createdAt: { $gte: '2024-11-07T00:00:40.208Z' },
-            verify: false
+            "verify.status": "waitingVerification"
         }).populate("franchisee", "fullName")
+
+        res.json({ clients })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getDenyVerfifcation = async (req, res) => {
+    try {
+        const id = req.userId;
+        const clients = await Client.find({
+            franchisee: id,
+            createdAt: { $gte: '2024-11-07T00:00:40.208Z' },
+            "verify.status": "denyVerification"
+        })
 
         res.json({ clients })
     } catch (error) {

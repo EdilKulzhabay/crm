@@ -83,8 +83,13 @@ const ClientSchema = new mongoose.Schema(
             default: true
         },
         verify: {
-            type: Boolean,
-            default: true
+            status: {
+                type: String,
+                default: "waitingVerification"
+            },
+            message: {
+                type: String,
+            }
         },
         haveCompletedOrder: {
             type: Boolean,

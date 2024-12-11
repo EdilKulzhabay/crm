@@ -146,6 +146,7 @@ app.post("/deleteSubscription", SubscriptionController.deleteSubscription);
 ///////CLIENT
 app.get("/getFreeInfo", checkAuth, ClientController.getFreeInfo);
 app.get("/getNotVerifyClients", ClientController.getNotVerifyClients);
+app.get("/getDenyVerfifcation", checkAuth, ClientController.getDenyVerfifcation);
 app.post("/addClient", ClientController.addClient);
 app.post("/getClients", checkAuth, ClientController.getClients);
 app.post("/searchClient", checkAuth, ClientController.searchClient);

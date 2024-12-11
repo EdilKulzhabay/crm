@@ -99,6 +99,14 @@ export default function SuperAdmin() {
                         <Info>{userData?.b197kol}</Info>
                     </div>
                 </Li>
+                <Li>
+                    <div className="flex items-center gap-x-3">
+                        <div>Клиенты не прошедшие верификацию: </div>
+                        <div>
+                            <LinkButton href="/adminDenyVerificationClients">{info?.clientsWithDenyVerification || 0} шт.</LinkButton>
+                        </div>
+                    </div>
+                </Li>
             </>
             <Div />
             <Div>
