@@ -4,6 +4,7 @@ import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import Info from "../../Components/Info";
 import Li from "../../Components/Li";
+import Li2 from "../../Components/Li2";
 import LinkButton from "../../Components/LinkButton";
 import useFetchUserData from "../../customHooks/useFetchUserData";
 
@@ -67,6 +68,20 @@ export default function SuperAdmin() {
                         <Info>{info?.clients}</Info>
                     </div>
                 </Li>
+                <Li2>
+                    <div className="">
+                        На верификации:
+                        <Info>{info?.clientsWithWaitingVerification || 0}</Info>
+                    </div>
+                </Li2>
+                <Li2>
+                    <div className="flex items-center gap-x-3">
+                        <div>Отклонено: </div>
+                        <div>
+                            <LinkButton href="/adminDenyVerificationClients">{info?.clientsWithDenyVerification || 0} шт.</LinkButton>
+                        </div>
+                    </div>
+                </Li2>
                 <Li>
                     <div className="">
                         Прибыль:
@@ -99,14 +114,7 @@ export default function SuperAdmin() {
                         <Info>{userData?.b197kol}</Info>
                     </div>
                 </Li>
-                <Li>
-                    <div className="flex items-center gap-x-3">
-                        <div>Клиенты не прошедшие верификацию: </div>
-                        <div>
-                            <LinkButton href="/adminDenyVerificationClients">{info?.clientsWithDenyVerification || 0} шт.</LinkButton>
-                        </div>
-                    </div>
-                </Li>
+                
             </>
             <Div />
             <Div>
