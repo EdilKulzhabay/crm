@@ -454,7 +454,6 @@ export const getClientsForExcel = async (req, res) => {
 export const getNotVerifyClients = async (req, res) => {
     try {
         const clients = await Client.find({
-            createdAt: { $gte: '2024-11-07T00:00:40.208Z' },
             "verify.status": "waitingVerification"
         }).populate("franchisee", "fullName")
 
@@ -474,7 +473,6 @@ export const getDenyVerfifcation = async (req, res) => {
         
         const clients = await Client.find({
             franchisee: id,
-            createdAt: { $gte: '2024-11-07T00:00:40.208Z' },
             "verify.status": "denyVerification"
         })
 
