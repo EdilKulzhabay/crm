@@ -3,7 +3,7 @@ import Pagada from "../icons/Pagada";
 
 export default function Li(props) {
     const icon = props.icon || false
-    const link = props.link === "verified" ? false : true
+    const link = props?.link && props?.link === "verified" ? false : true
     return (
         <Div>
             <div className="flex items-center gap-x-3">
