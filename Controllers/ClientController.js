@@ -470,11 +470,16 @@ export const getNotVerifyClients = async (req, res) => {
 export const getDenyVerfifcation = async (req, res) => {
     try {
         const id = req.userId;
+        console.log(id);
+        
         const clients = await Client.find({
             franchisee: id,
             createdAt: { $gte: '2024-11-07T00:00:40.208Z' },
             "verify.status": "denyVerification"
         })
+
+        console.log("clients: ", clients);
+        
 
         res.json({ clients })
     } catch (error) {
