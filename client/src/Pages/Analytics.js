@@ -9,6 +9,7 @@ import DataInput from "../Components/DataInput";
 import MyButton from "../Components/MyButton";
 import LinkButton from "../Components/LinkButton";
 import MySnackBar from "../Components/MySnackBar";
+import getPreviousMonthRange from "../utils/getPreviousMonthRange";
 
 export default function Analytics() {
     const userData = useFetchUserData()
@@ -98,7 +99,19 @@ export default function Analytics() {
                 <>
                     <Div>Аналитика</Div>
                     <Div />
-                    <Div>Фильтры:</Div>
+                    <Div>
+                        <div>Фильтры:</div>
+                        <MyButton click={() => {
+                            const { start, end } = getPreviousMonthRange();
+                            setDates({ startDate: start, endDate: end });
+                        }}>Предыдущий месяц</MyButton>
+                        <MyButton click={() => {
+                            setDates({
+                                startDate: getStartOfMonth(), // Начало месяца
+                                endDate: getCurrentDate()
+                            })
+                        }}>Текущий месяц</MyButton>
+                    </Div>
                     <>
                         <Li>
                             <div className="flex items-center gap-x-3 flex-wrap">

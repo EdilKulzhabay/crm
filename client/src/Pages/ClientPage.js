@@ -34,6 +34,8 @@ export default function ClientPage() {
         startDate: "2024-01-01", // Начало месяца
         endDate: getCurrentDate()     // Сегодняшняя дата
     });
+    const [denyVerification, setDenyVerification] = useState(false)
+    const [denyVerificationMessage, setDenyVerificationMessage] = useState("")
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -590,11 +592,84 @@ export default function ClientPage() {
                 {userData?.role === "superAdmin" && <>
                     <Div />
                     <Div>
-                        Верифицирован: {client?.verify && client?.verify === true ? "Да" : "Нет"}
+                        Верифицирован: {client?.verify && client?.verify?.status === "verified" ? "Да" : client?.verify?.status === "waitingVerification" ? "Ожидает верификации" : "Отказано в верификации"}
                     </Div>
                     <Div>
-                        <MyButton click={() => {updateClientData("verify", true)}}>Верифицировать</MyButton>
+                        <MyButton click={() => {updateClientData("verify", {status: "verified", message: "success"})}}>Верифицировать</MyButton>
+                        <MyButton click={() => {setDenyVerification(true)}}>Отказать в верификации</MyButton>
                     </Div>
+                    {denyVerification && <>
+                        <Div>
+                            Причина отказа:
+                        </Div>
+                        <Li>
+                            <MyButton click={() => {
+                                const DVM = denyVerificationMessage
+                                if (DVM.includes("Не полный адрес")) {
+                                    const updated = DVM.replace("Не полный адрес", "").trim();
+                                    setDenyVerificationMessage(updated);
+                                } else {
+                                    const updated = (DVM + " Не полный адрес").trim();
+                                    setDenyVerificationMessage(updated);
+                                }
+                            }}>{denyVerificationMessage.includes("Не полный адрес") ? "x" : " "}</MyButton>
+                            <div>Не полный адрес</div>
+                        </Li>
+                        <Li>
+                            <MyButton click={() => {
+                                const DVM = denyVerificationMessage
+                                if (DVM.includes("Отсутствует email")) {
+                                    const updated = DVM.replace("Отсутствует email", "").trim();
+                                    setDenyVerificationMessage(updated);
+                                } else {
+                                    const updated = (DVM + " Отсутствует email").trim();
+                                    setDenyVerificationMessage(updated);
+                                }
+                            }}>{denyVerificationMessage.includes("Отсутствует email") ? "x" : " "}</MyButton>
+                            <div>Отсутствует email</div>
+                        </Li>
+                        <Li>
+                            <MyButton click={() => {
+                                const DVM = denyVerificationMessage
+                                if (DVM.includes("Нет имени контактного лица")) {
+                                    const updated = DVM.replace("Нет имени контактного лица", "").trim();
+                                    setDenyVerificationMessage(updated);
+                                } else {
+                                    const updated = (DVM + " Нет имени контактного лица").trim();
+                                    setDenyVerificationMessage(updated);
+                                }
+                            }}>{denyVerificationMessage.includes("Нет имени контактного лица") ? "x" : " "}</MyButton>
+                            <div>Нет имени контактного лица</div>
+                        </Li>
+                        <Li>
+                            <MyButton click={() => {
+                                const DVM = denyVerificationMessage
+                                if (DVM.includes("Нет номера контактного лица")) {
+                                    const updated = DVM.replace("Нет номера контактного лица", "").trim();
+                                    setDenyVerificationMessage(updated);
+                                } else {
+                                    const updated = (DVM + " Нет номера контактного лица").trim();
+                                    setDenyVerificationMessage(updated);
+                                }
+                            }}>{denyVerificationMessage.includes("Нет номера контактного лица") ? "x" : " "}</MyButton>
+                            <div>Нет номера контактного лица</div>
+                        </Li>
+                        <Div />
+                        <Li>
+                            <MyButton click={() => {
+                                if (denyVerificationMessage === "") {
+                                    setOpen(true)
+                                    setMessage("Добавьте описание отказа")
+                                    setStatus("error")
+                                } else {
+                                    updateClientData("verify", {status: "denyVerification", message: denyVerificationMessage})
+                                    setDenyVerification(false)
+                                    setDenyVerificationMessage("")
+                                }
+                            }}>Принять</MyButton>
+                            <MyButton click={() => {setDenyVerification(false)}}>Отменить</MyButton>
+                        </Li>
+                    </>}
                 </>}
 
                 <Div />

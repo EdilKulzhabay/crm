@@ -50,6 +50,7 @@ import AddOrder2 from "./Pages/AddOrder2";
 import SuperAdminClientsVerify from "./Pages/SuperAdmin/SuperAdminClientsVerify";
 import PickupInfo from "./Pages/PickupInfo";
 import AddPickup from "./Pages/AddPickup";
+import AdminDenyVerificationClients from "./Pages/Admin/AdminDenyVerificationClients";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -105,7 +106,7 @@ export const router = createBrowserRouter([
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
-    
+    { path: "/adminDenyVerificationClients", element: <AdminDenyVerificationClients /> },
 
     ////COURIERLINKS
     { path: "/courier", element: <CourierMain /> },
