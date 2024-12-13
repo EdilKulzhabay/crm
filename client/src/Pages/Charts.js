@@ -322,26 +322,26 @@ export default function Charts() {
                     {userData?.role === "admin" ? 
                         <>
                             <Div>
-                                Всего отпущено бутылей (12,5): <Info>{saldoData?.tookAwayB12}</Info>
+                                Всего отпущено бутылей (12,5): <Info>{saldoData?.tookAwayB12} шт.</Info>
                             </Div>
                             <Div>
-                                Всего отпущено бутылей (19,8): <Info>{saldoData?.tookAwayB19}</Info>
+                                Всего отпущено бутылей (19,8): <Info>{saldoData?.tookAwayB19} шт.</Info>
                             </Div>
                             <Div />
                             <Div>
                                 Доставлено:
                             </Div>
                             <Li>
-                                По доп заказам (12,5): <Info>{saldoData?.totalAddtitionalB12Bottles}</Info>
+                                По доп заказам (12,5): <Info>{saldoData?.totalAddtitionalB12Bottles} шт.</Info>
                             </Li>
                             <Li>
-                                По доп заказам (19,8): <Info>{saldoData?.totalAddtitionalB19Bottles}</Info>
+                                По доп заказам (19,8): <Info>{saldoData?.totalAddtitionalB19Bottles} шт.</Info>
                             </Li>
                             <Li>
-                                По собст заказам (12,5): <Info>{saldoData?.totalRegularB12Bottles}</Info>
+                                По собст заказам (12,5): <Info>{saldoData?.totalRegularB12Bottles} шт.</Info>
                             </Li>
                             <Li>
-                                По собст заказам (19,8): <Info>{saldoData?.totalRegularB19Bottles}</Info>
+                                По собст заказам (19,8): <Info>{saldoData?.totalRegularB19Bottles} шт.</Info>
                             </Li>
 
                             <Div />
@@ -349,13 +349,13 @@ export default function Charts() {
                                 -------------------------------
                             </Div>
                             <Div>
-                                Итого сумма заказов (x): <Info>{formatCurrency(saldoData?.haveTo)}</Info>
+                                Итого сумма заказов (x): <Info>{formatCurrency(saldoData?.haveTo)} тенге</Info>
                             </Div>
                             <Div>
-                                Итого оплаченных заказов (y): <Info>{formatCurrency(saldoData?.fakt)}</Info>
+                                Итого оплаченных заказов (y): <Info>{formatCurrency(saldoData?.fakt)} тенге</Info>
                             </Div>
                             <Div>
-                                Итого у оплате за вывоз (z): <Info>{formatCurrency(saldoData?.owe)}</Info>
+                                Итого у оплате за вывоз (z): <Info>{formatCurrency(saldoData?.owe)} тенге</Info>
                             </Div>
                             <Div>
                                 Сальдо (Формула: x-y-z): {saldo()}
