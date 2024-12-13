@@ -9,6 +9,7 @@ import MinusIcon from "../../icons/MinusIcon";
 import Li from "../../Components/Li";
 import MySnackBar from "../../Components/MySnackBar";
 import LinkButton from "../../Components/LinkButton";
+import Info from "../../Components/Info";
 
 export default function DepartamentGiving() {
     const userData = useFetchUserData();

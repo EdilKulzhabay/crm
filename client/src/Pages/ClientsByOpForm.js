@@ -14,20 +14,20 @@ import getPreviousMonthRange from "../utils/getPreviousMonthRange";
 export default function ClientsByOpForm() {
     const userData = useFetchUserData()
     const { opForm, startDate, endDate } = useParams();
-    // const getCurrentDate = () => {
-    //     const today = new Date();
-    //     const year = today.getFullYear();
-    //     const month = String(today.getMonth() + 1).padStart(2, '0');
-    //     const day = String(today.getDate()).padStart(2, '0');
-    //     return `${year}-${month}-${day}`;
-    // };
+    const getCurrentDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
-    // const getStartOfMonth = () => {
-    //     const today = new Date();
-    //     const year = today.getFullYear();
-    //     const month = String(today.getMonth() + 1).padStart(2, '0');
-    //     return `${year}-${month}-01`;
-    // };
+    const getStartOfMonth = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}-01`;
+    };
 
     const [dates, setDates] = useState({
         startDate: startDate, // Начало месяца
