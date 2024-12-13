@@ -312,7 +312,7 @@ export const updateClientData = async (req, res) => {
         // Обновляем поле клиента
         client[field] = value;
 
-        if (field === "verify" && value === "verified") {
+        if (field === "verify" && value.status === "verified") {
             const clientAddresses = client.addresses;
 
             // Функция для получения ID 2GIS по адресу
