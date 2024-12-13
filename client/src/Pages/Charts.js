@@ -349,13 +349,13 @@ export default function Charts() {
                                 -------------------------------
                             </Div>
                             <Div>
-                                Итого сумма заказов (x): <Info>{saldoData?.haveTo}</Info>
+                                Итого сумма заказов (x): <Info>{formatCurrency(saldoData?.haveTo)}</Info>
                             </Div>
                             <Div>
-                                Итого оплаченных заказов (y): <Info>{saldoData?.fakt}</Info>
+                                Итого оплаченных заказов (y): <Info>{formatCurrency(saldoData?.fakt)}</Info>
                             </Div>
                             <Div>
-                                Итого у оплате за вывоз (z): <Info>{saldoData?.owe}</Info>
+                                Итого у оплате за вывоз (z): <Info>{formatCurrency(saldoData?.owe)}</Info>
                             </Div>
                             <Div>
                                 Сальдо (Формула: x-y-z): {saldo()}
