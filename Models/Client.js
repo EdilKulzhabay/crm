@@ -31,6 +31,9 @@ const ClientSchema = new mongoose.Schema(
                 house: {
                     type: String,
                 },
+                id2Gis: {
+                    type: String
+                }
             },
         ],
         price19: {

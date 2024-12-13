@@ -9,6 +9,7 @@ import Li from "../Components/Li";
 import { useParams } from "react-router-dom";
 import Info from "../Components/Info";
 import LinkButton from "../Components/LinkButton";
+import getPreviousMonthRange from "../utils/getPreviousMonthRange";
 
 export default function ClientsByOpForm() {
     const userData = useFetchUserData()
@@ -86,7 +87,19 @@ export default function ClientsByOpForm() {
                 <>
                     <Div>Графики по форме оплаты</Div>
                     <Div />
-                    <Div>Фильтры:</Div>
+                    <Div>
+                        <div>Фильтры:</div>
+                        <MyButton click={() => {
+                            const { start, end } = getPreviousMonthRange();
+                            setDates({ startDate: start, endDate: end });
+                        }}>Предыдущий месяц</MyButton>
+                        <MyButton click={() => {
+                            setDates({
+                                startDate: getStartOfMonth(), // Начало месяца
+                                endDate: getCurrentDate()
+                            })
+                        }}>Текущий месяц</MyButton>
+                    </Div>
                     <>
                         <Li>
                             <div className="flex items-center gap-x-3 flex-wrap">

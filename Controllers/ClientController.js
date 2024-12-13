@@ -1,6 +1,7 @@
 import Client from "../Models/Client.js";
 import Notification from "../Models/Notification.js";
 import User from "../Models/User.js";
+import axios from "axios"
 
 export const addClient = async (req, res) => {
     try {
@@ -298,86 +299,120 @@ export const deleteClientAdress = async (req, res) => {
 
 export const updateClientData = async (req, res) => {
     try {
-      const { clientId, field, value } = req.body;
-  
-      // Находим текущего клиента
-      const client = await Client.findById(clientId);
-      if (!client) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Client not found" });
-      }
-  
-      // Обновляем поле клиента
-      client[field] = value;
-      await client.save();
-  
-      // Проверяем совпадения с другими клиентами
-      let orConditions = [];
-      if (field === "phone" && value) {
-        orConditions.push({ phone: value, franchisee: { $ne: client.franchisee } });
-      }
-      if (field === "addresses" && value.length > 0) {
-        value.forEach((address) => {
-          orConditions.push({
-            addresses: {
-              $elemMatch: {
-                link: address.link,
-              },
-            },
-            franchisee: { $ne: client.franchisee },
-          });
-        });
-      }
-  
-      let existingClients = null;
-      if (orConditions.length > 0) {
-        existingClients = await Client.findOne({
-          $or: orConditions,
-          _id: { $ne: clientId }, // исключаем текущего клиента из поиска
-        });
-      }
-  
-      // Если найдены совпадения, создаем уведомление
-      if (existingClients) {
-        let matchedField = "";
-        if (existingClients.phone === value && field === "phone")
-          matchedField += "phone ";
-        if (
-          field === "addresses" &&
-          existingClients.addresses.some((addr) =>
-            value.some((newAddr) => addr.link === newAddr.link)
-          )
-        ) {
-          matchedField += "addresses ";
+        const { clientId, field, value } = req.body;
+    
+        // Находим текущего клиента
+        const client = await Client.findById(clientId);
+        if (!client) {
+            return res
+            .status(404)
+            .json({ success: false, message: "Client not found" });
         }
   
-        const notDoc = new Notification({
-          first: existingClients.franchisee,
-          second: client.franchisee,
-          matchesType: "client",
-          matchedField,
-          firstObject: existingClients._id,
-          secondObject: client._id
-        });
-  
-        await notDoc.save();
-  
-        const notification = {
-          message: "Есть совпадение клиентов",
-        };
-  
-        global.io.emit("clientMatch", notification);
-      }
-  
-      res.json({ success: true, message: "Данные успешно изменены" });
+        // Обновляем поле клиента
+        client[field] = value;
+
+        if (field === "verify" && value === "verified") {
+            const clientAddresses = client.addresses;
+
+            // Функция для получения ID 2GIS по адресу
+            const fetchAddressId = async (item) => {
+                try {
+                    const response = await axios.get('https://catalog.api.2gis.com/3.0/items/geocode', {
+                        params: {
+                            fields: "items.point",
+                            key: "f5af220d-c60a-4cf6-a350-4a953c324a3d",
+                            q: `Алматы, ${item.street}`,
+                        },
+                    });
+                    console.log("response.data.result", response.data.result);
+                    
+                    return response.data.result.items[0]?.id || null; // Возвращаем ID или null
+                } catch (error) {
+                    console.log(`Невозможно найти адрес: ${item.street}`);
+                    return null;
+                }
+            };
+
+            // Получаем IDs для всех адресов
+            const addressIds = await Promise.allSettled(clientAddresses.map(fetchAddressId));
+            addressIds.forEach((result, index) => {
+                clientAddresses[index].id2Gis = result.status === "fulfilled" ? result.value : null;
+            });
+
+            // Сохраняем обновленный документ клиента
+            client.addresses = clientAddresses; // Перезаписываем массив addresses
+            await client.save();
+
+            console.log("client", client);
+            
+
+            // Проверяем совпадения с другими клиентами
+            let orConditions = [];
+            orConditions.push({ phone: client.phone, franchisee: { $ne: client.franchisee } });
+            orConditions.push({ mail: client.mail, franchisee: { $ne: client.franchisee } });
+            client.addresses.forEach((address) => {
+                orConditions.push({
+                    addresses: {
+                    $elemMatch: {
+                        link: address.id2Gis,
+                    },
+                    },
+                    franchisee: { $ne: client.franchisee },
+                });
+            });
+
+            console.log("orConditions", orConditions);
+            
+        
+            let existingClients = null;
+            existingClients = await Client.findOne({
+                $or: orConditions,
+                _id: { $ne: clientId }, // исключаем текущего клиента из поиска
+            });
+    
+            // Если найдены совпадения, создаем уведомление
+            if (existingClients) {
+                let matchedField = "";
+                if (existingClients.phone === client.phone) {
+                    matchedField += "phone ";
+                }
+                if (existingClients.mail === client.mail) {
+                    matchedField += "mail ";
+                }
+                if (existingClients.addresses.some((addr) => addr.id2Gis && client.addresses.some((newAddr) => addr.id2Gis === newAddr.id2Gis))) {
+                    matchedField += "addresses ";
+                }
+        
+                const notDoc = new Notification({
+                    first: existingClients.franchisee,
+                    second: client.franchisee,
+                    matchesType: "client",
+                    matchedField,
+                    firstObject: existingClients._id,
+                    secondObject: client._id
+                });
+        
+                await notDoc.save();
+        
+                const notification = {
+                    message: "Есть совпадение клиентов",
+                };
+        
+                global.io.emit("clientMatch", notification);
+            }
+        } else {
+            await client.save();
+        }
+
+        res.json({ success: true, message: "Данные успешно изменены" });
     } catch (error) {
-      console.log(error);
-      res.status(500).json({
-        message: "Что-то пошло не так",
-      });
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
     }
-  };
+};
 
 export const updateClientFranchisee = async (req, res) => {
     try {
