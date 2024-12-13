@@ -126,15 +126,10 @@ export default function DepartamentGiving() {
                 <Div>{chFranchisee.fullName} <MyButton click={skip}>Пропустить</MyButton> </Div>
                 <Div />
                 {chFranchisee?.b121kol !== 9999 && 
-                    <Li>Количество 12,5 л: {chFranchisee?.b121kol}</Li>
-                }
-                <Li>Количество 18,9 л. (1): {chFranchisee?.b191kol}</Li>
-                <Li>Количество 18,9 л. (7): {chFranchisee?.b197kol}</Li>
-                <Div />
-                {chFranchisee?.b121kol !== 9999 && 
                     <Li>
                         <div className="flex items-center gap-x-2">
                             <div>Количество 12,5 л:</div>
+                            <div className="w-5"><Info>{chFranchisee?.b121kol !== 9999 ? chFranchisee?.b121kol : "0"}</Info></div>
                             <button 
                                 onClick={() => {decreaseValue("b121kol")}}
                                 className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
@@ -174,6 +169,7 @@ export default function DepartamentGiving() {
                 <Li>
                     <div className="flex items-center gap-x-2">
                         <div>Количество 18,9 л. (1):</div>
+                        <div className="w-5"><Info>{chFranchisee?.b191kol}</Info></div>
                         <button 
                             onClick={() => {decreaseValue("b191kol")}}
                             className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
@@ -212,6 +208,7 @@ export default function DepartamentGiving() {
                 <Li>
                     <div className="flex items-center gap-x-2">
                         <div>Количество 18,9 л. (7):</div>
+                        <div className="w-5"><Info>{chFranchisee?.b197kol}</Info></div>
                         <button 
                             onClick={() => {decreaseValue("b197kol")}}
                             className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"

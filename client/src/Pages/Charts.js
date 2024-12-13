@@ -225,18 +225,18 @@ export default function Charts() {
                 <Div>Графики по форме оплаты</Div>
                 <Div />
                 <Div>
-                        <div>Фильтры:</div>
-                        <MyButton click={() => {
-                            const { start, end } = getPreviousMonthRange();
-                            setDates({ startDate: start, endDate: end });
-                        }}>Предыдущий месяц</MyButton>
-                        <MyButton click={() => {
-                            setDates({
-                                startDate: getStartOfMonth(), // Начало месяца
-                                endDate: getCurrentDate()
-                            })
-                        }}>Текущий месяц</MyButton>
-                    </Div>
+                    <div>Фильтры:</div>
+                    <MyButton click={() => {
+                        const { start, end } = getPreviousMonthRange();
+                        setDates({ startDate: start, endDate: end });
+                    }}>Предыдущий месяц</MyButton>
+                    <MyButton click={() => {
+                        setDates({
+                            startDate: getStartOfMonth(), // Начало месяца
+                            endDate: getCurrentDate()
+                        })
+                    }}>Текущий месяц</MyButton>
+                </Div>
                 <>
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
@@ -320,9 +320,47 @@ export default function Charts() {
                 <Div />
                 <Div>---------------------</Div>
                     {userData?.role === "admin" ? 
-                        <Div>
-                            Сальдо: {saldo()}
-                        </Div>
+                        <>
+                            <Div>
+                                Всего отпущено бутылей (12,5): <Info>{saldoData?.tookAwayB12}</Info>
+                            </Div>
+                            <Div>
+                                Всего отпущено бутылей (19,8): <Info>{saldoData?.tookAwayB19}</Info>
+                            </Div>
+                            <Div />
+                            <Div>
+                                Доставлено:
+                            </Div>
+                            <Li>
+                                По доп заказам (12,5): <Info>{saldoData?.totalAddtitionalB12Bottles}</Info>
+                            </Li>
+                            <Li>
+                                По доп заказам (19,8): <Info>{saldoData?.totalAddtitionalB19Bottles}</Info>
+                            </Li>
+                            <Li>
+                                По собст заказам (12,5): <Info>{saldoData?.totalRegularB12Bottles}</Info>
+                            </Li>
+                            <Li>
+                                По собст заказам (19,8): <Info>{saldoData?.totalRegularB19Bottles}</Info>
+                            </Li>
+
+                            <Div />
+                            <Div>
+                                -------------------------------
+                            </Div>
+                            <Div>
+                                Итого сумма заказов (x): <Info>{saldoData?.haveTo}</Info>
+                            </Div>
+                            <Div>
+                                Итого оплаченных заказов (y): <Info>{saldoData?.fakt}</Info>
+                            </Div>
+                            <Div>
+                                Итого у оплате за вывоз (z): <Info>{saldoData?.owe}</Info>
+                            </Div>
+                            <Div>
+                                Сальдо (Формула: x-y-z): {saldo()}
+                            </Div>
+                        </>
                         :
                         <>
                             <Div>
