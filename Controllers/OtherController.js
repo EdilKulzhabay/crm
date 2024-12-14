@@ -195,7 +195,7 @@ export const getMainPageInfo = async (req, res) => {
             ]
         }
 
-        const clients = await Client.countDocuments({franchisee: id});
+        const clients = await Client.countDocuments({franchisee: id, "verify.status": "verified"});
         const clientsWithDenyVerification = await Client.countDocuments({franchisee: id, "verify.status": "denyVerification"})
         const clientsWithWaitingVerification = await Client.countDocuments({franchisee: id, "verify.status": "waitingVerification"})
         const activeOrders = await Order.countDocuments({
