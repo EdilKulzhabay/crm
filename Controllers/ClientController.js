@@ -368,6 +368,7 @@ export const updateClientData = async (req, res) => {
             let existingClients = null;
             existingClients = await Client.findOne({
                 $or: orConditions,
+                "verify.status": "verified",
                 _id: { $ne: clientId }, // исключаем текущего клиента из поиска
             });
     
