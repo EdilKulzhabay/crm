@@ -344,9 +344,6 @@ export const updateClientData = async (req, res) => {
             client.addresses = clientAddresses; // Перезаписываем массив addresses
             await client.save();
 
-            console.log("client", client);
-            
-
             // Проверяем совпадения с другими клиентами
             let orConditions = [];
             orConditions.push({ phone: client.phone, franchisee: { $ne: client.franchisee } });
@@ -362,9 +359,6 @@ export const updateClientData = async (req, res) => {
                 });
             });
 
-            console.log("orConditions", orConditions);
-            
-        
             let existingClients = null;
             existingClients = await Client.findOne({
                 $or: orConditions,
@@ -489,11 +483,48 @@ export const getClientsForExcel = async (req, res) => {
 
 export const getNotVerifyClients = async (req, res) => {
     try {
-        const clients = await Client.find({
-            "verify.status": "waitingVerification"
-        }).populate("franchisee", "fullName")
+        const {page, searchF, sa} = req.body
 
-        res.json({ clients })
+        const limit = 20;
+        const skip = (page - 1) * limit;
+        const filter = {}
+
+        if (searchF !== "") {
+            const franchisees = await User.find({
+                $or: [
+                    { fullName: { $regex: searchF, $options: "i" } },
+                    { userName: { $regex: searchF, $options: "i" } }
+                ]
+            }).select('_id');
+    
+            const franchiseeIds = franchisees.map(franchisee => franchisee._id);
+            filter.$or = [
+                { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
+                { transferredFranchise: { $regex: searchF, $options: "i" } } // Фильтр по transferredFranchise
+            ];
+        } else if (sa) {
+            const franchisees = await User.find({
+                $or: [
+                    { fullName: { $regex: "admin", $options: "i" } },
+                    { userName: { $regex: "admin", $options: "i" } }
+                ]
+            }).select('_id');
+    
+            const franchiseeIds = franchisees.map(franchisee => franchisee._id);
+            filter.$or = [
+                { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
+                { transferredFranchise: { $regex: "admin", $options: "i" } } // Фильтр по transferredFranchise
+            ];
+        }
+
+        const totalClients = await Client.countDocuments({...filter, "verify.status": "waitingVerification"})
+
+        const clients = await Client.find({...filter, "verify.status": "waitingVerification"})
+            .populate("franchisee", "fullName")
+            .skip(skip)
+            .limit(limit);
+
+        res.json({ clients, totalClients })
     } catch (error) {
         console.log(error);
         res.status(500).json({

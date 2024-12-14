@@ -9,6 +9,7 @@ import MinusIcon from "../../icons/MinusIcon";
 import Li from "../../Components/Li";
 import MySnackBar from "../../Components/MySnackBar";
 import { useNavigate } from "react-router-dom";
+import Info from "../../Components/Info";
 
 export default function DepartamentGivingSingle() {
     const userData = useFetchUserData();
@@ -106,6 +107,7 @@ export default function DepartamentGivingSingle() {
                     <Li>
                         <div className="flex items-center gap-x-2">
                             <div>Количество 12,5 л:</div>
+                            <div className="w-[60px]"><Info>{chFranchisee?.b121kol !== 9999 ? chFranchisee?.b121kol : "0"}</Info></div>
                             <button 
                                 onClick={() => {decreaseValue("b121kol")}}
                                 className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
@@ -145,6 +147,7 @@ export default function DepartamentGivingSingle() {
                 <Li>
                     <div className="flex items-center gap-x-2">
                         <div>Количество 18,9 л. (1):</div>
+                        <div className="w-[60px]"><Info>{chFranchisee?.b191kol}</Info></div>
                         <button 
                             onClick={() => {decreaseValue("b191kol")}}
                             className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"
@@ -183,6 +186,7 @@ export default function DepartamentGivingSingle() {
                 <Li>
                     <div className="flex items-center gap-x-2">
                         <div>Количество 18,9 л. (7):</div>
+                        <div className="w-[60px]"><Info>{chFranchisee?.b197kol}</Info></div>
                         <button 
                             onClick={() => {decreaseValue("b197kol")}}
                             className="w-8 h-8 flex items-center bg-gray-700 bg-opacity-50 rounded-full justify-center p-1"

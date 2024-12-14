@@ -274,7 +274,7 @@ export default function SAAnalytics() {
                         Вы должны франчайзи: <Info>{formatCurrency(summaryData.we)}</Info>
                     </Li>
                     <Li>
-                        Франчайзи должны вам: <Info>{formatCurrency(summaryData.us)}</Info>
+                        Франчайзи должны вам: <Info>{formatCurrency(Math.abs(summaryData.us))}</Info>
                     </Li>
                     <Li>
                         Количество франчайзи с долгом: <Info>{summaryData.debtorsKol}</Info>

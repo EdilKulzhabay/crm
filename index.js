@@ -145,7 +145,6 @@ app.post("/deleteSubscription", SubscriptionController.deleteSubscription);
 
 ///////CLIENT
 app.get("/getFreeInfo", checkAuth, ClientController.getFreeInfo);
-app.get("/getNotVerifyClients", ClientController.getNotVerifyClients);
 app.get("/getDenyVerfifcation", checkAuth, ClientController.getDenyVerfifcation);
 app.post("/addClient", ClientController.addClient);
 app.post("/getClients", checkAuth, ClientController.getClients);
@@ -156,6 +155,7 @@ app.post("/deleteClientAdress", ClientController.deleteClientAdress);
 app.post("/updateClientData", ClientController.updateClientData);
 app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
 app.post("/getClientsForExcel", checkAuth, ClientController.getClientsForExcel);
+app.post("/getNotVerifyClients", ClientController.getNotVerifyClients);
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);

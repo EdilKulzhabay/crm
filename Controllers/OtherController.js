@@ -286,6 +286,7 @@ export const getMainPageInfoSA = async (req, res) => {
 
         // Считаем общее количество клиентов на сегодня
         const clients = await Client.countDocuments();
+        const clientsWithDenyVerification = await Client.countDocuments({franchisee: id, "verify.status": "denyVerification"})
 
         // Считаем статистику по заказам
         const stats = await Order.aggregate([
@@ -427,6 +428,7 @@ export const getMainPageInfoSA = async (req, res) => {
 
         res.json({
             clients,
+            clientsWithDenyVerification,
             stats: stats[0],
             bottles: bottles[0],
             balance: balance[0],
