@@ -202,6 +202,17 @@ export default function Charts() {
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")}`;
     };
 
+    const oweEqual = () => {
+        let owe = saldoData?.owe
+        if (saldoData?.tookAwayB12 > saldoData?.totalAddtitionalB12Bottles) {
+            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 170
+        }
+        if (saldoData?.tookAwayB19 > saldoData?.totalAddtitionalB19Bottles) {
+            owe += (saldoData?.tookAwayB19 - saldoData?.totalAddtitionalB19Bottles) * 250
+        }
+        return formatCurrency(owe)
+    }
+
     const saldo = () => {
         let sum = 0
         let owe = saldoData?.owe
@@ -325,7 +336,7 @@ export default function Charts() {
                                 Всего отпущено бутылей (12,5): <Info>{saldoData?.tookAwayB12} шт.</Info>
                             </Div>
                             <Div>
-                                Всего отпущено бутылей (19,8): <Info>{saldoData?.tookAwayB19} шт.</Info>
+                                Всего отпущено бутылей (18,9): <Info>{saldoData?.tookAwayB19} шт.</Info>
                             </Div>
                             <Div />
                             <Div>
@@ -335,13 +346,13 @@ export default function Charts() {
                                 По доп заказам (12,5): <Info>{saldoData?.totalAddtitionalB12Bottles} шт.</Info>
                             </Li>
                             <Li>
-                                По доп заказам (19,8): <Info>{saldoData?.totalAddtitionalB19Bottles} шт.</Info>
+                                По доп заказам (18,9): <Info>{saldoData?.totalAddtitionalB19Bottles} шт.</Info>
                             </Li>
                             <Li>
                                 По собст заказам (12,5): <Info>{saldoData?.totalRegularB12Bottles} шт.</Info>
                             </Li>
                             <Li>
-                                По собст заказам (19,8): <Info>{saldoData?.totalRegularB19Bottles} шт.</Info>
+                                По собст заказам (18,9): <Info>{saldoData?.totalRegularB19Bottles} шт.</Info>
                             </Li>
 
                             <Div />
@@ -355,7 +366,7 @@ export default function Charts() {
                                 Итого оплаченных заказов (y): <Info>{formatCurrency(saldoData?.fakt)} тенге</Info>
                             </Div>
                             <Div>
-                                Итого у оплате за вывоз (z): <Info>{formatCurrency(saldoData?.owe)} тенге</Info>
+                                Итого к оплате за вывоз (z): <Info>{oweEqual(saldoData?.owe)} тенге</Info>
                             </Div>
                             <Div>
                                 Сальдо (Формула: x-y-z): {saldo()}

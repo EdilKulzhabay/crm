@@ -84,6 +84,7 @@ export default function SuperAdmin() {
                     <div className="">
                         Клиенты:
                         <Info>{info?.clients}</Info>
+                        <LinkButton href="/adminDenyVerificationClients">{info?.clientsWithDenyVerification || 0}</LinkButton>
                     </div>
                 </Li>
                 <Li>
