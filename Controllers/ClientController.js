@@ -346,8 +346,12 @@ export const updateClientData = async (req, res) => {
 
             // Проверяем совпадения с другими клиентами
             let orConditions = [];
-            orConditions.push({ phone: client.phone, franchisee: { $ne: client.franchisee } });
-            orConditions.push({ mail: client.mail, franchisee: { $ne: client.franchisee } });
+            if (client.phone !== "") {
+                orConditions.push({ phone: client.phone, franchisee: { $ne: client.franchisee } });
+            }
+            if (client.mail !== "") {
+                orConditions.push({ mail: client.mail, franchisee: { $ne: client.franchisee } });
+            }
             client.addresses.forEach((address) => {
                 orConditions.push({
                     addresses: {
@@ -369,10 +373,10 @@ export const updateClientData = async (req, res) => {
             // Если найдены совпадения, создаем уведомление
             if (existingClients) {
                 let matchedField = "";
-                if (existingClients.phone === client.phone) {
+                if (existingClients.phone === client.phone && client.phone !== "") {
                     matchedField += "phone ";
                 }
-                if (existingClients.mail === client.mail) {
+                if (existingClients.mail === client.mail && client.mail !== "") {
                     matchedField += "mail ";
                 }
                 if (existingClients.addresses.some((addr) => addr.id2Gis && client.addresses.some((newAddr) => addr.id2Gis === newAddr.id2Gis))) {
