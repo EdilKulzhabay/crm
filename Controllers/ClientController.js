@@ -253,7 +253,7 @@ export const getClientDataForId = async (req, res) => {
     try {
         const { id } = req.body;
 
-        const client = await Client.findById(id);
+        const client = await Client.findById(id).populate("franchisee", "fullName");
 
         if (!client) {
             res.status(404).json({

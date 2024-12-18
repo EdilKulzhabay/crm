@@ -381,6 +381,10 @@ export default function ClientPage() {
             <Container role={userData?.role}>
                 <Div>Карточка клиента</Div>
                 <Div />
+                {userData?.role === "superAdmin" && <>
+                    <Div>Франчайзи: {client?.franchisee?.fullName}</Div>
+                    <Div/>
+                </>}
                 <Div>Личные данные:</Div>
                 <>
                     <UpdateClientData
