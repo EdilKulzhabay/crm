@@ -247,6 +247,7 @@ app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
 app.post("/pushNotification", MobileController.pushNotification)
 app.post("/expoTokenCheck", MobileController.expoTokenCheck)
+app.post("/addPassword", MobileController.addPassword)
 
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)

@@ -772,3 +772,35 @@ export const expoTokenCheck = async (req, res) => {
       });
     }
 };
+
+export const addPassword = async (req, res) => {
+    try {
+        const {phone, password} = req.body
+        const client = await Client.findOne({phone})
+        if (!client) {
+            console.log("client not found");
+            res.status(403).json({
+                success: false,
+                message: "client not found",
+                error: error.message,
+            })
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(req.body.password, salt);
+
+        client.password = hash
+
+        await client.save()
+
+        res.json({
+            success: true
+        })
+      } catch (error) {
+        res.status(500).json({
+          success: false,
+          message: "Что-то пошло не так",
+          error: error.message,
+        });
+      }
+}
