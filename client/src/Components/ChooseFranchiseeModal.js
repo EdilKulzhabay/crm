@@ -8,11 +8,12 @@ import MyInput from "../Components/MyInput";
 export default function ChooseFranchiseeModal(props) {
     const [search, setSearch] = useState("");
     const [franchisees, setFranchisees] = useState([]);
+    const [temporaryFranchisees, setTemporaryFranchisees] = useState([])
 
     const handleSearch = (e) => {
         setSearch(e.target.value);
         if (e.target.value === "") {
-            setFranchisees([]);
+            setFranchisees(temporaryFranchisees);
         }
     };
 
@@ -38,6 +39,7 @@ export default function ChooseFranchiseeModal(props) {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setFranchisees(data.franchisees)
+            setTemporaryFranchisees(data.franchisees)
         }).catch((e) => {
             console.log(e);
         })
