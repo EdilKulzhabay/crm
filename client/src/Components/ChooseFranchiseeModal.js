@@ -25,7 +25,7 @@ export default function ChooseFranchiseeModal(props) {
             }
         )
             .then(({ data }) => {
-                setFranchisees(data);
+                setFranchisees(data.franchisees);
             })
             .catch((e) => {
                 console.log(e);
@@ -82,7 +82,7 @@ export default function ChooseFranchiseeModal(props) {
                     <Div />
                     <Div>Список франчайзи:</Div>
                     <div className="max-h-[200px] overflow-scroll">
-                        {franchisees.map((item, index) => {
+                        {franchisees && franchisees.length > 0 && franchisees.map((item, index) => {
                             return (
                                 <div key={item._id}>
                                     <Li>
