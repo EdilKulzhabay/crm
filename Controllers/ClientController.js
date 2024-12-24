@@ -372,10 +372,6 @@ export const updateClientData = async (req, res) => {
                 _id: { $ne: clientId }, // исключаем текущего клиента из поиска
             });
 
-            console.log("orConditions", orConditions);
-            console.log("existingClients", existingClients);
-            
-    
             // Если найдены совпадения, создаем уведомление
             if (existingClients) {
                 let matchedField = "";
@@ -575,6 +571,11 @@ export const checkClientsCoincidences = async (req, res) => {
             for (let j = i + 1; j < clients.length; j++) {
                 const client2 = clients[j];
 
+                // Проверяем, что franchisee разные
+                if (client1.franchisee.toString() === client2.franchisee.toString()) {
+                    continue; // Пропускаем эту пару клиентов
+                }
+
                 // Условия совпадения
                 let matchedField = "";
 
@@ -618,7 +619,7 @@ export const checkClientsCoincidences = async (req, res) => {
                         });
 
                         await notDoc.save();
-                        // global.io.emit("clientMatch", { message: "Есть совпадение клиентов" });
+                        global.io.emit("clientMatch", { message: "Есть совпадение клиентов" });
                     }
                 }
             }
