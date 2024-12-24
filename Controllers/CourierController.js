@@ -7,7 +7,7 @@ import Client from "../Models/Client.js";
 import {Expo} from "expo-server-sdk";
 import { SendEmailOrder } from "./SendEmailOrder.js";
 import admin from "firebase-admin"
-import {serviceAccount} from "../FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json"
+import serviceAccount from "../FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json" assert { type: "json" };
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
