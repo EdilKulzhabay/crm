@@ -6,6 +6,12 @@ import Order from "../Models/Order.js"
 import Client from "../Models/Client.js";
 import {Expo} from "expo-server-sdk";
 import { SendEmailOrder } from "./SendEmailOrder.js";
+import admin from "firebase-admin"
+import {serviceAccount} from "../FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json"
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -474,20 +480,51 @@ export const updateCourierOrderStatus = async (req, res) => {
         
             // Создаем уведомление
             const message = {
-                to: expoToken,
-                sound: "default",
-                title: messageTitle,
-                body: messageBody,
-                priority: "high",
-                data: { newStatus },
-                _displayInForeground: true,
-                contentAvailable: true,
+                token: expoToken, // Вместо "to", используйте "token"
+                notification: {
+                    title: messageTitle,
+                    body: messageBody,
+                },
+                data: {
+                    newStatus: newStatus, // Передавайте данные как строку
+                },
+                android: {
+                    priority: "high",
+                },
+                apns: {
+                    headers: {
+                        "apns-priority": "10",
+                    },
+                    payload: {
+                        aps: {
+                            sound: "default",
+                            contentAvailable: true,
+                        },
+                    },
+                },
             };
+            // const message = {
+            //     to: expoToken,
+            //     sound: "default",
+            //     title: messageTitle,
+            //     body: messageBody,
+            //     priority: "high",
+            //     data: { newStatus },
+            //     _displayInForeground: true,
+            //     contentAvailable: true,
+            // };
             
             // Отправляем уведомление
-            const ticket = await expo.sendPushNotificationsAsync([message]);
+            admin.messaging().send(message)
+                .then(response => {
+                    console.log("Successfully sent message:", response);
+                })
+                .catch(error => {
+                    console.error("Error sending message:", error);
+                });
+            // const ticket = await expo.sendPushNotificationsAsync([message]);
         
-            console.log("Push notification ticket:", ticket);
+            // console.log("Push notification ticket:", ticket);
         }
 
         client.haveCompletedOrder = true
