@@ -564,3 +564,69 @@ export const getDenyVerfifcation = async (req, res) => {
         });
     }
 }
+
+export const checkClientsCoincidences = async (req, res) => {
+    try {
+        const clients = await Client.find({ "verify.status": "verified" }).sort({ createdAt: 1 });
+
+        for (let i = 0; i < clients.length - 1; i++) {
+            const client1 = clients[i];
+
+            for (let j = i + 1; j < clients.length; j++) {
+                const client2 = clients[j];
+
+                // Условия совпадения
+                let matchedField = "";
+
+                // Сравнение телефона
+                if (client1.phone && client1.phone === client2.phone) {
+                    matchedField += "phone ";
+                }
+
+                // Сравнение почты
+                if (client1.mail && client1.mail === client2.mail) {
+                    matchedField += "mail ";
+                }
+
+                // Сравнение адресов
+                if (
+                    client1.addresses.some((addr1) =>
+                        client2.addresses.some((addr2) => addr1.id2Gis && addr1.id2Gis === addr2.id2Gis)
+                    )
+                ) {
+                    matchedField += "addresses ";
+                }
+
+                // Если есть совпадения
+                if (matchedField) {
+                    const existingNotification = await Notification.findOne({
+                        first: client1.franchisee,
+                        second: client2.franchisee,
+                        matchesType: "client",
+                        firstObject: client1._id,
+                        secondObject: client2._id,
+                    });
+
+                    if (!existingNotification) {
+                        const notDoc = new Notification({
+                            first: client1.franchisee,
+                            second: client2.franchisee,
+                            matchesType: "client",
+                            matchedField,
+                            firstObject: client1._id,
+                            secondObject: client2._id,
+                        });
+
+                        await notDoc.save();
+                        // global.io.emit("clientMatch", { message: "Есть совпадение клиентов" });
+                    }
+                }
+            }
+        }
+
+        res.status(200).json({ message: "Проверка клиентов завершена успешно." });
+    } catch (error) {
+        console.error("Ошибка при проверке совпадений клиентов:", error.message);
+        res.status(500).json({ message: "Что-то пошло не так" });
+    }
+};
