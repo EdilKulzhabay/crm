@@ -369,6 +369,10 @@ export const updateClientData = async (req, res) => {
                 "verify.status": "verified",
                 _id: { $ne: clientId }, // исключаем текущего клиента из поиска
             });
+
+            console.log("orConditions", orConditions);
+            console.log("existingClients", existingClients);
+            
     
             // Если найдены совпадения, создаем уведомление
             if (existingClients) {
