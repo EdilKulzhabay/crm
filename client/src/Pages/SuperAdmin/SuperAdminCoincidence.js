@@ -136,7 +136,7 @@ export default function SuperAdminCoincidence() {
                                             <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>({item?.first?.fullName} и {item?.second?.fullName})</div>
                                                 <div>Совпадение по {item?.matchesType === "client" ? "Клиенту" : "Заказу"}</div>
-                                                <div>Совпадении: 
+                                                <div>Совпадения:{" "}
                                                     {item?.matchedField?.includes("phone") ? "номер телефона " : ""}
                                                     {item?.matchedField?.includes("addresses") ? "адрес " : ""}
                                                 </div>
@@ -156,7 +156,7 @@ export default function SuperAdminCoincidence() {
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>({item?.first?.fullName} и {item?.second?.fullName})</div>
                                                 <div>Совпадение по {item?.matchesType === "client" ? "Клиенту" : "Заказу"}</div>
-                                                <div>Совпадении: 
+                                                <div>Совпадения:{" "}
                                                     {item?.matchedField?.includes("phone") ? "номер телефона " : ""}
                                                     {item?.matchedField?.includes("addresses") ? "адрес " : ""}
                                                 </div>
