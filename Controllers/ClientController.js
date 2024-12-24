@@ -353,10 +353,12 @@ export const updateClientData = async (req, res) => {
                 orConditions.push({ mail: client.mail, franchisee: { $ne: client.franchisee } });
             }
             client.addresses.forEach((address) => {
+                console.log(address.id2Gis);
+                
                 orConditions.push({
                     addresses: {
                     $elemMatch: {
-                        link: address.id2Gis,
+                        id2Gis: address.id2Gis,
                     },
                     },
                     franchisee: { $ne: client.franchisee },
