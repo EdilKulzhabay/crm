@@ -477,54 +477,56 @@ export const updateCourierOrderStatus = async (req, res) => {
             const messageTitle = "Обновление статуса заказа"
 
             const messageBody = `Статус вашего заказа: ${newStatus === "delivered" ? "Доставлен" : "В пути"}`
-        
-            // Создаем уведомление
-            const message = {
-                token: expoToken, // Вместо "to", используйте "token"
-                notification: {
+
+            if (Expo.isExpoPushToken(expoToken)) {
+                const message = {
+                    to: expoToken,
+                    sound: "default",
                     title: messageTitle,
                     body: messageBody,
-                },
-                data: {
-                    newStatus: newStatus, // Передавайте данные как строку
-                },
-                android: {
                     priority: "high",
-                },
-                apns: {
-                    headers: {
-                        "apns-priority": "10",
+                    data: { newStatus },
+                    _displayInForeground: true,
+                    contentAvailable: true,
+                };
+
+                const ticket = await expo.sendPushNotificationsAsync([message]);
+                console.log("Push notification ticket:", ticket);
+            } else {
+                const message = {
+                    token: expoToken, // Вместо "to", используйте "token"
+                    notification: {
+                        title: messageTitle,
+                        body: messageBody,
                     },
-                    payload: {
-                        aps: {
-                            sound: "default",
-                            contentAvailable: true,
+                    data: {
+                        newStatus: newStatus, // Передавайте данные как строку
+                    },
+                    android: {
+                        priority: "high",
+                    },
+                    apns: {
+                        headers: {
+                            "apns-priority": "10",
+                        },
+                        payload: {
+                            aps: {
+                                sound: "default",
+                                contentAvailable: true,
+                            },
                         },
                     },
-                },
-            };
-            // const message = {
-            //     to: expoToken,
-            //     sound: "default",
-            //     title: messageTitle,
-            //     body: messageBody,
-            //     priority: "high",
-            //     data: { newStatus },
-            //     _displayInForeground: true,
-            //     contentAvailable: true,
-            // };
+                };
+                // Отправляем уведомление
+                admin.messaging().send(message)
+                    .then(response => {
+                        console.log("Successfully sent message:", response);
+                    })
+                    .catch(error => {
+                        console.error("Error sending message:", error);
+                    });
+            }
             
-            // Отправляем уведомление
-            admin.messaging().send(message)
-                .then(response => {
-                    console.log("Successfully sent message:", response);
-                })
-                .catch(error => {
-                    console.error("Error sending message:", error);
-                });
-            // const ticket = await expo.sendPushNotificationsAsync([message]);
-        
-            // console.log("Push notification ticket:", ticket);
         }
 
         client.haveCompletedOrder = true
