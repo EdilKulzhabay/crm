@@ -240,6 +240,7 @@ app.post("/clientRegister", MobileController.clientRegister);
 app.post("/clientLogin", MobileController.clientLogin);
 app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
 app.post("/addClientAddress", checkAuth, MobileController.addClientAddress);
+app.post("/updateClientAddress", checkAuth, MobileController.updateClientAddress);
 app.post("/getClientAddresses", checkAuth, MobileController.getClientAddresses);
 app.post("/updateCart", checkAuth, MobileController.updateCart);
 app.post("/cleanCart", checkAuth, MobileController.cleanCart);

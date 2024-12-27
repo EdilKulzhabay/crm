@@ -393,6 +393,54 @@ export const addClientAddress = async (req, res) => {
     }
 };
 
+export const updateClientAddress = async (req, res) => {
+    try {
+        const { mail, _id, name, street, house, link } = req.body;
+
+        // Найти клиента по email
+        const client = await Client.findOne({ mail });
+
+        if (!client) {
+            return res.status(404).json({
+                message: "Клиент не найден",
+            });
+        }
+
+        // Найти адрес по ID и обновить его
+        const addressIndex = client.addresses.findIndex(
+            (addr) => addr._id.toString() === _id
+        );
+
+        if (addressIndex === -1) {
+            return res.status(404).json({
+                message: "Адрес не найден",
+            });
+        }
+
+        // Обновить данные адреса
+        client.addresses[addressIndex] = {
+            ...client.addresses[addressIndex]._doc, // Сохранение других полей
+            name,
+            street,
+            link,
+            house,
+        };
+
+        // Сохранить изменения
+        await client.save();
+
+        res.json({
+            success: true,
+            message: "Адрес успешно обновлен",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
 export const getClientAddresses = async (req, res) => {
     try {
         const { mail } = req.body;
