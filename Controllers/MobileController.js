@@ -370,8 +370,10 @@ export const addClientAddress = async (req, res) => {
 
         const client = await Client.findOne({ mail });
 
+        const addressesLenght = client?.addresses?.length
+
         const address = {
-            name,
+            name: name !== "" ? name : `Адрес ${addressesLenght + 1}`,
             street,
             link,
             house,
@@ -436,6 +438,35 @@ export const updateClientAddress = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const updateAllClientAddresses = async (req, res) => {
+    try {
+        // Получить всех клиентов из базы данных
+        const clients = await Client.find();
+
+        // Перебрать каждого клиента
+        for (const client of clients) {
+            // Перебрать адреса клиента и обновить их имена
+            client.addresses.forEach((address, index) => {
+                address.name = `Адрес ${index + 1}`; // Установить имя как "Адрес 1", "Адрес 2" и т.д.
+            });
+
+            // Сохранить обновления для текущего клиента
+            await client.save();
+        }
+
+        res.json({
+            success: true,
+            message: "Имена адресов успешно обновлены для всех клиентов",
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
             message: "Что-то пошло не так",
         });
     }
