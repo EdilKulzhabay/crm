@@ -366,11 +366,12 @@ export const updateForgottenPassword = async (req, res) => {
 
 export const addClientAddress = async (req, res) => {
     try {
-        const { mail, city, street, house, link } = req.body;
+        const { mail, name, city, street, house, link } = req.body;
 
         const client = await Client.findOne({ mail });
 
         const address = {
+            name,
             street,
             link,
             house,

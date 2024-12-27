@@ -22,6 +22,9 @@ const ClientSchema = new mongoose.Schema(
         },
         addresses: [
             {
+                name: {
+                    type: String,
+                },
                 street: {
                     type: String,
                 },

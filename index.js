@@ -41,10 +41,24 @@ app.use(
 );
 
 const upload = multer({ dest: "uploads/" });
+const uploadAccessoriseImages = multer({ dest: "accessoriesImages/" });
 
 app.post("/api/upload-excel", upload.single("file"), checkAuth, async (req, res) => {
     try {
         const id = req.userId;
+        const filePath = req.file.path;
+        await processExcelFile(filePath, id);
+        res.json({ success: true, message: "File processed successfully" });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error processing file",
+        });
+    }
+});
+
+app.post("/api/upload-accessoriesImages", uploadAccessoriseImages.single("file"), checkAuth, async (req, res) => {
+    try {
         const filePath = req.file.path;
         await processExcelFile(filePath, id);
         res.json({ success: true, message: "File processed successfully" });

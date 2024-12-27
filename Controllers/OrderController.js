@@ -911,17 +911,19 @@ export const deleteOrder = async (req, res) => {
                         SendEmailOrder(mail, "cancelled", sendText)
                     }
                 }
-                const franchisee = await User.findOne({_id: order.franchisee})
-                const mail = franchisee.mail
-                if (mail !== null && mail !== "" && mail.includes("@")) {
-                    let sendText = `По адресу ${order?.address.actual}, `
-                    if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
-                        sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                if (order?.franchisee) {
+                    const franchisee = await User.findOne({_id: order.franchisee})
+                    const mail = franchisee.mail
+                    if (mail !== null && mail !== "" && mail.includes("@")) {
+                        let sendText = `По адресу ${order?.address.actual}, `
+                        if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                            sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                        }
+                        if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                            sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                        }
+                        SendEmailOrder(mail, "cancelled", sendText)
                     }
-                    if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
-                        sendText += `кол. 18,9 л.: ${order?.products.b19} `
-                    }
-                    SendEmailOrder(mail, "cancelled", sendText)
                 }
             }
             const delRes = await Order.findByIdAndDelete(orderId);
