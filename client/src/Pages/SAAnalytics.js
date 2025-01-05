@@ -332,6 +332,9 @@ export default function SAAnalytics() {
                                     <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB12Bottles * 170)}</Info>
                                 </Div>
                                 <Div />
+                                <Li>
+                                    Количество клиентов: <Info ml="ml-1">{item?.totalClients}</Info>
+                                </Li>
                                 <Div>Кол отпущенных:</Div>
                                 <Li>
                                     18,9 л: <Info ml="ml-1">{item.tookAwayB19}</Info>
@@ -366,6 +369,9 @@ export default function SAAnalytics() {
                             </> : 
                             <>
                                 <Div>{item.fullName}</Div>
+                                <Li>
+                                    Количество клиентов: <Info ml="ml-1">{item?.totalClients}</Info>
+                                </Li>
                                 <Li>
                                     {saldo(item)}
                                 </Li>

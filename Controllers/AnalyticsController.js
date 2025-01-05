@@ -451,6 +451,15 @@ export const getFranchiseeAnalytics = async (req, res) => {
             }  
         ])
 
+        const clientStats = await Client.aggregate([
+            {
+                $group: {
+                    _id: "$franchisee", // Группируем по франчайзи
+                    totalClients: { $sum: 1 }, // Считаем количество клиентов
+                },
+            },
+        ]);
+
         const ordersStats = await Order.aggregate([
             { $match: filter }, // Фильтр по диапазону дат
             { 
@@ -516,6 +525,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
         franchisee.forEach(fran => {
             franchiseeStats[fran._id] = {
                 _id: fran._id,
+                totalClients: 0,
                 totalRegularB12Bottles: 0,
                 totalRegularB19Bottles: 0,
                 totalAddtitionalB12Bottles: 0,
@@ -531,6 +541,15 @@ export const getFranchiseeAnalytics = async (req, res) => {
                 tookAwayB19: 0,
                 fullName: fran.fullName
             };
+        });
+
+        clientStats.forEach((stat) => {
+            const franchiseeEntry = franchisee.find(
+                (fran) => fran._id.toString() === stat._id.toString()
+            );
+            if (franchiseeEntry) {
+                franchiseeStats[franchiseeEntry._id].totalClients = stat.totalClients;
+            }
         });
 
         // Обрабатываем результаты агрегации

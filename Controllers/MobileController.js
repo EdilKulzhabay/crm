@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import {Expo} from "expo-server-sdk";
 import { scheduleJob } from "node-schedule";
 import "dotenv/config";
+import { pushNotification } from "../pushNotification.js";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -588,15 +589,28 @@ export const updateClientDataMobile = async (req, res) => {
     try {
         const { mail, field, value } = req.body;
 
-        console.log("mail: ", mail);
-        console.log("field: ", field);
-        console.log("value: ", value);
+        
 
         const client = await Client.findOne({ mail });
         if (!client) {
             return res
                 .status(404)
                 .json({ success: false, message: "Client not found" });
+        }
+
+        if (field === "expoPushToken") {
+            // Добавить элемент в массив, если его еще нет
+            if (!client.expoPushToken.includes(value)) {
+                client.expoPushToken.push(value);
+            }
+        } else if (field === "expoPushTokenDel") {
+            // Удалить элемент из массива, если он существует
+            client.expoPushToken = client.expoPushToken.filter(
+                (token) => token !== value
+            );
+        } else {
+            // Обновить любое другое поле
+            client[field] = value;
         }
 
         client[field] = value;
@@ -625,31 +639,18 @@ export const addBonus = async (req, res) => {
         }
 
         client.bonus = client.bonus + count;
-        if (client.expoPushToken !== expoPushToken) {
-            client.expoPushToken = expoPushToken
-        }
         await client.save();
         const userId = client?._id
+        const expoTokens = client?.expoPushToken || []
 
         const job = scheduleJob(new Date(Date.now() + 60 * 60 * 1000), async () => {
             try {
-                const messages = [
-                    {
-                        to: expoPushToken,
-                        sound: "default",
-                        title: "Пора пить воду",
-                        body: "Не забудьте выпить стакан воды!",
-                        priority: "high",
-                        data: { newStatus: "bonus" },
-                        _displayInForeground: true,
-                        contentAvailable: true,
-                    },
-                ];
-        
-                const ticketChunk = await expo.sendPushNotificationsAsync(messages);
-                console.log("Уведомление отправлено:", ticketChunk);
-        
-                // Удаляем задачу после выполнения
+                const messageTitle = "Пора пить воду"
+                const messageBody = "Не забудьте выпить стакан воды!"
+                const newStatus = "bonus"
+                if (expoTokens.length > 0) {
+                    pushNotification(messageTitle, messageBody, expoTokens, newStatus)
+                }
                 delete userNotifications[userId];
             } catch (error) {
                 console.error("Ошибка при отправке уведомления:", error);
@@ -782,57 +783,6 @@ export const getClientHistoryMobile = async (req, res) => {
     }
 }
 
-export const pushNotification = async (req, res) => {
-    try {
-      const { expoToken, status } = req.body;
-
-      console.log("req.body: ", req.body);
-      
-  
-      // Проверяем, является ли push-токен валидным Expo push-токеном
-      if (!Expo.isExpoPushToken(expoToken)) {
-        console.error(`Push token ${expoToken} is not a valid Expo push token`);
-        return res.json({
-          success: false,
-          message: "Invalid Expo push token",
-        });
-      }
-
-      const messageTitle = status === "bonus" ? "Пора пить воду" : "Обновление статуса заказа"
-      const messageBody = status === "bonus" ? "Не забудьте выпить стакан воды" : `Статус вашего заказа: ${status}`
-  
-      // Создаем уведомление
-      const message = {
-        to: expoToken,
-        // name: "Tibetskaya",
-        sound: "default",
-        title: messageTitle,
-        body: messageBody,
-        priority: "high",
-        data: { status },
-        _displayInForeground: true,
-        contentAvailable: true,
-      };
-  
-      // Отправляем уведомление
-      const ticket = await expo.sendPushNotificationsAsync([message]);
-  
-      console.log("Push notification ticket:", ticket);
-  
-      // Возвращаем успех после успешной отправки уведомления
-      res.json({
-        success: true,
-        ticket,
-      });
-    } catch (error) {
-      console.error("Error sending push notification:", error);
-      res.status(500).json({
-        success: false,
-        message: "Что-то пошло не так",
-        error: error.message,
-      });
-    }
-};
 export const expoTokenCheck = async (req, res) => {
     console.log("expoTokenCheck proverks na log");
     
@@ -852,6 +802,30 @@ export const expoTokenCheck = async (req, res) => {
       });
     }
 };
+
+export const getUnreviewedOrders = async (req, res) => {
+    try {
+        const {mail} = req.body
+
+        const client = await Client.findOne({mail})
+        const clientId = client._id
+        const orders = await Order.find({client: clientId, clientReview: 0, clientNotes: ""})
+
+        if (!orders) {
+            return res.status(404).json({
+                success: false,
+                message: "Хз че не так, но заказов нет("
+            })
+        }
+
+        res.json({ orders });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
 
 export const addPassword = async (req, res) => {
     try {

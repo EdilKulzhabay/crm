@@ -351,6 +351,7 @@ export default function AddOrder() {
                                     <MyButton
                                         click={() => {
                                             setAddress({
+                                                name: adress?.name,
                                                 actual:
                                                     adress.street + " " +
                                                     adress.house,

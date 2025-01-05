@@ -178,6 +178,11 @@ export default function CompletedOrders() {
             .then(({ data }) => {
                 const type = "orders";
                 const orders = data.orders;
+                const formatDate = (date) => {
+                    if (!date) return "";
+                    const [year, month, day] = date.split("-");
+                    return `${day}/${month}/${year}`;
+                };
 
                 const mappedData = orders.map((item) => {
                     return {
@@ -198,7 +203,7 @@ export default function CompletedOrders() {
                                 : item?.status === "delivered"
                                 ? "Доставлен"
                                 : "Отменен",
-                        "Дата доставки": item?.date?.d,
+                        "Дата доставки": formatDate(item?.date?.d),
                     };
                 });
 

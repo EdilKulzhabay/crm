@@ -171,6 +171,7 @@ app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
 app.post("/getClientsForExcel", checkAuth, ClientController.getClientsForExcel);
 app.post("/getNotVerifyClients", ClientController.getNotVerifyClients);
 app.get("/checkClientsCoincidences", ClientController.checkClientsCoincidences)
+app.get("/addClientPassword", ClientController.addClientPassword)
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
@@ -262,8 +263,8 @@ app.post("/addBonus", MobileController.addBonus);
 app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
-app.post("/pushNotification", MobileController.pushNotification)
 app.post("/expoTokenCheck", MobileController.expoTokenCheck)
+app.post("/getUnreviewedOrders", MobileController.getUnreviewedOrders)
 app.post("/addPassword", MobileController.addPassword)
 
 ////////ANALYTICS
