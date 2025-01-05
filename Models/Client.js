@@ -101,10 +101,7 @@ const ClientSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        expoPushToken: {
-            type: String,
-            default: ""
-        }
+        expoPushToken: []
     },
     {
         timestamps: true,

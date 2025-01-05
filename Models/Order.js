@@ -11,6 +11,9 @@ const OrderSchema = new mongoose.Schema(
             ref: "Client",
         },
         address: {
+            name: {
+                type: String,
+            },
             actual: {
                 type: String,
             },
@@ -51,6 +54,7 @@ const OrderSchema = new mongoose.Schema(
         history: [String],
         clientNotes: {
             type: String,
+            default: ""
         },
         transferred: {
             type: Boolean,
@@ -60,7 +64,8 @@ const OrderSchema = new mongoose.Schema(
             type: String,
         },
         clientReview: {
-            type: String,
+            type: Number,
+            default: 0
         },
         opForm: {
             type: String

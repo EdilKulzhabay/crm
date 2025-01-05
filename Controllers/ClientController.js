@@ -542,15 +542,15 @@ export const getNotVerifyClients = async (req, res) => {
 export const getDenyVerfifcation = async (req, res) => {
     try {
         const id = req.userId;
-        console.log(id);
-        
-        const clients = await Client.find({
-            franchisee: id,
-            "verify.status": "denyVerification"
-        })
 
-        console.log("clients: ", clients);
+        const franchisee = await User.findById(id)
+        const filter = {"verify.status": "denyVerification"}
         
+        if (franchisee.role === "admin") {
+            filter.franchisee = id
+        }
+        
+        const clients = await Client.find(filter).populate("franchisee", "fullName")
 
         res.json({ clients })
     } catch (error) {

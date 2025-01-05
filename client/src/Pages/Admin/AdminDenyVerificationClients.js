@@ -35,6 +35,10 @@ export default function AdminDenyVerificationClients() {
                             <div>{item?.fullName !== "" ? item?.fullName : item?.userName}</div>
                             <div>|</div>
                             <div>{item?.verify?.message}</div>
+                            {userData?.role === "superAdmin" && <>
+                                <div>|</div>
+                                <div>{item?.franchisee?.fullName}</div> 
+                            </>}
                             <LinkButton
                                 color="green"
                                 href={`/ClientPage/${item?._id}`}

@@ -8,6 +8,7 @@ import {Expo} from "expo-server-sdk";
 import { SendEmailOrder } from "./SendEmailOrder.js";
 import admin from "firebase-admin"
 import serviceAccount from "../FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json" assert { type: "json" };
+import { pushNotification } from "../pushNotification.js";
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -471,62 +472,14 @@ export const updateCourierOrderStatus = async (req, res) => {
         const clientId2 = order.client
 
         const client = await Client.findById(clientId2)
-        const expoToken = client?.expoPushToken || ""
+        const expoTokens = client?.expoPushToken || []
 
-        if (expoToken !== "") {
+        if (expoTokens.length > 0) {
             const messageTitle = "Обновление статуса заказа"
 
-            const messageBody = `Статус вашего заказа: ${newStatus === "delivered" ? "Доставлен" : "В пути"}`
+            const messageBody = `Статус: ${newStatus === "delivered" ? "Доставлено" : "В пути"} (${order?.address?.name})`
 
-            if (Expo.isExpoPushToken(expoToken)) {
-                const message = {
-                    to: expoToken,
-                    sound: "default",
-                    title: messageTitle,
-                    body: messageBody,
-                    priority: "high",
-                    data: { newStatus },
-                    _displayInForeground: true,
-                    contentAvailable: true,
-                };
-
-                const ticket = await expo.sendPushNotificationsAsync([message]);
-                console.log("Push notification ticket:", ticket);
-            } else {
-                const message = {
-                    token: expoToken, // Вместо "to", используйте "token"
-                    notification: {
-                        title: messageTitle,
-                        body: messageBody,
-                    },
-                    data: {
-                        newStatus: newStatus, // Передавайте данные как строку
-                    },
-                    android: {
-                        priority: "high",
-                    },
-                    apns: {
-                        headers: {
-                            "apns-priority": "10",
-                        },
-                        payload: {
-                            aps: {
-                                sound: "default",
-                                contentAvailable: true,
-                            },
-                        },
-                    },
-                };
-                // Отправляем уведомление
-                admin.messaging().send(message)
-                    .then(response => {
-                        console.log("Successfully sent message:", response);
-                    })
-                    .catch(error => {
-                        console.error("Error sending message:", error);
-                    });
-            }
-            
+            pushNotification(messageTitle, messageBody, expoTokens, newStatus)
         }
 
         client.haveCompletedOrder = true

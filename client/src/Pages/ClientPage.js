@@ -826,7 +826,7 @@ export default function ClientPage() {
                                 <div key={item?._id} ref={lastOrderElementRef}>
                                     <Li>
                                         <div className="flex items-center gap-x-3 flex-wrap">
-                                            <div className="bg-red">
+                                            <div>
                                                 Заказ: 
                                             </div>
                                             <div>{item?.client?.fullName}</div>
@@ -847,7 +847,7 @@ export default function ClientPage() {
                                 <div key={item?._id}>
                                     <Li>
                                         <div className="flex items-center gap-x-3 flex-wrap">
-                                            <div className="bg-red">
+                                            <div>
                                                 Заказ: 
                                             </div>
                                             <div>{item?.client?.fullName}</div>
