@@ -162,9 +162,6 @@ export const getMe = async (req, res) => {
     try {
         const id = req.userId;
 
-        console.log("id in getMe", id);
-        
-
         const user = await User.findById(id);
 
         if (!user) {
