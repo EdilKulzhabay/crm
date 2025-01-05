@@ -4,17 +4,9 @@ import jwt from "jsonwebtoken";
 import User from "../Models/User.js";
 import Order from "../Models/Order.js"
 import Client from "../Models/Client.js";
-import {Expo} from "expo-server-sdk";
 import { SendEmailOrder } from "./SendEmailOrder.js";
-import admin from "firebase-admin"
-import serviceAccount from "../FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json" assert { type: "json" };
 import { pushNotification } from "../pushNotification.js";
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
-
-let expo = new Expo({ useFcmV1: true });
 
 export const addCourier = async (req, res) => {
     try {
