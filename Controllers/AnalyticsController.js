@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Order from "../Models/Order.js";
 import User from "../Models/User.js";
+import Client from "../Models/Client.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
 
 export const getAnalyticsData = async (req, res) => {
