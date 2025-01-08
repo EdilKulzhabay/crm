@@ -513,12 +513,14 @@ export default function OrderPage() {
 
                 <Div />
                 <Div>Отзыв клиента: {order?.clientReview > 0 && 
-                    <Info>
+                    <div className="flex items-center gap-x-1 text-sm lg:text-base">
+                        <div className="text-red">[</div>
                         <div className="flex items-center gap-x-2">
                             <div><StarIcon className="w-5 h-5" /> </div>
                             <div>{order?.clientReview}</div>
                         </div>
-                    </Info>}</Div>
+                        <div className="text-red">]</div>
+                    </div>}</Div>
                 <Li>
                     Отзыв:{" "}
                     {order?.clientNotes.length > 0
