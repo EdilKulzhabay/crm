@@ -803,22 +803,22 @@ export const expoTokenCheck = async (req, res) => {
     }
 };
 
-export const getUnreviewedOrders = async (req, res) => {
+export const getUnreviewedOrder = async (req, res) => {
     try {
         const {mail} = req.body
 
         const client = await Client.findOne({mail})
         const clientId = client._id
-        const orders = await Order.find({client: clientId, clientReview: 0, clientNotes: ""})
+        const order = await Order.findOne({client: clientId, clientReview: 0, clientNotes: ""})
 
-        if (!orders) {
+        if (!order) {
             return res.status(404).json({
                 success: false,
                 message: "Хз че не так, но заказов нет("
             })
         }
 
-        res.json({ orders });
+        res.json({ success: true, order });
     } catch (error) {
         console.log(error);
         res.status(500).json({

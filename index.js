@@ -263,7 +263,7 @@ app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
 app.post("/expoTokenCheck", MobileController.expoTokenCheck)
-app.post("/getUnreviewedOrders", MobileController.getUnreviewedOrders)
+app.post("/getUnreviewedOrder", MobileController.getUnreviewedOrder)
 app.post("/addPassword", MobileController.addPassword)
 
 ////////ANALYTICS
