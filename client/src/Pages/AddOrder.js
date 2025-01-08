@@ -195,7 +195,7 @@ export default function AddOrder() {
         }
         api.post(
             "/addOrder",
-            { franchisee, client, address, products, courier, date, clientNotes: "", opForm: client.opForm, comment },
+            { franchisee, client, address, products, courier, date, clientNotes: [], opForm: client.opForm, comment },
             {
                 headers: { "Content-Type": "application/json" },
             }

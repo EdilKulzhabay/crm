@@ -52,10 +52,6 @@ const OrderSchema = new mongoose.Schema(
             ref: "Courier",
         },
         history: [String],
-        clientNotes: {
-            type: String,
-            default: ""
-        },
         transferred: {
             type: Boolean,
             default: false
@@ -63,16 +59,17 @@ const OrderSchema = new mongoose.Schema(
         transferredFranchise: {
             type: String,
         },
-        clientReview: {
-            type: Number,
-            default: 0
-        },
         opForm: {
             type: String
         },
         comment: {
             type: String
-        }
+        },
+        clientReview: {
+            type: Number,
+            default: 0
+        },
+        clientNotes: [String]
     },
     {
         timestamps: true,

@@ -699,7 +699,7 @@ export const addOrderClientMobile = async (req, res) => {
                 products,
                 date: date || {d: "", time: ""},
                 sum,
-                clientNotes: clientNotes || "",
+                clientNotes: clientNotes || [],
                 opForm
             });
     
@@ -711,7 +711,7 @@ export const addOrderClientMobile = async (req, res) => {
                 products,
                 date: date || {d: "", time: ""},
                 sum,
-                clientNotes: clientNotes || "",
+                clientNotes: clientNotes || [],
                 opForm
             });
     
@@ -809,7 +809,7 @@ export const getUnreviewedOrder = async (req, res) => {
 
         const client = await Client.findOne({mail})
         const clientId = client._id
-        const order = await Order.findOne({client: clientId, clientReview: 0, clientNotes: ""})
+        const order = await Order.findOne({client: clientId, clientReview: 0})
 
         if (!order) {
             return res.status(404).json({
@@ -819,6 +819,26 @@ export const getUnreviewedOrder = async (req, res) => {
         }
 
         res.json({ success: true, order });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const addReview = async (req, res) => {
+    try {
+        const {orderId, rating, notes} = req.body
+
+        const order = await Order.findById(orderId)
+
+        order.clientReview = rating
+        order.clientNotes = notes
+
+        await order.save()
+
+        res.json({success: true})
     } catch (error) {
         console.log(error);
         res.status(500).json({

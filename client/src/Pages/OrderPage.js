@@ -16,6 +16,7 @@ import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 import Info from "../Components/Info";
 import useFetchUserData from "../customHooks/useFetchUserData";
+import StarIcon from "../icons/StarIcon";
 
 const adjustDateByDays = (dateStr, days) => {
     const currentDate = new Date(dateStr);
@@ -511,11 +512,11 @@ export default function OrderPage() {
                 }
 
                 <Div />
-                <Div>Отзыв клиента:</Div>
+                <Div>Отзыв клиента: {order?.clientReview > 0 && <Info><StarIcon className="w-5 h-5" /> {order?.clientReview}</Info>}</Div>
                 <Li>
                     Отзыв:{" "}
-                    {order?.clientNotes
-                        ? order.clientNotes
+                    {order?.clientNotes.length > 0
+                        ? order.clientNotes.join("; ")
                         : "Клиент не оставил отзыва"}
                 </Li>
 
