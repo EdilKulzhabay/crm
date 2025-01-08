@@ -264,6 +264,7 @@ app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
 app.post("/expoTokenCheck", MobileController.expoTokenCheck)
 app.post("/getUnreviewedOrder", MobileController.getUnreviewedOrder)
+app.post("/addReview", MobileController.addReview)
 app.post("/addPassword", MobileController.addPassword)
 
 ////////ANALYTICS
