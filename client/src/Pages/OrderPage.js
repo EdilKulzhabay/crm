@@ -524,7 +524,7 @@ export default function OrderPage() {
                 <Li>
                     Отзыв:{" "}
                     {order?.clientNotes.length > 0
-                        ? order.clientNotes.join("; ")
+                        ? <span className="text-yellow-300">{order.clientNotes.join("; ")}</span>
                         : "Клиент не оставил отзыва"}
                 </Li>
 
