@@ -97,6 +97,7 @@ export default function DepartamentReceiving() {
                                 {item.fullName}
                                 <MyButton click={() => {setChFranchisee(item)}}>Выбрать</MyButton>
                             </Div>
+                            <Div />
                         </div>
                     );
                 })}
