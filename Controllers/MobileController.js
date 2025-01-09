@@ -809,7 +809,7 @@ export const getUnreviewedOrder = async (req, res) => {
 
         const client = await Client.findOne({mail})
         const clientId = client._id
-        const order = await Order.findOne({client: clientId, clientReview: 0})
+        const order = await Order.findOne({client: clientId, clientReview: 0, status: "delivered"})
 
         if (!order) {
             return res.status(404).json({
