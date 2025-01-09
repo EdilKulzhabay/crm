@@ -310,9 +310,9 @@ export const updateClientData = async (req, res) => {
         }
   
         // Обновляем поле клиента
-        client[field] = value;
         client.verify.status = "waitingVerification"
         client.verify.message = ""
+        client[field] = value;
 
         if (field === "verify" && value.status === "verified") {
             const clientAddresses = client.addresses;
