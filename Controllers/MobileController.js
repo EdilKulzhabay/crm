@@ -758,6 +758,9 @@ export const getLastOrderMobile = async (req, res) => {
 export const getClientHistoryMobile = async (req, res) => {
     try {
         const {clientId, page} = req.body
+        console.log("clientId", clientId);
+        console.log("page", page);
+        
 
         const limit = 5;
         const skip = (page - 1) * limit
