@@ -317,6 +317,7 @@ export default function ClientPage() {
                         Адрес: item?.address?.actual,
                         "Кол18,9": item?.products?.b19 && item?.products?.b19 !== 0 ? item?.products?.b19 : "",
                         "Кол12,5": item?.products?.b12 && item?.products?.b12 !== 0 ? item?.products?.b12 : "",
+                        "Форма оплаты": item?.opForm,
                         Сумма: item?.sum,
                         Курьер: item?.courier?.fullName,
                         Статус: "Доставлен",
