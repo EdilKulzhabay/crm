@@ -504,7 +504,7 @@ export const getFranchiseeClients = async (req, res) => {
     }
 };
 
-export const updateFranchiseeData = async (req, res) => {
+export const updateFranchiseeDataB = async (req, res) => {
     try {
         const { userId, change, changeData } = req.body;
 
