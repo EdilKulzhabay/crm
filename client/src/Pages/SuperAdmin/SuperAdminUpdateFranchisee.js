@@ -190,8 +190,8 @@ export default function SuperAdminUpdateFranchisee() {
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
 
-    const updateFranchiseeData = (change, changeData) => {
-        api.post("/updateFranchiseeData", {userId: id, change, changeData}, {
+    const updateFranchiseeDataB = (change, changeData) => {
+        api.post("/updateFranchiseeDataB", {userId: id, change, changeData}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             if (data.success) {
@@ -377,7 +377,7 @@ export default function SuperAdminUpdateFranchisee() {
                             if (bottles.b197kol === "") {
                                 bottles.b197kol = franchisee?.b197kol
                             }
-                            updateFranchiseeData("bottles", bottles)
+                            updateFranchiseeDataB("bottles", bottles)
                         }}>Применить</MyButton>
                     </Div>}
                 </>
