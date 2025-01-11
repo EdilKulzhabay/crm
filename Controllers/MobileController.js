@@ -602,10 +602,15 @@ export const updateClientDataMobile = async (req, res) => {
                 client.expoPushToken.push(value);
             }
         } else if (field === "expoPushTokenDel") {
-            // Удалить элемент из массива, если он существует
+            console.log("expoPushTokenDel");
+            console.log(client.expoPushToken);
+            
+            
             client.expoPushToken = client.expoPushToken.filter(
                 (token) => token !== value
             );
+
+            console.log(client.expoPushToken);
         } else {
             // Обновить любое другое поле
             client[field] = value;
