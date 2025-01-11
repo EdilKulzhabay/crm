@@ -129,7 +129,7 @@ export default function ChooseClientModal(props) {
                                     key={client._id}
                                     ref={lastClientElementRef}
                                 >
-                                    <Li icon={item?.franchisee?._id === "66f15c557a27c92d447a16a0"}>
+                                    <Li icon={client?.franchisee?._id === "66f15c557a27c92d447a16a0"}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>{client.fullName}{client.fullName === "" && client.userName}</div>
@@ -154,7 +154,7 @@ export default function ChooseClientModal(props) {
                         } else {
                             return (
                                 <div key={client._id}>
-                                    <Li icon={item?.franchisee?._id === "66f15c557a27c92d447a16a0"}>
+                                    <Li icon={client?.franchisee?._id === "66f15c557a27c92d447a16a0"}>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>{client.fullName}{client.fullName === "" && client.userName}</div>
