@@ -602,7 +602,7 @@ export const updateClientDataMobile = async (req, res) => {
                 client.expoPushToken.push(value);
             }
         } else if (field === "expoPushTokenDel") {
-            console.log("expoPushTokenDel");
+            console.log("expoPushTokenDel value = ", value);
             console.log(client.expoPushToken);
             
             
