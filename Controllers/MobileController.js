@@ -589,8 +589,6 @@ export const updateClientDataMobile = async (req, res) => {
     try {
         const { mail, field, value } = req.body;
 
-        
-
         const client = await Client.findOne({ mail });
         if (!client) {
             return res
@@ -613,7 +611,6 @@ export const updateClientDataMobile = async (req, res) => {
             client[field] = value;
         }
 
-        client[field] = value;
         await client.save();
 
         res.json({ success: true, message: "Данные успешно изменены" });
