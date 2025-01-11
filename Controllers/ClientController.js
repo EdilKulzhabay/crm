@@ -696,6 +696,8 @@ export const updateClientData2 = async (req, res) => {
                 });
             });
 
+            const clientId = client._id
+
             let existingClients = null;
             existingClients = await Client.findOne({
                 $or: orConditions,
