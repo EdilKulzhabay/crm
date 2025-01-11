@@ -451,22 +451,6 @@ export const getFranchiseeAnalytics = async (req, res) => {
                 }
             }  
         ])
-        // db.orders.updateOne({_id: ObjectId('6769870c25f2d8b2b8a14d8d')}, {$set: { transferred: false, transferredFranchise: "" }})
-        // db.departmenthistories.find({
-        //     franchisee: ObjectId('66f15c9a7a27c92d447a16ae'),
-        //     createdAt: {
-        //       $gte: ISODate('2024-12-14T00:00:00.000Z'),
-        //       $lt: ISODate('2024-12-15T00:00:00.000Z')
-        //     }
-        //   });
-        //   db.departmenthistories.updateOne(
-        //     { 
-        //       _id: ObjectId('675d4c6605afc0c77ea0accc') 
-        //     },
-        //     { 
-        //       $set: { "data.b121kol": 52 } 
-        //     }
-        //   );
 
         const clientStats = await Client.aggregate([
             {
