@@ -205,10 +205,10 @@ export default function Charts() {
     const oweEqual = () => {
         let owe = saldoData?.owe
         if (saldoData?.tookAwayB12 > saldoData?.totalAddtitionalB12Bottles) {
-            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 170
+            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 220
         }
         if (saldoData?.tookAwayB19 > saldoData?.totalAddtitionalB19Bottles) {
-            owe += (saldoData?.tookAwayB19 - saldoData?.totalAddtitionalB19Bottles) * 250
+            owe += (saldoData?.tookAwayB19 - saldoData?.totalAddtitionalB19Bottles) * 300
         }
         return formatCurrency(owe)
     }
@@ -217,10 +217,10 @@ export default function Charts() {
         let sum = 0
         let owe = saldoData?.owe
         if (saldoData?.tookAwayB12 > saldoData?.totalAddtitionalB12Bottles) {
-            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 170
+            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 220
         }
         if (saldoData?.tookAwayB19 > saldoData?.totalAddtitionalB19Bottles) {
-            owe += (saldoData?.tookAwayB19 - saldoData?.totalAddtitionalB19Bottles) * 250
+            owe += (saldoData?.tookAwayB19 - saldoData?.totalAddtitionalB19Bottles) * 300
         }
         sum += saldoData?.haveTo - owe - saldoData?.fakt
         if (sum < 0) {
