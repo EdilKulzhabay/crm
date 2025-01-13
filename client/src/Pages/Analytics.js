@@ -68,6 +68,12 @@ export default function Analytics() {
             setMessage("Введите даты в формате ГГГГ-ММ-ДД")
             return
         }
+        if (dates.startDate.includes("2024") || dates.endDate.includes("2024")) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Прошлый год не доступен")
+            return
+        }
         const id = userData?._id
         api.post("/getAnalyticsData", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
