@@ -112,6 +112,12 @@ export default function Charts() {
             setMessage("Введите даты в формате ГГГГ-ММ-ДД")
             return
         }
+        if (dates.startDate.includes("2024") || dates.endDate.includes("2024")) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Прошлый год не доступен")
+            return
+        }
         const id = userData?._id
         api.post("/getChartByOp", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
@@ -138,6 +144,12 @@ export default function Charts() {
             setOpen(true)
             setStatus("error")
             setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
+        if (dates.startDate.includes("2024") || dates.endDate.includes("2024")) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Прошлый год не доступен")
             return
         }
         const id = userData?._id
@@ -167,6 +179,12 @@ export default function Charts() {
             setOpen(true)
             setStatus("error")
             setMessage("Введите даты в формате ГГГГ-ММ-ДД")
+            return
+        }
+        if (dates.startDate.includes("2024") || dates.endDate.includes("2024")) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Прошлый год не доступен")
             return
         }
         api.post("/getSAGeneralInfo", { ...dates }, {
