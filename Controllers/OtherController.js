@@ -214,8 +214,8 @@ export const getMainPageInfo = async (req, res) => {
             status: { $in: ["delivered", "cancelled"] },
         });
 
-        const costPrice19 = 250; // Себестоимость 19L бутылки
-        const costPrice12 = 170; // Себестоимость 12L бутылки
+        const costPrice19 = 300; // Себестоимость 19L бутылки
+        const costPrice12 = 220; // Себестоимость 12L бутылки
 
 
         const orders = await Order.find({...filter, 'date.d': todayDate, status: "delivered"}).populate('client');
@@ -315,8 +315,8 @@ export const getMainPageInfoSA = async (req, res) => {
                                         },
                                         else: { 
                                             $add: [
-                                                { $multiply: [{ $ifNull: ["$products.b12", 0] }, 170] },
-                                                { $multiply: [{ $ifNull: ["$products.b19", 0] }, 250] }
+                                                { $multiply: [{ $ifNull: ["$products.b12", 0] }, 220] },
+                                                { $multiply: [{ $ifNull: ["$products.b19", 0] }, 300] }
                                             ]
                                         }
                                     }
