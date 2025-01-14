@@ -245,6 +245,18 @@ export default function CourierList() {
                                             </div>
                                         </div>
                                     </Li2>
+                                    {item?.averageRating > 0 && <Li2>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div>
+                                                Средняя оценка:
+                                            </div>
+                                            <div className="flex items-center gap-x-2">
+                                                <div><StarIcon className="w-5 h-5 text-white" /> </div>
+                                                <div>{item?.averageRating}</div>
+                                            </div>
+                                        </div>
+                                    </Li2>
+                                    }
                                 </div>
                             );
                         }
