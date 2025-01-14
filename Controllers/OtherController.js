@@ -253,6 +253,19 @@ export const getMainPageInfo = async (req, res) => {
             });
         }
 
+        const ordersForRating = await Order.find({...filter, status: "delivered"}).sort({ createdAt: -1 }).limit(20);
+
+        let totalRating = 0;
+        let worstRating = 100
+        ordersForRating.forEach(order => {
+            totalRating += order.clientReview || 0; 
+            if (order.clientReview) {
+                worstRating = worstRating > order.clientReview ? order.clientReview : worstRating
+            }
+        });
+
+        const rating = ordersForRating.length > 0 ? totalRating / ordersForRating.length : 0
+
         res.json({
             clients,
             clientsWithDenyVerification,
@@ -261,7 +274,9 @@ export const getMainPageInfo = async (req, res) => {
             unfinishedOrders,
             deliveredOrders,
             totalRevenue,
-            totalSum
+            totalSum,
+            rating: rating.toFixed(1),
+            worstRating
         });
     } catch (error) {
         console.log(error);

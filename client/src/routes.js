@@ -51,6 +51,7 @@ import SuperAdminClientsVerify from "./Pages/SuperAdmin/SuperAdminClientsVerify"
 import PickupInfo from "./Pages/PickupInfo";
 import AddPickup from "./Pages/AddPickup";
 import AdminDenyVerificationClients from "./Pages/Admin/AdminDenyVerificationClients";
+import DepartmentReceivingHistory from "./Pages/Department/DepartmentReceivingHistory";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -120,4 +121,5 @@ export const router = createBrowserRouter([
     { path: "/departamentGiving", element: <DepartamentGiving />},
     { path: "/departamentReceiving", element: <DepartamentReceiving />},
     { path: "/departamentGivingSingle", element: <DepartamentGivingSingle />},
+    { path: "/departmentReceivingHistory", element: <DepartmentReceivingHistory />},
 ]);

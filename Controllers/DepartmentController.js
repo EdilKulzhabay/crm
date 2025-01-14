@@ -134,17 +134,6 @@ export const departmentAction = async (req, res) => {
         })
         
         await history.save()
-
-        if (!receivingFinish) {
-            if (type) {
-                const queue = new Queue({
-                    franchisee
-                })
-                await queue.save()
-            } else {
-                await Queue.findOneAndDelete({franchisee})
-            }
-        }
         
         const fran = await User.findById(franchisee)
         if (type) {
@@ -375,6 +364,38 @@ export const deleteDepartmentHistory = async (req, res) => {
             success: true,
             message: "Удаление прошло успешно"
         })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getReceivHistory = async (req, res) => {
+    try {
+        const {id} = req.body
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const franchisee = await User.findById(id)
+
+        const filter = {
+            franchisee: new mongoose.Types.ObjectId(id),
+            createdAt: { $gte: today, $lte: tomorrow },
+            type: true
+        }
+
+        const history = await DepartmentHistory.find(filter)
+        .populate("department")
+        .populate("franchisee")
+
+        res.json({history})
     } catch (error) {
         console.log(error);
         res.status(500).json({

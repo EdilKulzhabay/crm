@@ -60,7 +60,7 @@ export const getCouriers = async (req, res) => {
     try {
         const id = req.userId;
         const { page } = req.body;
-        const limit = 3;
+        const limit = 9;
         const skip = (page - 1) * limit;
 
         const user = await User.findById(id);
@@ -78,6 +78,35 @@ export const getCouriers = async (req, res) => {
             .sort({ createdAt: 1 })
             .skip(skip)
             .limit(limit);
+
+        const couriersWithRating = [];
+
+            // Проходимся по каждому курьеру
+        for (const courier of couriers) {
+            // Находим последние 20 выполненных заказов для текущего курьера
+            const orders = await Order.find({ courier: courier._id, status: "delivered" })
+                .sort({ createdAt: -1 }) // Сортировка по убыванию времени создания, чтобы получить последние заказы первыми
+                .limit(20); // Ограничиваем до 20 заказов
+
+            // Вычисляем сумму оценок клиентов
+            let totalRating = 0;
+            for (const order of orders) {
+                totalRating += order.clientReview || 0; // Добавляем clientReview к totalRating, предварительно проверяя, определена ли оценка клиента
+            }
+
+            // Вычисляем среднюю оценку
+            const averageRating = orders.length > 0 ? totalRating / orders.length : 0;
+
+            // Добавляем курьера с его оценкой в результат
+            couriersWithRating.push({
+                _id: courier._id,
+                name: courier.name,
+                fullName: courier.fullName,
+                status: courier.status,
+                completedOrders: courier.completedOrders,
+                averageRating: averageRating.toFixed(1), // Округляем до двух знаков после запятой
+            });
+        }
 
         res.json({ couriers });
     } catch (error) {
@@ -276,42 +305,65 @@ export const getActiveOrdersCourier = async (req, res) => {
 
 export const getDeliveredOrdersCourier = async (req, res) => {
     try {
-        const { id, page } = req.body;
+        const { id, page, startDate, endDate, clientNote } = req.body;
 
-        if (!id) {
-            return res.status(400).json({ message: "ID курьера не предоставлен" });
-        }
-
-        const limit = 3; // Количество заказов на странице
+        const limit = 5;
         const skip = (page - 1) * limit;
 
-        // Находим курьера и пополняем поле orders.order
-        const courier = await Courier.findById(id)
-            .populate({
-                path: 'orders.order', // Пополняем поле order
-                populate: {
-                    path: 'client', // Вложенный populate для клиента
-                    model: 'Client', // Указываем модель клиента
-                }
-            });
+        let filter = { courier: id, status: "delivered" };
 
-        if (!courier) {
-            return res.status(404).json({ message: "Курьер не найден" });
+        // Добавление даты
+        if (startDate && endDate) {
+            const startDateObj = new Date(startDate);
+            const endDateObj = new Date(endDate);
+            filter.date = {
+                $gte: startDateObj,
+                $lte: endDateObj,
+            };
         }
 
-        // Фильтруем заказы с нужным статусом
-        const deliveredOrders = courier.orders.filter(
-            (item) => item.orderStatus === "delivered"
-        );
+        // Добавление условия для clientNotes
+        if (clientNote && clientNote !== "") {
+            filter.clientNotes = { $in: [clientNote] };
+        }
 
-        // Убираем заказы, где поле order равно null
-        const filteredOrders = deliveredOrders.filter(item => item.order !== null);
+        // Найти заказы по условиям
+        const orders = await Order.find(filter).limit(limit).skip(skip).populate("client").populate("franchisee")
 
-        // Применяем skip и limit на отфильтрованные заказы
-        const paginatedOrders = filteredOrders.slice(skip, skip + limit);
+        res.status(200).json({ orders });
 
-        // Возвращаем только нужные заказы для текущей страницы
-        res.json({ deliveredOrders: paginatedOrders, totalOrders: filteredOrders.length });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getDeliveredOrdersCourierTagCounts = async (req, res) => {
+    try {
+        const { id, startDate, endDate } = req.body;
+
+        let filter = { courier: id, status: "delivered" };
+
+        // Добавление даты
+        if (startDate && endDate) {
+            const startDateObj = new Date(startDate);
+            const endDateObj = new Date(endDate);
+            filter.date = {
+                $gte: startDateObj,
+                $lte: endDateObj,
+            };
+        }
+
+        const tagCounts = await Order.aggregate([
+            { $match: filter }, // Применить те же условия для агрегации
+            { $unwind: "$clientNotes" }, // Развернуть массив clientNotes
+            { $group: { _id: "$clientNotes", count: { $sum: 1 } } } // Сгруппировать и подсчитать количество каждого тега
+        ]);
+
+        res.status(200).json({ tagCounts });
+
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -490,6 +542,30 @@ export const updateCourierOrderStatus = async (req, res) => {
         res.status(500).json({ message: "Не удалось обновить статус заказа" });
     }
 };
+
+export const getCourierRating = async (req, res) => {
+    try {
+        const id = req.userId
+
+        const orders = await Order.find({ courier: id })
+            .sort({ createdAt: -1 }) 
+            .limit(20); 
+        
+        let totalRating = 0;
+        orders.forEach(order => {
+            totalRating += order.clientReview || 0; 
+        });
+
+        const rating = orders.length > 0 ? totalRating / orders.length : 0
+
+        res.status(200).json({ rating: rating.toFixed(1) });
+    } catch {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
 
 
 
