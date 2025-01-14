@@ -224,27 +224,29 @@ export default function CourierDeliveredOrders(props) {
             </div>
         </Li>
         <Div />
-        {tags.map((item) => {
-            const selectTag = tagCounts.find((item) => item._id === item)
+        {tags.map((tag) => {
+            const selectTag = tagCounts.find((item) => item._id === tag);
 
-            return <div key={item}>
-                <Div>
-                    <button
-                        onClick={() => {
-                            setClientNote(item); 
-                            setPage(1)
-                            loadMoreDeliveredOrders(1, dates, item)}
-                        }
-                        className={clsx("", {
-                            "text-yellow-300": item === clientNote,
-                            "text-green-400": item !== clientNote
-                        })}
-                    >
-                       [ {item} ]
-                    </button>
-                    <Info>{selectTag ? selectTag.count : 0}</Info>
-                </Div>
-            </div>
+            return (
+                <div key={tag}>
+                    <Div>
+                        <button
+                            onClick={() => {
+                                setClientNote(tag); 
+                                setPage(1);
+                                loadMoreDeliveredOrders(1, dates, tag);
+                            }}
+                            className={clsx("", {
+                                "text-yellow-300": tag === clientNote,
+                                "text-green-400": tag !== clientNote
+                            })}
+                        >
+                            [ {tag} ]
+                        </button>
+                        <Info>{selectTag ? selectTag.count : 0}</Info>
+                    </Div>
+                </div>
+            );
         })}
         <Div />
         <div className="max-h-[250px] overflow-scroll">

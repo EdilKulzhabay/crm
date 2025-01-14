@@ -310,6 +310,7 @@ export const getDeliveredOrdersCourier = async (req, res) => {
 
         const limit = 5;
         const skip = (page - 1) * limit;
+        
         let filter = { 
             courier: id,
             status: "delivered",
