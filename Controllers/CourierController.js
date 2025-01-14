@@ -318,6 +318,9 @@ export const getDeliveredOrdersCourier = async (req, res) => {
             "date.d": {$gte: startDateObj, $lte: endDateObj}
         };
 
+        console.log("filter in getDeliveredOrdersCourier: ", filter);
+        
+
         // Добавление условия для clientNotes
         if (clientNote && clientNote !== "") {
             filter.clientNotes = { $in: [clientNote] };
@@ -325,6 +328,8 @@ export const getDeliveredOrdersCourier = async (req, res) => {
 
         // Найти заказы по условиям
         const orders = await Order.find(filter).limit(limit).skip(skip).populate("client").populate("franchisee")
+        console.log("orders in getDeliveredOrdersCourier: ", orders);
+        
 
         res.status(200).json({ orders });
 
@@ -344,10 +349,13 @@ export const getDeliveredOrdersCourierTagCounts = async (req, res) => {
         const endDateObj = new Date(endDate);
 
         let filter = { 
-            courier: id,
+            courier: new mongoose.Types.ObjectId(id),
             status: "delivered",
             "date.d": {$gte: startDateObj, $lte: endDateObj}
         };
+
+        console.log("filter in getDeliveredOrdersCourierTagCounts", filter);
+        
 
         const tagCounts = await Order.aggregate([
             { $match: filter }, // Применить те же условия для агрегации
