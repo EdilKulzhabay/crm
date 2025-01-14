@@ -28,7 +28,6 @@ const tags = [
     "Курьер не помог установить",
     "Проблемы с оплатой",
     "Грубое общение",
-    "Чистая упаковка",
     "Ошибка оплаты",
     "Быстрая доставка",
     "Чистая упаковка",
@@ -232,9 +231,15 @@ export default function CourierDeliveredOrders(props) {
                     <Div>
                         <button
                             onClick={() => {
-                                setClientNote(tag); 
-                                setPage(1);
-                                loadMoreDeliveredOrders(1, dates, tag);
+                                if (clientNote !== tag) {
+                                    setClientNote(tag); 
+                                    setPage(1);
+                                    loadMoreDeliveredOrders(1, dates, tag);
+                                } else {
+                                    setClientNote(""); 
+                                    setPage(1);
+                                    loadMoreDeliveredOrders(1, dates, "");
+                                }
                             }}
                             className={clsx("", {
                                 "text-yellow-300": tag === clientNote,
