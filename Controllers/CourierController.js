@@ -328,11 +328,10 @@ export const getDeliveredOrdersCourier = async (req, res) => {
         }
 
         // Найти заказы по условиям
-        const orders = await Order.find(filter).limit(limit).skip(skip).populate("client").populate("franchisee")
-        console.log("orders in getDeliveredOrdersCourier: ", orders);
+        const deliveredOrders = await Order.find(filter).limit(limit).skip(skip).populate("client").populate("franchisee")
         
 
-        res.status(200).json({ orders });
+        res.status(200).json({ deliveredOrders });
 
     } catch (error) {
         console.log(error);
