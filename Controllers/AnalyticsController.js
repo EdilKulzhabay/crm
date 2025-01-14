@@ -541,7 +541,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
 
         // Создаем объект для хранения статистики по франчайзи
         const franchiseeStats = {};
-        franchisee.forEach(fran => {
+        for (const fran of franchisee) {
             const ratingFilter = {
                 status: "delivered"
             }
@@ -550,7 +550,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                 {transferredFranchise: fran.fullName}
             ]
 
-            const {rating, worstRating} = getRating(ratingFilter)
+            const {rating, worstRating} = await getRating(ratingFilter)
             
             franchiseeStats[fran._id] = {
                 _id: fran._id,
@@ -572,7 +572,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                 rating,
                 worstRating
             };
-        });
+        };
 
         clientStats.forEach((stat) => {
             const franchiseeEntry = franchisee.find(

@@ -304,12 +304,7 @@ export default function SAAnalytics() {
                         return (<div key={item._id}>
                             {chooseFr === item._id ? 
                             <>
-                                <Div>{item.fullName} {item?.rating !== 0 && <div className="flex items-center gap-x-2">
-                                    <div><StarIcon className="w-5 h-5 text-white" /> </div>
-                                    <div>{item?.rating}</div>
-                                    <div className="ml-2"><StarIcon className="w-5 h-5 text-red" /> </div>
-                                    <div className="text-red">{item?.worstRating}</div>
-                                </div>}</Div>
+                                <Div>{item.fullName}</Div>
                                 <Div>Переданные. заказы</Div>
                                 <Div>
                                     <div>18,9 л: </div>
@@ -374,7 +369,12 @@ export default function SAAnalytics() {
                                 </Div>
                             </> : 
                             <>
-                                <Div>{item.fullName}</Div>
+                                <Div>{item.fullName} {item?.rating !== 0 && <div className="flex items-center gap-x-2">
+                                    <div><StarIcon className="w-5 h-5 text-white" /> </div>
+                                    <div>{item?.rating}</div>
+                                    <div className="ml-2"><StarIcon className="w-5 h-5 text-red" /> </div>
+                                    <div className="text-red">{item?.worstRating}</div>
+                                </div>}</Div>
                                 <Li>
                                     Количество клиентов: <Info ml="ml-1">{item?.totalClients}</Info>
                                 </Li>
