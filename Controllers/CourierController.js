@@ -309,18 +309,14 @@ export const getDeliveredOrdersCourier = async (req, res) => {
 
         const limit = 5;
         const skip = (page - 1) * limit;
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
 
-        let filter = { courier: id, status: "delivered" };
-
-        // Добавление даты
-        if (startDate && endDate) {
-            const startDateObj = new Date(startDate);
-            const endDateObj = new Date(endDate);
-            filter.date = {
-                $gte: startDateObj,
-                $lte: endDateObj,
-            };
-        }
+        let filter = { 
+            courier: id,
+            status: "delivered",
+            "date.d": {$gte: startDateObj, $lte: endDateObj}
+        };
 
         // Добавление условия для clientNotes
         if (clientNote && clientNote !== "") {
@@ -344,17 +340,14 @@ export const getDeliveredOrdersCourierTagCounts = async (req, res) => {
     try {
         const { id, startDate, endDate } = req.body;
 
-        let filter = { courier: id, status: "delivered" };
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
 
-        // Добавление даты
-        if (startDate && endDate) {
-            const startDateObj = new Date(startDate);
-            const endDateObj = new Date(endDate);
-            filter.date = {
-                $gte: startDateObj,
-                $lte: endDateObj,
-            };
-        }
+        let filter = { 
+            courier: id,
+            status: "delivered",
+            "date.d": {$gte: startDateObj, $lte: endDateObj}
+        };
 
         const tagCounts = await Order.aggregate([
             { $match: filter }, // Применить те же условия для агрегации
