@@ -310,17 +310,11 @@ export const getDeliveredOrdersCourier = async (req, res) => {
 
         const limit = 5;
         const skip = (page - 1) * limit;
-        const startDateObj = new Date(startDate);
-        const endDateObj = new Date(endDate);
-
         let filter = { 
             courier: id,
             status: "delivered",
             "date.d": {$gte: startDate, $lte: endDate}
         };
-
-        console.log("filter in getDeliveredOrdersCourier: ", filter);
-        
 
         // Добавление условия для clientNotes
         if (clientNote && clientNote !== "") {
@@ -328,7 +322,7 @@ export const getDeliveredOrdersCourier = async (req, res) => {
         }
 
         // Найти заказы по условиям
-        const deliveredOrders = await Order.find(filter).limit(limit).skip(skip).populate("client").populate("franchisee")
+        const deliveredOrders = await Order.find(filter).sort({updatedAt: -1}).limit(limit).skip(skip).populate("client").populate("franchisee")
         
 
         res.status(200).json({ deliveredOrders });
@@ -345,23 +339,19 @@ export const getDeliveredOrdersCourierTagCounts = async (req, res) => {
     try {
         const { id, startDate, endDate } = req.body;
 
-        const startDateObj = new Date(startDate);
-        const endDateObj = new Date(endDate);
-
         let filter = { 
             courier: new mongoose.Types.ObjectId(id),
             status: "delivered",
             "date.d": {$gte: startDate, $lte: endDate}
         };
 
-        console.log("filter in getDeliveredOrdersCourierTagCounts", filter);
-        
-
         const tagCounts = await Order.aggregate([
             { $match: filter }, // Применить те же условия для агрегации
             { $unwind: "$clientNotes" }, // Развернуть массив clientNotes
             { $group: { _id: "$clientNotes", count: { $sum: 1 } } } // Сгруппировать и подсчитать количество каждого тега
         ]);
+
+        console.log("tagCounts:", tagCounts);
 
         res.status(200).json({ tagCounts });
 
