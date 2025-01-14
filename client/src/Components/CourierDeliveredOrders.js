@@ -164,7 +164,7 @@ export default function CourierDeliveredOrders(props) {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, hasMore]);
+    }, [page, hasMore, clientNote]);
 
 
     useEffect(() => {

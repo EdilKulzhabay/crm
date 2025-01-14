@@ -253,7 +253,7 @@ export const getMainPageInfo = async (req, res) => {
             });
         }
 
-        const ordersForRating = await Order.find({...filter, status: "delivered"}).sort({ createdAt: -1 }).limit(20);
+        const ordersForRating = await Order.find({...filter, clientReview: { $exists: true, $ne: 0 }, status: "delivered"}).sort({ createdAt: -1 }).limit(20);
 
         let totalRating = 0;
         let worstRating = 100

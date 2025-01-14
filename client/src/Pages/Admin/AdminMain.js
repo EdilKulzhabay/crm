@@ -42,7 +42,7 @@ export default function SuperAdmin() {
                     <div><StarIcon className="w-5 h-5 text-white" /> </div>
                     <div>{info?.rating}</div>
                     <div className="ml-2"><StarIcon className="w-5 h-5 text-red" /> </div>
-                    <div className="text-red">{info?.worstRating}</div>
+                    <div className="text-red">{info?.worstRating === 100 ? 0 : info?.worstRating}</div>
                 </div>}
             </Div>
             <Div />
