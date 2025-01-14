@@ -316,7 +316,7 @@ export const getDeliveredOrdersCourier = async (req, res) => {
         let filter = { 
             courier: id,
             status: "delivered",
-            "date.d": {$gte: startDateObj, $lte: endDateObj}
+            "date.d": {$gte: startDate, $lte: endDate}
         };
 
         console.log("filter in getDeliveredOrdersCourier: ", filter);
@@ -352,7 +352,7 @@ export const getDeliveredOrdersCourierTagCounts = async (req, res) => {
         let filter = { 
             courier: new mongoose.Types.ObjectId(id),
             status: "delivered",
-            "date.d": {$gte: startDateObj, $lte: endDateObj}
+            "date.d": {$gte: startDate, $lte: endDate}
         };
 
         console.log("filter in getDeliveredOrdersCourierTagCounts", filter);
