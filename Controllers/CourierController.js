@@ -117,7 +117,7 @@ export const getCouriers = async (req, res) => {
             });
         }
 
-        res.json({ couriers });
+        res.json({ couriers: couriersWithRating });
     } catch (error) {
         console.log(error);
         res.status(500).json({
