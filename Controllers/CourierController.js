@@ -85,7 +85,7 @@ export const getCouriers = async (req, res) => {
             // Проходимся по каждому курьеру
         for (const courier of couriers) {
             // Находим последние 20 выполненных заказов для текущего курьера
-            const orders = await Order.find({ courier: courier._id, status: "delivered" })
+            const orders = await Order.find({ courier: courier._id, clientReview: { $exists: true, $ne: 0 }, status: "delivered" })
                 .sort({ createdAt: -1 }) // Сортировка по убыванию времени создания, чтобы получить последние заказы первыми
                 .limit(20); // Ограничиваем до 20 заказов
 
@@ -547,7 +547,7 @@ export const getCourierRating = async (req, res) => {
     try {
         const id = req.userId
 
-        const orders = await Order.find({ courier: id })
+        const orders = await Order.find({ courier: id, clientReview: { $exists: true, $ne: 0 }, status: "delivered" })
             .sort({ createdAt: -1 }) 
             .limit(20); 
         

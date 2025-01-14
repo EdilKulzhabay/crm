@@ -522,7 +522,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
         ]);
 
         const getRating = async(ratingFilter) => {
-            const ordersForRating = await Order.find(ratingFilter).limit(20).sort({createdAt: -1})
+            const ordersForRating = await Order.find({...ratingFilter, clientReview: { $exists: true, $ne: 0 }}).limit(20).sort({createdAt: -1})
 
             let totalRating = 0;
             let worstRating = 100
