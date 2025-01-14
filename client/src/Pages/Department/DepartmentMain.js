@@ -11,8 +11,11 @@ export default function DepartmentMain() {
         </Div>
         <Div />
         <Div>
-            <LinkButton color="green" href={`/${userData?.receiving ? "departamentReceiving" : "departamentGiving"}`}>{userData?.receiving ? "Принять" : "Отпустить"}</LinkButton>
+            <LinkButton color="green" href={`/${userData?.receiving ? "departamentReceiving" : "departamentGivingSingle"}`}>{userData?.receiving ? "Принять" : "Отпустить"}</LinkButton>
         </Div>
+
+        <Div />
+        {userData?.receiving && <LinkButton color="green" href="/departmentReceivingHistory" />}
 
         <Div />
         <Div />

@@ -150,6 +150,7 @@ export const clientRegister = async (req, res) => {
                 b12: 0,
                 b19: 0,
             },
+            franchisee: ObjectId('66f15c557a27c92d447a16a0'),
             price12: 900,
             price19: 1300,
             dailyWater: 2,

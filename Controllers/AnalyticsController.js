@@ -521,9 +521,35 @@ export const getFranchiseeAnalytics = async (req, res) => {
             }
         ]);
 
+        const getRating = async(ratingFilter) => {
+            const ordersForRating = await Order.find(ratingFilter).limit(20).sort({createdAt: -1})
+
+            let totalRating = 0;
+            let worstRating = 100
+            ordersForRating.forEach(order => {
+                totalRating += order.clientReview || 0; 
+                if (order.clientReview) {
+                    worstRating = worstRating > order.clientReview ? order.clientReview : worstRating
+                }
+            });
+
+            const rating = ordersForRating.length > 0 ? totalRating / ordersForRating.length : 0
+            return {rating, worstRating}
+        }
+
         // Создаем объект для хранения статистики по франчайзи
         const franchiseeStats = {};
         franchisee.forEach(fran => {
+            const ratingFilter = {
+                status: "delivered"
+            }
+            ratingFilter.$or = [
+                {franchisee: fran._id},
+                {transferredFranchise: fran.fullName}
+            ]
+
+            const {rating, worstRating} = getRating(ratingFilter)
+            
             franchiseeStats[fran._id] = {
                 _id: fran._id,
                 totalClients: 0,
@@ -540,7 +566,9 @@ export const getFranchiseeAnalytics = async (req, res) => {
                 owe: 0,
                 tookAwayB12: 0,
                 tookAwayB19: 0,
-                fullName: fran.fullName
+                fullName: fran.fullName,
+                rating,
+                worstRating
             };
         });
 

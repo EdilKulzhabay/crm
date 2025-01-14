@@ -7,6 +7,7 @@ import Li from "../../Components/Li";
 import Li2 from "../../Components/Li2";
 import LinkButton from "../../Components/LinkButton";
 import useFetchUserData from "../../customHooks/useFetchUserData";
+import StarIcon from "../../icons/StarIcon";
 
 export default function SuperAdmin() {
     const userData = useFetchUserData();
@@ -37,6 +38,12 @@ export default function SuperAdmin() {
         <Container role={userData?.role}>
             <Div>
                 <div>Главная панель</div>
+                {info?.rating !== 0 && <div className="flex items-center gap-x-2">
+                    <div><StarIcon className="w-5 h-5 text-white" /> </div>
+                    <div>{info?.rating}</div>
+                    <div className="ml-2"><StarIcon className="w-5 h-5 text-red" /> </div>
+                    <div className="text-red">{info?.worstRating}</div>
+                </div>}
             </Div>
             <Div />
             <Div>

@@ -14,6 +14,7 @@ import DownIcon from "../icons/DownIcon";
 import UpIcon from "../icons/UpIcon";
 import getPreviousMonthRange from "../utils/getPreviousMonthRange";
 import clsx from "clsx";
+import StarIcon from "../icons/StarIcon";
 
 export default function SAAnalytics() {
     const userData = useFetchUserData()
@@ -303,7 +304,12 @@ export default function SAAnalytics() {
                         return (<div key={item._id}>
                             {chooseFr === item._id ? 
                             <>
-                                <Div>{item.fullName}</Div>
+                                <Div>{item.fullName} {item?.rating !== 0 && <div className="flex items-center gap-x-2">
+                                    <div><StarIcon className="w-5 h-5 text-white" /> </div>
+                                    <div>{item?.rating}</div>
+                                    <div className="ml-2"><StarIcon className="w-5 h-5 text-red" /> </div>
+                                    <div className="text-red">{item?.worstRating}</div>
+                                </div>}</Div>
                                 <Div>Переданные. заказы</Div>
                                 <Div>
                                     <div>18,9 л: </div>

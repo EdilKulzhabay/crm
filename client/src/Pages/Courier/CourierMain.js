@@ -7,6 +7,7 @@ import LinkButton from "../../Components/LinkButton";
 import MyButton from "../../Components/MyButton";
 import OrderInfo from "../../Components/OrderInfo";
 import useFetchUserData from "../../customHooks/useFetchUserData";
+import StarIcon from "../../icons/StarIcon";
 
 export default function CourierMain() {
     const userData = useFetchUserData();
@@ -15,6 +16,7 @@ export default function CourierMain() {
         b19: "",
     });
     const [opForm, setOpForm] = useState("")
+    const [rating, setRating] = useState(0)
 
     const [firstActiveOrder, setFirstActiveOrder] = useState([])
 
@@ -37,7 +39,18 @@ export default function CourierMain() {
         })
     }
 
+    const getCourierRating = () => {
+        api.get("/getCourierRating", {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            setRating(data.rating)
+        }).catch((error) => {
+            console.log(error);
+        })
+    }
+
     useEffect(() => {
+        getCourierRating()
         getFirstOrderForToday()
     }, [])
 
@@ -73,7 +86,11 @@ export default function CourierMain() {
     return (
         <Container role={userData?.role}>
             <Div>
-                Главная панель
+                Главная панель 
+                {rating !== 0 && <div className="flex items-center gap-x-2">
+                    <div><StarIcon className="w-5 h-5 text-white" /> </div>
+                    <div>{rating}</div>
+                </div>}
             </Div>
             
             {userData?.wholeList && <><Div/><Div><LinkButton href={`/courierActiveOrders/${userData?._id}`}>Список заказов</LinkButton></Div></> }

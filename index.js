@@ -176,6 +176,7 @@ app.get("/checkClientsCoincidences", ClientController.checkClientsCoincidences)
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
 app.get("/getFirstOrderForToday", checkAuth, CourierController.getFirstOrderForToday);
+app.get("/getCourierRating", checkAuth, CourierController.getCourierRating);
 app.post("/updateOrderList", checkAuth, CourierController.updateOrderList);
 app.post("/addCourier", CourierController.addCourier);
 app.post("/getCouriers", checkAuth, CourierController.getCouriers);
@@ -189,6 +190,7 @@ app.post("/updateCourierData", CourierController.updateCourierData);
 app.post("/deleteCourier", CourierController.deleteCourier);
 app.post("/getActiveOrdersCourier", CourierController.getActiveOrdersCourier)
 app.post("/getDeliveredOrdersCourier", CourierController.getDeliveredOrdersCourier)
+app.post("/getDeliveredOrdersCourierTagCounts", CourierController.getDeliveredOrdersCourierTagCounts)
 app.post("/updateCourierOrderStatus", checkAuth, CourierController.updateCourierOrderStatus)
 
 ///////PROMOCODE
@@ -226,6 +228,7 @@ app.post("/getDepartmentHistory", DepartmentController.getDepartmentHistory)
 app.post("/getDepartmentInfo", DepartmentController.getDepartmentInfo)
 app.post("/getDepartmentInfoFranchisee", DepartmentController.getDepartmentInfoFranchisee)
 app.post("/deleteDepartmentHistory", DepartmentController.deleteDepartmentHistory)
+app.post("/getReceivHistory", DepartmentController.getReceivHistory)
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);

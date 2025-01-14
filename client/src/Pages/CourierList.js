@@ -9,6 +9,7 @@ import LinkButton from "../Components/LinkButton";
 import api from "../api";
 import Container from "../Components/Container";
 import useFetchUserData from "../customHooks/useFetchUserData";
+import StarIcon from "../icons/StarIcon";
 
 export default function CourierList() {
     const userData = useFetchUserData();
@@ -160,7 +161,7 @@ export default function CourierList() {
             </Li>
             <Div />
             <Div>Список курьеров:</Div>
-            <div className="max-h-[100px] overflow-scroll">
+            <div className="max-h-[300px] overflow-scroll">
                 {couriers &&
                     couriers.length > 0 &&
                     couriers.map((item, index) => {
@@ -197,6 +198,18 @@ export default function CourierList() {
                                             </div>
                                         </div>
                                     </Li2>
+                                    {item?.averageRating > 0 && <Li2>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div>
+                                                Средняя оценка:
+                                            </div>
+                                            <div className="flex items-center gap-x-2">
+                                                <div><StarIcon className="w-5 h-5 text-white" /> </div>
+                                                <div>{item?.averageRating}</div>
+                                            </div>
+                                        </div>
+                                    </Li2>
+                                    }
                                 </div>
                             );
                         } else {
