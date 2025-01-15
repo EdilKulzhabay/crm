@@ -14,6 +14,9 @@ export default function AdminDenyVerificationClients() {
     const [searchF, setSearchF] = useState("");
     const handleSearchF = (e) => {
         setSearchF(e.target.value);
+        if (e.target.value === "") {
+            getDenyVerfifcation()
+        }
     };
 
     const getDenyVerfifcation = async () => {
