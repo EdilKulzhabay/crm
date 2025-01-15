@@ -551,10 +551,12 @@ export const getDenyVerfifcation = async (req, res) => {
 
         if (searchF !== "") {
             const regex = new RegExp(searchF, "i"); 
-            const filterF = [
-                { fullName: { $regex: regex } },
-                { userName: { $regex: regex } },
-            ]; 
+            const filterF = {
+                $or: [
+                  { fullName: { $regex: regex } },
+                  { userName: { $regex: regex } },
+                ]
+              };
             const searchFranchisee = await User.findOne(filterF)
             filter.franchisee = searchFranchisee._id
         }
