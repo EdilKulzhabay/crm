@@ -15,12 +15,12 @@ export default function AdminDenyVerificationClients() {
     const handleSearchF = (e) => {
         setSearchF(e.target.value);
         if (e.target.value === "") {
-            getDenyVerfifcation()
+            getDenyVerfifcation("")
         }
     };
 
-    const getDenyVerfifcation = async () => {
-        api.post("/getDenyVerfifcation", {searchF}, {
+    const getDenyVerfifcation = async (fr) => {
+        api.post("/getDenyVerfifcation", {searchF: fr}, {
             headers: { "Content-Type": "application/json" },
         })
             .then(({ data }) => {
@@ -32,7 +32,7 @@ export default function AdminDenyVerificationClients() {
     }
 
     useEffect(() => {
-        getDenyVerfifcation()
+        getDenyVerfifcation("")
     }, []);
 
     return (
@@ -51,7 +51,7 @@ export default function AdminDenyVerificationClients() {
                             color="white"
                         />
                         <MyButton click={() => {
-                            getDenyVerfifcation()
+                            getDenyVerfifcation(searchF)
                         }}>Найти</MyButton>
                     </div>
                 </Div>
