@@ -91,20 +91,12 @@ export const getCouriers = async (req, res) => {
 
             // Вычисляем сумму оценок клиентов
             let totalRating = 0;
-            let orderskol = 0
             for (const order of orders) {
-                totalRating += order.clientReview || 0; // Добавляем clientReview к totalRating, предварительно проверяя, определена ли оценка клиента
-                if (order.clientReview && order.clientReview > 0) {
-                    orderskol++
-                }
-            }
-            if (orderskol > 0) {
-                console.log("courier: ", courier);
-                console.log(totalRating);
+                totalRating += order.clientReview || 0;
             }
 
             // Вычисляем среднюю оценку
-            const averageRating = orderskol > 0 ? totalRating / orderskol : 0;
+            const averageRating = orders.length > 0 ? totalRating / orders.length : 0;
 
             // Добавляем курьера с его оценкой в результат
             couriersWithRating.push({
@@ -552,15 +544,11 @@ export const getCourierRating = async (req, res) => {
             .limit(20); 
         
         let totalRating = 0;
-        let orderskol = 0
         orders.forEach(order => {
             totalRating += order.clientReview || 0; 
-            if (order.clientReview && order.clientReview > 0) {
-                orderskol++
-            }
         });
 
-        const rating = orderskol > 0 ? totalRating / orderskol : 0
+        const rating = orders.length > 0 ? totalRating / orders.length : 0
 
         res.status(200).json({ rating: rating.toFixed(1) });
     } catch {
