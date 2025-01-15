@@ -87,11 +87,18 @@ export default function CourierMain() {
         <Container role={userData?.role}>
             <Div>
                 Главная панель 
-                {rating !== 0 && <div className="flex items-center gap-x-2">
-                    <div><StarIcon className="w-5 h-5 text-white" /> </div>
-                    <div>{rating}</div>
-                </div>}
             </Div>
+            <Div />
+            {rating !== 0 && <Div>
+                <div className="flex items-center">
+                    <div>Рейтинг</div>
+                    <div className="flex items-center gap-x-2 ml-4">
+                        <div><StarIcon className="w-5 h-5 text-yellow-300" /> </div>
+                        <div className="text-yellow-300">{rating}</div>
+                    </div>
+                    <div></div>
+                </div>
+            </Div>}
             
             {userData?.wholeList && <><Div/><Div><LinkButton href={`/courierActiveOrders/${userData?._id}`}>Список заказов</LinkButton></Div></> }
             <Div />
