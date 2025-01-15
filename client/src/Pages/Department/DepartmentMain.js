@@ -15,8 +15,9 @@ export default function DepartmentMain() {
         </Div>
 
         <Div />
-        {userData?.receiving && <LinkButton color="green" href="/departmentReceivingHistory" />}
-
+        <Div>
+        {userData?.receiving && <LinkButton color="green" href="/departmentReceivingHistory">История</LinkButton>}
+        </Div>
         <Div />
         <Div />
         {!userData?.receiving && 
