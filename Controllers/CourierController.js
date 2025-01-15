@@ -538,8 +538,18 @@ export const updateCourierOrderStatus = async (req, res) => {
 export const getCourierRating = async (req, res) => {
     try {
         const id = req.userId
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const day = String(today.getDate()).padStart(2, "0");
+        const todayString = `${year}-${month}-${day}`;
 
-        const orders = await Order.find({ courier: id, clientReview: { $exists: true, $ne: 0 }, status: "delivered" })
+        const orders = await Order.find({ 
+            courier: id,
+            clientReview: { $exists: true, $ne: 0 },
+            status: "delivered",
+            "date.d": { $ne: todayString },
+         })
             .sort({ createdAt: -1 }) 
             .limit(20); 
         

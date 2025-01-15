@@ -234,10 +234,14 @@ export default function CourierDeliveredOrders(props) {
                                 if (clientNote !== tag) {
                                     setClientNote(tag); 
                                     setPage(1);
+                                    setLoading(false)
+                                    setHasMore(true)
                                     loadMoreDeliveredOrders(1, dates, tag);
                                 } else {
                                     setClientNote(""); 
                                     setPage(1);
+                                    setLoading(false)
+                                    setHasMore(true)
                                     loadMoreDeliveredOrders(1, dates, "");
                                 }
                             }}
