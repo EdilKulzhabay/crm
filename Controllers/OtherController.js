@@ -257,16 +257,12 @@ export const getMainPageInfo = async (req, res) => {
 
         let totalRating = 0;
         let worstRating = 100
-        let orderskol = 0
         ordersForRating.forEach(order => {
-            totalRating += order.clientReview || 0; 
-            if (order.clientReview && order.clientReview > 0) {
-                worstRating = worstRating > order.clientReview ? order.clientReview : worstRating
-                orderskol++
-            }
+            totalRating += order.clientReview; 
+            worstRating = worstRating > order.clientReview ? order.clientReview : worstRating
         });
 
-        const rating = orderskol > 0 ? totalRating / orderskol : 0
+        const rating = ordersForRating.length > 0 ? totalRating / ordersForRating.length : 0
 
         res.json({
             clients,
