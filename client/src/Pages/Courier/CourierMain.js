@@ -89,7 +89,7 @@ export default function CourierMain() {
                 Главная панель 
             </Div>
             <Div />
-            {rating !== 0 && <Div>
+            {rating > 0 && <Div>
                 <div className="flex items-center">
                     <div>Рейтинг</div>
                     <div className="flex items-center gap-x-2 ml-4">

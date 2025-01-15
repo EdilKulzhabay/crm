@@ -544,9 +544,20 @@ export const getNotVerifyClients = async (req, res) => {
 export const getDenyVerfifcation = async (req, res) => {
     try {
         const id = req.userId;
+        const {searchF} = req.body
 
         const franchisee = await User.findById(id)
         const filter = {"verify.status": "denyVerification"}
+
+        if (searchF !== "") {
+            const regex = new RegExp(searchF, "i"); 
+            const filterF = [
+                { fullName: { $regex: regex } },
+                { userName: { $regex: regex } },
+            ]; 
+            const searchFranchisee = await User.findOne(filterF)
+            filter.franchisee = searchFranchisee._id
+        }
         
         if (franchisee.role === "admin") {
             filter.franchisee = id

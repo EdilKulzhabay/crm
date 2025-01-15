@@ -476,6 +476,15 @@ export const updateCourierOrderStatus = async (req, res) => {
                     sendText += `кол. 18,9 л.: ${products.b19} `
                 }
                 SendEmailOrder(mail, "delivered", sendText)
+                if (order?.transferred) {
+                    const transferredFranchise = await User.findOne({fullName: order?.transferredFranchise})
+                    if (transferredFranchise) {
+                        const transferredFranchiseMail = transferredFranchise.mail
+                        if (transferredFranchiseMail !== null && transferredFranchiseMail !== "" && transferredFranchiseMail.includes("@")) {
+                            SendEmailOrder(mail, "delivered", sendText)
+                        }
+                    }
+                }
             }
         }
 
