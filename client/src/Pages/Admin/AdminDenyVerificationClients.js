@@ -5,13 +5,26 @@ import Div from "../../Components/Div";
 import Li from "../../Components/Li";
 import LinkButton from "../../Components/LinkButton";
 import useFetchUserData from "../../customHooks/useFetchUserData";
+import MyInput from "../../Components/MyInput";
+import MyButton from "../../Components/MyButton";
 
 export default function AdminDenyVerificationClients() {
     const userData = useFetchUserData();
     const [clients, setClients] = useState([]);
+    const [searchF, setSearchF] = useState("");
+    const handleSearchF = (e) => {
+        setSearchF(e.target.value);
+        if (e.target.value === "") {
+            setOrders([]);
+            setPage(1);
+            setHasMore(true);
+            setLoading(false)
+            loadMoreOrders(1, dates, search, searchStatus, "", sa)
+        }
+    };
 
-    useEffect(() => {
-        api.get("/getDenyVerfifcation", {
+    const getDenyVerfifcation = async () => {
+        api.post("/getDenyVerfifcation", {searchF}, {
             headers: { "Content-Type": "application/json" },
         })
             .then(({ data }) => {
@@ -20,6 +33,10 @@ export default function AdminDenyVerificationClients() {
             .catch((e) => {
                 console.log(e);
             });
+    }
+
+    useEffect(() => {
+        getDenyVerfifcation()
     }, []);
 
     return (
@@ -27,6 +44,22 @@ export default function AdminDenyVerificationClients() {
             <Div>
                 <div>Клиенты не прошедшие верификацию:</div>
             </Div>
+            {userData?.role === "superAdmin" && <>
+                <Div />
+                <Div>Фильтрация по франчайзи</Div>
+                <Div>
+                    <div className="flex items-center flex-wrap gap-x-4">
+                        <MyInput
+                            value={searchF}
+                            change={handleSearchF}
+                            color="white"
+                        />
+                        <MyButton click={() => {
+                            getDenyVerfifcation()
+                        }}>Найти</MyButton>
+                    </div>
+                </Div>
+            </>}
             <Div />
             {clients && clients.length > 0 && clients.map((item) => {
                 return <div key={item?._id}>
