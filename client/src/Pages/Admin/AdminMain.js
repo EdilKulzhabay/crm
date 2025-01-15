@@ -39,8 +39,8 @@ export default function SuperAdmin() {
             <Div>
                 <div>Главная панель</div>
                 {info?.rating !== 0 && <div className="flex items-center gap-x-2">
-                    <div><StarIcon className="w-5 h-5 text-white" /> </div>
-                    <div>{info?.rating}</div>
+                    <div><StarIcon className="w-5 h-5 text-yellow-300" /> </div>
+                    <div className="text-yellow-300">{info?.rating}</div>
                     <div className="ml-2"><StarIcon className="w-5 h-5 text-red" /> </div>
                     <div className="text-red">{info?.worstRating === 100 ? 0 : info?.worstRating}</div>
                 </div>}

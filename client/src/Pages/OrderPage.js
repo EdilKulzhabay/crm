@@ -516,8 +516,8 @@ export default function OrderPage() {
                     <div className="flex items-center gap-x-1 text-sm lg:text-base">
                         <div className="text-red">[</div>
                         <div className="flex items-center gap-x-2">
-                            <div><StarIcon className="w-5 h-5 text-white" /> </div>
-                            <div>{order?.clientReview}</div>
+                            <div><StarIcon className="w-5 h-5 text-yellow-300" /> </div>
+                            <div className="text-yellow-300">{order?.clientReview}</div>
                         </div>
                         <div className="text-red">]</div>
                     </div>}</Div>

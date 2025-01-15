@@ -204,8 +204,8 @@ export default function CourierList() {
                                                 Средняя оценка:
                                             </div>
                                             <div className="flex items-center gap-x-2">
-                                                <div><StarIcon className="w-5 h-5 text-white" /> </div>
-                                                <div>{item?.averageRating}</div>
+                                                <div><StarIcon className="w-5 h-5 text-yellow-300" /> </div>
+                                                <div className="text-yellow-300">{item?.averageRating}</div>
                                             </div>
                                         </div>
                                     </Li2>
@@ -251,8 +251,8 @@ export default function CourierList() {
                                                 Средняя оценка:
                                             </div>
                                             <div className="flex items-center gap-x-2">
-                                                <div><StarIcon className="w-5 h-5 text-white" /> </div>
-                                                <div>{item?.averageRating}</div>
+                                                <div><StarIcon className="w-5 h-5 text-yellow-300" /> </div>
+                                                <div className="text-yellow-300">{item?.averageRating}</div>
                                             </div>
                                         </div>
                                     </Li2>
