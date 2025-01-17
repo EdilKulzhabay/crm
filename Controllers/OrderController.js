@@ -438,7 +438,7 @@ export const updateOrder = async (req, res) => {
             if (order?.courier && order?.courier !== null) {
                 const courierId = order.courier
                 const lCourier = await Courier.findById(courierId)
-                const mail = lCourier.mail
+                const mail = lCourier?.mail
                 if (mail !== null && mail !== "" && mail.includes("@")) {
                     let sendText = `По адресу ${order?.address.actual}, `
                     if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
