@@ -7,6 +7,7 @@ import {Expo} from "expo-server-sdk";
 import { scheduleJob } from "node-schedule";
 import "dotenv/config";
 import { pushNotification } from "../pushNotification.js";
+import User from "../Models/User.js";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -131,6 +132,8 @@ export const clientRegister = async (req, res) => {
         console.log(req.body);
         
 
+        const user = await User.findOne({role: "superAdmin"})
+        const superAdminId = user._id
         const candidate = await Client.findOne({ phone });
 
         if (candidate) {
@@ -150,7 +153,7 @@ export const clientRegister = async (req, res) => {
                 b12: 0,
                 b19: 0,
             },
-            franchisee: ObjectId('66f15c557a27c92d447a16a0'),
+            franchisee: superAdminId,
             price12: 900,
             price19: 1300,
             dailyWater: 2,
