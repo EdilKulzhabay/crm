@@ -439,7 +439,7 @@ export default function ClientList() {
                         if (clients.length === index + 1) {
                             return (
                                 <div key={client._id} ref={lastClientElementRef}>
-                                    <Li link={client?.verify?.status}>
+                                    <Li link={client?.verify?.status} status={client?.status || ""}>
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                             <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                             <div>|</div>
@@ -469,7 +469,7 @@ export default function ClientList() {
                         } else {
                             return (
                                 <div key={client._id}>
-                                    <Li link={client?.verify?.status}>
+                                    <Li link={client?.verify?.status} status={client?.status || ""}>
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                             <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                             <div>|</div>

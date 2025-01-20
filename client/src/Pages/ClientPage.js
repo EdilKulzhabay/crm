@@ -880,6 +880,12 @@ export default function ClientPage() {
                         {userData?.role === "superAdmin" && 
                             <MyButton click={() => {setDeleteModalClient(true)}}>Удалить клиента</MyButton>
                         }
+                        {userData?.role === "superAdmin" && 
+                            <MyButton click={() => {
+                                const status = client?.status === "active" ? "inActive" : "active"
+                                updateClientData("status", status)}}
+                            >{client?.status === "active" ? "Блокировать" : "Активировать"}</MyButton>
+                        }
                     </div>
                 </Div>
                 <Div />

@@ -481,7 +481,7 @@ export const updateCourierOrderStatus = async (req, res) => {
                     if (transferredFranchise) {
                         const transferredFranchiseMail = transferredFranchise.mail
                         if (transferredFranchiseMail !== null && transferredFranchiseMail !== "" && transferredFranchiseMail.includes("@")) {
-                            SendEmailOrder(mail, "delivered", sendText)
+                            SendEmailOrder(transferredFranchiseMail, "delivered", sendText)
                         }
                     }
                 }
