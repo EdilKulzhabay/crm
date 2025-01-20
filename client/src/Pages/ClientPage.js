@@ -199,6 +199,8 @@ export default function ClientPage() {
                     setOpen(true);
                     setStatus("success");
                     setMessage(data.message);
+                    setPassword("")
+                    setAddPassword(false)
                     getClientData(); // обновляем данные клиента после успешного обновления
                 }
             })
