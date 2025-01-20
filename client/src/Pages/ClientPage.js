@@ -49,6 +49,8 @@ export default function ClientPage() {
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleteModalClient, setDeleteModalClient] = useState(false)
     const [deleteObject, setDeleteObject] = useState(null)
+    const [password, setPassword] = useState("")
+    const [addPassword, setAddPassword] = useState(false)
 
     const closeSnack = () => {
         setOpen(false);
@@ -183,6 +185,27 @@ export default function ClientPage() {
                 console.log(e);
             });
     };
+
+    const clientAddPassword = (password) => {
+        api.post(
+            "/clientAddPassword",
+            { clientId: client._id, password },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                if (data.success) {
+                    setOpen(true);
+                    setStatus("success");
+                    setMessage(data.message);
+                    getClientData(); // обновляем данные клиента после успешного обновления
+                }
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    }
 
     const updateClientData = (field, value) => {
         if (field === "addresses") {
@@ -424,6 +447,30 @@ export default function ClientPage() {
                         client={client}
                         updateClientData={updateClientData}
                     />
+                    <Li>
+                        <div>Пароль:</div>
+                        {addPassword && <>
+                            <MyInput
+                                color="red"
+                                value={password}
+                                change={(e) => {
+                                    setPassword(e.target.value);
+                                }}
+                            />
+                        </>}
+                        {addPassword ? <div className="flex items-center gap-x-2 text-green-400">
+                            <div>[</div>
+                            <button className="text-green-400 hover:text-blue-500" onClick={() => {clientAddPassword(password)}}>Сохранить</button>
+                            <div>/</div>
+                            <button className="text-green-400 hover:text-blue-500" onClick={() => {setAddPassword(false)}}>Отменить</button>
+                            <div>]</div>
+                        </div> : <>
+                            <MyButton click={() => {
+                                setAddPassword(true)
+                            }}>{client?.password ? "Добавить" : "Изменить"}</MyButton>
+                        </>}
+                        
+                    </Li>
                 </>
 
                 <Div />
