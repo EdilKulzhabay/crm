@@ -664,6 +664,8 @@ export const clientAddPassword = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(req.body.password, salt);
 
+        client.bonus = 0
+        client.haveCompletedOrder = false
         client.password = hash
         await client.save()
 
