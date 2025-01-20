@@ -171,6 +171,7 @@ app.get("/updateClientData2", ClientController.updateClientData2);
 app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
 app.post("/getClientsForExcel", checkAuth, ClientController.getClientsForExcel);
 app.post("/getNotVerifyClients", ClientController.getNotVerifyClients);
+app.post("/clientAddPassword", ClientController.clientAddPassword);
 app.get("/checkClientsCoincidences", ClientController.checkClientsCoincidences)
 
 ///////COURIER
