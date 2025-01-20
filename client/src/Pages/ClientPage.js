@@ -469,7 +469,7 @@ export default function ClientPage() {
                         </div> : <>
                             <MyButton click={() => {
                                 setAddPassword(true)
-                            }}>{client?.password ? "Добавить" : "Изменить"}</MyButton>
+                            }}>{client?.password ? "Изменить" : "Добавить"}</MyButton>
                         </>}
                         
                     </Li>
