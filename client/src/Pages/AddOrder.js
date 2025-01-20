@@ -180,6 +180,15 @@ export default function AddOrder() {
         setComment("")
     };
 
+    useEffect(() => {
+        if (client?.status === "inActive") {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Клиент заблокирован, вы не сможете создать заказ")
+            setClient(null)
+        }
+    }, [client])
+
     const addOrder = () => {
         if (address === null) {
             setOpen(true);

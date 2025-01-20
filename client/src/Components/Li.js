@@ -4,8 +4,12 @@ import Pagada from "../icons/Pagada";
 export default function Li(props) {
     const icon = props.icon || false
     const link = props?.link
+    const status = props?.status || ""
 
     const elemnt = () => {
+        if (status === "inActive") {
+            return <div className="w-[10px] h-[10px] mx-px shrink-0 bg-white" />
+        }
         if (icon) {
             return <Pagada className="w-[12px] h-[12px] shrink-0" />
         }
