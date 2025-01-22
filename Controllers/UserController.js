@@ -261,10 +261,11 @@ export const updateFranchisee = async (req, res) => {
         if (!updateRes) {
             return res.status(400).json({
                 message: "Что то пошло не так",
+                success: false
             });
         }
         res.json({
-            franchisee: updateRes,
+            success: true,
         });
     } catch (error) {
         console.log(error);

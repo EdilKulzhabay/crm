@@ -83,7 +83,17 @@ export default function SuperAdminFranchiseeList() {
             }
         )
             .then(({ data }) => {
-                getAllFranchisee();
+                if (data.success) {
+                    setOpen(true);
+                    setStatus("success");
+                    setMessage("Успешно изменено");
+                    getAllFranchisee();
+                } else {
+                    setOpen(true);
+                    setStatus("error");
+                    setMessage("Не получилось(");
+                    getAllFranchisee();
+                }
             })
             .catch((e) => {
                 setOpen(true);
