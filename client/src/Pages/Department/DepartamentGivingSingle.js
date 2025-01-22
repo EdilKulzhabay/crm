@@ -10,6 +10,7 @@ import Li from "../../Components/Li";
 import MySnackBar from "../../Components/MySnackBar";
 import { useNavigate } from "react-router-dom";
 import Info from "../../Components/Info";
+import clsx from "clsx";
 
 export default function DepartamentGivingSingle() {
     const userData = useFetchUserData();
@@ -92,8 +93,9 @@ export default function DepartamentGivingSingle() {
                     return (
                         <div key={item._id}>
                             <Div>
-                                {item.fullName}
-                                <MyButton click={() => {setChFranchisee(item)}}>Выбрать</MyButton>
+                                <div className={clsx("", {"bg-red": item.status === "inActive"})}>{item.fullName}</div>
+                                {item.status === "active" && <MyButton click={() => {setChFranchisee(item)}}>Выбрать</MyButton>}
+                                
                             </Div>
                         </div>
                     );
