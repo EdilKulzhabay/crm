@@ -356,8 +356,8 @@ export const updateClientData = async (req, res) => {
             const res2Gis = await Promise.allSettled(clientAddresses.map(fetchAddressId));
             res2Gis.forEach((result, index) => {
                 if (result.status === "fulfilled") {
-                    clientAddresses[index].id2Gis = res2Gis?.id
-                    clientAddresses[index].point = res2Gis?.point
+                    clientAddresses[index].id2Gis = res2Gis?.value?.id
+                    clientAddresses[index].point = res2Gis?.value?.point
                 } else {
                     clientAddresses[index].id2Gis = null
                     clientAddresses[index].point = {lat: null, lon: null}
