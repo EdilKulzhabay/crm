@@ -354,7 +354,7 @@ export const updateClientData = async (req, res) => {
 
             // Получаем IDs для всех адресов
             const res2Gis = await Promise.allSettled(clientAddresses.map(fetchAddressId));
-            addressIds.forEach((result, index) => {
+            res2Gis.forEach((result, index) => {
                 if (result.status === "fulfilled") {
                     clientAddresses[index].id2Gis = res2Gis?.id
                     clientAddresses[index].point = res2Gis?.point
