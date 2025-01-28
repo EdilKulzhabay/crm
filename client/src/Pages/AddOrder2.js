@@ -356,6 +356,7 @@ export default function AddOrder2() {
                                                     adress.street + " " +
                                                     adress.house,
                                                 link: adress.link,
+                                                phone: adress.phone
                                             });
                                             setChooseAddress(index + 1);
                                         }}

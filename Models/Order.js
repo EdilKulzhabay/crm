@@ -20,6 +20,19 @@ const OrderSchema = new mongoose.Schema(
             link: {
                 type: String,
             },
+            phone: {
+                type: String
+            },
+            point: {
+                lat: {
+                    type: Number,
+                    required: true
+                },
+                lon: {
+                    type: Number,
+                    required: true
+                }
+            }
         },
         products: {
             b12: {

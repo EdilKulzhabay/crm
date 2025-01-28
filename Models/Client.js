@@ -36,6 +36,19 @@ const ClientSchema = new mongoose.Schema(
                 },
                 id2Gis: {
                     type: String
+                },
+                phone: {
+                    type: String
+                },
+                point: {
+                    lat: {
+                        type: Number,
+                        required: true
+                    },
+                    lon: {
+                        type: Number,
+                        required: true
+                    }
                 }
             },
         ],

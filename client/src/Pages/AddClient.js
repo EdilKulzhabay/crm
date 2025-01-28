@@ -39,7 +39,7 @@ export default function AddClient() {
     const confirmAddAddress = () => {
         setAddresses([
             ...addresses,
-            { street: "", link: "", house: "" },
+            { street: "", link: "", house: "", phone: "" },
         ]);
         setModal(false)
     }
@@ -104,7 +104,8 @@ export default function AddClient() {
             return {
                 street: item.street,
                 house: item.house,
-                link: item.exactLink
+                link: item.exactLink,
+                phone: item.phone
             }
         })
 
@@ -375,6 +376,23 @@ export default function AddClient() {
                                         />
                                     </div>
                                 </Li2>
+                                <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Номер телефона:</div>
+                                        <MyInput
+                                            name={`phone${index}`}
+                                            value={addresses[index].phone}
+                                            change={(event) =>
+                                                addressChangeHandlerLink(
+                                                    index,
+                                                    event,
+                                                    "phone"
+                                                )
+                                            }
+                                            color="white"
+                                        />
+                                    </div>
+                                </Li2>
                             </div>
                         );
                     })}
@@ -385,7 +403,7 @@ export default function AddClient() {
                                 
                                 if (addresses.length === 0) {
                                     setAddresses([
-                                        { street: "", link: "", house: "", exactLink: "" },
+                                        { street: "", link: "", house: "", exactLink: "", phone: "" },
                                     ])
                                 } else {
                                     setModal(true)

@@ -105,7 +105,7 @@ export const addClient = async (req, res) => {
 export const getClients = async (req, res) => {
     try {
         const id = req.userId;
-        const { page, startDate, endDate } = req.body;
+        const { page, startDate, endDate, searchF } = req.body;
 
         const sDate = startDate
             ? new Date(startDate + "T00:00:00.000Z")
@@ -123,6 +123,15 @@ export const getClients = async (req, res) => {
         const filter = {
             createdAt: { $gte: sDate, $lte: eDate },
         };
+
+        if (searchF !== "") {
+            filter.franchisee = {
+                $or: [
+                    { fullName: { $regex: searchF, $options: "i" } },
+                    { userName: { $regex: searchF, $options: "i" } }
+                ]
+            };
+        }
 
         // Добавляем фильтр по франчайзи для админа
         if (user.role === "admin") {
@@ -332,7 +341,7 @@ export const updateClientData = async (req, res) => {
                     });
                     console.log("response.data.result", response.data.result);
                     
-                    return response.data.result.items[0]?.id || null; // Возвращаем ID или null
+                    return response.data.result.items[0] || null; // Возвращаем ID или null
                 } catch (error) {
                     console.log(`Невозможно найти адрес: ${item.street}`);
                     return null;
@@ -340,9 +349,15 @@ export const updateClientData = async (req, res) => {
             };
 
             // Получаем IDs для всех адресов
-            const addressIds = await Promise.allSettled(clientAddresses.map(fetchAddressId));
+            const res2Gis = await Promise.allSettled(clientAddresses.map(fetchAddressId));
             addressIds.forEach((result, index) => {
-                clientAddresses[index].id2Gis = result.status === "fulfilled" ? result.value : null;
+                if (result.status === "fulfilled") {
+                    clientAddresses[index].id2Gis = res2Gis?.id
+                    clientAddresses[index].point = res2Gis?.point
+                } else {
+                    clientAddresses[index].id2Gis = null
+                    clientAddresses[index].point = {lat: null, lon: null}
+                }
             });
 
             // Сохраняем обновленный документ клиента
@@ -452,7 +467,7 @@ export const updateClientFranchisee = async (req, res) => {
 export const getClientsForExcel = async (req, res) => {
     try {
         const id = req.userId;
-        const { startDate, endDate, status } = req.body;
+        const { startDate, endDate, status, searchF } = req.body;
 
         const sDate = startDate
             ? new Date(startDate + "T00:00:00.000Z")
@@ -467,6 +482,15 @@ export const getClientsForExcel = async (req, res) => {
         const filter = {
             createdAt: { $gte: sDate, $lte: eDate },
         };
+
+        if (searchF !== "") {
+            filter.franchisee = {
+                $or: [
+                    { fullName: { $regex: searchF, $options: "i" } },
+                    { userName: { $regex: searchF, $options: "i" } }
+                ]
+            };
+        }
 
         // Добавляем фильтр по статусу, если он не "all"
         if (status !== "all") {
@@ -677,3 +701,26 @@ export const clientAddPassword = async (req, res) => {
         });
     }
 };
+
+export const addPhoneForAddress = async (req, res) => {
+    try {
+        const clients = await Client.find()
+
+        await Promise.all(clients.map(async (client) => {
+            const phone = client.phone;
+            client.addresses = client.addresses
+                ? client.addresses.map((item) => ({...item, phone}))
+                : [];
+            await client.save();
+        }));
+        
+        res.json({
+            success: true
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
