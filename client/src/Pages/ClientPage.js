@@ -546,7 +546,7 @@ export default function ClientPage() {
                                         {selectAddress?._id !== adress?._id && <>
                                             <MyButton
                                                 click={() => {
-                                                    setSelectAddress(adress)
+                                                    setSelectAddress({ ...adress })
                                                 }}
                                             >
                                                 Редактировать
@@ -616,12 +616,9 @@ export default function ClientPage() {
                                     <button 
                                         className="text-green-400 hover:text-blue-500" 
                                         onClick={() => {
-                                            const updatedAddresses = client.addresses.map((address) => {
-                                                if (address?._id === selectAddress?._id) {
-                                                    return { ...selectAddress }; 
-                                                }
-                                                return address; 
-                                            });
+                                            const updatedAddresses = client.addresses.map((address) =>
+                                                address?._id === selectAddress?._id ? { ...selectAddress } : address
+                                            );
                                             updateClientData("addresses", updatedAddresses);
                                         }}
                                     >
