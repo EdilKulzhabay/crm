@@ -708,12 +708,13 @@ export const addPhoneForAddress = async (req, res) => {
 
         await Promise.all(clients.map(async (client) => {
             const phone = client.phone;
+            const point = {lat: null, lon: null}
             client.addresses = client.addresses
-                ? client.addresses.map((item) => ({...item, phone}))
+                ? client.addresses.map((item) => ({...item, phone, point}))
                 : [];
             await client.save();
         }));
-        
+
         res.json({
             success: true
         })
