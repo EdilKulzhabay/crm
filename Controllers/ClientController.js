@@ -358,8 +358,8 @@ export const updateClientData = async (req, res) => {
                 console.log("result: ", result);
                 
                 if (result.status === "fulfilled") {
-                    clientAddresses[index].id2Gis = res2Gis?.value?.id
-                    clientAddresses[index].point = res2Gis?.value?.point
+                    clientAddresses[index].id2Gis = result?.value?.id
+                    clientAddresses[index].point = result?.value?.point
                 } else {
                     clientAddresses[index].id2Gis = null
                     clientAddresses[index].point = {lat: null, lon: null}
