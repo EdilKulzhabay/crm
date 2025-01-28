@@ -20,6 +20,7 @@ export default function ClientList() {
     const [search, setSearch] = useState("");
     const [clients, setClients] = useState([]);
     const [filterClientStatus, setFilterClientStatus] = useState("all");
+    const [searchF, setSearchF] = useState("");
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -92,6 +93,17 @@ export default function ClientList() {
         }
     };
 
+    const handleSearchF = (e) => {
+        setSearchF(e.target.value);
+        if (e.target.value === "") {
+            setClients([]);
+            setPage(1);
+            setHasMore(true);
+            setLoading(false)
+            loadMoreClients(1, dates, "all", "")
+        }
+    };
+
     const getFreeInfo = () => {
         api.get("/getFreeInfo", {
             headers: { "Content-Type": "application/json" },
@@ -129,13 +141,13 @@ export default function ClientList() {
             });
     };
 
-    const loadMoreClients = useCallback(async () => {
+    const loadMoreClients = useCallback(async (page, dates, filterClientStatus, searchF) => {
         if (loading || !hasMore) return;
 
         setLoading(true);
         api.post(
             "/getClients",
-            { page, ...dates, status: filterClientStatus },
+            { page, ...dates, status: filterClientStatus, searchF },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -144,10 +156,14 @@ export default function ClientList() {
                 if (data.clients.length === 0) {
                     setHasMore(false);
                 } else {
-                    setClients((prevClients) => [
-                        ...prevClients,
-                        ...data.clients,
-                    ]);
+                    if (page === 1) {
+                        setClients([...data.clients])
+                    } else {
+                        setClients((prevClients) => [
+                            ...prevClients,
+                            ...data.clients,
+                        ]);
+                    }
                     setPage(page + 1);
                 }
             })
@@ -155,11 +171,11 @@ export default function ClientList() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore]);
+    }, [page, loading]);
 
     useEffect(() => {
         if (hasMore) {
-            loadMoreClients();
+            loadMoreClients(page, dates, filterClientStatus, searchF);
         }
     }, [hasMore]);
 
@@ -170,7 +186,7 @@ export default function ClientList() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreClients();
+                    loadMoreClients(page, dates, filterClientStatus, searchF);
                 }
             });
             if (node) observer.current.observe(node);
@@ -232,7 +248,7 @@ export default function ClientList() {
     const getClientsForExcel = () => {
         api.post(
             "/getClientsForExcel",
-            { ...dates, status: filterClientStatus },
+            { ...dates, status: filterClientStatus, searchF },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -318,54 +334,6 @@ export default function ClientList() {
                 <Div />
                 <Div>Фильтры:</Div>
                 <>
-                    {/* <Li>
-                        <div className="flex items-center gap-x-3 flex-wrap">
-                            <div>Статус клиента:</div>
-                            <div className="flex items-center gap-x-2 flex-wrap text-red">
-                                [
-                                <button
-                                    className="text-red hover:text-blue-500"
-                                    onClick={() => {
-                                        setFilterClientStatus("all");
-                                    }}
-                                >
-                                    Все
-                                </button>
-                                <div>/</div>
-                                <button
-                                    className="text-red hover:text-blue-500"
-                                    onClick={() => {
-                                        setFilterClientStatus("active");
-                                    }}
-                                >
-                                    Активные
-                                </button>
-                                <div>/</div>
-                                <button
-                                    className="text-red hover:text-blue-500"
-                                    onClick={() => {
-                                        setFilterClientStatus("inActive");
-                                    }}
-                                >
-                                    Неактивные
-                                </button>
-                                ]
-                            </div>
-                            <MyButton
-                                click={() => {
-                                    setClients([]);
-                                    setPage(1);
-                                    setLoading(false);
-                                    setHasMore(true);
-                                    loadMoreClients();
-                                }}
-                            >
-                                <span className="text-green-400">
-                                Применить
-                                </span>
-                            </MyButton>
-                        </div>
-                    </Li> */}
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>Дата регистрации:</div>
@@ -396,7 +364,7 @@ export default function ClientList() {
                                     setPage(1);
                                     setLoading(false);
                                     setHasMore(true);
-                                    loadMoreClients();
+                                    loadMoreClients(page, dates, filterClientStatus, searchF);
                                 }}
                             >
                                 <span className="text-green-400">
@@ -405,6 +373,22 @@ export default function ClientList() {
                             </MyButton>
                         </div>
                     </Li>
+                    {userData?.role === "superAdmin" && <>
+                        <Li>
+                            <MyInput
+                                value={searchF}
+                                change={handleSearchF}
+                                color="white"
+                            />
+                            <MyButton click={() => {
+                                setClients([]);
+                                setPage(1);
+                                setHasMore(true);
+                                setLoading(false)
+                                loadMoreClients(1, dates, "all", searchF)
+                            }}>Найти</MyButton>
+                        </Li>
+                    </>}
                 </>
 
                 <Div />

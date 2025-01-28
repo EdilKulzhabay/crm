@@ -219,7 +219,7 @@ export default function OrderPage() {
                 
                 <Div>Детали заказа</Div>
                 <Div />
-                <Div>Клиент:</Div>
+                <Div>Клиент: {order?.franchisee?.fullName}</Div>
                 <>
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">

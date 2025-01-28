@@ -14,6 +14,7 @@ import useScrollPosition from "../customHooks/useScrollPosition";
 import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 import useFetchUserData from "../customHooks/useFetchUserData";
 import DataInput from "../Components/DataInput";
+import Li2 from "../Components/Li2";
 
 const getCurrentDate = () => {
     const today = new Date();
@@ -51,6 +52,7 @@ export default function ClientPage() {
     const [deleteObject, setDeleteObject] = useState(null)
     const [password, setPassword] = useState("")
     const [addPassword, setAddPassword] = useState(false)
+    const [selectAddress, setSelectAddress] = useState(null)
 
     const closeSnack = () => {
         setOpen(false);
@@ -131,6 +133,10 @@ export default function ClientPage() {
             ...updates,
             [title]: value,
         });
+    };
+
+    const changeHandler = (event) => {
+        setSelectAddress({ ...selectAddress, [event.target.name]: event.target.value });
     };
 
     const getClientData = () => {
@@ -517,36 +523,122 @@ export default function ClientPage() {
                     client.addresses.length > 0 &&
                     client.addresses.map((adress, index) => {
                         return (
-                            <Li key={adress?._id}>
-                                <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>
-                                        Адрес{" "}
-                                        <span className="text-red">
-                                            {index + 1}
-                                        </span>
-                                        :
+                            <>
+                                <Li key={adress?._id}>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>
+                                            Адрес{" "}
+                                            <span className="text-red">
+                                                {index + 1}
+                                            </span>
+                                            :
+                                        </div>
+                                        <div>
+                                            {adress?.street} {adress?.house}
+                                        </div>
+                                        <a
+                                            href={adress?.link}
+                                            target="_blank" rel="noreferrer"
+                                            className="text-blue-500 hover:text-blue-500"
+                                        >
+                                            {adress?.link.includes("/search") ? <>link%%{adress?.street}</> : <>{adress?.link}</>}
+                                        </a>
+                                        {selectAddress?._id !== adress?._id && <>
+                                            <MyButton
+                                                click={() => {
+                                                    setSelectAddress(adress)
+                                                }}
+                                            >
+                                                Редактировать
+                                            </MyButton>
+                                            <MyButton
+                                                click={() => {
+                                                    setDeleteObject(adress?._id)
+                                                    setDeleteModal(true)
+                                                    // deleteClient(client._id);
+                                                }}
+                                            >
+                                                Удалить
+                                            </MyButton>
+                                        </>}
+                                        
                                     </div>
-                                    <div>
-                                        {adress?.street} {adress?.house}
+                                </Li>
+                                {selectAddress?._id === adress?._id && <>
+                                    <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap gap-y-2">
+                                        <div>Улица, дом, под:</div>
+                                        <MyInput
+                                            name="street"
+                                            value={selectAddress.street}
+                                            change={changeHandler}
+                                            color="white"
+                                        />
                                     </div>
-                                    <a
-                                        href={adress?.link}
-                                        target="_blank" rel="noreferrer"
-                                        className="text-blue-500 hover:text-blue-500"
-                                    >
-                                        {adress?.link.includes("/search") ? <>link%%{adress?.street}</> : <>{adress?.link}</>}
-                                    </a>
-                                    <MyButton
-                                        click={() => {
-                                            setDeleteObject(adress?._id)
-                                            setDeleteModal(true)
-                                            // deleteClient(client._id);
+                                </Li2>
+                                <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Кв. этаж:</div>
+                                        <MyInput
+                                            name={`house`}
+                                            value={selectAddress.house}
+                                            change={changeHandler}
+                                            color="white"
+                                        />
+                                    </div>
+                                </Li2>
+                                <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Точная ссылка:</div>
+                                        <MyInput
+                                            name={`link`}
+                                            value={selectAddress.link}
+                                            change={changeHandler}
+                                            color="white"
+                                        />
+                                    </div>
+                                </Li2>
+                                <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Номер телефона:</div>
+                                        <MyInput
+                                            name={"phone"}
+                                            value={selectAddress.phone}
+                                            change={changeHandler}
+                                            color="white"
+                                        />
+                                    </div>
+                                </Li2>
+                                <Li2>
+                                    <div className="text-green-400">
+                                        [
+                                    </div>
+                                    <button 
+                                        className="text-green-400 hover:text-blue-500" 
+                                        onClick={() => {
+                                            const updatedAddresses = client.addresses.map((address) => {
+                                                if (address?._id === selectAddress?._id) {
+                                                    return { ...selectAddress }; 
+                                                }
+                                                return address; 
+                                            });
+                                            updateClientData("addresses", updatedAddresses);
                                         }}
                                     >
-                                        Удалить
-                                    </MyButton>
-                                </div>
-                            </Li>
+                                        Сохранить
+                                    </button>
+                                    <div className="text-green-400">
+                                        /
+                                    </div>
+                                    <button className="text-green-400 hover:text-blue-500" onClick={() => {setSelectAddress(null)}}>
+                                        Отменить
+                                    </button>
+                                    <div className="text-green-400">
+                                        ]
+                                    </div>
+                                </Li2>
+                                </>}
+                            </>
                         );
                     })}
                 <>
