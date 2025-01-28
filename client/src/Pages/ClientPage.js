@@ -216,6 +216,7 @@ export default function ClientPage() {
     }
 
     const updateClientData = (field, value) => {
+        let field2 = field
         if (field === "addresses") {
             const sendAddress = {
                 street: value.street,
@@ -225,9 +226,13 @@ export default function ClientPage() {
 
             value = [...client.addresses, sendAddress]
         }
+        if (field === "addresses2") {
+            field2 = "addresses"
+        }
+
         api.post(
             "/updateClientData",
-            { clientId: client._id, field, value },
+            { clientId: client._id, field: field2, value },
             {
                 headers: { "Content-Type": "application/json" },
             }
