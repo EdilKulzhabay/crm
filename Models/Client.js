@@ -43,11 +43,9 @@ const ClientSchema = new mongoose.Schema(
                 point: {
                     lat: {
                         type: Number,
-                        required: true
                     },
                     lon: {
                         type: Number,
-                        required: true
                     }
                 }
             },
