@@ -241,6 +241,7 @@ export default function ClientPage() {
                     setStatus("success");
                     setMessage(data.message);
                     getClientData(); // обновляем данные клиента после успешного обновления
+                    setSelectAddress(null)
                 }
             })
             .catch((e) => {
@@ -619,7 +620,7 @@ export default function ClientPage() {
                                             const updatedAddresses = client.addresses.map((address) =>
                                                 address?._id === selectAddress?._id ? { ...selectAddress } : address
                                             );
-                                            updateClientData("addresses", updatedAddresses);
+                                            updateClientData("addresses2", updatedAddresses);
                                         }}
                                     >
                                         Сохранить
