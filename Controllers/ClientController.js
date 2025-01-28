@@ -124,13 +124,17 @@ export const getClients = async (req, res) => {
             createdAt: { $gte: sDate, $lte: eDate },
         };
 
-        if (searchF !== "") {
-            filter.franchisee = {
+        if (searchF && searchF.trim() !== "") {
+            const franchisees = await User.find({
                 $or: [
                     { fullName: { $regex: searchF, $options: "i" } },
                     { userName: { $regex: searchF, $options: "i" } }
                 ]
-            };
+            })
+            if (franchisees.length > 0) {
+                const franchiseeIds = franchisees.map((franchisee) => franchisee._id);
+                filter.franchisee = { $in: franchiseeIds };
+            }
         }
 
         // Добавляем фильтр по франчайзи для админа
@@ -483,13 +487,17 @@ export const getClientsForExcel = async (req, res) => {
             createdAt: { $gte: sDate, $lte: eDate },
         };
 
-        if (searchF !== "") {
-            filter.franchisee = {
+        if (searchF && searchF.trim() !== "") {
+            const franchisees = await User.find({
                 $or: [
                     { fullName: { $regex: searchF, $options: "i" } },
                     { userName: { $regex: searchF, $options: "i" } }
                 ]
-            };
+            })
+            if (franchisees.length > 0) {
+                const franchiseeIds = franchisees.map((franchisee) => franchisee._id);
+                filter.franchisee = { $in: franchiseeIds };
+            }
         }
 
         // Добавляем фильтр по статусу, если он не "all"
