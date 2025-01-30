@@ -44,7 +44,7 @@ export default function SuperAdminClientManagment() {
 
     useEffect(() => {
         getMe();
-        api.get("/getAllFranchisee", {
+        api.get("/getAllFranchiseeforChangeClientFranchisee", {
             headers: { "Content-Type": "application/json" },
         })
             .then(({ data }) => {

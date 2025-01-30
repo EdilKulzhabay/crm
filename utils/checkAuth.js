@@ -6,6 +6,8 @@ export default (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.SecretKey);
+            console.log("decoded in chackAuth: ", decoded);
+            
             let userId;
             if (decoded.client) {
                 userId = decoded.client._id;
