@@ -1,6 +1,4 @@
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-const navigate = useNavigate();
 
 const api = axios.create({
     baseURL: process.env.REACT_APP_PORT,
@@ -20,7 +18,7 @@ api.interceptors.response.use(
     (error) => {
         if (error.response && error.response.status === 403) {
             localStorage.removeItem("token");
-            navigate("/login"); // Перенаправление через useNavigate
+            window.location.href = "/login"; // Перенаправление на страницу логина
         }
         return Promise.reject(error);
     }
