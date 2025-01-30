@@ -212,6 +212,25 @@ export const getAllFranchisee = async (req, res) => {
     }
 };
 
+export const getAllFranchiseeforChangeClientFranchisee = async (req, res) => {
+    try {
+        const franchisees = await User.find();
+
+        if (!franchisees) {
+            return res.status(409).json({
+                message: "Не получилось получить список",
+            });
+        }
+
+        res.json({ franchisees });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
 export const getFranchiseeById = async (req, res) => {
     try {
         const { id } = req.body;

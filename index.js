@@ -131,6 +131,7 @@ app.post("/getPickupInfo", OtherController.getPickupInfo)
 /////USER
 app.get("/getMe", checkAuth, UserController.getMe);
 app.get("/getAllFranchisee", UserController.getAllFranchisee);
+app.get("/getAllFranchiseeforChangeClientFranchisee", UserController.getAllFranchiseeforChangeClientFranchisee);
 app.post("/register", UserController.register);
 app.post("/login", UserController.login);
 app.post("/getFranchiseeById", UserController.getFranchiseeById);
