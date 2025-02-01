@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
-import User from "../Models/User";
-import Courier from "../Models/Courier";
-import Client from "../Models/Client";
+import User from "../Models/User.js";
+import Courier from "../Models/Courier.js";
+import Client from "../Models/Client.js";
 
 export default async (req, res, next) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
