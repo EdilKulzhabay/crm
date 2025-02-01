@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../Models/User.js";
 import Courier from "../Models/Courier.js";
 import Client from "../Models/Client.js";
+import Department from "../Models/Department.js";
 
 export default async (req, res, next) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
@@ -22,7 +23,8 @@ export default async (req, res, next) => {
             const user =
             (await User.findById(userId)) ||
             (await Courier.findById(userId)) ||
-            (await Client.findById(userId));
+            (await Client.findById(userId)) ||
+            (await Department.findById(userId))
 
             if (!user) {
                 return res.status(403).json({ message: "Нет доступа" });
