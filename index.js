@@ -22,6 +22,7 @@ import {
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
 import { processExcelFile } from "./excelProcessor.js";
+import checkRole from "./utils/checkRole.js";
 
 mongoose
     .connect(process.env.MONGOURL)
@@ -206,7 +207,7 @@ app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
 app.post("/getAdditionalOrders", checkAuth, OrderController.getAdditionalOrders);
 app.get("/getActiveOrdersKol", checkAuth, OrderController.getActiveOrdersKol)
 app.post("/addOrder", OrderController.addOrder);
-app.post("/addOrder2", OrderController.addOrder2);
+app.post("/addOrder2", checkAuth, checkRole(["user"]), OrderController.addOrder2);
 app.post("/getOrders", checkAuth, OrderController.getOrders);
 app.post("/getClientOrders", OrderController.getClientOrders);
 app.post("/getOrdersForExcel", checkAuth, OrderController.getOrdersForExcel);
