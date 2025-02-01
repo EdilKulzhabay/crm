@@ -34,6 +34,7 @@ export default async (req, res, next) => {
                 if (user instanceof User) userType = "user";
                 else if (user instanceof Courier) userType = "courier";
                 else if (user instanceof Client) userType = "client";
+                else if (user instanceof Department) userType = "department";
             }
     
             req.userId = userId;
