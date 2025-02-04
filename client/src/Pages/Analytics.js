@@ -166,19 +166,19 @@ export default function Analytics() {
                     <Div>Прибыль франчайзи: <Info>{formatCurrency(stats?.additionalB12Revenue)}</Info></Div>
                     <Div>Общая сумма: <Info>{formatCurrency(stats?.additionalB12Amount)}</Info></Div>
                     <Div />
-                    <Div>Собственные заказы:</Div>
+                    <Div><div className="font-bold">Собственные заказы:</div></Div>
                     <Div>---------------------</Div>
-                    <Div>Бутыли 18.9л: <Info>{stats?.totalRegularB19Bottles}</Info></Div>
-                    <Div>Средняя стоимость: <Info>{formatCurrency(stats?.regularAverageCostB19)}</Info></Div>
-                    <Div>Оплата франчайзеру: <Info>{formatCurrency(stats?.regularB19Expense)}</Info></Div>
-                    <Div>Прибыль франчайзи: <Info>{formatCurrency(stats?.regularB19Revenue)}</Info></Div>
-                    <Div>Общая сумма: <Info>{formatCurrency(stats?.regularB19Amount)}</Info></Div>
+                    <Div><div className="font-bold">Бутыли 18.9л: <Info>{stats?.totalRegularB19Bottles}</Info></div></Div>
+                    <Div><div className="font-bold">Средняя стоимость: <Info>{formatCurrency(stats?.regularAverageCostB19)}</Info></div></Div>
+                    <Div><div className="font-bold">Оплата франчайзеру: <Info>{formatCurrency(stats?.regularB19Expense)}</Info></div></Div>
+                    <Div><div className="font-bold">Прибыль франчайзи: <Info>{formatCurrency(stats?.regularB19Revenue)}</Info></div></Div>
+                    <Div><div className="font-bold">Общая сумма: <Info>{formatCurrency(stats?.regularB19Amount)}</Info></div></Div>
                     <Div />
-                    <Div>Бутыли 12.5л: <Info>{stats?.totalRegularB12Bottles}</Info></Div>
-                    <Div>Средняя стоимость: <Info>{formatCurrency(stats?.regularAverageCostB12)}</Info></Div>
-                    <Div>Оплата франчайзеру: <Info>{formatCurrency(stats?.regularB12Expense)}</Info></Div>
-                    <Div>Прибыль франчайзи: <Info>{formatCurrency(stats?.regularB12Revenue)}</Info></Div>
-                    <Div>Общая сумма: <Info>{formatCurrency(stats?.regularB12Amount)}</Info></Div>
+                    <Div><div className="font-bold">Бутыли 12.5л: <Info>{stats?.totalRegularB12Bottles}</Info></div></Div>
+                    <Div><div className="font-bold">Средняя стоимость: <Info>{formatCurrency(stats?.regularAverageCostB12)}</Info></div></Div>
+                    <Div><div className="font-bold">Оплата франчайзеру: <Info>{formatCurrency(stats?.regularB12Expense)}</Info></div></Div>
+                    <Div><div className="font-bold">Прибыль франчайзи: <Info>{formatCurrency(stats?.regularB12Revenue)}</Info></div></Div>
+                    <Div><div className="font-bold">Общая сумма: <Info>{formatCurrency(stats?.regularB12Amount)}</Info></div></Div>
                     <Div />
                     <Div>Общая прибыль от заказов:</Div>
                     <Div>---------------------</Div>

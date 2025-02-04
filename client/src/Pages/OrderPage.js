@@ -44,6 +44,7 @@ export default function OrderPage() {
         d: "",
         time: "",
     });
+    const [changeOpForm, setChangeOpForm] = useState("")
     const [comment, setComment] = useState("")
 
     const [open, setOpen] = useState(false);
@@ -390,7 +391,59 @@ export default function OrderPage() {
                 <Div />
                 <Div>
                     <div>Форма оплаты: <span className="text-yellow-400">{order?.opForm === "fakt" && "Нал_Карта_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "В долг"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "Cмешанно"}</span></div>
+                    {userData?.role === "superAdmin" && <MyButton click={() => {setChangeOpForm(order?.opForm)}}>Изменить</MyButton>}
                 </Div>
+                {changeOpForm && <>
+                    <Div>
+                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                            "text-blue-700": changeOpForm === "fakt"
+                        })}>
+                            <div>[</div>
+                            <button onClick={() => {setChangeOpForm("fakt")}}>Нал_Карта_QR</button>
+                            <div>]</div>
+                        </div>
+                    </Div>
+                    <Div>
+                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                            "text-blue-700": changeOpForm === "postpay"
+                        })}>
+                            <div>[</div>
+                            <button onClick={() => {setChangeOpForm("postpay")}}>Постоплата</button>
+                            <div>]</div>
+                        </div>
+                    </Div>
+                    <Div>
+                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                            "text-blue-700": changeOpForm === "credit"
+                        })}>
+                            <div>[</div>
+                            <button onClick={() => {setChangeOpForm("credit")}}>В долг</button>
+                            <div>]</div>
+                        </div>
+                    </Div>
+                    <Div>
+                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                            "text-blue-700": changeOpForm === "coupon"
+                        })}>
+                            <div>[</div>
+                            <button onClick={() => {setChangeOpForm("coupon")}}>Талоны</button>
+                            <div>]</div>
+                        </div>
+                    </Div>
+                    <Div>
+                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                            "text-blue-700": changeOpForm === "mixed"
+                        })}>
+                            <div>[</div>
+                            <button onClick={() => {setChangeOpForm("mixed")}}>Cмешанно</button>
+                            <div>]</div>
+                        </div>
+                    </Div>
+                    <Div>
+                        <MyButton click={updateOrder("opForm", changeOpForm)}>Сохранить</MyButton>
+                        <MyButton click={() => {setChangeOpForm("")}}>Отменить</MyButton>
+                    </Div>
+                </>}
 
                 <Div />
                 <Div>

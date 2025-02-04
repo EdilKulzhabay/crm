@@ -38,10 +38,8 @@ const codes = {};
 
 export const sendMail = async (req, res) => {
     const { mail } = req.body;
-    console.log("req.body: ", req.body);
-    
 
-    const candidate = await Client.findOne({ mail });
+    const candidate = await Client.findOne({ mail: mail.toLowerCase() });
 
     if (candidate) {
         return res.status(409).json({
@@ -75,7 +73,7 @@ export const sendMailRecovery = async (req, res) => {
     const { mail } = req.body;
 
     // Проверка наличия кандидата
-    const candidate = await Client.findOne({ mail });
+    const candidate = await Client.findOne({ mail: mail.toLowerCase() });
 
     if (!candidate) {
         // Возвращаем ответ, если кандидат не найден
@@ -129,9 +127,6 @@ export const clientRegister = async (req, res) => {
     try {
         const { phone, mail, type } = req.body;
 
-        console.log(req.body);
-        
-
         const user = await User.findOne({role: "superAdmin"})
         const superAdminId = user._id
         const candidate = await Client.findOne({ phone });
@@ -148,7 +143,7 @@ export const clientRegister = async (req, res) => {
         const doc = new Client({
             password: hash,
             phone,
-            mail,
+            mail: mail.toLowerCase(),
             cart: {
                 b12: 0,
                 b19: 0,
@@ -196,7 +191,7 @@ export const clientLogin = async (req, res) => {
     try {
         const { mail } = req.body;
 
-        const candidate = await Client.findOne({ mail });
+        const candidate = await Client.findOne({ mail: mail.toLowerCase() });
 
         if (!candidate) {
             return res.status(404).json({
@@ -322,7 +317,7 @@ export const updateForgottenPassword = async (req, res) => {
     try {
         const { mail } = req.body;
 
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(req.body.password, salt);
@@ -373,7 +368,7 @@ export const addClientAddress = async (req, res) => {
     try {
         const { mail, name, city, street, house, link } = req.body;
 
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         const addressesLenght = client?.addresses?.length
 
@@ -405,7 +400,7 @@ export const updateClientAddress = async (req, res) => {
         const { mail, _id, name, street, house, link } = req.body;
 
         // Найти клиента по email
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         if (!client) {
             return res.status(404).json({
@@ -481,7 +476,7 @@ export const getClientAddresses = async (req, res) => {
     try {
         const { mail } = req.body;
 
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         const addresses = client.addresses;
 
@@ -498,7 +493,7 @@ export const updateCart = async (req, res) => {
     try {
         const { mail, product, method } = req.body;
 
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         if (product === "b12") {
             if (method === "add") {
@@ -533,7 +528,7 @@ export const cleanCart = async (req, res) => {
     try {
         const { mail } = req.body;
 
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         client.cart.b12 = 0;
         client.cart.b19 = 0;
@@ -554,7 +549,7 @@ export const cleanCart = async (req, res) => {
 export const getCart = async (req, res) => {
     try {
         const { mail } = req.body;
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         const cart = client.cart;
 
@@ -573,7 +568,7 @@ export const getCart = async (req, res) => {
 export const getClientDataMobile = async (req, res) => {
     try {
         const { mail } = req.body;
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
 
         const { refreshToken, ...clientData } = client;
 
@@ -593,7 +588,7 @@ export const updateClientDataMobile = async (req, res) => {
     try {
         const { mail, field, value } = req.body;
 
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
         if (!client) {
             return res
                 .status(404)
@@ -637,7 +632,7 @@ export const addBonus = async (req, res) => {
     try {
         const { mail, count, expoPushToken } = req.body;
 
-        const client = await Client.findOne({ mail });
+        const client = await Client.findOne({ mail: mail.toLowerCase() });
         if (!client) {
             return res
                 .status(404)
@@ -813,7 +808,7 @@ export const getUnreviewedOrder = async (req, res) => {
     try {
         const {mail} = req.body
 
-        const client = await Client.findOne({mail})
+        const client = await Client.findOne({ mail: mail.toLowerCase})
         const clientId = client._id
         const order = await Order.findOne({client: clientId, clientReview: 0, status: "delivered"})
 
