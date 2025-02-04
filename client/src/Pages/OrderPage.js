@@ -440,7 +440,7 @@ export default function OrderPage() {
                         </div>
                     </Div>
                     <Div>
-                        <MyButton click={updateOrder("opForm", changeOpForm)}>Сохранить</MyButton>
+                        <MyButton click={() => {updateOrder("opForm", changeOpForm)}}>Сохранить</MyButton>
                         <MyButton click={() => {setChangeOpForm("")}}>Отменить</MyButton>
                     </Div>
                 </>}
