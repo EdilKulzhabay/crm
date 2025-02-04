@@ -226,7 +226,7 @@ export default function CourierActiveOrders() {
                                                 "text-white bg-blue-600": new Date(item?.order?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
                                             })}>Заказ:</span> <span className="text-green-500">{index + 1}</span>
                                     </div>
-                                    <div className={clsx("", {"text-blue-400": (item?.order?.products?.b12 !== 0 && item?.order?.products?.b12 !== null)})}>{item?.order?.client?.fullName}</div>
+                                    <div className={clsx("", {"text-violet-500": (item?.order?.products?.b12 !== 0 && item?.order?.products?.b12 !== null)})}>{item?.order?.client?.fullName}</div>
                                     <a target="_blank" rel="noreferrer" href={item?.order?.address?.link} className="text-blue-500 hover:text-green-500">{item?.order?.address?.actual}</a>
                                     <div>{item?.order?.date?.d} {item?.order?.date?.time && item?.order?.date?.time !== "" && item?.order?.date?.time}</div>
                                     <div>
