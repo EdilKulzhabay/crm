@@ -395,7 +395,8 @@ export default function OrderPage() {
                 </Div>
                 {changeOpForm && <>
                     <Div>
-                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                        <div className={clsx("hover:text-yellow-300 flex items-center gap-x-3", {
+                            "text-green-400": changeOpForm !== "fakt",
                             "text-blue-700": changeOpForm === "fakt"
                         })}>
                             <div>[</div>
@@ -404,7 +405,8 @@ export default function OrderPage() {
                         </div>
                     </Div>
                     <Div>
-                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                        <div className={clsx("hover:text-yellow-300 flex items-center gap-x-3", {
+                            "text-green-400": changeOpForm !== "postpay",
                             "text-blue-700": changeOpForm === "postpay"
                         })}>
                             <div>[</div>
@@ -413,7 +415,8 @@ export default function OrderPage() {
                         </div>
                     </Div>
                     <Div>
-                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                        <div className={clsx("hover:text-yellow-300 flex items-center gap-x-3", {
+                            "text-green-400": changeOpForm !== "credit",
                             "text-blue-700": changeOpForm === "credit"
                         })}>
                             <div>[</div>
@@ -422,7 +425,8 @@ export default function OrderPage() {
                         </div>
                     </Div>
                     <Div>
-                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                        <div className={clsx("hover:text-yellow-300 flex items-center gap-x-3", {
+                            "text-green-400": changeOpForm !== "coupon",
                             "text-blue-700": changeOpForm === "coupon"
                         })}>
                             <div>[</div>
@@ -431,7 +435,8 @@ export default function OrderPage() {
                         </div>
                     </Div>
                     <Div>
-                        <div className={clsx("hover:text-yellow-300 text-green-400 flex items-center gap-x-3", {
+                        <div className={clsx("hover:text-yellow-300 flex items-center gap-x-3", {
+                            "text-green-400": changeOpForm !== "mixed",
                             "text-blue-700": changeOpForm === "mixed"
                         })}>
                             <div>[</div>
