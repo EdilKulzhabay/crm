@@ -22,7 +22,7 @@ export const addClient = async (req, res) => {
             fullName,
             userName,
             phone,
-            mail,
+            mail: mail.toLowerCase(),
             addresses,
             price19,
             price12,
@@ -328,7 +328,11 @@ export const updateClientData = async (req, res) => {
             client.verify.status = "waitingVerification"
             client.verify.message = ""
         }
-        client[field] = value;
+        if (field === "mail") {
+            client[field] = value.toLowerCase()
+        } else {
+            client[field] = value;
+        }
 
         if (field === "verify" && value.status === "verified") {
             const clientAddresses = client.addresses;

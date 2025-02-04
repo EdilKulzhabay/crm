@@ -246,9 +246,13 @@ export const getOrders = async (req, res) => {
                 if (sa) {
                     filter.transferredFranchise = { $regex: searchF, $options: "i" }
                 } else {
-                    filter.$or = [
-                        { franchisee: { $in: franchiseeIds } }, // Применяем $in к полю franchisee
-                        { transferredFranchise: { $regex: searchF, $options: "i" } } // Фильтр по transferredFranchise
+                    filter.$and = [
+                        {
+                            $or: [
+                                { franchisee: { $in: franchiseeIds } },
+                                { transferredFranchise: { $regex: searchF, $options: "i" } }
+                            ]
+                        }
                     ];
                 }
             }
@@ -267,10 +271,23 @@ export const getOrders = async (req, res) => {
 
             const clientIds = clients.map(client => client._id);
 
-            filter.$or = [
-                { client: { $in: clientIds } },
-                { "address.actual": { $regex: search, $options: "i" } }
-            ]
+            if (filter.$and) {
+                filter.$and.push({
+                    $or: [
+                        { client: { $in: clientIds } },
+                        { "address.actual": { $regex: search, $options: "i" } }
+                    ]
+                });
+            } else {
+                filter.$and = [
+                    {
+                        $or: [
+                            { client: { $in: clientIds } },
+                            { "address.actual": { $regex: search, $options: "i" } }
+                        ]
+                    }
+                ];
+            }
         }
 
         const totalOrders = await Order.countDocuments(filter)
@@ -501,6 +518,11 @@ export const updateOrder = async (req, res) => {
 
         if (change === "comment") {
             order.comment = changeData
+            await order.save()
+        }
+
+        if (change === "opForm") {
+            order.opForm = changeData
             await order.save()
         }
 
