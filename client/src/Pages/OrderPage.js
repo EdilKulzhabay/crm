@@ -180,6 +180,9 @@ export default function OrderPage() {
                             b19: ""
                         })
                     }
+                    if (change === "opForm") {
+                        setChangeOpForm("")
+                    }
                 }
                 getOrderData();
             })
