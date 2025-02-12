@@ -19,6 +19,7 @@ export default function ChooseClientModal(props) {
             setClients([]);
             setPage(1);
             setHasMore(true);
+            loadMoreClients(1)
         }
     };
 
@@ -39,13 +40,13 @@ export default function ChooseClientModal(props) {
             });
     };
 
-    const loadMoreClients = useCallback(async () => {
+    const loadMoreClients = useCallback(async (page) => {
         if (loading || !hasMore) return;
 
         setLoading(true);
         api.post(
             "/getClients",
-            { page, status: "all" },
+            { page },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -54,10 +55,14 @@ export default function ChooseClientModal(props) {
                 if (data.clients.length === 0) {
                     setHasMore(false);
                 } else {
-                    setClients((prevClients) => [
-                        ...prevClients,
-                        ...data.clients,
-                    ]);
+                    if (page === 1) {
+                        setClients([...data.clients])
+                    } else {
+                        setClients((prevClients) => [
+                            ...prevClients,
+                            ...data.clients,
+                        ]);
+                    }
                     setPage(page + 1);
                 }
             })
@@ -65,11 +70,11 @@ export default function ChooseClientModal(props) {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore]);
+    }, [page, loading]);
 
     useEffect(() => {
         if (hasMore) {
-            loadMoreClients();
+            loadMoreClients(page);
         }
     }, [hasMore]);
 
@@ -80,7 +85,7 @@ export default function ChooseClientModal(props) {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreClients();
+                    loadMoreClients(page);
                 }
             });
             if (node) observer.current.observe(node);
@@ -159,7 +164,7 @@ export default function ChooseClientModal(props) {
                                             <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                                 <div>|</div>
-                                                <div>{client.phone}</div>
+                                                {props.role === "admin" ? <div>{client?.phone}</div> : <div>{client?.franchisee?.fullName}</div>}
                                             </div>
                                             <div className="min-w-max ml-5 lg:ml-10 flex items-center">
                                                 <MyButton

@@ -231,6 +231,7 @@ export default function AddOrder2() {
                 <ChooseClientModal
                     closeClientsModal={closeClientsModal}
                     chooseClient={chooseClient}
+                    role={userData?.role}
                 />
             )}
             {couriersModal && (
