@@ -1,5 +1,6 @@
 import Client from "../Models/Client.js";
 import Notification from "../Models/Notification.js";
+import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 import axios from "axios"
 import bcrypt from "bcrypt";
@@ -22,7 +23,7 @@ export const addClient = async (req, res) => {
             fullName,
             userName,
             phone,
-            mail: mail.toLowerCase(),
+            mail: mail?.toLowerCase(),
             addresses,
             price19,
             price12,
@@ -329,7 +330,7 @@ export const updateClientData = async (req, res) => {
             client.verify.message = ""
         }
         if (field === "mail") {
-            client[field] = value.toLowerCase()
+            client[field] = value?.toLowerCase()
         } else {
             client[field] = value;
         }
@@ -706,6 +707,15 @@ export const clientAddPassword = async (req, res) => {
         client.haveCompletedOrder = false
         client.password = hash
         await client.save()
+
+        const clientIdOrder = client?._id
+
+        await Order.updateMany(
+            { client: clientIdOrder }, // Условие поиска
+            {
+                $set: { clientReview: 5, clientNotes: ["Быстрая доставка"] } // Обновление полей
+            }
+        );
 
         res.json({ success: true, message: "Данные успешно изменены" });
     } catch (error) {
