@@ -139,7 +139,7 @@ export default function ChooseClientModal(props) {
                                             <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>{client.fullName}{client.fullName === "" && client.userName}</div>
                                                 <div>|</div>
-                                                <div>{client.phone}</div>
+                                                {props.role === "admin" ? <div>{client?.phone}</div> : <div>{client?.franchisee?.fullName}</div>}
                                             </div>
                                             <div className="min-w-max ml-5 lg:ml-10 flex items-center">
                                                 <MyButton
