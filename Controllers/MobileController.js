@@ -89,21 +89,22 @@ export const sendMailRecovery = async (req, res) => {
     codes[mail] = confirmCode;
 
     const mailOptions = {
-        from: "kzautonex@mail.ru",
+        from: "info@tibetskaya.kz",
         to: mail,
-        subject: "Подтверждение электронной почты",
+        subject: "Подтвердждение электронной почты",
         text: confirmCode,
     };
 
     // Отправка письма
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent: " + info.response);
-        return res.status(200).send("Письмо успешно отправлено");
-    } catch (error) {
-        console.log("Ошибка при отправке письма:", error);
-        return res.status(500).send("Ошибка при отправке письма");
-    }
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+            res.status(500).send("Ошибка при отправке письма");
+        } else {
+            console.log("Email sent: " + info.response);
+            res.status(200).send("Письмо успешно отправлено");
+        }
+    });
 };
 
 export const codeConfirm = async (req, res) => {
