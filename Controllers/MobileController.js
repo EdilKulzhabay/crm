@@ -398,7 +398,10 @@ export const addClientAddress = async (req, res) => {
 
 export const updateClientAddress = async (req, res) => {
     try {
-        const { mail, _id, name, street, house, link } = req.body;
+        const { mail, _id, name, street, house, link, phone } = req.body;
+
+        console.log("updateClientAddress", req.body);
+        
 
         // Найти клиента по email
         const client = await Client.findOne({ mail: mail?.toLowerCase() });
@@ -427,6 +430,7 @@ export const updateClientAddress = async (req, res) => {
             street,
             link,
             house,
+            phone
         };
 
         // Сохранить изменения
