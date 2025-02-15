@@ -5,6 +5,7 @@ import Client from "../Models/Client.js";
 import Courier from "../Models/Courier.js";
 import mongoose from "mongoose";
 import { SendEmailOrder } from "./SendEmailOrder.js";
+import { pushNotification } from "../pushNotification.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -512,7 +513,16 @@ export const updateOrder = async (req, res) => {
 
         if (change === "date") {
             order.date = changeData
+            const clientId = order.client
+            const client = await Client.findById(clientId)
 
+            if (client && client?.expoPushToken?.length > 0) {
+                const expoTokens = client?.expoPushToken
+                const messageTitle = "Поменяли дату доставки"
+                const messageBody = "Уважаемый клиент, доставка вашей воды “Тибетская” переносится на завтра из-за внеплановых логистических обстоятельств. Примите наши извинения, завтра мы позаботимся о том, чтобы ваш заказ прибыл как можно раньше. Спасибо за понимание!"
+                const newStatus = "date"
+                pushNotification(messageTitle, messageBody, expoTokens, newStatus)
+            }
             await order.save()
         }
 

@@ -245,14 +245,11 @@ export const deleteClient = async (req, res) => {
     try {
         const { id } = req.body;
 
-        const delRes = await Client.findByIdAndDelete(id);
+        const client = await Client.findById(id);
 
-        if (!delRes) {
-            return res.status(400).json({
-                success: false,
-                message: "Не удалось удалить клиента",
-            });
-        }
+        client.status = "deleted"
+
+        await client.save()
         res.json({
             success: true,
         });
