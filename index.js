@@ -18,11 +18,13 @@ import {
     NotificationController,
     DepartmentController,
     AnalyticsController,
+    CourierAggregatorController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
+import { aggregatorLogin } from "./Controllers/CourierAggregatorController.js";
 
 mongoose
     .connect(process.env.MONGOURL)
@@ -281,6 +283,10 @@ app.post("/getClientsByOpForm", AnalyticsController.getClientsByOpForm)
 app.post("/getAdditionalRevenue", AnalyticsController.getAdditionalRevenue)
 app.post("/getFranchiseeAnalytics", AnalyticsController.getFranchiseeAnalytics)
 app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
+
+/////////////COURIERAGGREGATOR
+app.post("/aggregatorLogin", CourierAggregatorController.aggregatorLogin)
+app.post("/courierAggregatorRegister", CourierAggregatorController.courierAggregatorRegister)
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
