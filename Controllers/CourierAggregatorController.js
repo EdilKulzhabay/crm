@@ -1,5 +1,7 @@
 import CourierAggregator from "../Models/CourierAggregator.js";
 import User from "../Models/User.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 export const aggregatorLogin = async(req, res) => {
     try {
@@ -96,6 +98,9 @@ export const aggregatorLogin = async(req, res) => {
 export const courierAggregatorRegister = async (req, res) => {
     try {
         const { mail, fullName, password, phone } = req.body;
+
+        console.log("courierAggregatorRegister req.body = ", req.body);
+        
 
         const candidate = await CourierAggregator.findOne({ mail });
 
