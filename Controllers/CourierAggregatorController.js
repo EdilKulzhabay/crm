@@ -7,7 +7,15 @@ export const aggregatorLogin = async(req, res) => {
     try {
         const {mail, password} = req.body
 
+        console.log("aggregatorLogin req.body = ", req.body);
+        
+
         const courier = await CourierAggregator.findOne({mail})
+
+        if (courier) {
+            console.log("courier = ", courier);
+            
+        }
 
         if (!courier) {
 
