@@ -5,50 +5,13 @@ import jwt from "jsonwebtoken";
 
 export const aggregatorLogin = async(req, res) => {
     try {
-        const {mail, userName, password} = req.body
+        const {mail, password} = req.body
 
-        if (mail) {
-            const courier = await CourierAggregator.findOne({mail})
+        const courier = await CourierAggregator.findOne({mail})
 
-            if (!courier) {
-                return res.status(404).json({ 
-                    message: "Неверный логин или пароль",
-                    success: false
-                });
-            }
+        if (!courier) {
 
-            const isValidPass = await bcrypt.compare(password, courier.password);
-
-            if (!isValidPass) {
-                return res.status(404).json({
-                    message: "Неверный логин или пароль",
-                    success: false
-                });
-            }
-    
-            if (courier.status !== "active") {
-                return res.status(404).json({
-                    message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
-                    success: false
-                });
-            }
-
-            const token = jwt.sign({ _id: courier._id }, process.env.SecretKey, {
-                expiresIn: "30d",
-            });
-
-            const role = "courier";
-
-            res.status(200).json({
-                token, 
-                role,
-                success: true,
-                message: "Вы успешно авторизовались"
-            });
-        }
-
-        if (userName) {
-            const user = await User.findOne({userName})
+            const user = await User.findOne({userName: mail})
 
             if (!user) {
                 return res.status(404).json({ 
@@ -79,13 +42,44 @@ export const aggregatorLogin = async(req, res) => {
 
             const role = "user";
 
-            res.status(200).json({
+            return res.status(200).json({
                 token, 
                 role,
                 success: true,
                 message: "Вы успешно авторизовались"
             });
         }
+
+        const isValidPass = await bcrypt.compare(password, courier.password);
+
+        if (!isValidPass) {
+            return res.status(404).json({
+                message: "Неверный логин или пароль",
+                success: false
+            });
+        }
+
+        if (courier.status !== "active") {
+            return res.status(404).json({
+                message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
+                success: false
+            });
+        }
+
+        const token = jwt.sign({ _id: courier._id }, process.env.SecretKey, {
+            expiresIn: "30d",
+        });
+
+        const role = "courier";
+
+        res.status(200).json({
+            token, 
+            role,
+            success: true,
+            message: "Вы успешно авторизовались"
+        });
+
+        
     } catch (error) {
         console.log(error);
         res.status(500).json({
