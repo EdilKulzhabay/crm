@@ -7,15 +7,7 @@ export const aggregatorLogin = async(req, res) => {
     try {
         const {mail, password} = req.body
 
-        console.log("aggregatorLogin req.body = ", req.body);
-        
-
         const courier = await CourierAggregator.findOne({mail})
-
-        if (courier) {
-            console.log("courier = ", courier);
-            
-        }
 
         if (!courier) {
 
@@ -53,6 +45,7 @@ export const aggregatorLogin = async(req, res) => {
             return res.status(200).json({
                 token, 
                 role,
+                userData: user,
                 success: true,
                 message: "Вы успешно авторизовались"
             });
@@ -83,6 +76,7 @@ export const aggregatorLogin = async(req, res) => {
         res.status(200).json({
             token, 
             role,
+            userData: courier,
             success: true,
             message: "Вы успешно авторизовались"
         });
@@ -139,6 +133,69 @@ export const courierAggregatorRegister = async (req, res) => {
             success: true,
             message: "Вы успешно зарегистрировались"
         });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
+export const updateCourierAggregatorData = async (req, res) => {
+    try {
+        const {id, changeField, changeData} = req.body
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.status(404).json({
+                message: "Не получилось найти курьера",
+                success: false
+            });
+        }
+
+        if (changeField === "notificationPushTokensAdd") {
+            const token = changeData.trim(); // Убираем пробелы
+            if (!courier.notificationPushTokens.includes(token)) {
+                courier.notificationPushTokens.push(token);
+                await courier.save();
+                return res.json({
+                    success: true,
+                    message: "Токен успешно добавлен"
+                });
+            } else {
+                return res.json({
+                    success: false,
+                    message: "Токен уже существует"
+                });
+            }
+        }
+
+        if (changeField === "notificationPushTokensDelete") {
+            const token = changeData.trim();
+            if (courier.notificationPushTokens.includes(token)) {
+                courier.notificationPushTokens = courier.notificationPushTokens.filter((t) => t !== token);
+                await courier.save();
+                return res.json({
+                    success: true,
+                    message: "Токен успешно удален"
+                });
+            } else {
+                return res.json({
+                    success: false,
+                    message: "Токен не найден"
+                });
+            }
+        }
+
+        courier[changeField] = changeData
+        await courier.save()
+
+        res.json({
+            success: true,
+            message: "Успешно изменен"
+        })
     } catch (error) {
         console.log(error);
         res.status(500).json({

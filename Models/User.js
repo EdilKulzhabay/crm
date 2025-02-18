@@ -47,6 +47,10 @@ const UserSchema = new mongoose.Schema(
         b197kol: {
             type: Number,
             default: 0
+        },
+        notificationPushTokens: {
+            type: [String],
+            default: []
         }
     },
     {
