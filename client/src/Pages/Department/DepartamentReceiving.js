@@ -127,8 +127,8 @@ export default function DepartamentReceiving() {
                                     inputMode="numeric"
                                     pattern="\d*"
                                     onKeyPress={(event) => {
-                                        if (!/[0-9]/.test(event.key)) {
-                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        if (!/[0-9-]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса
                                         }
                                     }}
                                     onChange={(event) => {
@@ -166,8 +166,8 @@ export default function DepartamentReceiving() {
                                 inputMode="numeric"
                                 pattern="\d*"
                                 onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                    if (!/[0-9-]/.test(event.key)) {
+                                        event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса
                                     }
                                 }}
                                 onChange={(event) => {
@@ -204,8 +204,8 @@ export default function DepartamentReceiving() {
                                 inputMode="numeric"
                                 pattern="\d*"
                                 onKeyPress={(event) => {
-                                    if (!/[0-9]/.test(event.key)) {
-                                        event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                    if (!/[0-9-]/.test(event.key)) {
+                                        event.preventDefault(); // блокирует ввод символов, кроме цифр и минуса
                                     }
                                 }}
                                 onChange={(event) => {

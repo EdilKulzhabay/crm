@@ -70,6 +70,10 @@ const CourierAggregatorSchema = new mongoose.Schema(
         phoneVision: {
             type: Boolean,
             default: false
+        },
+        notificationPushTokens: {
+            type: [String],
+            default: []
         }
     },
     {
