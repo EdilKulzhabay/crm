@@ -5,7 +5,6 @@ import Order from "../Models/Order.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
 import Pickup from "../Models/Pickup.js";
 import { pushNotification } from "../pushNotification.js";
-import Expo from "expo-server-sdk";
 
 export const addPickup = async (req, res) => {
     try {
@@ -33,7 +32,6 @@ export const addPickup = async (req, res) => {
         });
     }
 }
-
 
 export const getPickupInfo = async (req, res) => {
     try {
@@ -487,9 +485,9 @@ export const sendNotificationToClients = async (req, res) => {
         let targetTokens = tokens;
 
         if (type === "ios") {
-            targetTokens = tokens.filter((item) => Expo.isExpoPushToken(item));
+            targetTokens = tokens.filter((item) => item.includes("ExponentPushToken"));
         } else if (type === "android") {
-            targetTokens = tokens.filter((item) => !Expo.isExpoPushToken(item));
+            targetTokens = tokens.filter((item) => !item.includes("ExponentPushToken"));
         }
 
         await pushNotification(title, text, targetTokens, "sendNotificationToClients");
