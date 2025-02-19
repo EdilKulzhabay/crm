@@ -4,6 +4,8 @@ import Client from "../Models/Client.js";
 import Order from "../Models/Order.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
 import Pickup from "../Models/Pickup.js";
+import { pushNotification } from "../pushNotification.js";
+import Expo from "expo-server-sdk";
 
 export const addPickup = async (req, res) => {
     try {
@@ -454,3 +456,52 @@ export const getMainPageInfoSA = async (req, res) => {
         });
     }
 };
+
+export const sendNotificationToClients = async (req, res) => {
+    try {
+        const { type, title, text } = req.body;
+
+        const clients = await Client.find({
+            expoPushToken: { $exists: true, $not: { $size: 0 } }
+        });
+
+        const tokens = clients.reduce((acc, client) => {
+            if (Array.isArray(client.expoPushToken)) {
+                return acc.concat(client.expoPushToken);
+            }
+            return acc;
+        }, []);
+
+        if (tokens.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Нет активных push-токенов для отправки уведомлений.",
+            });
+        }
+
+        const expo = new Expo();
+
+        let targetTokens = tokens;
+
+        if (type === "ios") {
+            targetTokens = tokens.filter((item) => expo.isExpoPushToken(item));
+        } else if (type === "android") {
+            targetTokens = tokens.filter((item) => !expo.isExpoPushToken(item));
+        }
+
+        await pushNotification(title, text, targetTokens, "sendNotificationToClients");
+
+        res.status(200).json({
+            success: true,
+            message: `Уведомления успешно отправлены (${type})`,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+            error: error.message
+        });
+    }
+};
+

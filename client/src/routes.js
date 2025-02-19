@@ -52,6 +52,7 @@ import PickupInfo from "./Pages/PickupInfo";
 import AddPickup from "./Pages/AddPickup";
 import AdminDenyVerificationClients from "./Pages/Admin/AdminDenyVerificationClients";
 import DepartmentReceivingHistory from "./Pages/Department/DepartmentReceivingHistory";
+import SendNotificationToClients from "./Pages/SendNotificationToClients";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -78,6 +79,7 @@ export const router = createBrowserRouter([
     { path: "/analytics", element: <Analytics /> },
     { path: "/charts", element: <Charts /> },
     { path: "/clientsByOpForm/:opForm/:startDate/:endDate", element: <ClientsByOpForm /> },
+    { path: "/sendNotificationToClients", element: <SendNotificationToClients /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },
