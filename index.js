@@ -131,6 +131,7 @@ app.get("/getMainPageInfoSA", checkAuth, OtherController.getMainPageInfoSA);
 app.post("/deleteUser", checkAuth, OtherController.deleteUser);
 app.post("/addPickup", OtherController.addPickup);
 app.post("/getPickupInfo", OtherController.getPickupInfo)
+app.post("/sendNotificationToClients", OtherController.sendNotificationToClients)
 
 /////USER
 app.get("/getMe", checkAuth, UserController.getMe);
