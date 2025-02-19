@@ -484,14 +484,12 @@ export const sendNotificationToClients = async (req, res) => {
             "eYwa4CYWSiaa9nLRyGXzfd:APA91bGKqIczmXf7f0IrsaH6_W_vjYpnslW_ynbT4NHwajUE8KeU9-ynBodVYJhyYnZ9GehWy6fEovIzBvW7PVKjVwoR6qzQFYgOumMNbtzwY60PKsrCX_Q"
         ]
 
-        const expo = new Expo();
-
         let targetTokens = tokens;
 
         if (type === "ios") {
-            targetTokens = tokens.filter((item) => expo.isExpoPushToken(item));
+            targetTokens = tokens.filter((item) => Expo.isExpoPushToken(item));
         } else if (type === "android") {
-            targetTokens = tokens.filter((item) => !expo.isExpoPushToken(item));
+            targetTokens = tokens.filter((item) => !Expo.isExpoPushToken(item));
         }
 
         await pushNotification(title, text, targetTokens, "sendNotificationToClients");
