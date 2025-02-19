@@ -724,6 +724,24 @@ export const addOrderClientMobile = async (req, res) => {
             await order.save();
         }
 
+        const text = `Адрес: ${address?.actual}\nТелефон: ${client?.phone}\nКол. 12,5л: ${products?.b12}\nКол. 18,9л: ${products?.b19}`
+        const mailOptions = {
+            from: "info@tibetskaya.kz",
+            to: "araiuwa_89@mail.ru",
+            subject: "Клиент добавил заказ через приложение",
+            text,
+        };
+    
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                res.status(500).send("Ошибка при отправке письма");
+            } else {
+                console.log("Email sent: " + info.response);
+                res.status(200).send("Письмо успешно отправлено");
+            }
+        });
+
         client.bonus = client.bonus + 50
         await client.save()
 
