@@ -60,7 +60,7 @@ export const aggregatorLogin = async(req, res) => {
             });
         }
 
-        if (courier.status !== "active" || courier.status !== "awaitingVerfication") {
+        if (courier.status === "inActive") {
             return res.status(404).json({
                 message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
                 success: false
