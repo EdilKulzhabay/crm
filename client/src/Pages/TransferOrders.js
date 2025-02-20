@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import Container from "../Components/Container";
 import Div from "../Components/Div";
@@ -11,6 +11,7 @@ import Li from "../Components/Li";
 
 export default function TransferOrders() {
     const navigate = useNavigate();
+    const { clientId } = useParams();
     const userData = useFetchUserData();
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -23,36 +24,6 @@ export default function TransferOrders() {
     const closeSnack = () => {
         setOpen(false);
     };
-
-    const sendNotification = () => {
-        if (text.trim() === "" || title.trim() === "") {
-            setOpen(true)
-            setMessage("Нельзя отправить пустое уведомление")
-            setStatus("error")
-            return
-        }
-
-        api.post("/sendNotificationToClients", {type, title, text}, {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            if (data.success) {
-                setOpen(true)
-                setMessage("Уведомление отправлено")
-                setStatus("success")
-                setType("all")
-                setTitle("")
-                setText("")
-            } else {
-                setOpen(true)
-                setMessage("Что то пошло не так")
-                setStatus("error")
-            }
-        }).catch((e) => {
-            setOpen(true)
-            setMessage("Что то пошло не так")
-            setStatus("error")
-        }) 
-    }
 
     const handleSearch = (e) => {
         setSearch(e.target.value);
@@ -80,7 +51,7 @@ export default function TransferOrders() {
     const getClientData = () => {
         api.post(
             "/getClientDataForId",
-            { id },
+            { clientId },
             { headers: { "Content-Type": "application/json" } }
         )
             .then(({ data }) => {
