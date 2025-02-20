@@ -746,3 +746,48 @@ export const addPhoneForAddress = async (req, res) => {
         });
     }
 }
+
+export const transferOrders = async (req, res) => {
+    try {
+        const {firstClientId, secondClientId} = req.body
+
+        const firstClient = await Client.findById(firstClientId)
+
+        const secondClient = await Client.findById(secondClientId)
+
+        if (!firstClient || !secondClient) {
+            return res.status(500).json({
+                message: "Не смогли найти клиента",
+                success: false
+            });
+        }
+
+        const result = await Order.updateMany(
+            {client: secondClient?._id}, 
+            { 
+                $set : {client: firstClient?._id}
+            }
+        )
+
+        if (result.modifiedCount === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Нет заказов для переноса"
+            });
+        }
+
+        secondClient.status = "inActive"
+        await secondClient.save()
+
+        res.json({
+            success: true,
+            message: "Все заказы были перенесены"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+            success: false
+        });
+    }
+}
