@@ -460,7 +460,10 @@ export const sendNotificationToClients = async (req, res) => {
         const { type, title, text } = req.body;
 
         const clients = await Client.find({
-            expoPushToken: { $exists: true, $not: { $size: 0 } }
+            $and: [
+                { expoPushToken: { $exists: true, $not: { $size: 0 } } }, // Проверка на существование и непустой массив
+                { expoPushToken: { $not: { $elemMatch: { $eq: "" } } } }  // Исключаем пустые строки из массива
+              ]
         });
 
         const tokens = clients.reduce((acc, client) => {
