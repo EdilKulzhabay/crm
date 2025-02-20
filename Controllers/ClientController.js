@@ -568,6 +568,7 @@ export const getNotVerifyClients = async (req, res) => {
 
         const clients = await Client.find({...filter, "verify.status": "waitingVerification"})
             .populate("franchisee", "fullName")
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
