@@ -179,6 +179,7 @@ app.post("/getNotVerifyClients", ClientController.getNotVerifyClients);
 app.post("/clientAddPassword", ClientController.clientAddPassword);
 app.get("/checkClientsCoincidences", ClientController.checkClientsCoincidences)
 app.get("/addPhoneForAddress", ClientController.addPhoneForAddress)
+app.post("/transferOrders", ClientController.transferOrders)
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);

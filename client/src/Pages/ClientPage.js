@@ -979,7 +979,15 @@ export default function ClientPage() {
                         </div>
                     </Li>
                 </>
-                <Div>История заказов:</Div>
+                <Div />
+                <Div>
+                    <div>История заказов:</div>
+                    <LinkButton
+                        href={`/transferOrders/${client?._id}`}
+                    >
+                        Перенести заказы
+                    </LinkButton>
+                </Div>
                 <div className="max-h-[100px] overflow-scroll">
                     {orders.map((item, index) => {
                         if (orders.length === index + 1) {
