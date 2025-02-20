@@ -51,7 +51,7 @@ export default function TransferOrders() {
     const getClientData = () => {
         api.post(
             "/getClientDataForId",
-            { clientId },
+            { id: clientId },
             { headers: { "Content-Type": "application/json" } }
         )
             .then(({ data }) => {
@@ -127,8 +127,9 @@ export default function TransferOrders() {
 
                 <Div />
 
-                <MyButton click={transferOrders}>Перенести</MyButton>
-
+                <Div>
+                    <MyButton click={transferOrders}>Перенести</MyButton>
+                </Div>
                 <Div />
 
                 <MySnackBar
