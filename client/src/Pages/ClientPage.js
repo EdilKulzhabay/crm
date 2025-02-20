@@ -982,11 +982,14 @@ export default function ClientPage() {
                 <Div />
                 <Div>
                     <div>История заказов:</div>
-                    <LinkButton
-                        href={`/transferOrders/${client?._id}`}
-                    >
-                        Перенести заказы
-                    </LinkButton>
+                    {userData?.role === "superAdmin" &&
+                        <LinkButton
+                            color="green"
+                            href={`/transferOrders/${client?._id}`}
+                        >
+                            Перенести заказы
+                        </LinkButton>
+                    }
                 </Div>
                 <div className="max-h-[100px] overflow-scroll">
                     {orders.map((item, index) => {
