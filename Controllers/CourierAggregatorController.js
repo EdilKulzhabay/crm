@@ -5,10 +5,38 @@ import jwt from "jsonwebtoken";
 
 export const getMeAggregate = async(req, res) => {
     try {
-        res.json({
-            success: true,
-            message: "hz"
-        })
+        const id = req.userId
+        const role = req.role
+
+        if (role === "user") {
+            const user = await User.findById(id)
+
+            if (!user) {
+                return res.json({
+                    success: false,
+                    message: "Не смогли найти пользователя"
+                })
+            }
+
+            return res.json({
+                success: true,
+                userData: user
+            })
+        } else {
+            const courier = await CourierAggregator.findById(id)
+
+            if (!courier) {
+                return res.json({
+                    success: false,
+                    message: "Не смогли найти курьера"
+                })
+            }
+
+            return res.json({
+                success: true,
+                userData: courier
+            })
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -51,7 +79,7 @@ export const aggregatorLogin = async(req, res) => {
                 });
             }
 
-            const token = jwt.sign({ _id: user._id }, process.env.SecretKey, {
+            const token = jwt.sign({ _id: user._id, role: "user" }, process.env.SecretKey, {
                 expiresIn: "30d",
             });
 
@@ -82,7 +110,7 @@ export const aggregatorLogin = async(req, res) => {
             });
         }
 
-        const token = jwt.sign({ _id: courier._id }, process.env.SecretKey, {
+        const token = jwt.sign({ _id: courier._id, role: "courier" }, process.env.SecretKey, {
             expiresIn: "30d",
         });
 
@@ -136,6 +164,7 @@ export const courierAggregatorRegister = async (req, res) => {
         const token = jwt.sign(
             {
                 _id: courier._id,
+                role: "courier"
             },
             process.env.SecretKey,
             {
