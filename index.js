@@ -26,6 +26,7 @@ import multer from "multer";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
 import { aggregatorLogin } from "./Controllers/CourierAggregatorController.js";
+import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 
 mongoose
     .connect(process.env.MONGOURL)
@@ -288,6 +289,7 @@ app.post("/getFranchiseeAnalytics", AnalyticsController.getFranchiseeAnalytics)
 app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
 
 /////////////COURIERAGGREGATOR
+app.get("/getMeAggregate", checkAuthAggregator, CourierAggregatorController.getMeAggregate)
 app.post("/aggregatorLogin", CourierAggregatorController.aggregatorLogin)
 app.post("/courierAggregatorRegister", CourierAggregatorController.courierAggregatorRegister)
 

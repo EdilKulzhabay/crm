@@ -3,6 +3,21 @@ import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+export const getMeAggregate = async(req, res) => {
+    try {
+        res.json({
+            success: true,
+            message: "hz"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
 export const aggregatorLogin = async(req, res) => {
     try {
         const {mail, password} = req.body
