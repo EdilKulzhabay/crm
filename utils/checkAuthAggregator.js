@@ -6,6 +6,9 @@ export default async (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.SecretKey);
+
+            console.log("checkAuthAggregator deocded: ", decoded);
+            
     
             req.userId = decoded?._id || null;
             req.role = decoded?.role || null; 

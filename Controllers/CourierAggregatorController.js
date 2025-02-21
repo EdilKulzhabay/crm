@@ -8,6 +8,9 @@ export const getMeAggregate = async(req, res) => {
         const id = req.userId
         const role = req.role
 
+        console.log("we in getMeAggregate");
+        
+
         if (role === "user") {
             const user = await User.findById(id)
 
