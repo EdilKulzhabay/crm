@@ -1,7 +1,11 @@
 import jwt from "jsonwebtoken";
 
 export default async (req, res, next) => {
+    console.log("we in checkAuthAggregator");
+    
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+
+    console.log("we in checkAuthAggregator2");
     
     if (token) {
         try {
@@ -20,6 +24,7 @@ export default async (req, res, next) => {
         }
     } else {
         return res.status(403).json({
+            success: false,
             message: "Нет доступа",
         });
     }
