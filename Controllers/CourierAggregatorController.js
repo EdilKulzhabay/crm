@@ -193,6 +193,9 @@ export const updateCourierAggregatorData = async (req, res) => {
     try {
         const {id, changeField, changeData} = req.body
 
+        console.log("we in updateCourierAggregatorData req.body = ", req.body);
+        
+
         const courier = await CourierAggregator.findById(id)
 
         if (!courier) {
@@ -204,6 +207,8 @@ export const updateCourierAggregatorData = async (req, res) => {
 
         if (changeField === "notificationPushTokensAdd") {
             const token = changeData.trim(); // Убираем пробелы
+            console.log("we in if in updateCourierAggregatorData");
+            
             if (!courier.notificationPushTokens.includes(token)) {
                 courier.notificationPushTokens.push(token);
                 await courier.save();
