@@ -466,24 +466,23 @@ export const sendNotificationToClients = async (req, res) => {
               ]
         });
 
-        const tokens = clients.reduce((acc, client) => {
-            if (Array.isArray(client.expoPushToken)) {
-                return acc.concat(client.expoPushToken);
-            }
-            return acc;
-        }, []);
+        // const tokens = clients.reduce((acc, client) => {
+        //     if (Array.isArray(client.expoPushToken)) {
+        //         return acc.concat(client.expoPushToken);
+        //     }
+        //     return acc;
+        // }, []);
 
-        if (tokens.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Нет активных push-токенов для отправки уведомлений.",
-            });
-        }
+        // if (tokens.length === 0) {
+        //     return res.status(404).json({
+        //         success: false,
+        //         message: "Нет активных push-токенов для отправки уведомлений.",
+        //     });
+        // }
 
-        // const tokens = [
-        //     "ExponentPushToken[QtOD5PGk1I9x8hE5pT20gz]",
-        //     "eYwa4CYWSiaa9nLRyGXzfd:APA91bGKqIczmXf7f0IrsaH6_W_vjYpnslW_ynbT4NHwajUE8KeU9-ynBodVYJhyYnZ9GehWy6fEovIzBvW7PVKjVwoR6qzQFYgOumMNbtzwY60PKsrCX_Q"
-        // ]
+        const tokens = [
+            "eYwa4CYWSiaa9nLRyGXzfd:APA91bGKqIczmXf7f0IrsaH6_W_vjYpnslW_ynbT4NHwajUE8KeU9-ynBodVYJhyYnZ9GehWy6fEovIzBvW7PVKjVwoR6qzQFYgOumMNbtzwY60PKsrCX_Q"
+        ]
 
         let targetTokens = tokens;
 
