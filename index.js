@@ -292,6 +292,7 @@ app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
 app.get("/getMeAggregate", checkAuthAggregator, CourierAggregatorController.getMeAggregate)
 app.post("/aggregatorLogin", CourierAggregatorController.aggregatorLogin)
 app.post("/courierAggregatorRegister", CourierAggregatorController.courierAggregatorRegister)
+app.post("/updateCourierAggregatorData", CourierAggregatorController.updateCourierAggregatorData)
 
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
