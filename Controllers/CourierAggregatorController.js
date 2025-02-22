@@ -23,7 +23,8 @@ export const getMeAggregate = async(req, res) => {
 
             return res.json({
                 success: true,
-                userData: user
+                userData: user,
+                role: "user"
             })
         } else {
             const courier = await CourierAggregator.findById(id)
@@ -37,7 +38,8 @@ export const getMeAggregate = async(req, res) => {
 
             return res.json({
                 success: true,
-                userData: courier
+                userData: courier,
+                role: "courier"
             })
         }
     } catch (error) {
