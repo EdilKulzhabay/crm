@@ -459,6 +459,10 @@ export const sendNotificationToClients = async (req, res) => {
     try {
         const { type, title, text } = req.body;
 
+
+        console.log("Start send notification ", new Date());
+        
+
         const clients = await Client.find({
             $and: [
                 { expoPushToken: { $exists: true, $not: { $size: 0 } } }, // Проверка на существование и непустой массив
@@ -481,7 +485,16 @@ export const sendNotificationToClients = async (req, res) => {
         // }
 
         const tokens = [
-            "eYwa4CYWSiaa9nLRyGXzfd:APA91bGKqIczmXf7f0IrsaH6_W_vjYpnslW_ynbT4NHwajUE8KeU9-ynBodVYJhyYnZ9GehWy6fEovIzBvW7PVKjVwoR6qzQFYgOumMNbtzwY60PKsrCX_Q"
+            'eYwa4CYWSiaa9nLRyGXzfd:APA91bGKqIczmXf7f0IrsaH6_W_vjYpnslW_ynbT4NHwajUE8KeU9-ynBodVYJhyYnZ9GehWy6fEovIzBvW7PVKjVwoR6qzQFYgOumMNbtzwY60PKsrCX_Q',
+            'fPsDHpE_Sim2eaYQusKq-F:APA91bHfv4aolWqCudfQj-BOexROQwKNOZvht1rsks3_1ztVVmjivCQWMdcoInIjye3i-bXfmg2hqdPXXAs-ykVm0nIL8Ocg44l3OAWO-bAPJZFLNNXOmBY',
+            'ExponentPushToken[kLOuXYAh9QeaqanuVO0GWu]',
+            'ExponentPushToken[QtOD5PGk1I9x8hE5pT20gz]',
+            'ExponentPushToken[7yzQqvMElF8Vixs7iUHYhf]',
+            'ExponentPushToken[zMqNYKIOyk-kkIT1QoNJ5a]',
+            'cSrCfzbaSQKVziNDCY0rYc:APA91bGUAdaACwc-9rXYkCwxjmMPJkgUVeVLa4pHCy-V_ZABMjek4c_M8KCWze51qtj08hIvdyNBBoXoHKNJN_Q-vB_zngtHqpDitcxvib_Begs-UgMfqs0',
+            'ExponentPushToken[lB1zRRLDlsFuHXZcAywadu]',
+            'ExponentPushToken[kYIv_DGGiQ7w8v3OWmQUso]',
+            'ExponentPushToken[aG2DCoDxLiVt5-YJjeURbU]'
         ]
 
         let targetTokens = tokens;
@@ -493,6 +506,9 @@ export const sendNotificationToClients = async (req, res) => {
         }
 
         await pushNotification(title, text, targetTokens, "sendNotificationToClients");
+
+
+        console.log("End send notification ", new Date());
 
         res.status(200).json({
             success: true,
