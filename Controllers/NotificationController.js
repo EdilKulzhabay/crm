@@ -11,6 +11,7 @@ export const getNotifications = async (req, res) => {
         .populate("second")
         .populate("firstObject")
         .populate("secondObject")
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         
