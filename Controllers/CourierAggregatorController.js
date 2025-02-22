@@ -8,7 +8,7 @@ export const getMeAggregate = async(req, res) => {
         const id = req.userId
         const role = req.role
 
-        console.log("we in getMeAggregate");
+        console.log("we in getMeAggregate id = ", id, " role = ", role);
         
 
         if (role === "user") {
