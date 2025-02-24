@@ -265,9 +265,9 @@ export const deleteClientAdmin = async (req, res) => {
     try {
         const { id } = req.body;
 
-        const res = await Client.findByIdAndDelete(id)
+        const delRes = await Client.findByIdAndDelete(id)
 
-        if (!res) {
+        if (!delRes) {
             return res.json({
                 message: "Не удалось удалить",
                 success: false,
