@@ -1,19 +1,21 @@
 import { Link } from "react-router-dom";
 
 export default function LinkButton(props) {
-    const color = props.color || ""
+    const color = props.color || "";
+    const isNewTab = props.children === "Просмотр"; // Проверка для новой вкладки
 
-    if (color === "green") {
-        return (
-            <Link to={props.href} className="text-green-400 hover:text-blue-500">
-                [ {props.children} ]
-            </Link>
-        );
-    } else {
-        return (
-            <Link to={props.href} className="text-red hover:text-blue-500">
-                [ {props.children} ]
-            </Link>
-        );
-    }
+    const linkProps = isNewTab
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : {};
+
+    const linkClass =
+        color === "green"
+            ? "text-green-400 hover:text-blue-500"
+            : "text-red hover:text-blue-500";
+
+    return (
+        <Link to={props.href} className={linkClass} {...linkProps}>
+            [ {props.children} ]
+        </Link>
+    );
 }
