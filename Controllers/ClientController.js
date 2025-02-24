@@ -261,6 +261,30 @@ export const deleteClient = async (req, res) => {
     }
 };
 
+export const deleteClientAdmin = async (req, res) => {
+    try {
+        const { id } = req.body;
+
+        const res = await Client.findByIdAndDelete(id)
+
+        if (!res) {
+            return res.json({
+                message: "Не удалось удалить",
+                success: false,
+            });
+        }
+
+        res.json({
+            success: true,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
 export const getClientDataForId = async (req, res) => {
     try {
         const { id } = req.body;
