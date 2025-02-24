@@ -8,6 +8,7 @@ import { scheduleJob } from "node-schedule";
 import "dotenv/config";
 import { pushNotification } from "../pushNotification.js";
 import User from "../Models/User.js";
+import { getLocationsLogic } from "../utils/getLocationsLogic.js";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -697,8 +698,10 @@ export const addOrderClientMobile = async (req, res) => {
             Number(products.b12) * Number(client.price12) +
             Number(products.b19) * Number(client.price19);
 
+        let order
+
         if (franchiseeId !== "") {
-            const order = new Order({
+            order = new Order({
                 franchisee: franchiseeId,
                 client: clientId,
                 address,
@@ -711,7 +714,7 @@ export const addOrderClientMobile = async (req, res) => {
     
             await order.save();
         } else {
-            const order = new Order({
+            order = new Order({
                 client: clientId,
                 address,
                 products,
@@ -749,6 +752,15 @@ export const addOrderClientMobile = async (req, res) => {
             success: true,
             message: "Заказ успешно создан"
         })
+
+        // setImmediate(async () => {
+        //     try {
+        //       await getLocationsLogic(order?._id);
+        //       console.log("Обновленные локации после заказа:");
+        //     } catch (error) {
+        //       console.error("Ошибка при получении локаций:", error);
+        //     }
+        //   });
     } catch (error) {
         console.log(error);
         res.status(500).json({
