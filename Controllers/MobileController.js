@@ -8,7 +8,7 @@ import { scheduleJob } from "node-schedule";
 import "dotenv/config";
 import { pushNotification } from "../pushNotification.js";
 import User from "../Models/User.js";
-import { getLocationsLogic } from "../utils/getLocationsLogic.js";
+// import { getLocationsLogic } from "../utils/getLocationsLogic.js";
 
 let expo = new Expo({ useFcmV1: true });
 
