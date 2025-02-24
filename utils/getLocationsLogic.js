@@ -1,6 +1,6 @@
 import CourierAggregator from "../Models/CourierAggregator.js";
 import Order from "../Models/Order.js";
-import { pushNotification } from "../pushNotification";
+import { pushNotification } from "../pushNotification.js";
 
 export const getLocationsLogic = async (orderId) => {
     try {
