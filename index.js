@@ -171,6 +171,7 @@ app.post("/addClient", ClientController.addClient);
 app.post("/getClients", checkAuth, ClientController.getClients);
 app.post("/searchClient", checkAuth, ClientController.searchClient);
 app.post("/deleteClient", ClientController.deleteClient);
+app.post("/deleteClientAdmin", ClientController.deleteClientAdmin);
 app.post("/getClientDataForId", ClientController.getClientDataForId);
 app.post("/deleteClientAdress", ClientController.deleteClientAdress);
 app.post("/updateClientData", ClientController.updateClientData);

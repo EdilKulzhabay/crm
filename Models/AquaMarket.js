@@ -47,6 +47,20 @@ const AquaMarketScheme = new mongoose.Schema(
                 type: Number,
                 default: 0
             }
+        },
+        point: {
+            lat: {
+                type: Number,
+                required: true
+            },
+            lon: {
+                type: Number,
+                required: true
+            }
+        },
+        dispensedBottlesKol: {
+            type: Number,
+            default: 0
         }
     },
     {

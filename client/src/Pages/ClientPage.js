@@ -258,7 +258,7 @@ export default function ClientPage() {
 
     const deleteClient = () => {
         api.post(
-            "/deleteClient",
+            "/deleteClientAdmin",
             { id: client._id },
             {
                 headers: { "Content-Type": "application/json" },

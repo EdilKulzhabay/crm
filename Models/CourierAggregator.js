@@ -87,7 +87,43 @@ const CourierAggregatorSchema = new mongoose.Schema(
             }
         },
         orders: {
-            type: [mongoose.Schema.Types.ObjectId],
+            type: [{
+                orderId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "Order",
+                    required: true
+                },
+                clientPoints: {
+                    lat: {
+                        type: Number,
+                        required: true
+                    },
+                    lon: {
+                        type: Number,
+                        required: true
+                    }
+                },
+                aquaMarketPoints: {
+                    lat: {
+                        type: Number,
+                        required: true
+                    },
+                    lon: {
+                        type: Number,
+                        required: true
+                    }
+                },
+                aquaMarketAddress: {
+                    type: String,
+                    required: true
+                },
+                step: {
+                    type: String,
+                    enum: ["toAquaMarket", "toClient"],
+                    required: true,
+                    default: "toAquaMarket"
+                }
+            }],
             default: []
         }
     },
