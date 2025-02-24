@@ -81,6 +81,9 @@ const CourierAggregatorSchema = new mongoose.Schema(
             },
             lon: {
                 type: Number,
+            },
+            timestamp: {
+                type: Date
             }
         },
         orders: {
