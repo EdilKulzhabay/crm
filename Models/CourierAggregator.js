@@ -74,6 +74,18 @@ const CourierAggregatorSchema = new mongoose.Schema(
         notificationPushTokens: {
             type: [String],
             default: []
+        },
+        point: {
+            lat: {
+                type: Number,
+            },
+            lon: {
+                type: Number,
+            }
+        },
+        orders: {
+            type: [mongoose.Schema.Types.ObjectId],
+            default: []
         }
     },
     {
