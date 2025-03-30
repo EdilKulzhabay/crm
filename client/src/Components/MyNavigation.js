@@ -62,14 +62,14 @@ const AButtons = [
         href: "/analytics",
         title: "Аналитика",
     },
-    {
-        href: "/adminCoincidence",
-        title: "Совпадение",
-    },
     // {
-    //     href: "/adminSettings",
-    //     title: "Настройки",
+    //     href: "/adminCoincidence",
+    //     title: "Совпадение",
     // },
+    {
+        href: "/adminSettings",
+        title: "Настройки",
+    },
 ];
 
 const CButtons = [
