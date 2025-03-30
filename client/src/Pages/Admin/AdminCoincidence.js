@@ -44,11 +44,11 @@ export default function SuperAdminCoincidence() {
         if (loading || !hasMore) return;
 
         setLoading(true);
-        const franchiseeId = "213"
-        const role = "superAdmin"
+        const franchiseeId = userData?._id
+        const role = userData?.role
         api.post(
             "/getNotifications",
-            { page },
+            { page, franchiseeId, role},
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -71,10 +71,10 @@ export default function SuperAdminCoincidence() {
     }, [page, loading, hasMore]);
 
     useEffect(() => {
-        if (hasMore) {
+        if (userData && hasMore) {
             loadMoreNotifications();
         }
-    }, [hasMore]);
+    }, [hasMore, userData]);
 
     const observer = useRef();
     const lastNotificationElementRef = useCallback(
@@ -142,11 +142,13 @@ export default function SuperAdminCoincidence() {
                                                     {item?.matchedField?.includes("phone") ? "номер телефона " : ""}
                                                     {item?.matchedField?.includes("addresses") ? "адрес " : ""}
                                                 </div>
+                                                {/*
                                                 <LinkButton href={`/superAdminCoincidencePage/${item?._id}`}>Перейти</LinkButton>
                                                 <MyButton click={() => {
                                                     setDeleteObject(item._id)
                                                     setDeleteModal(true)
                                                 }}>Удалить</MyButton>
+                                                */}
                                             </div>
                                         </Li>
                                     </div>
@@ -162,11 +164,11 @@ export default function SuperAdminCoincidence() {
                                                     {item?.matchedField?.includes("phone") ? "номер телефона " : ""}
                                                     {item?.matchedField?.includes("addresses") ? "адрес " : ""}
                                                 </div>
-                                                <LinkButton href={`/superAdminCoincidencePage/${item?._id}`}>Перейти</LinkButton>
+                                                {/* <LinkButton href={`/superAdminCoincidencePage/${item?._id}`}>Перейти</LinkButton>
                                                 <MyButton click={() => {
                                                     setDeleteObject(item._id)
                                                     setDeleteModal(true)
-                                                }}>Удалить</MyButton>
+                                                }}>Удалить</MyButton> */}
                                             </div>
                                         </Li>
                                     </div>
@@ -178,11 +180,11 @@ export default function SuperAdminCoincidence() {
 
                 <Div />
                 <MySnackBar
-                        open={open}
-                        text={message}
-                        status={status}
-                        close={closeSnack}
-                    />
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
+                />
             </Container>
         </div>
     )

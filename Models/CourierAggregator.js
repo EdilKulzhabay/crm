@@ -125,6 +125,15 @@ const CourierAggregatorSchema = new mongoose.Schema(
                 }
             }],
             default: []
+        },
+        soldBootles: {
+            kol: {
+                type: Number,
+                default: 0,
+            },
+            date: {
+                type: Date,
+            }
         }
     },
     {

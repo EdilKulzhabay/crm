@@ -1,7 +1,11 @@
 import CourierAggregator from "../Models/CourierAggregator.js";
+import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import distributionOrdersToFreeCourier from "../utils/distributionOrdersToFreeCourier.js";
+import distributionUrgentOrder from "../utils/distributionUrgentOrder.js";
+import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 
 export const getMeAggregate = async(req, res) => {
     try {
@@ -54,6 +58,8 @@ export const getMeAggregate = async(req, res) => {
 export const aggregatorLogin = async(req, res) => {
     try {
         const {mail, password} = req.body
+        console.log("aggregatorLogin req.body = ", req.body);
+        
 
         const courier = await CourierAggregator.findOne({mail})
 
@@ -250,6 +256,20 @@ export const updateCourierAggregatorData = async (req, res) => {
             success: true,
             message: "Успешно изменен"
         })
+
+        if (changeField === "onTheLine" && changeData) {
+            await distributionOrdersToFreeCourier(courier._id)
+        }
+
+        if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
+            const orderIds = courier.orders.map(item => item.orderId);
+            const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
+            courier.orders = []
+            await courier.save()
+            for (const order of orders) {
+                await getLocationsLogicQueue(order._id);
+            }
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -259,14 +279,56 @@ export const updateCourierAggregatorData = async (req, res) => {
     }
 }
 
-// export const getLocations = async (req, res) => {
-//     try {
-        
-//     } catch (error) {
-//         console.log(error);
-//         res.status(500).json({
-//             success: false,
-//             message: "Ошибка на стороне сервера"
-//         })
-//     }
-// }
+export const completeOrderCourierAggregator = async (req, res) => {
+    try {
+        const {orderId, courierId, b12, b19, opForm} = req.body
+
+        const order = await Order.findById(orderId).populate("client")
+
+        order.status = "delivered"
+        order.products.b12 = b12
+        order.products.b19 = b19
+        order.opForm = opForm
+        order.sum = order.client.price12 * b12 + order.client.price19 * price19 || order.sum
+        order.courier = courierId
+
+        await order.save()
+
+        const courier = await CourierAggregator.findById(courierId)
+
+        courier.orders.shift();
+        courier.balance = courier.balance + b12 * 300 + b19 * 400
+
+        await courier.save();
+
+        res.json({
+            success: true,
+            message: "Заказ завершен"
+        })
+
+        if (courier.orders.length === 0) {
+            await distributionOrdersToFreeCourier(courierId)
+        } else {
+            let nextOrder = await Order.findById(courier.orders[0].orderId)
+            await pushNotification(
+                "Новый заказ",
+                `${order?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
+                courier.notificationPushTokens,
+                "new Order",
+                courier.orders[0].orderId
+            );
+            await new Promise(resolve => setTimeout(resolve, 60000));
+            nextOrder = await Order.findById(courier.orders[0].orderId)
+            if (nextOrder.status !== "onTheWay") {
+                await distributionUrgentOrder(courier.orders[0].orderId)
+            }
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}

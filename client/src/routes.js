@@ -51,6 +51,7 @@ import SuperAdminClientsVerify from "./Pages/SuperAdmin/SuperAdminClientsVerify"
 import PickupInfo from "./Pages/PickupInfo";
 import AddPickup from "./Pages/AddPickup";
 import AdminDenyVerificationClients from "./Pages/Admin/AdminDenyVerificationClients";
+import AdminCoincidence from "./Pages/Admin/AdminCoincidence";
 import DepartmentReceivingHistory from "./Pages/Department/DepartmentReceivingHistory";
 import SendNotificationToClients from "./Pages/SendNotificationToClients";
 import TransferOrders from "./Pages/TransferOrders";
@@ -112,6 +113,7 @@ export const router = createBrowserRouter([
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
     { path: "/adminDenyVerificationClients", element: <AdminDenyVerificationClients /> },
+    { path: "/adminCoincidence", element: <AdminCoincidence /> },
 
     ////COURIERLINKS
     { path: "/courier", element: <CourierMain /> },

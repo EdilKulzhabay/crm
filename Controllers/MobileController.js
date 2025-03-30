@@ -8,7 +8,7 @@ import { scheduleJob } from "node-schedule";
 import "dotenv/config";
 import { pushNotification } from "../pushNotification.js";
 import User from "../Models/User.js";
-// import { getLocationsLogic } from "../utils/getLocationsLogic.js";
+import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -678,10 +678,6 @@ export const addBonus = async (req, res) => {
 export const addOrderClientMobile = async (req, res) => {
     try {
         const {clientId, address, products, clientNotes, date, opForm} = req.body
-        //У клиента есть chooseTime, если равно true то он может выбрать дату и время доставки
-        //Address должен быть в виде {actual: "", link: ""} actual это street + house
-        //Products = {b12: "", b19: ""}
-        //opForm это форма оплаты, по типу нал, перевод, карта и Талоны
 
         const client = await Client.findById(clientId)
 
@@ -727,23 +723,23 @@ export const addOrderClientMobile = async (req, res) => {
             await order.save();
         }
 
-        const text = `Адрес: ${address?.actual}\nТелефон: ${client?.phone}\nКол. 12,5л: ${products?.b12}\nКол. 18,9л: ${products?.b19}`
-        const mailOptions = {
-            from: "info@tibetskaya.kz",
-            to: "araiuwa_89@mail.ru",
-            subject: "Клиент добавил заказ через приложение",
-            text,
-        };
+        // const text = `Адрес: ${address?.actual}\nТелефон: ${client?.phone}\nКол. 12,5л: ${products?.b12}\nКол. 18,9л: ${products?.b19}`
+        // const mailOptions = {
+        //     from: "info@tibetskaya.kz",
+        //     to: "araiuwa_89@mail.ru",
+        //     subject: "Клиент добавил заказ через приложение",
+        //     text,
+        // };
     
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-                res.status(500).send("Ошибка при отправке письма");
-            } else {
-                console.log("Email sent: " + info.response);
-                res.status(200).send("Письмо успешно отправлено");
-            }
-        });
+        // transporter.sendMail(mailOptions, function (error, info) {
+        //     if (error) {
+        //         console.log(error);
+        //         res.status(500).send("Ошибка при отправке письма");
+        //     } else {
+        //         console.log("Email sent: " + info.response);
+        //         res.status(200).send("Письмо успешно отправлено");
+        //     }
+        // });
 
         client.bonus = client.bonus + 50
         await client.save()
@@ -753,14 +749,15 @@ export const addOrderClientMobile = async (req, res) => {
             message: "Заказ успешно создан"
         })
 
-        // setImmediate(async () => {
-        //     try {
-        //       await getLocationsLogic(order?._id);
-        //       console.log("Обновленные локации после заказа:");
-        //     } catch (error) {
-        //       console.error("Ошибка при получении локаций:", error);
-        //     }
-        //   });
+        setImmediate(async () => {
+            const orderId = order?._id
+            try {
+              await getLocationsLogicQueue(orderId);
+              console.log("Обновленные локации после заказа:");
+            } catch (error) {
+              console.error("Ошибка при получении локаций:", error);
+            }
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({

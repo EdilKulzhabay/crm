@@ -1,6 +1,10 @@
 import {Expo} from "expo-server-sdk";
 import admin from "firebase-admin"
-import serviceAccount from "./FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json" assert { type: "json" };
+import fs from 'fs';
+
+// Чтение JSON-файла
+const serviceAccount = JSON.parse(fs.readFileSync('./FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json', 'utf8'));
+// import serviceAccount from "./FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json" assert { type: "json" };
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -8,7 +12,7 @@ admin.initializeApp({
 
 let expo = new Expo({ useFcmV1: true });
 
-export const pushNotification = async (messageTitle, messageBody, expoTokens, newStatus) => {
+export const pushNotification = async (messageTitle, messageBody, expoTokens, newStatus, orderId = null) => {
     for (const token of expoTokens) {
         if (Expo.isExpoPushToken(token)) {
             const message = {
@@ -17,7 +21,10 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
                 title: messageTitle,
                 body: messageBody,
                 priority: "high",
-                data: { newStatus },
+                data: {
+                    newStatus,
+                    ...(newStatus === "new Order" && orderId ? { orderId } : {}) // Добавляем orderId, если newStatus = "new Order"
+                },
                 _displayInForeground: true,
                 contentAvailable: true,
             };
@@ -36,7 +43,8 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
                     body: messageBody,
                 },
                 data: {
-                    newStatus: newStatus, // Передавайте данные как строку
+                    newStatus: newStatus.toString(), // Убеждаемся, что newStatus строка
+                    ...(newStatus === "new Order" && orderId ? { orderId: orderId.toString() } : {}) // Добавляем orderId как строку
                 },
                 android: {
                     priority: "high",
