@@ -1,6 +1,30 @@
+import AquaMarket from "../Models/AquaMarket.js";
 import User from "../Models/User.js";
 
-export const addAquaMarket = async (req, res) => {}
+export const addAquaMarket = async (req, res) => {
+    try {
+        const {franchisee, point, address} = req.body
+
+        const aquaMarket = new AquaMarket({
+            franchisee,
+            point,
+            address
+        })
+
+        await aquaMarket.save()
+
+        res.json({
+            success: true,
+            message: "Аквамаркет успешно добавлен"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
 
 
 export const updateUserData = async (req, res) => {

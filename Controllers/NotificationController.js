@@ -1,17 +1,27 @@
+import mongoose from "mongoose";
 import Notification from "../Models/Notification.js"
 
 export const getNotifications = async (req, res) => {
     try {
-        const { page } = req.body;
+        const { page, franchiseeId, role } = req.body;
         const limit = 3;
         const skip = (page - 1) * limit;
 
-        const notifications = await Notification.find().sort({ createdAt: 1 })
+        const filter = {}
+
+        if (role === "admin") {
+            const franchiseeObjectId = new mongoose.Types.ObjectId(franchiseeId); // Преобразование строки в ObjectId
+            filter.$or = [
+                { first: franchiseeObjectId },
+                { second: franchiseeObjectId }
+            ];
+        }
+
+        const notifications = await Notification.find(filter).sort({ createdAt: 1 })
         .populate("first")
         .populate("second")
         .populate("firstObject")
         .populate("secondObject")
-        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         

@@ -7,7 +7,7 @@ const Alert = React.forwardRef(function Alert(props, ref) {
 });
 
 export default function MySnackBar(props) {
-    const vertical = "bottom";
+    const vertical = "top";
     const horizontal = "center";
 
     return (

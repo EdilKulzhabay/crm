@@ -754,6 +754,15 @@ export default function ClientPage() {
                         </Li>
                     )}
                 </>
+                {userData?.role === "admin" && <>
+                    <Div />
+                    <Div>
+                        Верифицирован: {client?.verify && client?.verify?.status === "verified" ? "Да" : client?.verify?.status === "waitingVerification" ? "Ожидает верификации" : "Отказано в верификации"}
+                    </Div>
+                    <Div>
+                        <MyButton click={() => {updateClientData("verify", {status: "verified", message: "success"})}}>Верифицировать</MyButton>
+                    </Div>
+                </>}
                 {userData?.role === "superAdmin" && <>
                     <Div />
                     <Div>

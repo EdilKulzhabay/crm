@@ -61,6 +61,10 @@ const AquaMarketScheme = new mongoose.Schema(
         dispensedBottlesKol: {
             type: Number,
             default: 0
+        },
+        address: {
+            type: String,
+            default: ""
         }
     },
     {
@@ -68,4 +72,4 @@ const AquaMarketScheme = new mongoose.Schema(
     }
 )
 
-export default mongoose.Model("AquaMarket", AquaMarketScheme)
+export default mongoose.model("AquaMarket", AquaMarketScheme)
