@@ -66,10 +66,10 @@ const AButtons = [
         href: "/adminCoincidence",
         title: "Совпадение",
     },
-    {
-        href: "/adminSettings",
-        title: "Настройки",
-    },
+    // {
+    //     href: "/adminSettings",
+    //     title: "Настройки",
+    // },
 ];
 
 const CButtons = [
