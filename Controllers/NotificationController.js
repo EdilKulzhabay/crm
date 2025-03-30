@@ -4,6 +4,8 @@ import Notification from "../Models/Notification.js"
 export const getNotifications = async (req, res) => {
     try {
         const { page, franchiseeId, role } = req.body;
+        console.log("req.body = ", req.body);
+        
         const limit = 3;
         const skip = (page - 1) * limit;
 

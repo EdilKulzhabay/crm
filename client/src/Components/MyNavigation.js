@@ -62,10 +62,10 @@ const AButtons = [
         href: "/analytics",
         title: "Аналитика",
     },
-    // {
-    //     href: "/adminCoincidence",
-    //     title: "Совпадение",
-    // },
+    {
+        href: "/adminCoincidence",
+        title: "Совпадение",
+    },
     {
         href: "/adminSettings",
         title: "Настройки",
