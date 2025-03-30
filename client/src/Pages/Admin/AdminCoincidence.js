@@ -68,10 +68,10 @@ export default function SuperAdminCoincidence() {
                 console.log(e);
             });
         setLoading(false);
-    }, [page, loading, hasMore]);
+    }, [page, loading, hasMore, userData]);
 
     useEffect(() => {
-        if (userData && hasMore) {
+        if (userData?._id && userData?.role && hasMore) {
             loadMoreNotifications();
         }
     }, [hasMore, userData]);
@@ -159,11 +159,9 @@ export default function SuperAdminCoincidence() {
                                         <Li>
                                         <div className="flex items-center gap-x-2 flex-wrap">
                                                 <div>({item?.first?.fullName} и {item?.second?.fullName})</div>
-                                                <div>Совпадение по {item?.matchesType === "client" ? "Клиенту" : "Заказу"}</div>
-                                                <div>Совпадения:{" "}
-                                                    {item?.matchedField?.includes("phone") ? "номер телефона " : ""}
-                                                    {item?.matchedField?.includes("addresses") ? "адрес " : ""}
-                                                </div>
+                                                <div>Совпадение по {item?.matchesType === "client" ? "Клиентам" : "Заказу"}</div>
+                                                <div>{item?.firstObject?.fullName || item?.firstObject?.userName} и {item?.secondObject?.fullName || item?.secondObject?.userName}</div>
+                                                
                                                 {/* <LinkButton href={`/superAdminCoincidencePage/${item?._id}`}>Перейти</LinkButton>
                                                 <MyButton click={() => {
                                                     setDeleteObject(item._id)
