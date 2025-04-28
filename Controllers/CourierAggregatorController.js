@@ -22,7 +22,7 @@ const generateCode = () => {
     const characters = "0123456789";
     let randomPart = "";
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
         randomPart += characters.charAt(
             Math.floor(Math.random() * characters.length)
         );
