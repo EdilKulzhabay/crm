@@ -6,6 +6,7 @@ import Courier from "../Models/Courier.js";
 import mongoose from "mongoose";
 import { SendEmailOrder } from "./SendEmailOrder.js";
 import { pushNotification } from "../pushNotification.js";
+import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -50,7 +51,8 @@ export const addOrder = async (req, res) => {
             opForm,
             comment: comment || "",
             transferred,
-            transferredFranchise
+            transferredFranchise,
+            income: Number(products.b12 || 0) * Number(process.env.Reward12) + Number(products.b19 || 0) * Number(process.env.Reward19)
         });
 
         await order.save();
@@ -125,6 +127,16 @@ export const addOrder = async (req, res) => {
         res.json({
             success: true,
         });
+
+        // setImmediate(async () => {
+        //     const orderId = order?._id
+        //     try {
+        //       await getLocationsLogicQueue(orderId);
+        //       console.log("Обновленные локации после заказа:");
+        //     } catch (error) {
+        //       console.error("Ошибка при получении локаций:", error);
+        //     }
+        // });
     } catch (error) {
         console.log(error);
         res.status(500).json({

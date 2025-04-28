@@ -1,51 +1,29 @@
 import CourierAggregator from "../Models/CourierAggregator.js";
 import Order from "../Models/Order.js";
-import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import distributionOrdersToFreeCourier from "../utils/distributionOrdersToFreeCourier.js";
 import distributionUrgentOrder from "../utils/distributionUrgentOrder.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
+import { pushNotification } from "../pushNotification.js";
 
-export const getMeAggregate = async(req, res) => {
+export const getCourierAggregatorData = async(req, res) => {
     try {
         const id = req.userId
-        const role = req.role
 
-        console.log("we in getMeAggregate id = ", id, " role = ", role);
-        
+        const courier = await CourierAggregator.findById(id)
 
-        if (role === "user") {
-            const user = await User.findById(id)
-
-            if (!user) {
-                return res.json({
-                    success: false,
-                    message: "Не смогли найти пользователя"
-                })
-            }
-
+        if (!courier) {
             return res.json({
-                success: true,
-                userData: user,
-                role: "user"
-            })
-        } else {
-            const courier = await CourierAggregator.findById(id)
-
-            if (!courier) {
-                return res.json({
-                    success: false,
-                    message: "Не смогли найти курьера"
-                })
-            }
-
-            return res.json({
-                success: true,
-                userData: courier,
-                role: "courier"
+                success: false,
+                message: "Не смогли найти курьера"
             })
         }
+
+        return res.json({
+            success: true,
+            userData: courier._doc,
+        })
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -55,57 +33,25 @@ export const getMeAggregate = async(req, res) => {
     }
 }
 
-export const aggregatorLogin = async(req, res) => {
+export const courierAggregatorLogin = async(req, res) => {
     try {
-        const {mail, password} = req.body
+        const {email, password} = req.body
         console.log("aggregatorLogin req.body = ", req.body);
         
 
-        const courier = await CourierAggregator.findOne({mail})
+        const courier = await CourierAggregator.findOne({email})
 
         if (!courier) {
-
-            const user = await User.findOne({userName: mail})
-
-            if (!user) {
-                return res.status(404).json({ 
-                    message: "Неверный логин или пароль",
-                    success: false
-                });
-            }
-
-            const isValidPass = await bcrypt.compare(password, user.password);
-
-            if (!isValidPass) {
-                return res.status(404).json({
-                    message: "Неверный логин или пароль",
-                    success: false
-                });
-            }
-    
-            if (user.status !== "active") {
-                return res.status(404).json({
-                    message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
-                    success: false
-                });
-            }
-
-            const token = jwt.sign({ _id: user._id, role: "user" }, process.env.SecretKey, {
-                expiresIn: "30d",
-            });
-
-            const role = "user";
-
-            return res.status(200).json({
-                token, 
-                role,
-                userData: user,
-                success: true,
-                message: "Вы успешно авторизовались"
-            });
+            res.status(404).json({
+                success: false,
+                message: "Неверный логин или пароль"
+            })
         }
 
-        const isValidPass = await bcrypt.compare(password, courier.password);
+        console.log("courier = ", courier);
+        
+
+        const isValidPass = await bcrypt.compare(password, courier._doc.password);
 
         if (!isValidPass) {
             return res.status(404).json({
@@ -125,12 +71,9 @@ export const aggregatorLogin = async(req, res) => {
             expiresIn: "30d",
         });
 
-        const role = "courier";
-
         res.status(200).json({
             token, 
-            role,
-            userData: courier,
+            userData: {...courier._doc, password},
             success: true,
             message: "Вы успешно авторизовались"
         });
@@ -147,30 +90,62 @@ export const aggregatorLogin = async(req, res) => {
 
 export const courierAggregatorRegister = async (req, res) => {
     try {
-        const { mail, fullName, password, phone } = req.body;
+        const { 
+            firstName, 
+            lastName, 
+            email, 
+            phone, 
+            languages, 
+            birthDate, 
+            country, 
+            city, 
+            transport, 
+            inviteCode, 
+            termsAccepted, 
+            privacyAccepted 
+        } = req.body;
 
         console.log("courierAggregatorRegister req.body = ", req.body);
         
-
-        const candidate = await CourierAggregator.findOne({ mail });
-
-        if (candidate) {
-            return res.status(409).json({
-                message: "Пользователь с таким номером уже существует",
+        // Проверяем, приняты ли условия
+        if (!termsAccepted || !privacyAccepted) {
+            return res.status(400).json({
+                success: false,
+                message: "Необходимо принять условия использования и политику конфиденциальности"
             });
         }
 
+        const candidate = await CourierAggregator.findOne({ email });
+
+        if (candidate) {
+            return res.status(409).json({
+                success: false,
+                message: "Пользователь с такой почтой уже существует"
+            });
+        }
+
+        // Генерируем случайный пароль
+        const password = "qweasdzxc";
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(password, salt);
 
-        const doc = new CourierAggregator({
-            fullName,
+        const courier = new CourierAggregator({
+            fullName: `${firstName} ${lastName}`,
+            firstName,
+            lastName,
             password: hash,
-            mail,
-            phone
+            email,
+            phone,
+            status: "awaitingVerfication",
+            carType: transport || "A", // Если транспорт не указан, устанавливаем тип A по умолчанию
+            income: 0,
+            birthDate,
+            country,
+            city,
+            languages
         });
 
-        const courier = await doc.save();
+        await courier.save();
 
         const token = jwt.sign(
             {
@@ -184,7 +159,8 @@ export const courierAggregatorRegister = async (req, res) => {
         );
 
         res.status(200).json({ 
-            token,  
+            token,
+            userData: {...courier._doc, password},
             success: true,
             message: "Вы успешно зарегистрировались"
         });
@@ -203,7 +179,6 @@ export const updateCourierAggregatorData = async (req, res) => {
 
         console.log("we in updateCourierAggregatorData req.body = ", req.body);
         
-
         const courier = await CourierAggregator.findById(id)
 
         if (!courier) {
@@ -213,43 +188,36 @@ export const updateCourierAggregatorData = async (req, res) => {
             });
         }
 
-        if (changeField === "notificationPushTokensAdd") {
-            const token = changeData.trim(); // Убираем пробелы
-            console.log("we in if in updateCourierAggregatorData");
+        // Обработка вложенных полей
+        if (changeField.includes('.')) {
+            const fields = changeField.split('.');
+            let current = courier;
+            console.log("current = ", current);
             
-            if (!courier.notificationPushTokens.includes(token)) {
-                courier.notificationPushTokens.push(token);
-                await courier.save();
-                return res.json({
-                    success: true,
-                    message: "Токен успешно добавлен"
-                });
-            } else {
-                return res.json({
-                    success: false,
-                    message: "Токен уже существует"
-                });
+            console.log("current.orders[0] = ", current.orders[0]);
+            
+            current.orders[0].step = changeData
+            
+            // Проходим по всем уровням вложенности, кроме последнего
+            for (let i = 0; i < fields.length - 1; i++) {
+                if (!current[fields[i]]) {
+                    current[fields[i]] = {};
+                }
+                current = current[fields[i]];
             }
+            
+            // Устанавливаем значение на последнем уровне
+            current[fields[fields.length - 1]] = changeData;
+            // console.log("current = ", current);
+            
+            // console.log("current.orders[0] = ", current.orders[0]);
+            
+            // current.orders[0].step = changeData
+        } else {
+            // Обычное обновление поля
+            courier[changeField] = changeData;
         }
 
-        if (changeField === "notificationPushTokensDelete") {
-            const token = changeData.trim();
-            if (courier.notificationPushTokens.includes(token)) {
-                courier.notificationPushTokens = courier.notificationPushTokens.filter((t) => t !== token);
-                await courier.save();
-                return res.json({
-                    success: true,
-                    message: "Токен успешно удален"
-                });
-            } else {
-                return res.json({
-                    success: false,
-                    message: "Токен не найден"
-                });
-            }
-        }
-
-        courier[changeField] = changeData
         await courier.save()
 
         res.json({
@@ -279,17 +247,100 @@ export const updateCourierAggregatorData = async (req, res) => {
     }
 }
 
+export const updateCourierAggregatorDataFull = async (req, res) => {
+    try {
+        const {id, data} = req.body
+
+        console.log("we in updateCourierAggregatorDataFull req.body = ", req.body);
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.status(404).json({
+                message: "Не получилось найти курьера",
+                success: false
+            });
+        }
+
+        courier.fullName = data.firstName + " " + data.lastName
+        courier.firstName = data.firstName
+        courier.lastName = data.lastName
+        courier.birthDate = data.birthDate
+        courier.country = data.country
+        courier.city = data.city
+        courier.languages = data.languages
+        courier.phone = data.phone
+        courier.email = data.email
+        await courier.save()
+
+        res.json({
+            success: true,
+            userData: {...courier._doc},
+            message: "Успешно изменен"
+        })
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
+export const acceptOrderCourierAggregator = async (req, res) => {
+    try {
+        const id = req.userId
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.status(404).json({
+                message: "Не получилось найти курьера",
+                success: false
+            });
+        }
+
+        const {order} = req.body
+
+        console.log("order in acceptOrderCourierAggregator = ", order);
+        
+
+        const order2 = await Order.findById(order.orderId)
+
+        order2.status = "onTheWay"
+        order2.courier = courier._id
+        order2.aquaMarketAddress = order.aquaMarketAddress
+        await order2.save()
+
+        courier.orders.push({...order})
+        courier.order = order
+        await courier.save()
+        // Проверим, что заказ действительно добавляется в массив orders
+        console.log('Добавление заказа в orders:', order);
+        console.log('Текущие заказы курьера:', courier.orders);
+        
+        res.json({
+            success: true,
+            message: "Заказ принят"
+        })
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
 export const completeOrderCourierAggregator = async (req, res) => {
     try {
-        const {orderId, courierId, b12, b19, opForm} = req.body
+        const {orderId, courierId, b12, b19} = req.body
 
-        const order = await Order.findById(orderId).populate("client")
+        const order = await Order.findById(orderId)
 
         order.status = "delivered"
-        order.products.b12 = b12
-        order.products.b19 = b19
-        order.opForm = opForm
-        order.sum = order.client.price12 * b12 + order.client.price19 * price19 || order.sum
         order.courier = courierId
 
         await order.save()
@@ -297,33 +348,115 @@ export const completeOrderCourierAggregator = async (req, res) => {
         const courier = await CourierAggregator.findById(courierId)
 
         courier.orders.shift();
-        courier.balance = courier.balance + b12 * 300 + b19 * 400
+        courier.order = null
+        courier.income = courier.income + b12 * process.env.Reward12 + b19 * process.env.Reward19
 
         await courier.save();
 
         res.json({
             success: true,
-            message: "Заказ завершен"
+            message: "Заказ завершен",
+            income: b12 * process.env.Reward12 + b19 * process.env.Reward19
         })
 
         if (courier.orders.length === 0) {
             await distributionOrdersToFreeCourier(courierId)
         } else {
-            let nextOrder = await Order.findById(courier.orders[0].orderId)
+            let nextOrder = courier.orders[0]
             await pushNotification(
-                "Новый заказ",
-                `${order?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
-                courier.notificationPushTokens,
+                "New order",
+                `${nextOrder?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
+                [courier.notificationPushToken],
                 "new Order",
-                courier.orders[0].orderId
+                courier.orders[0]
             );
-            await new Promise(resolve => setTimeout(resolve, 60000));
+            await new Promise(resolve => setTimeout(resolve, 20000));
             nextOrder = await Order.findById(courier.orders[0].orderId)
             if (nextOrder.status !== "onTheWay") {
                 await distributionUrgentOrder(courier.orders[0].orderId)
             }
         }
 
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
+export const getCourierAggregatorOrdersHistory = async (req, res) => {
+    try {
+        const id = req.userId
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.status(404).json({
+                message: "Не получилось найти курьера",
+                success: false
+            });
+        }
+
+        const {startDate, endDate} = req.body
+
+        console.log("startDate = ", startDate);
+        console.log("endDate = ", endDate);
+
+        const orders = await Order.find({
+            courier: courier._id,
+            "date.d": {
+                $gte: startDate?.split('-').reverse().join('-'),
+                $lte: endDate?.split('-').reverse().join('-')
+            }
+        })  
+
+        console.log("orders = ", orders);
+
+        res.json({
+            success: true,
+            orders
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
+export const cancelOrderCourierAggregator = async (req, res) => {
+    try {
+        const id = req.userId
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.status(404).json({
+                message: "Не получилось найти курьера",
+                success: false
+            });
+        }
+
+        courier.order = null
+        courier.orders.shift()
+        await courier.save()
+
+        const {orderId, reason} = req.body
+
+        const order = await Order.findById(orderId)
+
+        order.status = "cancelled"
+        order.reason = reason
+        await order.save()
+        
+        res.json({
+            success: true,
+            message: "Заказ отменен"
+        })
+        
     } catch (error) {
         console.log(error);
         res.status(500).json({

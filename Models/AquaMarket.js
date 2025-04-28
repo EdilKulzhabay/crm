@@ -65,6 +65,10 @@ const AquaMarketScheme = new mongoose.Schema(
         address: {
             type: String,
             default: ""
+        },
+        link: {
+            type: String,
+            default: ""
         }
     },
     {

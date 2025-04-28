@@ -3,12 +3,13 @@ import User from "../Models/User.js";
 
 export const addAquaMarket = async (req, res) => {
     try {
-        const {franchisee, point, address} = req.body
+        const {franchisee, point, address, link} = req.body
 
         const aquaMarket = new AquaMarket({
             franchisee,
             point,
-            address
+            address,
+            link
         })
 
         await aquaMarket.save()
