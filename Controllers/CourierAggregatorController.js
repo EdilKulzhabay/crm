@@ -6,6 +6,94 @@ import distributionOrdersToFreeCourier from "../utils/distributionOrdersToFreeCo
 import distributionUrgentOrder from "../utils/distributionUrgentOrder.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import { pushNotification } from "../pushNotification.js";
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+    host: "smtp.mail.ru",
+    port: 465, // Или 587 для TLS
+    secure: true,
+    auth: {
+        user: "info@tibetskaya.kz",
+        pass: process.env.MailSMTP,
+    },
+});
+
+const generateCode = () => {
+    const characters = "0123456789";
+    let randomPart = "";
+
+    for (let i = 0; i < 4; i++) {
+        randomPart += characters.charAt(
+            Math.floor(Math.random() * characters.length)
+        );
+    }
+
+    return randomPart;
+};
+
+const codes = {};
+
+export const courierAggregatorSendCode = async (req, res) => {
+    const { email } = req.body;
+
+    const candidate = await CourierAggregator.findOne({ email: email?.toLowerCase() });
+
+    if (candidate) {
+        return res.status(409).json({
+            message: "Пользователь с такой почтой уже существует",
+        });
+    }
+
+    const confirmCode = generateCode();
+
+    codes[email] = confirmCode;
+
+    const mailOptions = {
+        from: "info@tibetskaya.kz",
+        to: email,
+        subject: "Подтвердждение электронной почты",
+        text: confirmCode,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+            res.status(500).json({
+                success: false,
+                message: "Ошибка при отправке письма"
+            })
+        } else {
+            console.log("Email sent: " + info.response);
+            res.status(200).json({
+                success: true,
+                message: "Письмо успешно отправлено"
+            })
+        }
+    });
+};
+
+export const courierAggregatorCodeConfirm = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        if (codes[email] === code) {
+            delete codes[email]; // Удаляем код после успешного подтверждения
+            res.status(200).json({
+                success: true,
+                message: "Код успешно подтвержден"
+            })
+        } else {
+            res.status(400).json({
+                success: false,
+                message: "Неверный код"
+            })
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
 
 export const getCourierAggregatorData = async(req, res) => {
     try {
