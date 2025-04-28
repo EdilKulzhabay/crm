@@ -80,7 +80,19 @@ const OrderSchema = new mongoose.Schema(
             type: Number,
             default: 0
         },
-        clientNotes: [String]
+        clientNotes: [String],
+        income: {
+            type: Number,
+            default: 0
+        },
+        aquaMarketAddress: {
+            type: String,
+            default: ""
+        },
+        reason: {
+            type: String,
+            default: ""
+        }
     },
     {
         timestamps: true,

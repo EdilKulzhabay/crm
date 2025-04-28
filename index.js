@@ -25,7 +25,6 @@ import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
-import { aggregatorLogin } from "./Controllers/CourierAggregatorController.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 
 mongoose
@@ -290,14 +289,20 @@ app.post("/getFranchiseeAnalytics", AnalyticsController.getFranchiseeAnalytics)
 app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
 
 /////////////COURIERAGGREGATOR
-app.get("/getMeAggregate", checkAuthAggregator, CourierAggregatorController.getMeAggregate)
-app.post("/aggregatorLogin", CourierAggregatorController.aggregatorLogin)
+app.get("/getCourierAggregatorData", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorData)
+app.post("/courierAggregatorLogin", CourierAggregatorController.courierAggregatorLogin)
 app.post("/courierAggregatorRegister", CourierAggregatorController.courierAggregatorRegister)
 app.post("/updateCourierAggregatorData", CourierAggregatorController.updateCourierAggregatorData)
+app.post("/updateCourierAggregatorDataFull", CourierAggregatorController.updateCourierAggregatorDataFull)
+app.post("/acceptOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.acceptOrderCourierAggregator)
+app.post("/completeOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.completeOrderCourierAggregator)
+app.post("/getCourierAggregatorOrdersHistory", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorOrdersHistory)
+app.post("/cancelOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.cancelOrderCourierAggregator)
 
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
 app.post("/updateUserData", AquaMarketController.updateUserData)
+
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);

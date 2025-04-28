@@ -6,13 +6,17 @@ const CourierAggregatorSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
-        mail: {
+        email: {
             type: String,
             default: ""
         },
         phone: {
             type: String,
             default: ""
+        },
+        income: {
+            type: Number,
+            default: 0
         },
         password: {
             type: String,
@@ -21,10 +25,6 @@ const CourierAggregatorSchema = new mongoose.Schema(
         onTheLine: {
             type: Boolean,
             default: false
-        },
-        order: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Order",
         },
         notAccesptedKol: {
             type: Number,
@@ -61,7 +61,8 @@ const CourierAggregatorSchema = new mongoose.Schema(
         },
         carType: {
             type: String,
-            enum: ["A", "B", "C"]
+            enum: ["A", "B", "C"],
+            default: "A"
         },
         wholeList: {
             type: Boolean,
@@ -71,9 +72,50 @@ const CourierAggregatorSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        notificationPushTokens: {
+        notificationPushToken: {
+            type: String,
+            default: ""
+        },
+        firstName: {
+            type: String,
+            default: ""
+        },
+        lastName: {
+            type: String,
+            default: ""
+        },
+        languages: {
             type: [String],
             default: []
+        },
+        birthDate: {
+            type: Date,
+            default: null
+        },
+        country: {
+            type: String,
+            default: ""
+        },
+        city: {
+            type: String,
+            default: ""
+        },
+        transport: {
+            type: String,
+            enum: ["A", "B", "C"],
+            default: "A"
+        },
+        inviteCode: {
+            type: String,
+            default: ""
+        },
+        termsAccepted: {
+            type: Boolean,
+            default: false
+        },
+        privacyAccepted: {
+            type: Boolean,
+            default: false
         },
         point: {
             lat: {
@@ -86,42 +128,136 @@ const CourierAggregatorSchema = new mongoose.Schema(
                 type: Date
             }
         },
+        order: {
+            orderId: {
+                type: String
+            },
+            status: {
+                type: String
+            },
+            products: {
+                b12: {
+                    type: Number
+                },
+                b19: {
+                    type: Number
+                }
+            },
+            sum: {
+                type: Number
+            },
+            opForm: {
+                type: String
+            },
+            comment: {
+                type: String
+            },
+            clientReview: {
+                type: String
+            },
+            date: {
+                d: {
+                    type: String
+                },
+                time: {
+                    type: String
+                }
+            },
+            clientPoints: {
+                lat: {
+                    type: Number
+                },
+                lon: {
+                    type: Number
+                }
+            },
+            clientAddress: {
+                type: String
+            },
+            clientAddressLink: {
+                type: String
+            },
+            aquaMarketPoints: {
+                lat: {
+                    type: Number
+                },
+                lon: {
+                    type: Number
+                }
+            },
+            aquaMarketAddress: {
+                type: String
+            },
+            aquaMarketAddressLink: {
+                type: String
+            },
+            step: {
+                type: String
+            },
+            income: {
+                type: Number
+            }
+        },
         orders: {
             type: [{
                 orderId: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: "Order",
-                    required: true
+                    type: String
+                },
+                products: {
+                    b12: {
+                        type: Number
+                    },
+                    b19: {
+                        type: Number
+                    }
+                },
+                sum: {
+                    type: Number
+                },
+                opForm: {
+                    type: String
+                },
+                comment: {
+                    type: String
+                },
+                clientReview: {
+                    type: String
+                },
+                date: {
+                    d: {
+                        type: String
+                    },
+                    time: {
+                        type: String
+                    }
                 },
                 clientPoints: {
                     lat: {
-                        type: Number,
-                        required: true
+                        type: Number
                     },
                     lon: {
-                        type: Number,
-                        required: true
+                        type: Number
                     }
+                },
+                clientAddress: {
+                    type: String
                 },
                 aquaMarketPoints: {
                     lat: {
-                        type: Number,
-                        required: true
+                        type: Number
                     },
                     lon: {
-                        type: Number,
-                        required: true
+                        type: Number
                     }
                 },
                 aquaMarketAddress: {
-                    type: String,
-                    required: true
+                    type: String
                 },
                 step: {
-                    type: String,
-                    enum: ["toAquaMarket", "toClient"],
-                    required: true,
-                    default: "toAquaMarket"
+                    type: String
+                },
+                income: {
+                    type: Number
                 }
             }],
             default: []
