@@ -131,6 +131,9 @@ export default function SuperAdminCoincidence() {
                     {notifications &&
                         notifications.length > 0 &&
                         notifications.map((item, index) => {
+                            if ((item?.firstObject?._id === "66f15c557a27c92d447a16a0" || item?.secondObject?._id === "66f15c557a27c92d447a16a0") && (item?.firstObject?._id === "67010493e6648af4cb0213b7" || item?.secondObject?._id === "67010493e6648af4cb0213b7") && userData._id === "67010493e6648af4cb0213b7") {
+                                return null
+                            }
                             if (notifications.length === index + 1) {
                                 return (
                                     <div key={item._id} ref={lastNotificationElementRef}>
