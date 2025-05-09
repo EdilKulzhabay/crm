@@ -128,15 +128,15 @@ export const addOrder = async (req, res) => {
             success: true,
         });
 
-        // setImmediate(async () => {
-        //     const orderId = order?._id
-        //     try {
-        //       await getLocationsLogicQueue(orderId);
-        //       console.log("Обновленные локации после заказа:");
-        //     } catch (error) {
-        //       console.error("Ошибка при получении локаций:", error);
-        //     }
-        // });
+        setImmediate(async () => {
+            const orderId = order?._id
+            try {
+              await getLocationsLogicQueue(orderId);
+              console.log("Обновленные локации после заказа:");
+            } catch (error) {
+              console.error("Ошибка при получении локаций:", error);
+            }
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({
