@@ -87,6 +87,8 @@ export const addClient = async (req, res) => {
 
             const notification = {
                 message: "Есть совпадение клиентов",
+                first: existingClients.franchisee,
+                second: franchisee
             };
 
             global.io.emit("clientMatch", notification);
@@ -451,6 +453,8 @@ export const updateClientData = async (req, res) => {
         
                 const notification = {
                     message: "Есть совпадение клиентов",
+                    first: existingClients.franchisee,
+                    second: client.franchisee
                 };
         
                 global.io.emit("clientMatch", notification);
