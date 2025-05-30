@@ -54,6 +54,8 @@ export default function ClientPage() {
     const [addPassword, setAddPassword] = useState(false)
     const [selectAddress, setSelectAddress] = useState(null)
 
+    const [needVerification, setNeedVerification] = useState(false)
+
     const closeSnack = () => {
         setOpen(false);
     };
@@ -148,6 +150,17 @@ export default function ClientPage() {
         )
             .then(({ data }) => {
                 setClient(data);
+                
+                // Проверяем координаты всех адресов
+                const hasInvalidCoordinates = data.addresses?.some(address => 
+                    !address.point?.lat || 
+                    !address.point?.lon || 
+                    address.point.lat === null || 
+                    address.point.lon === null
+                );
+                
+                setNeedVerification(hasInvalidCoordinates);
+                
                 setUpdates({
                     fullNameOpen: false,
                     fullNameStr: data?.fullName,
@@ -161,7 +174,7 @@ export default function ClientPage() {
                     price12Str: data?.price12,
                     price19Open: false,
                     price19Str: data?.price19,
-                })
+                });
             })
             .catch((e) => {
                 console.log(e);
@@ -420,6 +433,12 @@ export default function ClientPage() {
             />}
             <Container role={userData?.role}>
                 <Div>Карточка клиента</Div>
+                {userData?.role === "superAdmin" && needVerification && <>
+                    <Div />
+                    <Div>
+                        <div className="text-red font-medium text-xl">Нужна верификация, у адресов нет координат</div>
+                    </Div>
+                </>}
                 <Div />
                 {userData?.role === "superAdmin" && <>
                     <Div>Франчайзи: {client?.franchisee?.fullName}</Div>
