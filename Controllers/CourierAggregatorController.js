@@ -108,6 +108,9 @@ export const getCourierAggregatorData = async(req, res) => {
             })
         }
 
+        console.log("we in getCourierAggregatorData courier = ", courier);
+        
+
         return res.json({
             success: true,
             userData: courier._doc,
