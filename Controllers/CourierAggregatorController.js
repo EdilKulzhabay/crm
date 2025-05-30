@@ -109,6 +109,7 @@ export const getCourierAggregatorData = async(req, res) => {
         }
 
         console.log("we in getCourierAggregatorData courier = ", courier);
+        console.log("we in getCourierAggregatorData courier.doc = ", courier._doc);
         
 
         return res.json({
