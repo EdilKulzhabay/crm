@@ -332,10 +332,21 @@ async function getLocationsLogic(orderId) {
                                     $push: {
                                         orders: {
                                             orderId: order._id,
+                                            status: order.status,
+                                            products: order.products,
+                                            sum: order.sum,
+                                            opForm: order.opForm,
+                                            comment: order.comment,
+                                            clientReview: order.clientReview,
+                                            date: order.date,
                                             clientPoints: { lat: order.address.point.lat, lon: order.address.point.lon },
+                                            clientAddress: order.address.actual,
+                                            clientAddressLink: order.address.link,
                                             aquaMarketPoints: { lat: nearestCourier.aquaMarket.point.lat, lon: nearestCourier.aquaMarket.point.lon },
                                             aquaMarketAddress: nearestCourier.aquaMarket.address,
-                                            step: "toAquaMarket"
+                                            aquaMarketAddressLink: nearestCourier.aquaMarket.link,
+                                            step: "toAquaMarket",
+                                            income: order.income
                                         }
                                     }
                                 }
