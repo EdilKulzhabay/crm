@@ -212,7 +212,7 @@ app.post("/deletePromoCode", PromoCodeController.deletePromoCode);
 app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
 app.post("/getAdditionalOrders", checkAuth, OrderController.getAdditionalOrders);
 app.get("/getActiveOrdersKol", checkAuth, OrderController.getActiveOrdersKol)
-app.post("/addOrder", OrderController.addOrder);
+app.post("/addOrder", checkAuth, OrderController.addOrder);
 app.post("/addOrder2", checkAuth, checkRole(["user"]), OrderController.addOrder2);
 app.post("/getOrders", checkAuth, OrderController.getOrders);
 app.post("/getClientOrders", OrderController.getClientOrders);
