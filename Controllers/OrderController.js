@@ -10,6 +10,11 @@ import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 
 export const addOrder = async (req, res) => {
     try {
+
+        const id = req.userId;
+
+        const candidate = await User.findById(id);
+
         const { franchisee, client, address, products, courier, date, clientNotes, opForm, comment } =
             req.body;
 
@@ -128,15 +133,17 @@ export const addOrder = async (req, res) => {
             success: true,
         });
 
-        setImmediate(async () => {
-            const orderId = order?._id
-            try {
-              await getLocationsLogicQueue(orderId);
-              console.log("Обновленные локации после заказа:");
-            } catch (error) {
-              console.error("Ошибка при получении локаций:", error);
-            }
-        });
+        if (candidate.role === "superAdmin" && address.point.lat && address.point.lon) {
+            setImmediate(async () => {
+                const orderId = order?._id
+                try {
+                  await getLocationsLogicQueue(orderId);
+                  console.log("Обновленные локации после заказа:");
+                } catch (error) {
+                  console.error("Ошибка при получении локаций:", error);
+                }
+            });
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
