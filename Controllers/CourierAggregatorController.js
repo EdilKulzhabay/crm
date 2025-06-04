@@ -108,10 +108,6 @@ export const getCourierAggregatorData = async(req, res) => {
             })
         }
 
-        console.log("we in getCourierAggregatorData courier = ", courier);
-        console.log("we in getCourierAggregatorData courier.doc = ", courier._doc);
-        
-
         return res.json({
             success: true,
             userData: courier._doc,
@@ -343,8 +339,6 @@ export const updateCourierAggregatorDataFull = async (req, res) => {
     try {
         const {id, data} = req.body
 
-        console.log("we in updateCourierAggregatorDataFull req.body = ", req.body);
-
         const courier = await CourierAggregator.findById(id)
 
         if (!courier) {
@@ -401,7 +395,7 @@ export const acceptOrderCourierAggregator = async (req, res) => {
         const order2 = await Order.findById(order.orderId)
 
         order2.status = "onTheWay"
-        order2.courier = courier._id
+        order2.courierAggregator = courier._id
         order2.aquaMarketAddress = order.aquaMarketAddress
         await order2.save()
 
@@ -557,3 +551,67 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         })
     }
 }
+
+export const getCourierAggregators = async (req, res) => {
+    try {
+        const { page = 1, searchF = "", isActive } = req.body;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        let query = {};
+        if (searchF) {
+            query = {
+                $or: [
+                    { fullName: { $regex: searchF, $options: 'i' } },
+                    { phone: { $regex: searchF, $options: 'i' } }
+                ]
+            };
+        }
+
+        // Добавляем фильтрацию по статусу активности
+        if (isActive !== undefined) {
+            query.onTheLine = isActive;
+        }
+
+        const totalCouriers = await CourierAggregator.countDocuments(query);
+        const couriers = await CourierAggregator.find(query)
+            .skip(skip)
+            .limit(limit)
+            .select('fullName phone _id status onTheLine')
+            .sort({ createdAt: -1 });
+
+        res.json({
+            totalCouriers,
+            couriers
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+};
+
+export const getOrdersWithCourierAggregator = async (req, res) => {
+    try {
+        const { status } = req.body;
+        
+        let query = { courierAggregator: { $ne: null } };
+        
+        // Добавляем фильтрацию по статусу заказа
+        if (status) {
+            query.status = status;
+        }
+
+        const orders = await Order.find(query)
+            .populate('courierAggregator', 'fullName _id')
+            .select('orderNumber courierAggregator _id status')
+            .sort({ createdAt: -1 });
+
+        res.json({
+            totalOrders: orders.length,
+            orders
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+};

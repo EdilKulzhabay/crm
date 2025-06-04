@@ -55,6 +55,7 @@ import AdminCoincidence from "./Pages/Admin/AdminCoincidence";
 import DepartmentReceivingHistory from "./Pages/Department/DepartmentReceivingHistory";
 import SendNotificationToClients from "./Pages/SendNotificationToClients";
 import TransferOrders from "./Pages/TransferOrders";
+import SuperAdminAggregator from "./Pages/SuperAdmin/SuperAdminAggregator";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -108,6 +109,7 @@ export const router = createBrowserRouter([
     { path: "/superAdminClientsVerify", element: <SuperAdminClientsVerify /> },
     { path: "/pickupInfo", element: <PickupInfo /> },
     { path: "/addPickup", element: <AddPickup /> },
+    { path: "/aggregator", element: <SuperAdminAggregator /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },

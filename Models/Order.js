@@ -62,6 +62,10 @@ const OrderSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Courier",
         },
+        courierAggregator: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "CourierAggregator"
+        },
         history: [String],
         transferred: {
             type: Boolean,
