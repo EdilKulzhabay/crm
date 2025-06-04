@@ -595,8 +595,12 @@ export const getCourierAggregators = async (req, res) => {
         }
 
         // Добавляем фильтрацию по статусу активности
-        if (isActive !== undefined) {
-            query.onTheLine = isActive;
+        if (isActive === "active") {
+            query.onTheLine = true;
+        }
+
+        if (isActive === "inActive") {
+            query.onTheLine = false;
         }
 
         const totalCouriers = await CourierAggregator.countDocuments(query);
