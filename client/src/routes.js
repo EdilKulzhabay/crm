@@ -56,6 +56,7 @@ import DepartmentReceivingHistory from "./Pages/Department/DepartmentReceivingHi
 import SendNotificationToClients from "./Pages/SendNotificationToClients";
 import TransferOrders from "./Pages/TransferOrders";
 import SuperAdminAggregator from "./Pages/SuperAdmin/SuperAdminAggregator";
+import CourierAggregatorPage from "./Pages/CourierAggregatorPage";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -110,6 +111,7 @@ export const router = createBrowserRouter([
     { path: "/pickupInfo", element: <PickupInfo /> },
     { path: "/addPickup", element: <AddPickup /> },
     { path: "/aggregator", element: <SuperAdminAggregator /> },
+    { path: "/courierAggregatorPage/:id", element: <CourierAggregatorPage /> },
 
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },

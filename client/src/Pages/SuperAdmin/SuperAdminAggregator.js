@@ -71,7 +71,7 @@ export default function SuperAdminAggregator() {
             {
                 page,
                 searchF: "",
-                isActive: undefined
+                isActive: false
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -195,9 +195,9 @@ export default function SuperAdminAggregator() {
                                     </div>
                                     <LinkButton
                                         color="green"
-                                        href={`/CourierPage/${courier._id}`}
+                                        href={`/CourierAggregatorPage/${courier._id}`}
                                     >
-                                        Редактировать
+                                        Перейти
                                     </LinkButton>
                                 </div>
                             </Li>
