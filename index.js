@@ -303,6 +303,7 @@ app.post("/getCourierAggregatorOrdersHistory", checkAuthAggregator, CourierAggre
 app.post("/cancelOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.cancelOrderCourierAggregator)
 app.post("/getCourierAggregators", CourierAggregatorController.getCourierAggregators)
 app.post("/getOrdersWithCourierAggregator", CourierAggregatorController.getOrdersWithCourierAggregator)
+app.post("/getCompletedOrCancelledOrdersFromCourierAggregator", CourierAggregatorController.getCompletedOrCancelledOrdersFromCourierAggregator)
 
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
