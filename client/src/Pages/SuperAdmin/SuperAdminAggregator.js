@@ -75,7 +75,7 @@ export default function SuperAdminAggregator() {
             {
                 page,
                 searchF: "",
-                isActive: false
+                isActive
             },
             {
                 headers: { "Content-Type": "application/json" },
