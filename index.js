@@ -291,6 +291,7 @@ app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
 /////////////COURIERAGGREGATOR
 app.get("/getCourierAggregatorData", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorData)
 app.post("/courierAggregatorSendCode", CourierAggregatorController.courierAggregatorSendCode)
+app.post("/getCourierAggregatorDataForAdmin", CourierAggregatorController.getCourierAggregatorDataForAdmin)
 app.post("/courierAggregatorCodeConfirm", CourierAggregatorController.courierAggregatorCodeConfirm)
 app.post("/courierAggregatorLogin", CourierAggregatorController.courierAggregatorLogin)
 app.post("/courierAggregatorRegister", CourierAggregatorController.courierAggregatorRegister)

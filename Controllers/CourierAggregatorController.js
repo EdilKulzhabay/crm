@@ -121,6 +121,32 @@ export const getCourierAggregatorData = async(req, res) => {
     }
 }
 
+export const getCourierAggregatorDataForAdmin = async(req, res) => {
+    try {
+        const { id } = req.body
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.json({
+                success: false,
+                message: "Не смогли найти курьера"
+            })
+        }
+
+        return res.json({
+            success: true,
+            userData: courier._doc,
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
 export const courierAggregatorLogin = async(req, res) => {
     try {
         const {email, password} = req.body
@@ -577,7 +603,6 @@ export const getCourierAggregators = async (req, res) => {
         const couriers = await CourierAggregator.find(query)
             .skip(skip)
             .limit(limit)
-            .select('fullName phone _id status onTheLine')
             .sort({ createdAt: -1 });
 
         res.json({
@@ -615,3 +640,19 @@ export const getOrdersWithCourierAggregator = async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 };
+
+export const getCompletedOrCancelledOrdersFromCourierAggregator = async (req, res) => {
+    try {
+        const {courierId} = req.body
+
+        const orders = await Order.find({courierAggregator: courierId})
+
+        res.json({
+            success: true,
+            orders
+        })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+}
