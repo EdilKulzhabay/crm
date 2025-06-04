@@ -306,7 +306,7 @@ async function getLocationsLogic(orderId) {
                         aquaMarketAddress: nearestCourier.aquaMarket.address,
                         aquaMarketAddressLink: nearestCourier.aquaMarket.link,
                         step: "toAquaMarket",
-                        income: order.income
+                        income: order.sum
                     }
 
                     // Отправка уведомления курьеру
@@ -346,7 +346,7 @@ async function getLocationsLogic(orderId) {
                                             aquaMarketAddress: nearestCourier.aquaMarket.address,
                                             aquaMarketAddressLink: nearestCourier.aquaMarket.link,
                                             step: "toAquaMarket",
-                                            income: order.income
+                                            income: order.sum
                                         }
                                     }
                                 }

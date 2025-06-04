@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import { SendEmailOrder } from "./SendEmailOrder.js";
 import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
+import CourierAggregator from "../Models/CourierAggregator.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -949,19 +950,32 @@ export const deleteOrder = async (req, res) => {
                 if (order?.courier) {
                     const courierId = order.courier
                     const courier = await Courier.findById(courierId)
-                    const orders = courier.orders.filter(item => item.order !== orderId);
-                    courier.orders = orders
-                    await courier.save()
-                    const mail = courier.mail
-                    if (mail !== null && mail !== "" && mail.includes("@")) {
-                        let sendText = `По адресу ${order?.address.actual}, `
-                        if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
-                            sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                    if (courier) {
+                        const orders = courier.orders.filter(item => item.order !== orderId);
+                        courier.orders = orders
+                        await courier.save()
+                        const mail = courier.mail
+                        if (mail !== null && mail !== "" && mail.includes("@")) {
+                            let sendText = `По адресу ${order?.address.actual}, `
+                            if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
+                                sendText += `кол. 12,5 л.: ${order?.products.b12}, `
+                            }
+                            if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
+                                sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                            }
+                            SendEmailOrder(mail, "cancelled", sendText)
                         }
-                        if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
-                            sendText += `кол. 18,9 л.: ${order?.products.b19} `
+                    } else {
+                        const courieraggregator = await CourierAggregator.findById(courierId)
+                        if (courieraggregator) {
+                            const orders = courieraggregator.orders.filter(item => item.orderId !== orderId);
+                            if (courieraggregator.order._id === orderId) {
+                                courieraggregator.order = null
+                            }
+                            courieraggregator.orders = orders
+                            await courieraggregator.save()
+                            
                         }
-                        SendEmailOrder(mail, "cancelled", sendText)
                     }
                 }
                 if (order?.franchisee) {
