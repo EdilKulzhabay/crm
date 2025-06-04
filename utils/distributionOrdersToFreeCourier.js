@@ -171,7 +171,16 @@ async function distributionOrdersToFreeCourier(courierId) {
             return false
         }
 
-        let freeCourier = await CourierAggregator.findById(courierId)
+        let freeCourier = await CourierAggregator.findOne({ 
+            _id: courierId,
+            onTheLine: true 
+        });
+        
+        if (!freeCourier) {
+            console.log("Курьер не активен");
+            return false;
+        }
+
         if (freeCourier.soldBootles && freeCourier.soldBootles.date) {
             const today = new Date()
             const soldDate = new Date(freeCourier.soldBootles.date || today);

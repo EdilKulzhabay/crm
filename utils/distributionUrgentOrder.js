@@ -6,18 +6,21 @@ async function distributionUrgentOrder(orderId) {
     try {
         const result = await CourierAggregator.aggregate([
             {
+                $match: {
+                    onTheLine: true
+                }
+            },
+            {
                 $unwind: {
                     path: "$orders",
-                    includeArrayIndex: "arrayIndex" // Добавляем поле с индексом элемента
+                    includeArrayIndex: "arrayIndex"
                 }
             },
-            // Фильтруем только элементы с индексом > 1
             {
                 $match: {
-                    "arrayIndex": { $gt: 1 } // Индекс больше 1 (т.е. третий элемент и далее)
+                    "arrayIndex": { $gt: 1 }
                 }
             },
-            // Проецируем нужные поля
             {
                 $project: {
                     orderId: "$orders.orderId"
