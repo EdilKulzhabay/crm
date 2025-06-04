@@ -116,13 +116,13 @@ export default function CourierAggregatorPage() {
             {courier?.orders?.length > 0 ? (
                 courier?.orders.map(order => (
                     <Li key={order._id}>
-                        <div className="flex flex-col gap-y-2">
+                        {order.orderId !== courier?.order?.orderid && <div className="flex flex-col gap-y-2">
                             <div>Заказ #{order?.clientAddress}</div>
                             <LinkButton
                                 color="green"
                                 href={`/OrderPage/${order?.orderId}`}
                             >Перейти на заказ</LinkButton>
-                        </div>
+                        </div>}
                     </Li>
                 ))
             ) : (
@@ -135,7 +135,7 @@ export default function CourierAggregatorPage() {
                 completedOrders.map(order => (
                     <Li key={order._id}>
                         <div className="flex items-center gap-x-2 flex-wrap">
-                            <div>Заказ #{order?.clientAddress}</div>
+                            <div>Заказ #{order?.address.actual}</div>
                             <div>|</div>
                             
                             <div className={clsx("", {
@@ -146,7 +146,7 @@ export default function CourierAggregatorPage() {
                             </div>
                             <LinkButton
                                 color="green"
-                                href={`/OrderPage/${order?.orderId}`}
+                                href={`/OrderPage/${order?._id}`}
                             >Перейти на заказ</LinkButton>
                             {order?.reason && (
                                 <>
