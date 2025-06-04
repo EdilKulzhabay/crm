@@ -22,7 +22,7 @@ export default function SuperAdminAggregator() {
     const [searchF, setSearchF] = useState("")
     const [totalCouriers, setTotalCouriers] = useState(0)
     const [totalOrders, setTotalOrders] = useState(0)
-    const [isActive, setIsActive] = useState(undefined)
+    const [isActive, setIsActive] = useState("all")
     const [orderStatus, setOrderStatus] = useState("")
 
     const handleSearchF = (e) => {
@@ -42,8 +42,12 @@ export default function SuperAdminAggregator() {
         }
         
         // Фильтрация по активности
-        if (active !== undefined) {
-            filtered = filtered.filter(courier => courier.onTheLine === active)
+        if (isActive === "active") {
+            filtered = filtered.filter(courier => courier.onTheLine === true)
+        }
+
+        if (isActive === "inActive") {
+            filtered = filtered.filter(courier => courier.onTheLine === false)
         }
         
         setCouriers(filtered)
@@ -122,7 +126,7 @@ export default function SuperAdminAggregator() {
 
     useEffect(() => {
         filterCouriers()
-    }, [isActive])
+    }, [isActive, allCouriers])
 
     useEffect(() => {
         filterOrders()
@@ -169,13 +173,16 @@ export default function SuperAdminAggregator() {
                 </MyButton>
             </div>
         </Div>
+        <Div>
+            <MyButton click={() => {setIsActive("all")}}>Все</MyButton>
+            <MyButton click={() => {setIsActive("inActive")}}>Неактивные</MyButton>
+            <MyButton click={() => {setIsActive("active")}}>Aктивные</MyButton>
+        </Div>
 
         <Div />
         <Div>
             Количество курьеров: <Info>{totalCouriers}</Info>
         </Div>
-
-        <Div />
         <div className="max-h-[400px] overflow-scroll bg-black">
             {couriers.map((courier, index) => {
                 if (couriers.length === index + 1) {
@@ -220,9 +227,9 @@ export default function SuperAdminAggregator() {
                                     </div>
                                     <LinkButton
                                         color="green"
-                                        href={`/CourierPage/${courier._id}`}
+                                        href={`/CourierAggregatorPage/${courier._id}`}
                                     >
-                                        Редактировать
+                                        Перейти
                                     </LinkButton>
                                 </div>
                             </Li>
@@ -234,7 +241,6 @@ export default function SuperAdminAggregator() {
 
         <Div />
         <Div>Заказы с курьерами-агрегаторами</Div>
-        <Div />
         <Div>
             <div className="flex items-center flex-wrap gap-x-4">
                 <MyButton click={() => setOrderStatus("")}>
@@ -264,12 +270,9 @@ export default function SuperAdminAggregator() {
                 </MyButton>
             </div>
         </Div>
-        <Div />
         <Div>
             Количество заказов: <Info>{totalOrders}</Info>
         </Div>
-
-        <Div />
         <div className="max-h-[400px] overflow-scroll bg-black">
             {orders.map((order) => (
                 <div key={order._id}>
@@ -301,5 +304,7 @@ export default function SuperAdminAggregator() {
                 </div>
             ))}
         </div>
+
+        <Div />
     </Container>
 }

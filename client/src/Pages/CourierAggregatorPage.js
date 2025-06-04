@@ -51,6 +51,7 @@ export default function CourierAggregatorPage() {
     useEffect(() => {
         loadCourierData();
         getCompletedOrCancelledOrdersFromCourierAggregator()
+        setLoading(false)
     }, [id]);
 
     if (loading) {
@@ -92,7 +93,6 @@ export default function CourierAggregatorPage() {
 
             <Div />
             <Div className="text-xl font-bold">Активный заказ</Div>
-            <Div />
             {courier?.order ? (
                 <Li>
                     <div className="flex flex-col gap-y-2">
@@ -113,7 +113,6 @@ export default function CourierAggregatorPage() {
 
             <Div />
             <Div className="text-xl font-bold">Заказы в ожидании</Div>
-            <Div />
             {courier?.orders?.length > 0 ? (
                 courier?.orders.map(order => (
                     <Li key={order._id}>
@@ -132,7 +131,6 @@ export default function CourierAggregatorPage() {
 
             <Div />
             <Div className="text-xl font-bold">Завершенные заказы</Div>
-            <Div />
             {completedOrders.length > 0 ? (
                 completedOrders.map(order => (
                     <Li key={order._id}>
@@ -162,6 +160,7 @@ export default function CourierAggregatorPage() {
             ) : (
                 <Div>Нет завершенных заказов</Div>
             )}
+            <Div />
         </Container>
     );
 }
