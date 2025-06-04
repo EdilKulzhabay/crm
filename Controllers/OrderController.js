@@ -58,7 +58,8 @@ export const addOrder = async (req, res) => {
             comment: comment || "",
             transferred,
             transferredFranchise,
-            income: Number(products.b12 || 0) * Number(process.env.Reward12) + Number(products.b19 || 0) * Number(process.env.Reward19)
+            // income: Number(products.b12 || 0) * Number(process.env.Reward12) + Number(products.b19 || 0) * Number(process.env.Reward19)
+            income: sum
         });
 
         await order.save();
