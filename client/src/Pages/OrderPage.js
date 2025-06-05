@@ -392,6 +392,15 @@ export default function OrderPage() {
                 }
 
                 <Div />
+
+                {userData?.role === "superAdmin" && <>
+                    <Div>
+                        <div className="flex items-center gap-x-3">
+                            <div>Для агрегатора?</div>
+                            <MyButton click={() => {updateOrder("forAggregator", true)}}>Да</MyButton>
+                        </div>
+                    </Div>
+                </>}
                 <Div>
                     <div>Форма оплаты: <span className="text-yellow-400">{order?.opForm === "fakt" && "Нал_Карта_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "В долг"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "Cмешанно"}</span></div>
                     {userData?.role === "superAdmin" && <MyButton click={() => {setChangeOpForm(order?.opForm)}}>Изменить</MyButton>}

@@ -163,12 +163,20 @@ async function distributionOrdersToFreeCourier(courierId) {
 
         // Если нужно получить сами заказы из коллекции Order
         const orderIds = result.map(item => item.orderId);
-        const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
+        const courierAggregatorOrders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 });
+        const aggregatorOrders = await Order.find({
+            forAggregator: true,
+            courierAggregator: null,
+            status: "awaitingOrder"
+        }).sort({ createdAt: 1 });
+        
+        const orders = [...courierAggregatorOrders, ...aggregatorOrders].sort((a, b) => 
+            new Date(a.createdAt) - new Date(b.createdAt)
+        );
 
         if (!orders || orders?.length === 0) {
             console.log("нет активных заказов");
-            
-            return false
+            return false;
         }
 
         let freeCourier = await CourierAggregator.findOne({ 
