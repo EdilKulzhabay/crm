@@ -326,6 +326,13 @@ async function getLocationsLogic(orderId) {
                     // Обновление списка заказов курьера
                     if (nearestCourier.orders.length > 0) {
                         try {
+                            // Сначала удаляем заказ у всех курьеров
+                            await CourierAggregator.updateMany(
+                                { "orders.orderId": order._id },
+                                { $pull: { orders: { orderId: order._id } } }
+                            );
+
+                            // Затем добавляем заказ новому курьеру
                             await CourierAggregator.updateOne(
                                 { _id: nearestCourier._id },
                                 {
@@ -358,7 +365,7 @@ async function getLocationsLogic(orderId) {
                         break;
                     }
 
-                    await new Promise(resolve => setTimeout(resolve, 60000));
+                    await new Promise(resolve => setTimeout(resolve, 20000));
                     order = await Order.findById(orderId);
 
                     if (order?.status === "onTheWay") {
