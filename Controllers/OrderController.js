@@ -557,6 +557,11 @@ export const updateOrder = async (req, res) => {
             await order.save()
         }
 
+        if (change === "forAggregator") {
+            order.forAggregator = changeData
+            await order.save()
+        }
+
         res.json({
             success: true,
             message: "Заказ успешно изменен",
