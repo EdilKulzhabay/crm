@@ -461,8 +461,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
 
         courier.orders.shift();
         courier.order = null
-        // courier.income = courier.income + b12 * process.env.Reward12 + b19 * process.env.Reward19
-        courier.income = order.sum
+        courier.income = courier.income + order.sum
 
         await courier.save();
 
