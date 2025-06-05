@@ -189,7 +189,7 @@ async function getLocationsLogic(orderId) {
         console.log("Заказ найден:", order);
 
         // Проверка и получение активных курьеров
-        const couriers = await CourierAggregator.find({ onTheLine: true });
+        const couriers = await CourierAggregator.find({ onTheLine: true, order: null });
         if (couriers.length === 0) {
             console.error("Ошибка: Нет активных курьеров");
             return;
