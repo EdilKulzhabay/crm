@@ -96,6 +96,10 @@ const OrderSchema = new mongoose.Schema(
         reason: {
             type: String,
             default: ""
+        },
+        forAggregator: {
+            type: Boolean,
+            default: false
         }
     },
     {
