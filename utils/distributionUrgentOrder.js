@@ -37,19 +37,6 @@ async function distributionUrgentOrder(orderId) {
             
             return
         }
-
-        const updateResult = await CourierAggregator.updateMany(
-            { "orders.orderId": { $in: orderIds } }, // Находим курьеров, у которых есть эти заказы
-            { $pull: { orders: { orderId: { $in: orderIds } } } } // Удаляем заказы из массива
-        );
-
-        const order = await Order.findById(orderId)
-        orders.unshift(order)
-
-        for (const order of orders) {
-            await getLocationsLogicQueue(order._id);
-        }
-
     } catch {
         console.log("Волшебная ошибка");
         return
