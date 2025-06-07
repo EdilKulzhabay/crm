@@ -174,7 +174,6 @@ async function distributionOrdersToFreeCourier(courierId) {
         const aggregatorOrders = await Order.find({
             forAggregator: true,
             courierAggregator: null,
-            status: "awaitingOrder"
         }).sort({ createdAt: 1 });
         
         const orders = [...courierAggregatorOrders, ...aggregatorOrders].sort((a, b) => 
@@ -233,7 +232,15 @@ async function distributionOrdersToFreeCourier(courierId) {
             console.log("не знаем где находится курьер 2222");
             return
         }
-        const nearestCourier = await findShortestPath(freeCourier, orders[0]);
+
+        const pathInfo = await findShortestPath(freeCourier, orders[0]);
+
+        const nearestCourier = {
+            ...freeCourier.toObject(), 
+            totalDistance: pathInfo.distance,
+            path: pathInfo.path,
+            aquaMarket: pathInfo.aquaMarket
+        }
 
         const sendOrder = {
             orderId: order[0]._id,
@@ -268,6 +275,8 @@ async function distributionOrdersToFreeCourier(courierId) {
 
         if (order.status !== "onTheWay") {
             console.log("Курьер не принял заказ");
+            order.courierAggregator = null
+            await order.save()
             return
         }
 
@@ -286,14 +295,9 @@ async function distributionOrdersToFreeCourier(courierId) {
                     } 
                 }
             );
+            order.courierAggregator = freeCourier._id
+            await order.save()
         }
-
-        await CourierAggregator.updateMany(
-            { "orders.orderId": { $in: orderIds } }, // Находим курьеров, у которых есть эти заказы
-            { $pull: { orders: { orderId: { $in: orderIds } } } } // Удаляем заказы из массива
-        );
-
-        
 
         // for (const order of orders) {
         //     await getLocationsLogicQueue(order._id);
