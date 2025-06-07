@@ -209,17 +209,17 @@ async function getLocationsLogic(orderId) {
 
         const rejectedCourierIds = new Set();
 
+        try {
+            await pushNotification("getLocation", "getLocation", tokens, "getLocation");
+            console.log("Уведомление о местоположении отправлено");
+        } catch (pushErr) {
+            console.error("Ошибка при отправке уведомления о местоположении:", pushErr);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 10000));
+
         while (order?.status !== "onTheWay") {
             try {
-                // Отправка уведомления о местоположении
-                try {
-                    await pushNotification("getLocation", "getLocation", tokens, "getLocation");
-                    console.log("Уведомление о местоположении отправлено");
-                } catch (pushErr) {
-                    console.error("Ошибка при отправке уведомления о местоположении:", pushErr);
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 10000));
 
                 // Получение актуальных координат курьеров
                 const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
@@ -235,21 +235,21 @@ async function getLocationsLogic(orderId) {
                 console.log("Курьеры с актуальными координатами:", updatedCouriers.length);
 
                 // Обновление статистики продаж
-                for (const courier of updatedCouriers) {
-                    if (courier.soldBootles && courier.soldBootles.date) {
-                        const today = new Date();
-                        const soldDate = new Date(courier.soldBootles.date);
-                        today.setHours(0, 0, 0, 0);
-                        soldDate.setHours(0, 0, 0, 0);
+                // for (const courier of updatedCouriers) {
+                //     if (courier.soldBootles && courier.soldBootles.date) {
+                //         const today = new Date();
+                //         const soldDate = new Date(courier.soldBootles.date);
+                //         today.setHours(0, 0, 0, 0);
+                //         soldDate.setHours(0, 0, 0, 0);
 
-                        if (soldDate.getTime() !== today.getTime()) {
-                            courier.soldBootles.kol = 0;
-                            courier.soldBootles.date = today;
-                            await courier.save();
-                            console.log(`Обновлена статистика для курьера ${courier.fullName}`);
-                        }
-                    }
-                }
+                //         if (soldDate.getTime() !== today.getTime()) {
+                //             courier.soldBootles.kol = 0;
+                //             courier.soldBootles.date = today;
+                //             await courier.save();
+                //             console.log(`Обновлена статистика для курьера ${courier.fullName}`);
+                //         }
+                //     }
+                // }
 
                 // Поиск оптимального курьера
                 const couriersWithPath = await Promise.all(
@@ -290,37 +290,40 @@ async function getLocationsLogic(orderId) {
                     const nearestCourier = couriersWithPath[0];
                     console.log("Выбран ближайший курьер:", nearestCourier.fullName);
 
-                    const sendOrder = {
-                        orderId: order._id,
-                        status: order.status,
-                        products: order.products,
-                        sum: order.sum,
-                        opForm: order.opForm,
-                        comment: order.comment,
-                        clientReview: order.clientReview,
-                        date: order.date,
-                        clientPoints: { lat: order.address.point.lat, lon: order.address.point.lon },
-                        clientAddress: order.address.actual,
-                        clientAddressLink: order.address.link,
-                        aquaMarketPoints: { lat: nearestCourier.aquaMarket.point.lat, lon: nearestCourier.aquaMarket.point.lon },
-                        aquaMarketAddress: nearestCourier.aquaMarket.address,
-                        aquaMarketAddressLink: nearestCourier.aquaMarket.link,
-                        step: "toAquaMarket",
-                        income: order.sum
-                    }
+                    if (nearestCourier.orders.length === 0) {
 
-                    // Отправка уведомления курьеру
-                    try {
-                        await pushNotification(
-                            "newOrder",
-                            `${order?.products?.b19} бутылей. Забрать из аквамаркета: ${nearestCourier.aquaMarket.address}`,
-                            [nearestCourier.notificationPushToken],
-                            "newOrder",
-                            sendOrder
-                        );
-                        console.log("Уведомление о новом заказе отправлено курьеру");
-                    } catch (error) {
-                        console.error("Ошибка при отправке уведомления о заказе:", error);
+                        const sendOrder = {
+                            orderId: order._id,
+                            status: order.status,
+                            products: order.products,
+                            sum: order.sum,
+                            opForm: order.opForm,
+                            comment: order.comment,
+                            clientReview: order.clientReview,
+                            date: order.date,
+                            clientPoints: { lat: order.address.point.lat, lon: order.address.point.lon },
+                            clientAddress: order.address.actual,
+                            clientAddressLink: order.address.link,
+                            aquaMarketPoints: { lat: nearestCourier.aquaMarket.point.lat, lon: nearestCourier.aquaMarket.point.lon },
+                            aquaMarketAddress: nearestCourier.aquaMarket.address,
+                            aquaMarketAddressLink: nearestCourier.aquaMarket.link,
+                            step: "toAquaMarket",
+                            income: order.sum
+                        }
+
+                        // Отправка уведомления курьеру
+                        try {
+                            await pushNotification(
+                                "newOrder",
+                                `${order?.products?.b19} бутылей. Забрать из аквамаркета: ${nearestCourier.aquaMarket.address}`,
+                                [nearestCourier.notificationPushToken],
+                                "newOrder",
+                                sendOrder
+                            );
+                            console.log("Уведомление о новом заказе отправлено курьеру");
+                        } catch (error) {
+                            console.error("Ошибка при отправке уведомления о заказе:", error);
+                        }
                     }
 
                     // Обновление списка заказов курьера
@@ -358,6 +361,8 @@ async function getLocationsLogic(orderId) {
                                     }
                                 }
                             );
+
+                            await Order.updateOne({_id: order._id}, {$set: {courierAggregator: nearestCourier._id}})
                             console.log("Список заказов курьера обновлен");
                         } catch (error) {
                             console.error("Ошибка при обновлении списка заказов:", error);
@@ -368,12 +373,14 @@ async function getLocationsLogic(orderId) {
                     await new Promise(resolve => setTimeout(resolve, 20000));
                     order = await Order.findById(orderId);
 
-                    if (order?.status === "onTheWay") {
-                        try {
-                            console.log("Заказ успешно назначен курьеру");
-                        } catch (error) {
-                            console.error("Ошибка при назначении заказа курьеру:", error);
-                        }
+                    if (order?.status === "onTheWay" && order?.courierAggregator !== null) {
+                        await Order.updateOne({_id: order._id}, {$set: {courierAggregator: nearestCourier._id}})
+                        console.log("Заказ успешно назначен курьеру");
+                        break;
+                    }
+
+                    if (order?.courierAggregator !== null) {
+                        console.log("Заказ успешно назначен курьеру");
                         break;
                     } else {
                         rejectedCourierIds.add(nearestCourier._id.toString());
@@ -388,7 +395,7 @@ async function getLocationsLogic(orderId) {
             }
         }
 
-        if (order?.status === "onTheWay") {
+        if (order?.status === "onTheWay" || order?.courierAggregator !== null) {
             console.log("Заказ успешно распределен");
             return;
         } else {
