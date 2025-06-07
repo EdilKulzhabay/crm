@@ -476,6 +476,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
             await distributionOrdersToFreeCourier(courierId)
         } else {
             let nextOrder = courier.orders[0]
+            console.log("CourierAggregatorController 479, order = ", nextOrder);
             await pushNotification(
                 "New order",
                 `${nextOrder?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
@@ -483,6 +484,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 "new Order",
                 courier.orders[0]
             );
+            console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
+            
             await new Promise(resolve => setTimeout(resolve, 20000));
             nextOrder = await Order.findById(courier.orders[0].orderId)
             if (nextOrder.status !== "onTheWay") {

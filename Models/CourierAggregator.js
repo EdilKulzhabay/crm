@@ -203,6 +203,9 @@ const CourierAggregatorSchema = new mongoose.Schema(
                 orderId: {
                     type: String
                 },
+                status: {
+                    type: String
+                },
                 products: {
                     b12: {
                         type: Number
@@ -242,6 +245,9 @@ const CourierAggregatorSchema = new mongoose.Schema(
                 clientAddress: {
                     type: String
                 },
+                clientAddressLink: {
+                    type: String
+                },
                 aquaMarketPoints: {
                     lat: {
                         type: Number
@@ -251,6 +257,9 @@ const CourierAggregatorSchema = new mongoose.Schema(
                     }
                 },
                 aquaMarketAddress: {
+                    type: String
+                },
+                aquaMarketAddressLink: {
                     type: String
                 },
                 step: {
