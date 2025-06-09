@@ -452,18 +452,24 @@ export const completeOrderCourierAggregator = async (req, res) => {
 
         const order = await Order.findById(orderId)
 
-        order.status = "delivered"
-        order.courier = courierId
-
-        await order.save()
+        await Order.updateOne({_id: orderId}, { 
+            $set: {
+                status: "delivered",
+                courierAggregator: courierId
+            } 
+        })
+        
+        await CourierAggregator.updateOne({_id: courierId}, {
+            $pull: {
+                orders: { orderId }
+            },
+            $set: {
+                order: null,
+                income: income + order.sum
+            }
+        })
 
         const courier = await CourierAggregator.findById(courierId)
-
-        courier.orders.shift();
-        courier.order = null
-        courier.income = courier.income + order.sum
-
-        await courier.save();
 
         res.json({
             success: true,
