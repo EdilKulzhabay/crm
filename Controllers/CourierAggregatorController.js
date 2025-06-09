@@ -478,10 +478,10 @@ export const completeOrderCourierAggregator = async (req, res) => {
             let nextOrder = courier.orders[0]
             console.log("CourierAggregatorController 479, order = ", nextOrder);
             await pushNotification(
-                "new order",
+                "newOrder",
                 `${nextOrder?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
                 [courier.notificationPushToken],
-                "new Order",
+                "newOrder",
                 courier.orders[0]
             );
             console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
