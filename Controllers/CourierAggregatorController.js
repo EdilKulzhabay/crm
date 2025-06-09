@@ -465,7 +465,9 @@ export const completeOrderCourierAggregator = async (req, res) => {
             },
             $set: {
                 order: null,
-                income: income + order.sum
+            },
+            $inc: {
+                income: order.sum // прибавит значение order.sum
             }
         })
 
@@ -481,6 +483,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         if (courier.orders.length === 0) {
             await distributionOrdersToFreeCourier(courierId)
         } else {
+            await new Promise(resolve => setTimeout(resolve, 10000));
             let nextOrder = courier.orders[0]
             console.log("CourierAggregatorController 479, order = ", nextOrder);
             await pushNotification(
