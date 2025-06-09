@@ -303,7 +303,7 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         // Обработка вложенных полей
-        if (changeField.includes('.')) {
+        if (changeField.includes('.') && !changeField.includes("products")) {
             const fields = changeField.split('.');
             let current = courier;
             console.log("current = ", current);
