@@ -329,7 +329,9 @@ export const updateCourierAggregatorData = async (req, res) => {
             // current.orders[0].step = changeData
         } else {
             // Обычное обновление поля
-            courier[changeField] = changeData;
+            await CourierAggregator.updateOne({_id: id}, { $set: {
+                [changeField]: changeData
+            } })
         }
 
         await courier.save()
