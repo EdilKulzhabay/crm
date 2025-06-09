@@ -450,14 +450,17 @@ export const acceptOrderCourierAggregator = async (req, res) => {
 
 export const completeOrderCourierAggregator = async (req, res) => {
     try {
-        const {orderId, courierId, b12, b19} = req.body
+        const {orderId, courierId} = req.body
 
         const order = await Order.findById(orderId)
+
+        const courier1 = await CourierAggregator.findById(courierId)
 
         await Order.updateOne({_id: orderId}, { 
             $set: {
                 status: "delivered",
-                courierAggregator: courierId
+                courierAggregator: courierId,
+                products: courier1.order.products
             } 
         })
         
