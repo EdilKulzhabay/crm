@@ -594,26 +594,62 @@ export const cancelOrderCourierAggregator = async (req, res) => {
     try {
         const id = req.userId
 
-        const courier = await CourierAggregator.findById(id)
-
-        if (!courier) {
-            return res.status(404).json({
-                message: "Не получилось найти курьера",
-                success: false
-            });
-        }
-
-        courier.order = null
-        courier.orders.shift()
-        await courier.save()
-
         const {orderId, reason} = req.body
 
-        const order = await Order.findById(orderId)
+        await CourierAggregator.updateOne(
+            { _id: "id" },
+            { $pull: { orders: { orderId: orderId } } },
+            { $set: {order: null} }
+        );
 
-        order.status = "cancelled"
-        order.reason = reason
-        await order.save()
+        await Order.updateOne(
+            { _id: orderId },
+            { $set: {
+                status: "cancelled",
+                reason: reason
+            }}
+        )
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (courier.orders.length > 0) {
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            let nextOrder = courier.orders[0]
+            console.log("CourierAggregatorController 479, order = ", nextOrder);
+            await pushNotification(
+                "newOrder",
+                `${nextOrder?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
+                [courier.notificationPushToken],
+                "newOrder",
+                courier.orders[0]
+            );
+            console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
+            
+            await new Promise(resolve => setTimeout(resolve, 40000));
+            const currentOrder = await Order.findById(courier.orders[0].orderId)
+            if (currentOrder.status !== "onTheWay") {
+                // Получаем все ID заказов курьера
+                const orderIds = courier.orders.map(order => order.orderId);
+                
+                // Удаляем все заказы у курьера
+                await CourierAggregator.updateOne(
+                    { _id: id },
+                    { 
+                        $set: { 
+                            orders: [],
+                            order: null 
+                        }
+                    }
+                );
+
+                // Отправляем все заказы на переназначение
+                for (const orderId of orderIds) {
+                    await getLocationsLogicQueue(orderId);
+                }
+            }
+        } else {
+            await distributionOrdersToFreeCourier(id)
+        }
         
         res.json({
             success: true,
