@@ -225,6 +225,7 @@ async function getLocationsLogic(orderId) {
                 // Получение актуальных координат курьеров
                 const twoMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
                 const updatedCouriers = await CourierAggregator.find({
+                    onTheLine: true,
                     "point.timestamp": { $gte: twoMinutesAgo },
                     _id: { $nin: Array.from(rejectedCourierIds) }
                 });
