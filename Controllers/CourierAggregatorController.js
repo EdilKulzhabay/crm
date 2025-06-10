@@ -747,3 +747,10 @@ export const getCompletedOrCancelledOrdersFromCourierAggregator = async (req, re
         res.status(500).json({ message: "Ошибка сервера" });
     }
 }
+
+// db.courieraggregators.updateOne(
+//     { email: "Tibetwater@inbox.ru" },
+//     { 
+//       $pull: { orders: { orderId: "68480f47a558b7df88e00886" } },
+//     },
+//   );
