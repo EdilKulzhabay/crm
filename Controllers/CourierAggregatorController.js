@@ -500,9 +500,9 @@ export const completeOrderCourierAggregator = async (req, res) => {
             );
             console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
             
-            await new Promise(resolve => setTimeout(resolve, 20000));
-            nextOrder = await Order.findById(courier.orders[0].orderId)
-            if (nextOrder.status !== "onTheWay") {
+            await new Promise(resolve => setTimeout(resolve, 30000));
+            const currentOrder = await Order.findById(courier.orders[0].orderId)
+            if (currentOrder.status !== "onTheWay") {
                 await distributionUrgentOrder(courier.orders[0].orderId)
             }
         }
