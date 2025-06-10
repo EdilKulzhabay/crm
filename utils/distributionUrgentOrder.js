@@ -29,6 +29,18 @@ async function distributionUrgentOrder(orderId) {
         ]);
 
         const orderIds = result.map(item => item.orderId);
+
+        await CourierAggregator.updateMany(
+            {},
+            {
+                $pull: {
+                    orders: {
+                        orderId: { $in: orderIds }
+                    }
+                }
+            }
+        );
+
         const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
 
         if (!orders || orders?.length === 0) {
