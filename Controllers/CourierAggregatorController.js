@@ -415,24 +415,40 @@ export const acceptOrderCourierAggregator = async (req, res) => {
             });
         }
 
-        const {order} = req.body
+        const { order } = req.body
 
         console.log("order in acceptOrderCourierAggregator = ", order);
+
+        await Order.updateOne({_id: order.orderId}, { 
+            $set: {
+                status: "onTheWay",
+                courierAggregator: courier._id,
+                aquaMarketAddress: order.aquaMarketAddress
+            } 
+        })
+
+        // Проверяем, нет ли уже этого заказа в массиве orders
+        const orderExists = courier.orders.some(existingOrder => existingOrder.orderId === order.orderId);
         
-
-        const order2 = await Order.findById(order.orderId)
-
-        order2.status = "onTheWay"
-        order2.courierAggregator = courier._id
-        order2.aquaMarketAddress = order.aquaMarketAddress
-        await order2.save()
-
-        courier.orders.push({...order})
-        courier.order = order
-        await courier.save()
-        // Проверим, что заказ действительно добавляется в массив orders
-        console.log('Добавление заказа в orders:', order);
-        console.log('Текущие заказы курьера:', courier.orders);
+        if (!orderExists) {
+            await CourierAggregator.updateOne({_id: id}, {
+                $set: {
+                    order: order
+                },
+                $push: {
+                    orders: order
+                }
+            })
+            // Проверим, что заказ действительно добавляется в массив orders
+            console.log('Добавление заказа в orders:', order);
+        } else {
+            await CourierAggregator.updateOne({_id: id}, {
+                $set: {
+                    order: order
+                }
+            })
+            console.log('Заказ уже существует в массиве orders курьера');
+        }
         
         res.json({
             success: true,
