@@ -180,6 +180,19 @@ async function distributionOrdersToFreeCourier(courierId) {
             new Date(a.createdAt) - new Date(b.createdAt)
         );
 
+        await CourierAggregator.updateMany(
+            {},
+            {
+                $pull: {
+                    orders: {
+                        orderId: { $in: orderIds }
+                    }
+                }
+            }
+        );
+
+        // Отправляем заказы на переназначение через getLocationsLogicQueue
+
         if (!orders || orders?.length === 0) {
             console.log("нет активных заказов");
             return false;
@@ -275,8 +288,10 @@ async function distributionOrdersToFreeCourier(courierId) {
 
         if (order.status !== "onTheWay") {
             console.log("Курьер не принял заказ");
-            order.courierAggregator = null
-            await order.save()
+            await Order.updateOne({_id: orders[0]._id}, { $set: { courierAggregator: null } })
+            for (const orderId of orderIds) {
+                await getLocationsLogicQueue(orderId);
+            }
             return
         }
 
@@ -295,8 +310,12 @@ async function distributionOrdersToFreeCourier(courierId) {
                     } 
                 }
             );
-            order.courierAggregator = freeCourier._id
-            await order.save()
+            await Order.updateOne({_id: orders[0]._id}, { $set: { courierAggregator: freeCourier._id } })
+            for (const orderId of orderIds) {
+                if (orderId !== orders[0]._id) {
+                    await getLocationsLogicQueue(orderId);
+                }
+            }
         }
 
         // for (const order of orders) {
