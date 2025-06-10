@@ -282,7 +282,7 @@ async function distributionOrdersToFreeCourier(courierId) {
             sendOrder
         );
 
-        await new Promise(resolve => setTimeout(resolve, 20000));
+        await new Promise(resolve => setTimeout(resolve, 30000));
 
         const order = await Order.findById(orders[0]._id)
 
