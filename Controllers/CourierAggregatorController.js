@@ -597,7 +597,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         const {orderId, reason} = req.body
 
         await CourierAggregator.updateOne(
-            { _id: "id" },
+            { _id: id },
             { $pull: { orders: { orderId: orderId } } },
             { $set: {order: null} }
         );
