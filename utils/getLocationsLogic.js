@@ -190,7 +190,7 @@ async function getLocationsLogic(orderId) {
 
         // Проверка и получение активных курьеров
         const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-        const couriers = await CourierAggregator.find({ onTheLine: true, "point.timestamp": { $gte: tenMinutesAgo }, });
+        const couriers = await CourierAggregator.find({ onTheLine: true });
         if (couriers.length === 0) {
             console.error("Ошибка: Нет активных курьеров");
             return;
