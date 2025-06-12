@@ -191,33 +191,31 @@ async function getLocationsLogic(orderId) {
         // Проверка и получение активных курьеров
         const tenMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         const couriers = await CourierAggregator.find({ onTheLine: true, "point.timestamp": { $lte: tenMinutesAgo }, });
-        if (couriers.length === 0) {
-            console.error("Ошибка: Нет активных курьеров");
-            return;
-        }
-        console.log("Найдено активных курьеров:", couriers.length);
-
-        // Проверка токенов уведомлений
-        const tokens = couriers
+        if (couriers.length > 0) {
+            const tokens = couriers
             .filter(courier => courier.notificationPushToken)
             .map(courier => courier.notificationPushToken);
         
-        if (tokens.length === 0) {
-            console.error("Ошибка: Нет валидных токенов для уведомлений");
-            return;
+            if (tokens.length === 0) {
+                console.error("Ошибка: Нет валидных токенов для уведомлений");
+                return;
+            }
+            console.log("Найдено валидных токенов:", tokens.length);
+
+            const rejectedCourierIds = new Set();
+
+            try {
+                await pushNotification("getLocation", "getLocation", tokens, "getLocation");
+                console.log("Уведомление о местоположении отправлено");
+            } catch (pushErr) {
+                console.error("Ошибка при отправке уведомления о местоположении:", pushErr);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 10000));
         }
-        console.log("Найдено валидных токенов:", tokens.length);
 
-        const rejectedCourierIds = new Set();
-
-        try {
-            await pushNotification("getLocation", "getLocation", tokens, "getLocation");
-            console.log("Уведомление о местоположении отправлено");
-        } catch (pushErr) {
-            console.error("Ошибка при отправке уведомления о местоположении:", pushErr);
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        // Проверка токенов уведомлений
+        
 
         while (order?.status !== "onTheWay") {
             try {
