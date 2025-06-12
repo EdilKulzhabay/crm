@@ -202,8 +202,6 @@ async function getLocationsLogic(orderId) {
             }
             console.log("Найдено валидных токенов:", tokens.length);
 
-            const rejectedCourierIds = new Set();
-
             try {
                 await pushNotification("getLocation", "getLocation", tokens, "getLocation");
                 console.log("Уведомление о местоположении отправлено");
@@ -215,7 +213,7 @@ async function getLocationsLogic(orderId) {
         }
 
         // Проверка токенов уведомлений
-        
+        const rejectedCourierIds = new Set();
 
         while (order?.status !== "onTheWay") {
             try {
