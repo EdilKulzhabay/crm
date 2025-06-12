@@ -340,7 +340,7 @@ export const updateCourierAggregatorData = async (req, res) => {
 
             sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0
             await CourierAggregator.updateOne({_id: id}, { $set: {
-                "income": sum
+                "order.income": sum
             } })
         }
 
