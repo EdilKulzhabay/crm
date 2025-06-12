@@ -512,7 +512,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
             success: true,
             message: "Заказ завершен",
             // income: b12 * process.env.Reward12 + b19 * process.env.Reward19
-            income: order.sum
+            income: sum
         })
 
         if (courier.orders.length === 0) {
