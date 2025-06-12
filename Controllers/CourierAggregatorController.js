@@ -468,7 +468,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
     try {
         const {orderId, courierId} = req.body
 
-        const order = await Order.findById(orderId)
+        const order = await Order.findById(orderId).populate("client", "price19 price12")
 
         const courier1 = await CourierAggregator.findById(courierId)
 
@@ -480,6 +480,10 @@ export const completeOrderCourierAggregator = async (req, res) => {
             } 
         })
         
+        let sum = courier1.order.products.b12 > 0 ? courier1.order.products.b12 * order.client.price12 : 0
+
+        sum += courier1.order.products.b19 > 0 ? courier1.order.products.b19 * order.client.price19 : 0
+
         await CourierAggregator.updateOne({_id: courierId}, {
             $pull: {
                 orders: { orderId }
@@ -488,7 +492,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 order: null,
             },
             $inc: {
-                income: order.sum // прибавит значение order.sum
+                income: sum // прибавит значение order.sum
             }
         })
 
