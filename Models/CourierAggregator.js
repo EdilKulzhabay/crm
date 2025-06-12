@@ -163,6 +163,12 @@ const CourierAggregatorSchema = new mongoose.Schema(
                     type: String
                 }
             },
+            clientTitle: {
+                type: String
+            },
+            clientPhone: {
+                type: String
+            },
             clientPoints: {
                 lat: {
                     type: Number
@@ -233,6 +239,12 @@ const CourierAggregatorSchema = new mongoose.Schema(
                     time: {
                         type: String
                     }
+                },
+                clientTitle: {
+                    type: String
+                },
+                clientPhone: {
+                    type: String
                 },
                 clientPoints: {
                     lat: {
