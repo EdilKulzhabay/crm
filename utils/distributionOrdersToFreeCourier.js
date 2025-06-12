@@ -170,7 +170,7 @@ async function distributionOrdersToFreeCourier(courierId) {
 
         // Если нужно получить сами заказы из коллекции Order
         const orderIds = result.map(item => item.orderId);
-        const courierAggregatorOrders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 });
+        const courierAggregatorOrders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 }).populate("client", "fullName phone");
         const aggregatorOrders = await Order.find({
             forAggregator: true,
             courierAggregator: null,
@@ -259,6 +259,8 @@ async function distributionOrdersToFreeCourier(courierId) {
             orderId: order[0]._id,
             status: order[0].status,
             products: order[0].products,
+            clientTitle: order[0].client.fullName,
+            clientPhone: order[0].client.phone,
             sum: order[0].sum,
             opForm: order[0].opForm,
             comment: order[0].comment,

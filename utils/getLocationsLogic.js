@@ -181,7 +181,7 @@ async function getLocationsLogic(orderId) {
         }
 
         // Проверка и получение заказа
-        let order = await Order.findById(orderId);
+        let order = await Order.findById(orderId).populate("client", "fullName phone");
         if (!order) {
             console.error("Ошибка: Заказ не найден, orderId:", orderId);
             return;
@@ -302,6 +302,8 @@ async function getLocationsLogic(orderId) {
                             opForm: order.opForm,
                             comment: order.comment,
                             clientReview: order.clientReview,
+                            clientTitle: order.client.fullName,
+                            clientPhone: order.client.phone,
                             date: order.date,
                             clientPoints: { lat: order.address.point.lat, lon: order.address.point.lon },
                             clientAddress: order.address.actual,
@@ -350,6 +352,8 @@ async function getLocationsLogic(orderId) {
                                             opForm: order.opForm,
                                             comment: order.comment,
                                             clientReview: order.clientReview,
+                                            clientTitle: order.client.fullName,
+                                            clientPhone: order.client.phone,
                                             date: order.date,
                                             clientPoints: { lat: order.address.point.lat, lon: order.address.point.lon },
                                             clientAddress: order.address.actual,
