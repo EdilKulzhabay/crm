@@ -334,6 +334,16 @@ export const updateCourierAggregatorData = async (req, res) => {
             } })
         }
 
+        if (changeField === "products") {
+            const order = await Order.findById(courier.order.orderId).populate("client", "price12 price19")
+            let sum = changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0
+
+            sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0
+            await CourierAggregator.updateOne({_id: id}, { $set: {
+                "income": sum
+            } })
+        }
+
         await courier.save()
 
         res.json({
