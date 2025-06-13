@@ -365,6 +365,7 @@ async function getLocationsLogic(orderId) {
                             );
 
                             await Order.updateOne({_id: order._id}, {$set: {courierAggregator: nearestCourier._id}})
+                            break
                             console.log("Список заказов курьера обновлен");
                         } catch (error) {
                             console.error("Ошибка при обновлении списка заказов:", error);
@@ -378,11 +379,6 @@ async function getLocationsLogic(orderId) {
                     if (order?.status === "onTheWay" && order?.courierAggregator !== null) {
                         await Order.updateOne({_id: order._id}, {$set: {courierAggregator: nearestCourier._id}})
                         console.log("Заказ успешно назначен курьеру");
-                        break;
-                    }
-
-                    if (order?.courierAggregator && order?.courierAggregator !== null) {
-                        console.log("Заказ успешно назначен курьеру123");
                         break;
                     } else {
                         rejectedCourierIds.add(nearestCourier._id.toString());
