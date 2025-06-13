@@ -147,6 +147,12 @@ export default function SuperAdminAggregator() {
         [loading, hasMore, loadMoreCouriers]
     )
 
+    const updateCourierAggregatorData = (id, changeData) => {
+        api.post("/updateCourierAggregatorData", {id, changeField: "onTheLine", changeData}, {
+            headers: { "Content-Type": "application/json" },
+        }).then()
+    }
+
     return <Container role={userData?.role}>
         <Div>Агрегатор курьеров</Div>
         <Div />
@@ -206,6 +212,7 @@ export default function SuperAdminAggregator() {
                                     >
                                         Перейти
                                     </LinkButton>
+                                    <MyButton click={() => {updateCourierAggregatorData(courier?.id, courier.onTheLine ? false : true)}}>{!courier.onTheLine ? "Активен" : "Неактивен"}</MyButton>
                                 </div>
                             </Li>
                         </div>
@@ -231,6 +238,7 @@ export default function SuperAdminAggregator() {
                                     >
                                         Перейти
                                     </LinkButton>
+                                    <MyButton click={() => {updateCourierAggregatorData(courier?.id, courier.onTheLine ? false : true)}}>{!courier.onTheLine ? "Активен" : "Неактивен"}</MyButton>
                                 </div>
                             </Li>
                         </div>

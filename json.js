@@ -1,9 +1,9 @@
+db.courieraggregators.updateMany(
+  { email: { $in: ['zhenisulyerbol76@gmail.com', 'nur_gan_at@mail.ru'] } },
+  { $set: { onTheLine: false } }
+)
 
-db.courieraggregators.updateOne(
-    { _id: ObjectId('68413276b70d315d3b2b732f') },
-    {
-      $pull: {
-        orders: { orderId: '68442ad091a126d864d3cafb' }
-      }
-    }
-  )
+db.courieraggregators.updateMany(
+  { email: { $in: ['zhenisulyerbol76@gmail.com'] } },
+  { $set: { onTheLine: true } }
+)
