@@ -523,9 +523,22 @@ export const completeOrderCourierAggregator = async (req, res) => {
             await new Promise(resolve => setTimeout(resolve, 10000));
             let nextOrder = courier.orders[0]
             console.log("CourierAggregatorController 479, order = ", nextOrder);
+
+            let message = ""
+
+            if (nextOrder?.products?.b19 > 0) {
+                message += `${nextOrder?.products?.b19} 19.8 бутылей.`
+            }
+
+            if (nextOrder?.products?.b12 > 0) {
+                message += `${nextOrder?.products?.b12} 12.5 бутылей.`
+            }
+
+            message += `Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`
+
             await pushNotification(
                 "newOrder",
-                `${nextOrder?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
+                message,
                 [courier.notificationPushToken],
                 "newOrder",
                 courier.orders[0]
@@ -632,12 +645,24 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             await new Promise(resolve => setTimeout(resolve, 10000));
             let nextOrder = courier.orders[0]
             console.log("CourierAggregatorController 479, order = ", nextOrder);
+            let message = ""
+
+            if (nextOrder?.products?.b19 > 0) {
+                message += `${nextOrder?.products?.b19} 19.8 бутылей.`
+            }
+
+            if (nextOrder?.products?.b12 > 0) {
+                message += `${nextOrder?.products?.b12} 12.5 бутылей.`
+            }
+
+            message += `Забрать из аквамаркета: ${nextOrder.aquaMarketAddress}`
+
             await pushNotification(
                 "newOrder",
-                `${nextOrder?.products?.b19} бутылей. Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`,
+                message,
                 [courier.notificationPushToken],
                 "newOrder",
-                courier.orders[0]
+                nextOrder
             );
             console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
             
