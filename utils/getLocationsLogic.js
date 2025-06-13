@@ -381,7 +381,7 @@ async function getLocationsLogic(orderId) {
                         break;
                     }
 
-                    if (order?.courierAggregator !== null) {
+                    if (order?.courierAggregator && order?.courierAggregator !== null) {
                         console.log("Заказ успешно назначен курьеру123");
                         break;
                     } else {
