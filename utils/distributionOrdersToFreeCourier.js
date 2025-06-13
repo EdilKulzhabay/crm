@@ -223,7 +223,7 @@ async function distributionOrdersToFreeCourier(courierId) {
         // }
 
         try {
-            await pushNotification("location", "location", [freeCourier.notificationPushToken], "location");
+            await pushNotification("getLocation", "getLocation", [freeCourier.notificationPushToken], "getLocation");
         } catch (pushErr) {
             console.error("Ошибка при отправке уведомления:", pushErr);
         }
@@ -255,30 +255,44 @@ async function distributionOrdersToFreeCourier(courierId) {
             aquaMarket: pathInfo.aquaMarket
         }
 
+        const sendOrderData = await Order.findById(orders[0]._id).populate("client", "fullName phone")
+
         const sendOrder = {
-            orderId: order[0]._id,
-            status: order[0].status,
-            products: order[0].products,
-            clientTitle: order[0].client.fullName,
-            clientPhone: order[0].client.phone,
-            sum: order[0].sum,
-            opForm: order[0].opForm,
-            comment: order[0].comment,
-            clientReview: order[0].clientReview,
-            date: order[0].date,
-            clientPoints: { lat: order[0].address.point.lat, lon: order[0].address.point.lon },
-            clientAddress: order[0].address.actual,
-            clientAddressLink: order[0].address.link,
+            orderId: sendOrderData._id,
+            status: sendOrderData.status,
+            products: sendOrderData.products,
+            clientTitle: sendOrderData.client.fullName,
+            clientPhone: sendOrderData.client.phone,
+            sum: sendOrderData.sum,
+            opForm: sendOrderData.opForm,
+            comment: sendOrderData.comment,
+            clientReview: sendOrderData.clientReview,
+            date: sendOrderData.date,
+            clientPoints: { lat: sendOrderData.address.point.lat, lon: sendOrderData.address.point.lon },
+            clientAddress: sendOrderData.address.actual,
+            clientAddressLink: sendOrderData.address.link,
             aquaMarketPoints: { lat: nearestCourier.aquaMarket.point.lat, lon: nearestCourier.aquaMarket.point.lon },
             aquaMarketAddress: nearestCourier.aquaMarket.address,
             aquaMarketAddressLink: nearestCourier.aquaMarket.link,
             step: "toAquaMarket",
-            income: order[0].sum
+            income: sendOrderData.sum
         }
+
+        let message = ""
+
+        if (sendOrderData?.products?.b19 > 0) {
+            message += `${sendOrderData?.products?.b19} 19.8 бутылей.`
+        }
+
+        if (sendOrderData?.products?.b12 > 0) {
+            message += `${sendOrderData?.products?.b12} 12.5 бутылей.`
+        }
+
+        message += `Забрать из аквамаркета: ${nearestCourier.aquaMarket.address}`
 
         await pushNotification(
             "newOrder",
-            `${order?.products?.b19} бутылей. Забрать из аквамаркета: ${nearestCourier.aquaMarket.address}`,
+            message,
             [nearestCourier.notificationPushToken],
             "newOrder",
             sendOrder

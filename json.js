@@ -4,8 +4,8 @@ db.courieraggregators.updateMany(
 )
 
 db.courieraggregators.updateMany(
-  { email: { $in: ['Tibetwater@inbox.ru'] } },
-  { $set: { onTheLine: true } }
+  { email: { $in: ['zhenisulyerbol76@gmail.com'] } },
+  { $set: { onTheLine: false } }
 )
 
 db.courieraggregators.updateOne(

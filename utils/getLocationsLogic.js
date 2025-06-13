@@ -311,11 +311,23 @@ async function getLocationsLogic(orderId) {
                             income: order.sum
                         }
 
+                        let message = ""
+
+                        if (order?.products?.b19 > 0) {
+                            message += `${order?.products?.b19} 19.8 бутылей.`
+                        }
+
+                        if (order?.products?.b12 > 0) {
+                            message += `${order?.products?.b12} 12.5 бутылей.`
+                        }
+
+                        message += `Забрать из аквамаркета: ${nearestCourier.aquaMarket.address}`
+
                         // Отправка уведомления курьеру
                         try {
                             await pushNotification(
                                 "newOrder",
-                                `${order?.products?.b19} бутылей. Забрать из аквамаркета: ${nearestCourier.aquaMarket.address}`,
+                                message,
                                 [nearestCourier.notificationPushToken],
                                 "newOrder",
                                 sendOrder
