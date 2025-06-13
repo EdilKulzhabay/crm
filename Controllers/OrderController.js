@@ -139,10 +139,10 @@ export const addOrder = async (req, res) => {
             setImmediate(async () => {
                 const orderId = order?._id
                 try {
-                  await getLocationsLogicQueue(orderId);
-                  console.log("Обновленные локации после заказа:");
+                    console.log("Добавляем заказ в очередь для распределение");
+                    await getLocationsLogicQueue(orderId);
                 } catch (error) {
-                  console.error("Ошибка при получении локаций:", error);
+                    console.error("Ошибка при получении локаций:", error);
                 }
             });
         }
@@ -558,8 +558,18 @@ export const updateOrder = async (req, res) => {
         }
 
         if (change === "forAggregator") {
-            order.forAggregator = changeData
-            await order.save()
+            await Order.updateOne({_id: orderId}, { $set: { forAggregator: changeData } })
+            if (order.address.point.lat && order.address.point.lon) {
+                setImmediate(async () => {
+                    const orderId = order?._id
+                    try {
+                        console.log("Добавляем заказ в очередь для распределение");
+                        await getLocationsLogicQueue(orderId);
+                    } catch (error) {
+                        console.error("Ошибка при получении локаций:", error);
+                    }
+                });
+            }
         }
 
         res.json({
