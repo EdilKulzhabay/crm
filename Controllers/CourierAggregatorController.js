@@ -798,6 +798,177 @@ export const getCompletedOrCancelledOrdersFromCourierAggregator = async (req, re
     }
 }
 
+export const appointmentFranchisee = async (req, res) => {
+    try {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        
+        let query = { courierAggregator: { $ne: null }, "date.d": todayStr, status: "delivered" };
+
+        const orders = await Order.find(query)
+            .populate('courierAggregator', 'fullName _id')
+            .populate('franchisee', "role fullName");
+
+        await Promise.all(orders.map(async (order) => {
+            const courierName = order.courierAggregator?.fullName?.toLowerCase() || '';
+            const franchiseeName = order.franchisee?.fullName?.toLowerCase() || '';
+
+            // Яковлев Василий
+            if (courierName.includes("василий") && !franchiseeName.includes("василий")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Яковлев Василий"
+                        }
+                    }
+                );
+            }
+
+            // Таскын Абикен
+            if (courierName.includes("тасқын") && !franchiseeName.includes("таскын")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Таскын Абикен"
+                        }
+                    }
+                );
+            }
+
+            // Сандыбаев Айдынбек
+            // if (courierName.includes("айдынбек") && !franchiseeName.includes("айдынбек")) {
+            //     await Order.updateOne(
+            //         { _id: order._id },
+            //         {
+            //             $set: {
+            //                 transferred: true,
+            //                 transferredFranchise: "Сандыбаев Айдынбек"
+            //             }
+            //         }
+            //     );
+            // }
+
+            // Тимур Касымов
+            if (courierName.includes("елдос") && !franchiseeName.includes("тимур")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Тимур Касымов"
+                        }
+                    }
+                );
+            }
+
+            // Ракып Нурганат
+            if (courierName.includes("нұрғанат") && !franchiseeName.includes("нурганат")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Ракып Нурганат"
+                        }
+                    }
+                );
+            }
+
+            // Дауранбекова Гаухар
+            if (courierName.includes("ербол") && !franchiseeName.includes("гаухар")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Дауранбекова Гаухар"
+                        }
+                    }
+                );
+            }
+
+            // Ахметова Саида
+            // if (courierName.includes("саида") && !franchiseeName.includes("саида")) {
+            //     await Order.updateOne(
+            //         { _id: order._id },
+            //         {
+            //             $set: {
+            //                 transferred: true,
+            //                 transferredFranchise: "Ахметова Саида"
+            //             }
+            //         }
+            //     );
+            // }
+
+            // Ахметов Канат
+            // if (courierName.includes("канат") && !franchiseeName.includes("канат")) {
+            //     await Order.updateOne(
+            //         { _id: order._id },
+            //         {
+            //             $set: {
+            //                 transferred: true,
+            //                 transferredFranchise: "Ахметов Канат Ержанович"
+            //             }
+            //         }
+            //     );
+            // }
+
+            // Толемисова Галия
+            if (courierName.includes("серик") && !franchiseeName.includes("галия")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Толемисова Галия"
+                        }
+                    }
+                );
+            }
+
+            // Сапарбаев Бекет
+            if (courierName.includes("бекет") && !franchiseeName.includes("бекет")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Сапарбаев Бекет"
+                        }
+                    }
+                );
+            }
+
+            // Кудайберди Кулжабай
+            // if (courierName.includes("кұдайберді") && !franchiseeName.includes("кудайберди")) {
+            //     await Order.updateOne(
+            //         { _id: order._id },
+            //         {
+            //             $set: {
+            //                 transferred: true,
+            //                 transferredFranchise: "Кудайберди Кулжабай"
+            //             }
+            //         }
+            //     );
+            // }
+
+        }));
+
+        res.status(200).json({ message: "Переназначение выполнено" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+}
+
+
 // db.courieraggregators.updateOne(
 //     { email: "Tibetwater@inbox.ru" },
 //     { 
