@@ -382,7 +382,7 @@ async function getLocationsLogic(orderId) {
                     }
 
                     if (order?.courierAggregator !== null) {
-                        console.log("Заказ успешно назначен курьеру");
+                        console.log("Заказ успешно назначен курьеру123");
                         break;
                     } else {
                         rejectedCourierIds.add(nearestCourier._id.toString());
