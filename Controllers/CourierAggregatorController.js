@@ -357,9 +357,11 @@ export const updateCourierAggregatorData = async (req, res) => {
 
         if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
             const orderIds = courier.orders.map(item => item.orderId);
+            await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
             const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
-            courier.orders = []
-            await courier.save()
+            await CourierAggregator.updateOne({_id: id}, { $set: {
+                orders: []
+            } })
             for (const order of orders) {
                 await getLocationsLogicQueue(order._id);
             }
@@ -724,16 +726,22 @@ export const getOrdersWithCourierAggregator = async (req, res) => {
     try {
         const { status } = req.body;
         
-        let query = { courierAggregator: { $ne: null } };
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
+        
+        let query = { courierAggregator: { $ne: null }, "date.d": todayStr };
         
         // Добавляем фильтрацию по статусу заказа
-        if (status) {
+        if (status && status !== "all") {
             query.status = status;
         }
 
         const orders = await Order.find(query)
             .populate('courierAggregator', 'fullName _id')
-            .select('orderNumber courierAggregator _id status')
+            .select('address.actual courierAggregator _id status')
             .sort({ createdAt: -1 });
 
         res.json({
@@ -750,7 +758,10 @@ export const getCompletedOrCancelledOrdersFromCourierAggregator = async (req, re
     try {
         const {courierId} = req.body
 
-        const orders = await Order.find({courierAggregator: courierId})
+        const orders = await Order.find({
+            courierAggregator: courierId,
+            status: { $in: ["delivered", "cancelled"] }
+        });
 
         res.json({
             success: true,

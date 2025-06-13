@@ -23,7 +23,7 @@ export default function SuperAdminAggregator() {
     const [totalCouriers, setTotalCouriers] = useState(0)
     const [totalOrders, setTotalOrders] = useState(0)
     const [isActive, setIsActive] = useState("all")
-    const [orderStatus, setOrderStatus] = useState("")
+    const [orderStatus, setOrderStatus] = useState("all")
 
     const handleSearchF = (e) => {
         setSearchF(e.target.value)
@@ -103,7 +103,7 @@ export default function SuperAdminAggregator() {
     const loadOrders = useCallback(async () => {
         api.post(
             "/getOrdersWithCourierAggregator",
-            {},
+            {orderStatus},
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -245,7 +245,7 @@ export default function SuperAdminAggregator() {
             <div className="flex items-center flex-wrap gap-x-4">
                 <MyButton click={() => setOrderStatus("")}>
                     <span className={clsx("", {
-                        "text-yellow-300": orderStatus === ""
+                        "text-yellow-300": orderStatus === "all"
                     })}>Все</span>
                 </MyButton>
                 <MyButton click={() => setOrderStatus("awaitingOrder")}>
