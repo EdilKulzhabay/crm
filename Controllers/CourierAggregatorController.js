@@ -35,9 +35,7 @@ const codes = {};
 
 export const courierAggregatorTestLog = async (req, res) => {
     try {
-        const { text } = req.body;
-
-        console.log("text = ", text);
+        console.log("req.body = ", req.body);
 
         res.status(200).json({
             success: true,
