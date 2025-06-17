@@ -2,6 +2,7 @@ import CourierAggregator from "../Models/CourierAggregator.js";
 import Order from "../Models/Order.js";
 import AquaMarket from "../Models/AquaMarket.js";
 import { pushNotification } from "../pushNotification.js";
+import getLocationsLogicQueue from "./getLocationsLogicQueue.js";
 
 // const locationQueue = [];
 // let isProcessing = false;
@@ -388,10 +389,11 @@ async function getLocationsLogic(orderId) {
                     await new Promise(resolve => setTimeout(resolve, 20000));
                     order = await Order.findById(orderId);
 
-                    if (order?.status === "onTheWay" && order?.courierAggregator !== null) {
-                        await Order.updateOne({_id: order._id}, {$set: {courierAggregator: nearestCourier._id}})
+                    if (order?.status === "onTheWay") {
                         console.log("Заказ успешно назначен курьеру");
                         break;
+                    } else if (order?.status === "awaitingOrder" && order?.courierAggregator !== null) {
+                        console.log("Заказ добавлен в массив заказов курьера");
                     } else {
                         rejectedCourierIds.add(nearestCourier._id.toString());
                         console.log("Курьер отклонил заказ:", nearestCourier.fullName);
@@ -410,6 +412,9 @@ async function getLocationsLogic(orderId) {
             return;
         } else {
             console.error("Ошибка: Не удалось распределить заказ");
+            setTimeout(() => {
+                getLocationsLogicQueue(orderId);
+            }, 10 * 60 * 1000);
             return;
         }
     } catch (error) {
