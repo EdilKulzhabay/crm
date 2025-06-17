@@ -309,9 +309,13 @@ export const updateCourierAggregatorData = async (req, res) => {
     try {
         const {id, changeField, changeData} = req.body
 
+        const courier = await CourierAggregator.findById(id)
+
+        console.log("we in updateCourierAggregatorData courier.fullName = ", courier.fullName);
+
         console.log("we in updateCourierAggregatorData req.body = ", req.body);
         
-        const courier = await CourierAggregator.findById(id)
+        
 
         if (!courier) {
             return res.status(404).json({
@@ -520,6 +524,11 @@ export const completeOrderCourierAggregator = async (req, res) => {
             },
             $set: {
                 order: null,
+                points: {
+                    lat: order.clientPoints.lat,
+                    lon: order.clientPoints.lon,
+                    timestamp: new Date()
+                }
             },
             $inc: {
                 income: sum // прибавит значение order.sum
