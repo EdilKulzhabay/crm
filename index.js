@@ -289,6 +289,7 @@ app.post("/getFranchiseeAnalytics", AnalyticsController.getFranchiseeAnalytics)
 app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
 
 /////////////COURIERAGGREGATOR
+app.post("/courierAggregatorTestLog", CourierAggregatorController.courierAggregatorTestLog)
 app.get("/getCourierAggregatorData", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorData)
 app.get("/appointmentFranchisee", CourierAggregatorController.appointmentFranchisee)
 app.post("/courierAggregatorSendCode", CourierAggregatorController.courierAggregatorSendCode)

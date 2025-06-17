@@ -33,6 +33,26 @@ const generateCode = () => {
 
 const codes = {};
 
+export const courierAggregatorTestLog = async (req, res) => {
+    try {
+        const { text } = req.body;
+
+        console.log("text = ", text);
+
+        res.status(200).json({
+            success: true,
+            message: "Тестовое сообщение отправлено"
+        })
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
 export const courierAggregatorSendCode = async (req, res) => {
     const { email } = req.body;
 
@@ -691,6 +711,8 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         } else {
             await distributionOrdersToFreeCourier(id)
         }
+
+        await getLocationsLogicQueue(orderId);
         
         res.json({
             success: true,
