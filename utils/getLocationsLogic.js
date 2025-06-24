@@ -412,9 +412,9 @@ async function getLocationsLogic(orderId) {
             return;
         } else {
             console.error("Ошибка: Не удалось распределить заказ");
-            setTimeout(() => {
-                getLocationsLogicQueue(orderId);
-            }, 10 * 60 * 1000);
+            // setTimeout(() => {
+            //     getLocationsLogicQueue(orderId);
+            // }, 10 * 60 * 1000);
             return;
         }
     } catch (error) {
