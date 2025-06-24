@@ -524,11 +524,6 @@ export const completeOrderCourierAggregator = async (req, res) => {
             },
             $set: {
                 order: null,
-                points: {
-                    lat: order.clientPoints.lat,
-                    lon: order.clientPoints.lon,
-                    timestamp: new Date()
-                }
             },
             $inc: {
                 income: sum // прибавит значение order.sum
