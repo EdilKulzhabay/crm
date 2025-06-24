@@ -2,13 +2,10 @@ import mongoose from 'mongoose';
 import axios from 'axios';
 
 // Подключение к MongoDB
-mongoose.connect('mongodb://localhost:27017/crm', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
+mongoose.connect('mongodb://localhost:27017/crm');
 
 // Схемы для заказов и клиентов
-const orderSchema = new mongoose.Schema({}, { strict: false });
+const orderSchema = new mongoose.Schema({}, { strict: false, strictPopulate: false });
 const clientSchema = new mongoose.Schema({}, { strict: false });
 const Order = mongoose.model('Order', orderSchema, 'orders');
 const Client = mongoose.model('Client', clientSchema, 'clients');
