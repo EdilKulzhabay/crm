@@ -20,12 +20,15 @@ import {
     AnalyticsController,
     CourierAggregatorController,
     AquaMarketController,
+    DynamicZoneController,
+    ZoneController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
+import dynamicZoneScheduler from "./utils/dynamicZoneScheduler.js";
 
 mongoose
     .connect(process.env.MONGOURL)
@@ -312,7 +315,46 @@ app.post("/getCompletedOrCancelledOrdersFromCourierAggregator", CourierAggregato
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
 app.post("/updateUserData", AquaMarketController.updateUserData)
 
+/////////////DYNAMIC ZONES
+app.post("/api/zones/start-distribution", checkAuth, DynamicZoneController.startDynamicDistribution)
+app.post("/api/zones/analyze-density", checkAuth, DynamicZoneController.analyzeOrderDensity)
+app.post("/api/zones/efficiency-stats", checkAuth, DynamicZoneController.getZoneEfficiencyStats)
+app.get("/api/zones/distribution-status", checkAuth, DynamicZoneController.getCurrentDistributionStatus)
+app.post("/api/zones/redistribute", checkAuth, DynamicZoneController.redistributeOrders)
+app.post("/api/zones/settings", checkAuth, DynamicZoneController.updateZoneSettings)
+app.get("/api/zones/details", checkAuth, DynamicZoneController.getZoneDetailsAPI)
+app.get("/api/zones/centers", checkAuth, DynamicZoneController.getZoneCenters)
+app.get("/api/zones/print-console", checkAuth, DynamicZoneController.printZonesConsole)
+
+// Маршруты для зональной системы
+app.get("/api/zones", ZoneController.getAllZones);
+app.post("/api/zones", ZoneController.createZone);
+app.put("/api/zones/:id", ZoneController.updateZone);
+app.delete("/api/zones/:id", ZoneController.deleteZone);
+app.get("/api/zones/stats", ZoneController.getZoneStats);
+app.post("/api/zones/auto-create", ZoneController.autoCreateZones);
+app.post("/api/zones/assign-couriers", ZoneController.assignCouriersToZones);
+app.post("/api/zones/start-distribution", ZoneController.startZoneDistribution);
+
+// Новые маршруты для мониторинга и управления
+app.get("/api/zones/system-stats", ZoneController.getZoneSystemStats);
+app.get("/api/zones/courier-performance", ZoneController.getCourierPerformance);
+app.get("/api/zones/time-analytics", ZoneController.getTimeAnalytics);
+app.get("/api/zones/system-issues", ZoneController.getSystemIssues);
+app.get("/api/zones/detailed-report", ZoneController.generateDetailedReport);
+app.get("/api/zones/scheduler-stats", ZoneController.getSchedulerStats);
+app.post("/api/zones/manual-distribution", ZoneController.manualDistribution);
+app.post("/api/zones/control-scheduler", ZoneController.controlScheduler);
+
+// Обновление статуса курьера-агрегатора
+app.put("/api/courier-aggregator/:id/online-status", CourierAggregatorController.updateCourierAggregatorData);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
+    
+    // Запускаем планировщик динамической зональной системы
+    console.log("🚀 Инициализация динамической зональной системы...");
+    setTimeout(() => {
+        dynamicZoneScheduler.start();
+    }, 3000); // Запускаем через 3 секунды после старта сервера
 });

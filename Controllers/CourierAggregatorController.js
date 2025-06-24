@@ -7,6 +7,7 @@ import distributionUrgentOrder from "../utils/distributionUrgentOrder.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import { pushNotification } from "../pushNotification.js";
 import nodemailer from "nodemailer";
+import { onCourierGoesOnline, onOrderCompleted, onOrderRejected } from "../utils/smartDistributionTrigger.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -375,6 +376,15 @@ export const updateCourierAggregatorData = async (req, res) => {
 
         if (changeField === "onTheLine" && changeData) {
             await distributionOrdersToFreeCourier(courier._id)
+            
+            // Запускаем триггер при выходе курьера на линию
+            setImmediate(async () => {
+                try {
+                    await onCourierGoesOnline(courier._id);
+                } catch (error) {
+                    console.error("Ошибка в триггере onCourierGoesOnline:", error);
+                }
+            });
         }
 
         if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
@@ -543,6 +553,15 @@ export const completeOrderCourierAggregator = async (req, res) => {
             // income: b12 * process.env.Reward12 + b19 * process.env.Reward19
             income: sum
         })
+
+        // Запускаем триггер завершения заказа
+        setImmediate(async () => {
+            try {
+                await onOrderCompleted(orderId, courierId);
+            } catch (error) {
+                console.error("Ошибка в триггере onOrderCompleted:", error);
+            }
+        });
 
         if (courier.orders.length === 0) {
             await distributionOrdersToFreeCourier(courierId)
@@ -720,6 +739,15 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         }
 
         await getLocationsLogicQueue(orderId);
+        
+        // Запускаем триггер отклонения заказа
+        setImmediate(async () => {
+            try {
+                await onOrderRejected(orderId, id, reason);
+            } catch (error) {
+                console.error("Ошибка в триггере onOrderRejected:", error);
+            }
+        });
         
         res.json({
             success: true,
