@@ -8,6 +8,10 @@ import { SendEmailOrder } from "./SendEmailOrder.js";
 import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
+import { 
+    onNewOrderAdded, 
+    onOrderStatusChanged 
+} from "../utils/smartDistributionTrigger.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -135,16 +139,32 @@ export const addOrder = async (req, res) => {
             success: true,
         });
 
+        // Запускаем триггер для нового заказа
+        setImmediate(async () => {
+            try {
+                await onNewOrderAdded(order._id);
+            } catch (error) {
+                console.error("Ошибка в триггере onNewOrderAdded:", error);
+            }
+        });
+
         if (candidate.role === "superAdmin" && address.point.lat && address.point.lon) {
             setImmediate(async () => {
-                const orderId = order?._id
                 try {
-                    console.log("Добавляем заказ в очередь для распределение");
-                    await getLocationsLogicQueue(orderId);
+                    await onNewOrderAdded(order._id);
                 } catch (error) {
-                    console.error("Ошибка при получении локаций:", error);
+                    console.error("Ошибка в триггере onNewOrderAdded:", error);
                 }
             });
+            // setImmediate(async () => {
+            //     const orderId = order?._id
+            //     try {
+            //         console.log("Добавляем заказ в очередь для распределение");
+            //         await getLocationsLogicQueue(orderId);
+            //     } catch (error) {
+            //         console.error("Ошибка при получении локаций:", error);
+            //     }
+            // });
         }
     } catch (error) {
         console.log(error);
@@ -453,6 +473,7 @@ export const updateOrder = async (req, res) => {
         }
 
         if (change === "status") {
+            const oldStatus = order.status; // Сохраняем старый статус
             order.status = changeData;
             if (changeData === "delivered" || changeData === "cancelled") {
                 const courierId = order.courier
@@ -471,6 +492,14 @@ export const updateOrder = async (req, res) => {
                 message: `Статус заказа #${order._id} был изменен на ${changeData}`,
             });
 
+            // // Запускаем триггер изменения статуса
+            // setImmediate(async () => {
+            //     try {
+            //         await onOrderStatusChanged(orderId, changeData, oldStatus);
+            //     } catch (error) {
+            //         console.error("Ошибка в триггере onOrderStatusChanged:", error);
+            //     }
+            // });
         } 
 
         if (change === "courier") {
@@ -540,7 +569,7 @@ export const updateOrder = async (req, res) => {
             if (client && client?.expoPushToken?.length > 0) {
                 const expoTokens = client?.expoPushToken
                 const messageTitle = "Доставка воды – новая дата 📅"
-                const messageBody = "Уважаемый клиент, доставка вашей воды “Тибетская” переносится на завтра из-за внеплановых логистических обстоятельств. Примите наши извинения, завтра мы позаботимся о том, чтобы ваш заказ прибыл как можно раньше. Спасибо за понимание!"
+                const messageBody = `Уважаемый клиент, доставка вашей воды "Тибетская" переносится на завтра из-за внеплановых логистических обстоятельств. Примите наши извинения, завтра мы позаботимся о том, чтобы ваш заказ прибыл как можно раньше. Спасибо за понимание!`
                 const newStatus = "date"
                 pushNotification(messageTitle, messageBody, expoTokens, newStatus)
             }
