@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const axios = require('axios');
+import mongoose from 'mongoose';
+import axios from 'axios';
 
 // Подключение к MongoDB
 mongoose.connect('mongodb://localhost:27017/crm', {
@@ -41,10 +41,10 @@ const updateOrderCoordinates = async () => {
         const orders = await Order.find({
             franchisee: { 
                 $in: [
-                    mongoose.Types.ObjectId('66f15c557a27c92d447a16a0'), 
-                    mongoose.Types.ObjectId('66fc0cc6953c2dbbc86c2132'), 
-                    mongoose.Types.ObjectId('66fc0d01953c2dbbc86c2135'), 
-                    mongoose.Types.ObjectId('66fc0d3e953c2dbbc86c2138')
+                    new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0'), 
+                    new mongoose.Types.ObjectId('66fc0cc6953c2dbbc86c2132'), 
+                    new mongoose.Types.ObjectId('66fc0d01953c2dbbc86c2135'), 
+                    new mongoose.Types.ObjectId('66fc0d3e953c2dbbc86c2138')
                 ]
             },
             "date.d": "2025-06-24",
