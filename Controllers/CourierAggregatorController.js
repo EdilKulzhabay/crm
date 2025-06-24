@@ -997,6 +997,22 @@ export const appointmentFranchisee = async (req, res) => {
     }
 }
 
+// db.orders.updateMany(
+//     {
+//         franchisee: { $in: [ObjectId('66f15c557a27c92d447a16a0'), ObjectId('66fc0cc6953c2dbbc86c2132'), ObjectId('66fc0d01953c2dbbc86c2135'), ObjectId('66fc0d3e953c2dbbc86c2138')]},
+//         "date.d": "2025-06-24"
+//     },
+//     { $set: { forAggregator: true } }
+// );
+
+
+// db.orders.find(
+//     {
+//         franchisee: { $in: [ObjectId('66f15c557a27c92d447a16a0'), ObjectId('66fc0cc6953c2dbbc86c2132'), ObjectId('66fc0d01953c2dbbc86c2135'), ObjectId('66fc0d3e953c2dbbc86c2138')]},
+//         "date.d": "2025-06-24"
+//     }
+// );
+
 
 // db.courieraggregators.updateOne(
 //     { email: "Tibetwater@inbox.ru" },
