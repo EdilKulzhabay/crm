@@ -8,10 +8,6 @@ import { SendEmailOrder } from "./SendEmailOrder.js";
 import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
-import { 
-    onNewOrderAdded, 
-    onOrderStatusChanged 
-} from "../utils/smartDistributionTrigger.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -138,34 +134,6 @@ export const addOrder = async (req, res) => {
         res.json({
             success: true,
         });
-
-        // Запускаем триггер для нового заказа
-        setImmediate(async () => {
-            try {
-                await onNewOrderAdded(order._id);
-            } catch (error) {
-                console.error("Ошибка в триггере onNewOrderAdded:", error);
-            }
-        });
-
-        if (candidate.role === "superAdmin" && address.point.lat && address.point.lon) {
-            setImmediate(async () => {
-                try {
-                    await onNewOrderAdded(order._id);
-                } catch (error) {
-                    console.error("Ошибка в триггере onNewOrderAdded:", error);
-                }
-            });
-            // setImmediate(async () => {
-            //     const orderId = order?._id
-            //     try {
-            //         console.log("Добавляем заказ в очередь для распределение");
-            //         await getLocationsLogicQueue(orderId);
-            //     } catch (error) {
-            //         console.error("Ошибка при получении локаций:", error);
-            //     }
-            // });
-        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -491,15 +459,6 @@ export const updateOrder = async (req, res) => {
                 status: changeData,
                 message: `Статус заказа #${order._id} был изменен на ${changeData}`,
             });
-
-            // // Запускаем триггер изменения статуса
-            // setImmediate(async () => {
-            //     try {
-            //         await onOrderStatusChanged(orderId, changeData, oldStatus);
-            //     } catch (error) {
-            //         console.error("Ошибка в триггере onOrderStatusChanged:", error);
-            //     }
-            // });
         } 
 
         if (change === "courier") {
