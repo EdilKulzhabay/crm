@@ -540,7 +540,9 @@ export const completeOrderCourierAggregator = async (req, res) => {
         })
 
         if (courier.orders.length === 0) {
-            await distributionOrdersToFreeCourier(courierId)
+            // await distributionOrdersToFreeCourier(courierId)
+            console.log("У курьера нет заказов, отправляем на переназначение");
+            
         } else {
             await new Promise(resolve => setTimeout(resolve, 10000));
             let nextOrder = courier.orders[0]
@@ -571,23 +573,25 @@ export const completeOrderCourierAggregator = async (req, res) => {
             const currentOrder = await Order.findById(courier.orders[0].orderId)
             if (currentOrder.status !== "onTheWay") {
                 // Получаем все ID заказов курьера
-                const orderIds = courier.orders.map(order => order.orderId);
+                // const orderIds = courier.orders.map(order => order.orderId);
                 
-                // Удаляем все заказы у курьера
-                await CourierAggregator.updateOne(
-                    { _id: courierId },
-                    { 
-                        $set: { 
-                            orders: [],
-                            order: null 
-                        }
-                    }
-                );
+                // // Удаляем все заказы у курьера
+                // await CourierAggregator.updateOne(
+                //     { _id: courierId },
+                //     { 
+                //         $set: { 
+                //             orders: [],
+                //             order: null 
+                //         }
+                //     }
+                // );
 
-                // Отправляем все заказы на переназначение
-                for (const orderId of orderIds) {
-                    await getLocationsLogicQueue(orderId);
-                }
+                // // Отправляем все заказы на переназначение
+                // for (const orderId of orderIds) {
+                //     await getLocationsLogicQueue(orderId);
+                // }
+                console.log("У курьера нет заказов, отправляем на переназначение");
+                
             }
         }
 

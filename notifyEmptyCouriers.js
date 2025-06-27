@@ -3,15 +3,15 @@
 import mongoose from 'mongoose';
 import CourierAggregator from './Models/CourierAggregator.js';
 import Order from './Models/Order.js';
-import { sendPushNotification } from './notificationManager.js';
+import { pushNotification } from "../pushNotification.js";
 
 /**
- * 📱 УВЕДОМЛЕНИЯ КУРЬЕРАМ БЕЗ ЗАКАЗОВ
- * Ищет активных курьеров без заказов и отправляет им уведомления о первом доступном заказе
+ * 📱 УВЕДОМЛЕНИЯ КУРЬЕРАМ С ЗАКАЗАМИ
+ * Ищет активных курьеров с заказами и отправляет им уведомления о первом заказе
  */
 
-async function findEmptyCouriers() {
-    console.log("🔍 ПОИСК КУРЬЕРОВ БЕЗ ЗАКАЗОВ");
+async function findCouriersWithOrders() {
+    console.log("🔍 ПОИСК КУРЬЕРОВ С ЗАКАЗАМИ");
     console.log("=".repeat(50));
     
     try {
@@ -28,38 +28,25 @@ async function findEmptyCouriers() {
 
         console.log(`👥 Найдено ${activeCouriers.length} активных курьеров на линии`);
 
-        // Фильтруем курьеров без заказов
-        const emptyCouriers = activeCouriers.filter(courier => {
+        // Фильтруем курьеров С заказами
+        const couriersWithOrders = activeCouriers.filter(courier => {
             const hasOrders = courier.orders && courier.orders.length > 0;
             console.log(`   👤 ${courier.fullName}: ${hasOrders ? `${courier.orders.length} заказов` : 'БЕЗ ЗАКАЗОВ'}`);
-            return !hasOrders;
+            return hasOrders;
         });
 
-        console.log(`📦 Курьеров без заказов: ${emptyCouriers.length}`);
+        console.log(`📦 Курьеров с заказами: ${couriersWithOrders.length}`);
 
-        if (emptyCouriers.length === 0) {
-            console.log("✅ Все курьеры имеют заказы");
+        if (couriersWithOrders.length === 0) {
+            console.log("❌ Нет курьеров с заказами");
             return;
         }
 
-        // Ищем первый доступный заказ
-        const availableOrder = await Order.findOne({
-            forAggregator: true,
-            status: { $nin: ["onTheWay", "delivered", "cancelled"] },
-            courier: { $exists: false }
-        }).sort({ createdAt: 1 });
-
-        if (!availableOrder) {
-            console.log("❌ Нет доступных заказов для назначения");
-            return;
-        }
-
-        console.log(`📍 Найден заказ: ${availableOrder.address?.actual || 'Адрес не указан'}`);
         console.log("=".repeat(50));
 
-        // Отправляем уведомления курьерам без заказов
-        for (const courier of emptyCouriers) {
-            await sendNotificationToEmptyCourier(courier, availableOrder);
+        // Отправляем уведомления курьерам с заказами о их первом заказе
+        for (const courier of couriersWithOrders) {
+            await sendNotificationAboutFirstOrder(courier);
         }
 
         console.log("=".repeat(50));
@@ -74,39 +61,41 @@ async function findEmptyCouriers() {
 }
 
 /**
- * 📨 ОТПРАВКА УВЕДОМЛЕНИЯ КУРЬЕРУ
+ * 📨 ОТПРАВКА УВЕДОМЛЕНИЯ О ПЕРВОМ ЗАКАЗЕ
  */
-async function sendNotificationToEmptyCourier(courier, order) {
+async function sendNotificationAboutFirstOrder(courier) {
     try {
-        console.log(`📱 Отправка уведомления: ${courier.fullName}`);
+        console.log(`📱 Отправка уведомления: ${courier.fullName} (${courier.orders.length} заказов)`);
 
-        // Проверяем наличие токена
-        if (!courier.notificationToken) {
-            console.log(`   ⚠️ У курьера ${courier.fullName} нет токена уведомлений`);
+        // Проверяем наличие заказов
+        if (!courier.orders || courier.orders.length === 0) {
+            console.log(`   ⚠️ У курьера ${courier.fullName} нет заказов`);
             return;
         }
 
-        // Формируем данные уведомления
-        const notificationData = {
-            title: "🚀 Новый заказ доступен!",
-            body: `Заказ по адресу: ${order.address?.actual || 'Адрес не указан'}`,
-            data: {
-                type: "new_order_available",
-                orderId: order._id.toString(),
-                address: order.address?.actual || '',
-                customerPhone: order.customerPhone || '',
-                orderTime: order.createdAt.toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' })
-            }
-        };
-
-        // Отправляем уведомление
-        const result = await sendPushNotification(courier.notificationToken, notificationData);
-
-        if (result.success) {
-            console.log(`   ✅ Уведомление отправлено: ${courier.fullName}`);
-        } else {
-            console.log(`   ❌ Ошибка отправки: ${courier.fullName} - ${result.error}`);
+        // Получаем первый заказ
+        const firstOrderId = courier.orders[0];
+        
+        // Находим полную информацию о заказе
+        const firstOrder = await Order.findById(firstOrderId);
+        
+        if (!firstOrder) {
+            console.log(`   ⚠️ Заказ ${firstOrderId} не найден`);
+            return;
         }
+
+        console.log(`   📍 Первый заказ: ${firstOrder.address?.actual || 'Адрес не указан'}`);
+
+        // Отправляем уведомление используя существующую функцию pushNotification
+        await pushNotification(
+            "newOrder",
+            `Ваш первый заказ: ${firstOrder.address?.actual || 'Адрес не указан'}`,
+            [courier.notificationPushToken || courier.notificationToken],
+            "newOrder",
+            firstOrder
+        );
+
+        console.log(`   ✅ Уведомление отправлено: ${courier.fullName}`);
 
     } catch (error) {
         console.error(`   ❌ Ошибка отправки уведомления ${courier.fullName}:`, error.message);
@@ -131,10 +120,10 @@ async function showCourierStats() {
         console.log(`   📦 С заказами: ${couriersWithOrders.length}`);
         console.log(`   🆓 Без заказов: ${emptyCouriers.length}`);
 
-        if (emptyCouriers.length > 0) {
-            console.log("\n🆓 КУРЬЕРЫ БЕЗ ЗАКАЗОВ:");
-            emptyCouriers.forEach(courier => {
-                console.log(`   • ${courier.fullName} (${courier.notificationToken ? '📱' : '❌'})`);
+        if (couriersWithOrders.length > 0) {
+            console.log("\n📦 КУРЬЕРЫ С ЗАКАЗАМИ:");
+            couriersWithOrders.forEach(courier => {
+                console.log(`   • ${courier.fullName}: ${courier.orders.length} заказов (${courier.notificationPushToken || courier.notificationToken ? '📱' : '❌'})`);
             });
         }
 
@@ -144,7 +133,7 @@ async function showCourierStats() {
 }
 
 // Запуск скрипта
-console.log("🚀 ЗАПУСК СИСТЕМЫ УВЕДОМЛЕНИЙ ДЛЯ ПУСТЫХ КУРЬЕРОВ");
+console.log("🚀 ЗАПУСК СИСТЕМЫ УВЕДОМЛЕНИЙ ДЛЯ КУРЬЕРОВ С ЗАКАЗАМИ");
 console.log("📅 Время:", new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' }));
 
-findEmptyCouriers(); 
+findCouriersWithOrders(); 
