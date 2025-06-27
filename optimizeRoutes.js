@@ -571,6 +571,7 @@ export async function zoneBasedDistribution(date = null) {
                         sum: order.sum,
                         opForm: order.opForm,
                         comment: order.comment || "",
+                        clientReview: order.clientReview || "",
                         clientTitle: order.client?.fullName || "",
                         clientPhone: order.client?.phone || "",
                         date: order.date,
@@ -583,7 +584,8 @@ export async function zoneBasedDistribution(date = null) {
                         aquaMarketPoints: { lat: aquaMarket.point.lat, lon: aquaMarket.point.lon },
                         aquaMarketAddress: aquaMarket.address,
                         aquaMarketAddressLink: aquaMarket.link,
-                        step: "pending",
+                        step: "toAquaMarket",
+                        income: order.sum,
                         assignedAt: new Date()
                     };
 
@@ -737,6 +739,7 @@ export async function zoneBasedDistribution(date = null) {
                         sum: order.sum,
                         opForm: order.opForm,
                         comment: order.comment || "",
+                        clientReview: order.clientReview || "",
                         clientTitle: order.client?.fullName || "",
                         clientPhone: order.client?.phone || "",
                         date: order.date,
@@ -749,7 +752,8 @@ export async function zoneBasedDistribution(date = null) {
                         aquaMarketPoints: { lat: aquaMarket.point.lat, lon: aquaMarket.point.lon },
                         aquaMarketAddress: aquaMarket.address,
                         aquaMarketAddressLink: aquaMarket.link,
-                        step: "pending",
+                        step: "toAquaMarket",
+                        income: order.sum,
                         assignedAt: new Date()
                     };
 
