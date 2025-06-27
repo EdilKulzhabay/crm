@@ -711,14 +711,14 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
                 // Отправляем все заказы на переназначение
                 for (const orderId of orderIds) {
-                    await getLocationsLogicQueue(orderId);
+                    // await getLocationsLogicQueue(orderId);
                 }
             }
         } else {
             await distributionOrdersToFreeCourier(id)
         }
 
-        await getLocationsLogicQueue(orderId);
+        // await getLocationsLogicQueue(orderId);
         
         res.json({
             success: true,

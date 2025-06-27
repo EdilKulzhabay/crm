@@ -44,7 +44,7 @@ async function distributionUrgentOrder(orderId) {
         const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
 
         if (!orders || orders?.length === 0) {
-            await getLocationsLogicQueue(orderId)
+            // await getLocationsLogicQueue(orderId)
             console.log("Заказ нашел курьера");
             
             return
