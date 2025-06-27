@@ -34,7 +34,7 @@ const fetchAddressId = async (addressActual) => {
 // Основная функция обновления
 const updateOrderCoordinates = async () => {
     try {
-        // Находим заказы на 2025-06-24 для указанных франчайзи без координат с populate client
+        // Находим заказы на 2025-06-27 для указанных франчайзи без координат с populate client
         const orders = await Order.find({
             franchisee: { 
                 $in: [
@@ -62,6 +62,7 @@ const updateOrderCoordinates = async () => {
         for (const order of orders) {
             console.log(`\nОбрабатываем заказ ID: ${order._id}`);
             console.log(`Адрес заказа: ${order.address.actual}`);
+            console.log(`Текущие координаты:`, order.address.point);
 
             if (!order.client) {
                 console.log(`❌ Клиент не найден для заказа ${order._id}`);
@@ -98,23 +99,41 @@ const updateOrderCoordinates = async () => {
             const result = await fetchAddressId(addressToGeocode);
 
             if (result && result.point) {
+                console.log(`📍 Получены координаты из API:`, result.point);
+                
                 // Обновляем координаты в заказе
-                order.address.point = {
+                const newPoint = {
                     lat: result.point.lat,
                     lon: result.point.lon
                 };
-                await order.save();
                 
-                console.log(`✅ Координаты заказа обновлены: lat=${result.point.lat}, lon=${result.point.lon}`);
-                updatedCount++;
+                console.log(`🔄 Устанавливаем новые координаты:`, newPoint);
+                
+                // Используем updateOne вместо save для надежности
+                const updateResult = await Order.updateOne(
+                    { _id: order._id },
+                    { 
+                        $set: { 
+                            "address.point": newPoint,
+                            updatedAt: new Date()
+                        }
+                    }
+                );
+                
+                console.log(`📊 Результат обновления:`, updateResult);
+                
+                if (updateResult.modifiedCount > 0) {
+                    console.log(`✅ Координаты заказа обновлены: lat=${newPoint.lat}, lon=${newPoint.lon}`);
+                    updatedCount++;
+                } else {
+                    console.log(`❌ Не удалось обновить координаты в базе данных`);
+                    failedCount++;
+                }
 
                 // Обновляем координаты в адресе клиента, если найден соответствующий адрес
                 if (matchingAddress) {
                     matchingAddress.id2Gis = result.id;
-                    matchingAddress.point = {
-                        lat: result.point.lat,
-                        lon: result.point.lon
-                    };
+                    matchingAddress.point = newPoint;
                     
                     // Сохраняем клиента только если еще не обновляли
                     if (!clientsUpdated.has(order.client._id.toString())) {
