@@ -834,7 +834,7 @@ export const appointmentFranchisee = async (req, res) => {
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`;
         
-        let query = { courierAggregator: { $ne: null }, "date.d": todayStr, status: "delivered" };
+        let query = { courierAggregator: { $ne: null }, "date.d": todayStr, status: "delivered", forAggregator: true };
 
         const orders = await Order.find(query)
             .populate('courierAggregator', 'fullName _id')
