@@ -179,7 +179,7 @@ function groupZonesForCouriers(zones, courierCount) {
     // Подсчитываем общее количество заказов и целевую нагрузку на курьера
     const totalOrders = zones.reduce((sum, zone) => sum + zone.orders.length, 0);
     const targetOrdersPerCourier = Math.ceil(totalOrders / courierCount);
-    const maxOrdersPerCourier = targetOrdersPerCourier + 1; // Максимум +1 заказ к целевой нагрузке
+    const maxOrdersPerCourier = Math.min(targetOrdersPerCourier + 2, 8); // Максимум 8 заказов на курьера
     
     console.log(`📊 Общий анализ:`);
     console.log(`   📦 Всего заказов: ${totalOrders}`);
@@ -187,54 +187,12 @@ function groupZonesForCouriers(zones, courierCount) {
     console.log(`   🎯 Целевая нагрузка на курьера: ${targetOrdersPerCourier} заказов`);
     console.log(`   ⚠️ Максимум на курьера: ${maxOrdersPerCourier} заказов`);
     
-    // Разделяем зоны на приоритетные и обычные
-    const priorityZones = zones.filter(zone => zone.priority === 'high');
-    const normalZones = zones.filter(zone => zone.priority !== 'high');
+    // Разделяем зоны по приоритетам
+    const highPriorityZones = zones.filter(zone => zone.priority === 'high');
+    const mediumPriorityZones = zones.filter(zone => zone.priority === 'medium');
+    const lowPriorityZones = zones.filter(zone => zone.priority === 'low');
     
-    // НОВАЯ ЛОГИКА: Разбиваем большие зоны, если они превышают максимум
-    const processedZones = [];
-    
-    for (const zone of [...priorityZones, ...normalZones]) {
-        if (zone.orders.length <= maxOrdersPerCourier) {
-            processedZones.push(zone);
-        } else {
-            // Разбиваем большую зону на меньшие части
-            console.log(`⚡ Разбиваем большую зону ${zone.id} (${zone.orders.length} заказов) на части`);
-            
-            const ordersPerPart = Math.ceil(zone.orders.length / Math.ceil(zone.orders.length / maxOrdersPerCourier));
-            let partIndex = 1;
-            
-            for (let i = 0; i < zone.orders.length; i += ordersPerPart) {
-                const partOrders = zone.orders.slice(i, i + ordersPerPart);
-                const partCenter = calculateOrdersCenterFromArray(partOrders);
-                
-                const newZone = {
-                    id: `${zone.id}_part${partIndex}`,
-                    center: partCenter,
-                    orders: partOrders,
-                    radius: Math.min(calculateClusterRadius(partCenter, partOrders), 2000),
-                    priority: zone.priority || 'normal'
-                };
-                
-                processedZones.push(newZone);
-                console.log(`   📦 Часть ${partIndex}: ${newZone.id} (${newZone.orders.length} заказов)`);
-                partIndex++;
-            }
-        }
-    }
-    
-    // Сортируем обработанные зоны: сначала приоритетные, потом по количеству заказов
-    processedZones.sort((a, b) => {
-        if (a.priority === 'high' && b.priority !== 'high') return -1;
-        if (b.priority === 'high' && a.priority !== 'high') return 1;
-        return b.orders.length - a.orders.length;
-    });
-    
-    console.log(`📊 Зоны для распределения после обработки:`);
-    processedZones.forEach(zone => {
-        const priorityIcon = zone.priority === 'high' ? '⭐' : '🏷️';
-        console.log(`   ${priorityIcon} ${zone.id}: ${zone.orders.length} заказов, центр (${zone.center.lat.toFixed(4)}, ${zone.center.lon.toFixed(4)})`);
-    });
+    console.log(`📊 Зоны по приоритетам: ⭐${highPriorityZones.length} / 🔶${mediumPriorityZones.length} / 🏷️${lowPriorityZones.length}`);
     
     // Создаем группы для курьеров
     const courierGroups = Array.from({ length: courierCount }, () => ({
@@ -242,41 +200,30 @@ function groupZonesForCouriers(zones, courierCount) {
         totalOrders: 0,
         center: null,
         totalDistance: 0,
+        maxDistanceBetweenZones: 0,
         hasPriorityZone: false
     }));
     
-    // Распределяем зоны с СТРОГИМ контролем балансировки нагрузки
-    for (const zone of processedZones) {
+    // ЭТАП 1: Распределяем высокоприоритетные зоны (крупные)
+    for (const zone of highPriorityZones) {
         let bestCourierIndex = 0;
         let bestScore = Infinity;
         
         for (let i = 0; i < courierCount; i++) {
             const group = courierGroups[i];
-            
-            // Проверяем, не превысит ли курьер МАКСИМАЛЬНУЮ нагрузку
             const newTotalOrders = group.totalOrders + zone.orders.length;
             
-            // СТРОГОЕ ОГРАНИЧЕНИЕ: не превышаем максимум
             if (newTotalOrders > maxOrdersPerCourier) {
-                continue; // Пропускаем этого курьера
+                continue;
             }
             
-            // Штраф за превышение целевой нагрузки (но в пределах максимума)
-            let loadBalancePenalty = 0;
-            if (newTotalOrders > targetOrdersPerCourier) {
-                loadBalancePenalty = (newTotalOrders - targetOrdersPerCourier) * 5000; // Умеренный штраф
-            }
+            let score = 0;
             
-            // Если у курьера еще нет зон, назначаем эту зону
             if (group.zones.length === 0) {
-                bestCourierIndex = i;
-                bestScore = loadBalancePenalty;
-                if (loadBalancePenalty === 0) break; // Если нет штрафа, сразу выбираем
+                // Первая зона для курьера - минимальный штраф
+                score = newTotalOrders > targetOrdersPerCourier ? (newTotalOrders - targetOrdersPerCourier) * 1000 : 0;
             } else {
-                // Вычисляем оптимальность добавления зоны к курьеру
-                let routeOptimality = 0;
-                
-                // 1. Расстояние между зонами курьера
+                // Вычисляем среднее расстояние до всех зон курьера
                 let totalDistance = 0;
                 for (const existingZone of group.zones) {
                     const distance = calculateDistance(
@@ -289,38 +236,35 @@ function groupZonesForCouriers(zones, courierCount) {
                 }
                 const avgDistance = totalDistance / group.zones.length;
                 
-                // 2. Компактность маршрута (штраф за разбросанность)
-                const compactnessBonus = avgDistance < 3000 ? -500 : avgDistance < 5000 ? -200 : 0;
+                // СТРОГИЙ штраф за большие расстояния
+                let distancePenalty = avgDistance;
+                if (avgDistance > 5000) distancePenalty *= 3; // Тройной штраф за расстояния > 5км
+                if (avgDistance > 10000) distancePenalty *= 5; // Пятикратный штраф за расстояния > 10км
                 
-                // 3. Бонус для приоритетных зон
-                const priorityBonus = zone.priority === 'high' ? -1000 : 0;
+                // Штраф за перегрузку
+                const loadPenalty = newTotalOrders > targetOrdersPerCourier ? 
+                    (newTotalOrders - targetOrdersPerCourier) * 2000 : 0;
                 
-                routeOptimality = avgDistance + compactnessBonus + priorityBonus + loadBalancePenalty;
-                
-                if (routeOptimality < bestScore) {
-                    bestScore = routeOptimality;
-                    bestCourierIndex = i;
-                }
+                score = distancePenalty + loadPenalty;
+            }
+            
+            if (score < bestScore) {
+                bestScore = score;
+                bestCourierIndex = i;
             }
         }
         
-        // Проверяем, что нашли подходящего курьера
         if (bestScore === Infinity) {
-            console.log(`⚠️ Не удалось назначить зону ${zone.id} - все курьеры перегружены`);
+            console.log(`⚠️ Не удалось назначить высокоприоритетную зону ${zone.id}`);
             continue;
         }
         
-        // Назначаем зону лучшему курьеру
         const selectedGroup = courierGroups[bestCourierIndex];
         selectedGroup.zones.push(zone);
         selectedGroup.totalOrders += zone.orders.length;
+        selectedGroup.hasPriorityZone = true;
         
-        // Отмечаем наличие приоритетной зоны
-        if (zone.priority === 'high') {
-            selectedGroup.hasPriorityZone = true;
-        }
-        
-        // Пересчитываем центр группы
+        // Обновляем центр группы
         if (selectedGroup.zones.length === 1) {
             selectedGroup.center = { ...zone.center };
         } else {
@@ -336,16 +280,150 @@ function groupZonesForCouriers(zones, courierCount) {
             };
         }
         
-        const priorityMark = zone.priority === 'high' ? ' ⭐' : '';
-        console.log(`👤 Курьер ${bestCourierIndex + 1}: добавлена зона ${zone.id}${priorityMark} (оптимальность ${Math.round(bestScore)}, всего заказов: ${selectedGroup.totalOrders})`);
+        console.log(`👤 Курьер ${bestCourierIndex + 1}: добавлена ⭐зона ${zone.id} (оценка ${Math.round(bestScore)}, всего заказов: ${selectedGroup.totalOrders})`);
     }
     
-    // Вычисляем общее расстояние для каждого курьера
+    // ЭТАП 2: Распределяем среднеприоритетные зоны
+    for (const zone of mediumPriorityZones) {
+        let bestCourierIndex = 0;
+        let bestScore = Infinity;
+        
+        for (let i = 0; i < courierCount; i++) {
+            const group = courierGroups[i];
+            const newTotalOrders = group.totalOrders + zone.orders.length;
+            
+            if (newTotalOrders > maxOrdersPerCourier) {
+                continue;
+            }
+            
+            let score = 0;
+            
+            if (group.zones.length === 0) {
+                score = newTotalOrders > targetOrdersPerCourier ? (newTotalOrders - targetOrdersPerCourier) * 1000 : 0;
+            } else {
+                let totalDistance = 0;
+                for (const existingZone of group.zones) {
+                    const distance = calculateDistance(
+                        zone.center.lat,
+                        zone.center.lon,
+                        existingZone.center.lat,
+                        existingZone.center.lon
+                    );
+                    totalDistance += distance;
+                }
+                const avgDistance = totalDistance / group.zones.length;
+                
+                // Более строгие штрафы для средних зон
+                let distancePenalty = avgDistance * 1.5;
+                if (avgDistance > 4000) distancePenalty *= 2;
+                if (avgDistance > 8000) distancePenalty *= 4;
+                
+                const loadPenalty = newTotalOrders > targetOrdersPerCourier ? 
+                    (newTotalOrders - targetOrdersPerCourier) * 1500 : 0;
+                
+                score = distancePenalty + loadPenalty;
+            }
+            
+            if (score < bestScore) {
+                bestScore = score;
+                bestCourierIndex = i;
+            }
+        }
+        
+        if (bestScore === Infinity) {
+            console.log(`⚠️ Не удалось назначить среднюю зону ${zone.id}`);
+            continue;
+        }
+        
+        const selectedGroup = courierGroups[bestCourierIndex];
+        selectedGroup.zones.push(zone);
+        selectedGroup.totalOrders += zone.orders.length;
+        
+        // Обновляем центр группы
+        let totalLat = 0;
+        let totalLon = 0;
+        for (const z of selectedGroup.zones) {
+            totalLat += z.center.lat;
+            totalLon += z.center.lon;
+        }
+        selectedGroup.center = {
+            lat: totalLat / selectedGroup.zones.length,
+            lon: totalLon / selectedGroup.zones.length
+        };
+        
+        console.log(`👤 Курьер ${bestCourierIndex + 1}: добавлена 🔶зона ${zone.id} (оценка ${Math.round(bestScore)}, всего заказов: ${selectedGroup.totalOrders})`);
+    }
+    
+    // ЭТАП 3: Распределяем низкоприоритетные зоны (одиночные)
+    for (const zone of lowPriorityZones) {
+        let bestCourierIndex = 0;
+        let bestScore = Infinity;
+        
+        for (let i = 0; i < courierCount; i++) {
+            const group = courierGroups[i];
+            const newTotalOrders = group.totalOrders + zone.orders.length;
+            
+            if (newTotalOrders > maxOrdersPerCourier) {
+                continue;
+            }
+            
+            let score = 0;
+            
+            if (group.zones.length === 0) {
+                // Приоритет для курьеров с меньшей нагрузкой
+                score = 1000 + newTotalOrders * 100;
+            } else {
+                let minDistance = Infinity;
+                for (const existingZone of group.zones) {
+                    const distance = calculateDistance(
+                        zone.center.lat,
+                        zone.center.lon,
+                        existingZone.center.lat,
+                        existingZone.center.lon
+                    );
+                    minDistance = Math.min(minDistance, distance);
+                }
+                
+                // Используем минимальное расстояние до ближайшей зоны
+                let distancePenalty = minDistance;
+                if (minDistance > 6000) distancePenalty *= 3;
+                if (minDistance > 12000) distancePenalty *= 6;
+                
+                const loadPenalty = newTotalOrders > targetOrdersPerCourier ? 
+                    (newTotalOrders - targetOrdersPerCourier) * 1000 : 0;
+                
+                // Бонус за недозагрузку курьера
+                const underloadBonus = group.totalOrders < targetOrdersPerCourier ? 
+                    (targetOrdersPerCourier - group.totalOrders) * -200 : 0;
+                
+                score = distancePenalty + loadPenalty + underloadBonus;
+            }
+            
+            if (score < bestScore) {
+                bestScore = score;
+                bestCourierIndex = i;
+            }
+        }
+        
+        if (bestScore === Infinity) {
+            console.log(`⚠️ Не удалось назначить одиночную зону ${zone.id}`);
+            continue;
+        }
+        
+        const selectedGroup = courierGroups[bestCourierIndex];
+        selectedGroup.zones.push(zone);
+        selectedGroup.totalOrders += zone.orders.length;
+        
+        console.log(`👤 Курьер ${bestCourierIndex + 1}: добавлена 🏷️зона ${zone.id} (оценка ${Math.round(bestScore)}, всего заказов: ${selectedGroup.totalOrders})`);
+    }
+    
+    // Вычисляем статистику для каждого курьера
     for (let i = 0; i < courierGroups.length; i++) {
         const group = courierGroups[i];
         if (group.zones.length > 1) {
-            // Вычисляем расстояние между зонами курьера
             let totalDistance = 0;
+            let maxDistance = 0;
+            
             for (let j = 0; j < group.zones.length - 1; j++) {
                 const distance = calculateDistance(
                     group.zones[j].center.lat,
@@ -354,18 +432,29 @@ function groupZonesForCouriers(zones, courierCount) {
                     group.zones[j + 1].center.lon
                 );
                 totalDistance += distance;
+                maxDistance = Math.max(maxDistance, distance);
             }
+            
             group.totalDistance = totalDistance;
+            group.maxDistanceBetweenZones = maxDistance;
         }
     }
     
     console.log(`\n📊 ИТОГОВОЕ РАСПРЕДЕЛЕНИЕ ЗОН:`);
     courierGroups.forEach((group, index) => {
         if (group.zones.length > 0) {
-            const zoneNames = group.zones.map(z => z.id).join(' + ');
-            const priorityMark = group.hasPriorityZone ? ' ⭐' : '';
-            const balanceStatus = group.totalOrders <= targetOrdersPerCourier ? '✅' : group.totalOrders <= maxOrdersPerCourier ? '⚠️' : '❌';
-            console.log(`👤 Курьер ${index + 1}: ${zoneNames}${priorityMark} (${group.totalOrders} заказов ${balanceStatus}, ${Math.round(group.totalDistance)}м между зонами)`);
+            const zoneNames = group.zones.map(z => {
+                const priorityIcon = z.priority === 'high' ? '⭐' : z.priority === 'medium' ? '🔶' : '🏷️';
+                return `${priorityIcon}${z.id}`;
+            }).join(' + ');
+            
+            const balanceStatus = group.totalOrders <= targetOrdersPerCourier ? '✅' : 
+                                group.totalOrders <= maxOrdersPerCourier ? '⚠️' : '❌';
+            
+            const distanceStatus = group.maxDistanceBetweenZones > 10000 ? '🔴' : 
+                                 group.maxDistanceBetweenZones > 5000 ? '🟡' : '🟢';
+            
+            console.log(`👤 Курьер ${index + 1}: ${zoneNames} (${group.totalOrders} заказов ${balanceStatus}, макс.расстояние ${Math.round(group.maxDistanceBetweenZones)}м ${distanceStatus})`);
         }
     });
     
@@ -887,115 +976,137 @@ async function createSmartZones(orders, maxDistance = 2000, minOrdersInZone = 2)
     
     const clusters = [];
     const visited = new Set();
-    const noise = [];
+    const remainingOrders = [];
 
-    // Основная кластеризация
+    // ЭТАП 1: Создаем крупные зоны (минимум 3 заказа)
     for (let i = 0; i < sortedOrders.length; i++) {
         if (visited.has(i)) continue;
 
         const order = sortedOrders[i];
         const neighbors = findOrderNeighbors(sortedOrders, i, maxDistance);
 
-        if (neighbors.length < minOrdersInZone) {
-            noise.push({ order, index: i });
-            continue;
-        }
+        if (neighbors.length >= 3) { // Увеличенный минимум для крупных зон
+            // Создаем новый кластер
+            const cluster = {
+                id: `zone_${clusters.length + 1}`,
+                center: calculateOrdersCenter(sortedOrders, neighbors),
+                orders: [],
+                radius: 0,
+                priority: 'high' // Крупные зоны имеют высокий приоритет
+            };
 
-        // Создаем новый кластер
-        const cluster = {
-            id: `zone_${clusters.length + 1}`,
-            center: calculateOrdersCenter(sortedOrders, neighbors),
-            orders: [],
-            radius: 0
-        };
+            // Добавляем заказы в кластер
+            const stack = [...neighbors];
+            visited.add(i);
 
-        // Добавляем заказы в кластер
-        const stack = [...neighbors];
-        visited.add(i);
+            while (stack.length > 0) {
+                const currentIdx = stack.pop();
+                if (visited.has(currentIdx)) continue;
 
-        while (stack.length > 0) {
-            const currentIdx = stack.pop();
-            if (visited.has(currentIdx)) continue;
+                visited.add(currentIdx);
+                cluster.orders.push(sortedOrders[currentIdx]);
 
-            visited.add(currentIdx);
-            cluster.orders.push(sortedOrders[currentIdx]);
-
-            const currentNeighbors = findOrderNeighbors(sortedOrders, currentIdx, maxDistance);
-            if (currentNeighbors.length >= minOrdersInZone) {
-                for (const neighborIdx of currentNeighbors) {
-                    if (!visited.has(neighborIdx)) {
-                        stack.push(neighborIdx);
+                const currentNeighbors = findOrderNeighbors(sortedOrders, currentIdx, maxDistance);
+                if (currentNeighbors.length >= 2) { // Более мягкое требование для расширения
+                    for (const neighborIdx of currentNeighbors) {
+                        if (!visited.has(neighborIdx)) {
+                            stack.push(neighborIdx);
+                        }
                     }
                 }
             }
-        }
 
-        cluster.radius = Math.min(calculateClusterRadius(cluster.center, cluster.orders), maxDistance);
-        clusters.push(cluster);
+            cluster.radius = Math.min(calculateClusterRadius(cluster.center, cluster.orders), maxDistance);
+            clusters.push(cluster);
+            console.log(`🏷️ Создана крупная зона ${cluster.id}: ${cluster.orders.length} заказов`);
+        }
     }
 
-    // Обработка одиночных заказов
-    const processedNoise = new Set();
+    // ЭТАП 2: Собираем оставшиеся (не назначенные) заказы
+    for (let i = 0; i < sortedOrders.length; i++) {
+        if (!visited.has(i)) {
+            remainingOrders.push({ order: sortedOrders[i], index: i });
+        }
+    }
+
+    console.log(`📦 Оставшихся заказов для группировки: ${remainingOrders.length}`);
+
+    // ЭТАП 3: Создаем средние зоны из оставшихся заказов (минимум 2 заказа)
+    const processedRemaining = new Set();
     
-    for (let i = 0; i < noise.length; i++) {
-        if (processedNoise.has(i)) continue;
+    for (let i = 0; i < remainingOrders.length; i++) {
+        if (processedRemaining.has(i)) continue;
         
-        const noiseOrder = noise[i].order;
-        const nearbyNoise = [];
+        const baseOrder = remainingOrders[i].order;
+        const closeOrders = [baseOrder];
+        const usedIndices = [i];
         
-        for (let j = i + 1; j < noise.length; j++) {
-            if (processedNoise.has(j)) continue;
+        // Ищем близкие заказы
+        for (let j = i + 1; j < remainingOrders.length; j++) {
+            if (processedRemaining.has(j)) continue;
             
             const distance = calculateDistance(
-                noiseOrder.address.point.lat,
-                noiseOrder.address.point.lon,
-                noise[j].order.address.point.lat,
-                noise[j].order.address.point.lon
+                baseOrder.address.point.lat,
+                baseOrder.address.point.lon,
+                remainingOrders[j].order.address.point.lat,
+                remainingOrders[j].order.address.point.lon
             );
             
-            if (distance <= maxDistance * 1.2) {
-                nearbyNoise.push(noise[j]);
-                processedNoise.add(j);
+            if (distance <= maxDistance * 1.5) { // Увеличенный радиус для группировки оставшихся
+                closeOrders.push(remainingOrders[j].order);
+                usedIndices.push(j);
             }
         }
         
-        processedNoise.add(i);
+        // Отмечаем использованные заказы
+        for (const idx of usedIndices) {
+            processedRemaining.add(idx);
+        }
         
-        // Создаем отдельные зоны для заказов
-        
-        if (nearbyNoise.length > 0) {
-            const miniZoneOrders = [noiseOrder, ...nearbyNoise.map(n => n.order)];
-            const miniCenter = calculateOrdersCenterFromArray(miniZoneOrders);
+        if (closeOrders.length >= 2) {
+            // Создаем среднюю зону
+            const mediumCenter = calculateOrdersCenterFromArray(closeOrders);
             
             clusters.push({
                 id: `zone_${clusters.length + 1}`,
-                center: miniCenter,
-                orders: miniZoneOrders,
-                radius: Math.min(calculateClusterRadius(miniCenter, miniZoneOrders), maxDistance),
-                priority: 'normal' // Все зоны имеют стандартный приоритет
+                center: mediumCenter,
+                orders: closeOrders,
+                radius: Math.min(calculateClusterRadius(mediumCenter, closeOrders), maxDistance),
+                priority: 'medium'
             });
+            console.log(`🏷️ Создана средняя зона zone_${clusters.length}: ${closeOrders.length} заказов`);
         } else {
+            // Одиночный заказ - создаем маленькую зону
             clusters.push({
                 id: `single_zone_${clusters.length + 1}`,
                 center: {
-                    lat: noiseOrder.address.point.lat,
-                    lon: noiseOrder.address.point.lon
+                    lat: baseOrder.address.point.lat,
+                    lon: baseOrder.address.point.lon
                 },
-                orders: [noiseOrder],
-                radius: 800,
-                priority: 'normal' // Все зоны имеют стандартный приоритет
+                orders: [baseOrder],
+                radius: 1000, // Увеличенный радиус для одиночных зон
+                priority: 'low'
             });
+            console.log(`🏷️ Создана одиночная зона single_zone_${clusters.length}: 1 заказ`);
         }
     }
 
-    // Сортируем зоны по количеству заказов (без приоритетов)
+    // Сортируем зоны по приоритету, затем по количеству заказов
     clusters.sort((a, b) => {
+        const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+        const aPriority = priorityOrder[a.priority] || 1;
+        const bPriority = priorityOrder[b.priority] || 1;
+        
+        if (aPriority !== bPriority) {
+            return bPriority - aPriority;
+        }
         return b.orders.length - a.orders.length;
     });
 
     console.log(`✅ Создано ${clusters.length} зон:`);
     clusters.forEach(zone => {
-        console.log(`   🏷️ ${zone.id}: ${zone.orders.length} заказов, радиус ${Math.round(zone.radius)}м`);
+        const priorityIcon = zone.priority === 'high' ? '⭐' : zone.priority === 'medium' ? '🔶' : '🏷️';
+        console.log(`   ${priorityIcon} ${zone.id}: ${zone.orders.length} заказов, радиус ${Math.round(zone.radius)}м`);
     });
     
     return clusters;
