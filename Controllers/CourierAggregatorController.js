@@ -378,15 +378,15 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
-            const orderIds = courier.orders.map(item => item.orderId);
-            await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
-            const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
-            await CourierAggregator.updateOne({_id: id}, { $set: {
-                orders: []
-            } })
-            for (const order of orders) {
-                await getLocationsLogicQueue(order._id);
-            }
+            // const orderIds = courier.orders.map(item => item.orderId);
+            // await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
+            // const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
+            // await CourierAggregator.updateOne({_id: id}, { $set: {
+            //     orders: []
+            // } })
+            // for (const order of orders) {
+            //     await getLocationsLogicQueue(order._id);
+            // }
         }
     } catch (error) {
         console.log(error);

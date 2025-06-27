@@ -134,18 +134,6 @@ export const addOrder = async (req, res) => {
         res.json({
             success: true,
         });
-
-        if (candidate.role === "superAdmin" && address.point.lat && address.point.lon) {
-            setImmediate(async () => {
-                const orderId = order?._id
-                try {
-                    console.log("Добавляем заказ в очередь для распределение");
-                    await getLocationsLogicQueue(orderId);
-                } catch (error) {
-                    console.error("Ошибка при получении локаций:", error);
-                }
-            });
-        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -453,6 +441,7 @@ export const updateOrder = async (req, res) => {
         }
 
         if (change === "status") {
+            const oldStatus = order.status; // Сохраняем старый статус
             order.status = changeData;
             if (changeData === "delivered" || changeData === "cancelled") {
                 const courierId = order.courier
@@ -470,7 +459,6 @@ export const updateOrder = async (req, res) => {
                 status: changeData,
                 message: `Статус заказа #${order._id} был изменен на ${changeData}`,
             });
-
         } 
 
         if (change === "courier") {
@@ -540,7 +528,7 @@ export const updateOrder = async (req, res) => {
             if (client && client?.expoPushToken?.length > 0) {
                 const expoTokens = client?.expoPushToken
                 const messageTitle = "Доставка воды – новая дата 📅"
-                const messageBody = "Уважаемый клиент, доставка вашей воды “Тибетская” переносится на завтра из-за внеплановых логистических обстоятельств. Примите наши извинения, завтра мы позаботимся о том, чтобы ваш заказ прибыл как можно раньше. Спасибо за понимание!"
+                const messageBody = `Уважаемый клиент, доставка вашей воды "Тибетская" переносится на завтра из-за внеплановых логистических обстоятельств. Примите наши извинения, завтра мы позаботимся о том, чтобы ваш заказ прибыл как можно раньше. Спасибо за понимание!`
                 const newStatus = "date"
                 pushNotification(messageTitle, messageBody, expoTokens, newStatus)
             }
