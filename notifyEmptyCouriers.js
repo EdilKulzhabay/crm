@@ -130,3 +130,22 @@ console.log("🚀 ЗАПУСК СИСТЕМЫ УВЕДОМЛЕНИЙ ДЛЯ КУ
 console.log("📅 Время:", new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' }));
 
 findCouriersWithOrders(); 
+
+
+// db.orders.updateMany(
+//     { 
+//       _id: { 
+//         $in: [
+//           ObjectId('685e490b71139c8105c8ea1a'),
+//           ObjectId('685e29386f3d43fa9a2d9a88'),
+//         ]
+//       }
+//     }, 
+//     { 
+//       $set: {
+//         courierAggregator: null, 
+//         status: "awaitingOrder", 
+//         forAggregator: false
+//       } 
+//     }
+//   )

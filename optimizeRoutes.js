@@ -36,12 +36,28 @@ function optimizeCourierRoute(orders, courierName) {
     // Начинаем с первого заказа (любого)
     const firstOrder = remainingOrders.shift();
     optimizedRoute.push(firstOrder);
-    let currentLocation = {
-        lat: firstOrder.address.point.lat,
-        lon: firstOrder.address.point.lon
-    };
+    
+    // Определяем структуру координат (поддерживаем оба формата)
+    let currentLocation;
+    if (firstOrder.address && firstOrder.address.point) {
+        // Формат из базы Order
+        currentLocation = {
+            lat: firstOrder.address.point.lat,
+            lon: firstOrder.address.point.lon
+        };
+        console.log(`      🚀 Начинаем с заказа: ${firstOrder.address.actual}`);
+    } else if (firstOrder.clientPoints) {
+        // Формат из CourierAggregator
+        currentLocation = {
+            lat: firstOrder.clientPoints.lat,
+            lon: firstOrder.clientPoints.lon
+        };
+        console.log(`      🚀 Начинаем с заказа: ${firstOrder.clientAddress || firstOrder.clientTitle}`);
+    } else {
+        console.log(`      ❌ Не найдены координаты для первого заказа`);
+        return orders; // Возвращаем исходный порядок
+    }
 
-    console.log(`      🚀 Начинаем с заказа: ${firstOrder.address.actual}`);
     console.log(`         📍 (${currentLocation.lat.toFixed(4)}, ${currentLocation.lon.toFixed(4)})`);
 
     // Строим маршрут по принципу "ближайший сосед"
@@ -52,11 +68,24 @@ function optimizeCourierRoute(orders, courierName) {
         // Находим ближайший заказ к текущему местоположению
         for (let i = 0; i < remainingOrders.length; i++) {
             const order = remainingOrders[i];
+            let orderLat, orderLon;
+            
+            // Определяем координаты заказа (поддерживаем оба формата)
+            if (order.address && order.address.point) {
+                orderLat = order.address.point.lat;
+                orderLon = order.address.point.lon;
+            } else if (order.clientPoints) {
+                orderLat = order.clientPoints.lat;
+                orderLon = order.clientPoints.lon;
+            } else {
+                continue; // Пропускаем заказы без координат
+            }
+
             const distance = calculateDistance(
                 currentLocation.lat,
                 currentLocation.lon,
-                order.address.point.lat,
-                order.address.point.lon
+                orderLat,
+                orderLon
             );
 
             if (distance < shortestDistance) {
@@ -69,9 +98,21 @@ function optimizeCourierRoute(orders, courierName) {
         const selectedOrder = remainingOrders.splice(nearestIndex, 1)[0];
         optimizedRoute.push(selectedOrder);
         
+        // Определяем новое местоположение
+        let newLat, newLon, orderName;
+        if (selectedOrder.address && selectedOrder.address.point) {
+            newLat = selectedOrder.address.point.lat;
+            newLon = selectedOrder.address.point.lon;
+            orderName = selectedOrder.address.actual;
+        } else if (selectedOrder.clientPoints) {
+            newLat = selectedOrder.clientPoints.lat;
+            newLon = selectedOrder.clientPoints.lon;
+            orderName = selectedOrder.clientAddress || selectedOrder.clientTitle;
+        }
+        
         // Определяем направление движения
-        const deltaLat = selectedOrder.address.point.lat - currentLocation.lat;
-        const deltaLon = selectedOrder.address.point.lon - currentLocation.lon;
+        const deltaLat = newLat - currentLocation.lat;
+        const deltaLon = newLon - currentLocation.lon;
         
         let direction = '';
         if (Math.abs(deltaLat) > Math.abs(deltaLon)) {
@@ -80,14 +121,14 @@ function optimizeCourierRoute(orders, courierName) {
             direction = deltaLon > 0 ? '➡️ Восток' : '⬅️ Запад';
         }
         
-        console.log(`      → ${optimizedRoute.length}. ${selectedOrder.address.actual}`);
-        console.log(`         📍 (${selectedOrder.address.point.lat}, ${selectedOrder.address.point.lon})`);
+        console.log(`      → ${optimizedRoute.length}. ${orderName}`);
+        console.log(`         📍 (${newLat}, ${newLon})`);
         console.log(`         ${direction} - ${Math.round(shortestDistance)}м от предыдущей точки`);
         
         // Обновляем текущее местоположение
         currentLocation = {
-            lat: selectedOrder.address.point.lat,
-            lon: selectedOrder.address.point.lon
+            lat: newLat,
+            lon: newLon
         };
     }
 
@@ -95,13 +136,30 @@ function optimizeCourierRoute(orders, courierName) {
     let totalDistance = 0;
     
     for (let i = 1; i < optimizedRoute.length; i++) {
-        const distance = calculateDistance(
-            optimizedRoute[i-1].address.point.lat,
-            optimizedRoute[i-1].address.point.lon,
-            optimizedRoute[i].address.point.lat,
-            optimizedRoute[i].address.point.lon
-        );
-        totalDistance += distance;
+        let prevLat, prevLon, currLat, currLon;
+        
+        // Координаты предыдущего заказа
+        if (optimizedRoute[i-1].address && optimizedRoute[i-1].address.point) {
+            prevLat = optimizedRoute[i-1].address.point.lat;
+            prevLon = optimizedRoute[i-1].address.point.lon;
+        } else if (optimizedRoute[i-1].clientPoints) {
+            prevLat = optimizedRoute[i-1].clientPoints.lat;
+            prevLon = optimizedRoute[i-1].clientPoints.lon;
+        }
+        
+        // Координаты текущего заказа
+        if (optimizedRoute[i].address && optimizedRoute[i].address.point) {
+            currLat = optimizedRoute[i].address.point.lat;
+            currLon = optimizedRoute[i].address.point.lon;
+        } else if (optimizedRoute[i].clientPoints) {
+            currLat = optimizedRoute[i].clientPoints.lat;
+            currLon = optimizedRoute[i].clientPoints.lon;
+        }
+        
+        if (prevLat && prevLon && currLat && currLon) {
+            const distance = calculateDistance(prevLat, prevLon, currLat, currLon);
+            totalDistance += distance;
+        }
     }
 
     console.log(`   ✅ Маршрут оптимизирован. Общее расстояние между заказами: ${Math.round(totalDistance)}м`);
@@ -621,7 +679,7 @@ export async function zoneBasedDistribution(date = null) {
             ],
             "address.point.lat": { $exists: true, $ne: null },
             "address.point.lon": { $exists: true, $ne: null }
-        });
+        }).populate('client');
 
         if (remainingOrders.length > 0) {
             console.log(`\n⚠️ НАЙДЕНО ${remainingOrders.length} НЕНАЗНАЧЕННЫХ ЗАКАЗОВ`);

@@ -44,7 +44,7 @@ const updateOrderCoordinates = async () => {
                     new mongoose.Types.ObjectId('66fc0d3e953c2dbbc86c2138')
                 ]
             },
-            "date.d": "2025-06-24",
+            "date.d": "2025-06-27",
             $or: [
                 { "address.point": null },
                 { "address.point": { lat: null, lon: null } },
