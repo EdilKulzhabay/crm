@@ -595,29 +595,7 @@ export async function zoneBasedDistribution(date = null) {
                     
                     totalDistributed++;
 
-                    // Отправляем уведомление только для первого заказа курьера
-                    if (orderIndex === 0 && courier.notificationPushToken) {
-                        let message = "";
-                        
-                        if (order.products?.b19 > 0) {
-                            message += `${order.products.b19} бутылей 19л. `;
-                        }
-                        if (order.products?.b12 > 0) {
-                            message += `${order.products.b12} бутылей 12.5л. `;
-                        }
-                        
-                        message += `Забрать из аквамаркета: ${aquaMarket.address}`;
-
-                        await pushNotification(
-                            "newOrder",
-                            message,
-                            [courier.notificationPushToken],
-                            "newOrder",
-                            orderData
-                        );
-                        
-                        console.log(`      📱 Уведомление отправлено`);
-                    }
+                    console.log(`      ✅ Заказ назначен курьеру`);
 
                 } catch (error) {
                     console.log(`      ❌ Ошибка назначения: ${error.message}`);
