@@ -22,11 +22,17 @@ class EventMonitor {
      */
     async checkNewOrders() {
         try {
+            // Проверяем соединение
+            if (mongoose.connection.readyState !== 1) {
+                console.log("⚠️ MongoDB не подключен, пропускаем проверку заказов");
+                return false;
+            }
+
             const newOrders = await Order.find({
                 forAggregator: true,
                 createdAt: { $gt: this.lastCheck },
                 status: { $nin: ["onTheWay", "delivered", "cancelled"] }
-            });
+            }).maxTimeMS(5000); // Таймаут 5 секунд
 
             if (newOrders.length > 0) {
                 console.log(`📦 Найдено ${newOrders.length} новых заказов для агрегатора`);
@@ -39,7 +45,7 @@ class EventMonitor {
                 return true;
             }
         } catch (error) {
-            console.error("❌ Ошибка проверки новых заказов:", error);
+            console.error("❌ Ошибка проверки новых заказов:", error.message);
         }
         return false;
     }
@@ -49,9 +55,15 @@ class EventMonitor {
      */
     async checkCouriersOnline() {
         try {
+            // Проверяем соединение
+            if (mongoose.connection.readyState !== 1) {
+                console.log("⚠️ MongoDB не подключен, пропускаем проверку курьеров");
+                return false;
+            }
+
             const currentCouriers = await CourierAggregator.find({
                 status: "active"
-            });
+            }).maxTimeMS(5000); // Таймаут 5 секунд
 
             let hasChanges = false;
 
@@ -95,7 +107,7 @@ class EventMonitor {
                 return true;
             }
         } catch (error) {
-            console.error("❌ Ошибка проверки курьеров:", error);
+            console.error("❌ Ошибка проверки курьеров:", error.message);
         }
         return false;
     }
@@ -104,7 +116,7 @@ class EventMonitor {
      * 🔄 ПОЛНАЯ ПРОВЕРКА ВСЕХ СОБЫТИЙ
      */
     async checkAllEvents() {
-        console.log(`🔍 Проверка событий: ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' })}`);
+        console.log(`🔍 Проверка событий: ${new Date().toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' })} (MongoDB: ${mongoose.connection.readyState === 1 ? '✅' : '❌'})`);
         
         const newOrdersFound = await this.checkNewOrders();
         const courierChanges = await this.checkCouriersOnline();
@@ -152,8 +164,40 @@ class EventMonitor {
             console.log("✅ Мониторинг инициализирован");
 
         } catch (error) {
-            console.error("❌ Ошибка инициализации мониторинга:", error);
+            console.error("❌ Ошибка инициализации мониторинга:", error.message);
         }
+    }
+}
+
+/**
+ * 🔌 НАСТРОЙКА ПОДКЛЮЧЕНИЯ К MONGODB
+ */
+async function connectToMongoDB() {
+    try {
+        await mongoose.connect('mongodb://127.0.0.1:27017/crm', {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+            maxPoolSize: 10,
+            minPoolSize: 5,
+            maxIdleTimeMS: 30000,
+            bufferCommands: false,
+            bufferMaxEntries: 0
+        });
+        console.log("✅ Подключение к MongoDB установлено");
+        return true;
+    } catch (error) {
+        console.error("❌ Ошибка подключения к MongoDB:", error.message);
+        return false;
+    }
+}
+
+/**
+ * 🔄 ПЕРЕПОДКЛЮЧЕНИЕ К MONGODB
+ */
+async function ensureMongoConnection() {
+    if (mongoose.connection.readyState !== 1) {
+        console.log("🔄 Переподключение к MongoDB...");
+        await connectToMongoDB();
     }
 }
 
@@ -166,8 +210,25 @@ async function startSimpleSystem() {
 
         // Подключение к MongoDB
         console.log("🔌 Подключение к MongoDB...");
-        await mongoose.connect('mongodb://127.0.0.1:27017/crm');
-        console.log("✅ Подключение к MongoDB установлено");
+        const connected = await connectToMongoDB();
+        
+        if (!connected) {
+            console.log("❌ Не удалось подключиться к MongoDB. Выход...");
+            process.exit(1);
+        }
+
+        // Обработка событий подключения
+        mongoose.connection.on('disconnected', () => {
+            console.log("⚠️ MongoDB отключен");
+        });
+
+        mongoose.connection.on('reconnected', () => {
+            console.log("✅ MongoDB переподключен");
+        });
+
+        mongoose.connection.on('error', (err) => {
+            console.error("❌ Ошибка MongoDB:", err.message);
+        });
 
         // Создаем монитор событий
         const eventMonitor = new EventMonitor();
@@ -190,6 +251,7 @@ async function startSimpleSystem() {
 
         // Запускаем периодическую проверку каждые 30 секунд
         const intervalId = setInterval(async () => {
+            await ensureMongoConnection();
             await eventMonitor.checkAllEvents();
         }, 30 * 1000); // 30 секунд
 
@@ -205,7 +267,7 @@ async function startSimpleSystem() {
                 console.log("👋 Система остановлена");
                 process.exit(0);
             } catch (error) {
-                console.error("❌ Ошибка при закрытии:", error);
+                console.error("❌ Ошибка при закрытии:", error.message);
                 process.exit(1);
             }
         };
@@ -214,18 +276,18 @@ async function startSimpleSystem() {
         process.on('SIGTERM', cleanup);
 
     } catch (error) {
-        console.error("❌ Ошибка запуска системы:", error);
+        console.error("❌ Ошибка запуска системы:", error.message);
         process.exit(1);
     }
 }
 
 // Обработка необработанных ошибок
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Необработанная ошибка Promise:', reason);
+    console.error('❌ Необработанная ошибка Promise:', reason?.message || reason);
 });
 
 process.on('uncaughtException', (error) => {
-    console.error('❌ Необработанное исключение:', error);
+    console.error('❌ Необработанное исключение:', error.message);
     process.exit(1);
 });
 
