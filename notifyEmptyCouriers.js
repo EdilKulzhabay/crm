@@ -73,23 +73,16 @@ async function sendNotificationAboutFirstOrder(courier) {
             return;
         }
 
-        // Получаем первый заказ
-        const firstOrderId = courier.orders[0];
+        // Получаем первый заказ (он уже содержит полные данные)
+        const firstOrder = courier.orders[0];
         
-        // Находим полную информацию о заказе
-        const firstOrder = await Order.findById(firstOrderId);
-        
-        if (!firstOrder) {
-            console.log(`   ⚠️ Заказ ${firstOrderId} не найден`);
-            return;
-        }
-
-        console.log(`   📍 Первый заказ: ${firstOrder.address?.actual || 'Адрес не указан'}`);
+        console.log(`   📍 Первый заказ: ${firstOrder.clientAddress || 'Адрес не указан'}`);
+        console.log(`   📞 Клиент: ${firstOrder.clientTitle || 'Имя не указано'} (${firstOrder.clientPhone || 'Телефон не указан'})`);
 
         // Отправляем уведомление используя существующую функцию pushNotification
         await pushNotification(
             "newOrder",
-            `Ваш первый заказ: ${firstOrder.address?.actual || 'Адрес не указан'}`,
+            `Ваш первый заказ: ${firstOrder.clientAddress || 'Адрес не указан'}`,
             [courier.notificationPushToken || courier.notificationToken],
             "newOrder",
             firstOrder
