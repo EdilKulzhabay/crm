@@ -99,7 +99,10 @@ const updateOrderCoordinates = async () => {
 
             if (result && result.point) {
                 // Обновляем координаты в заказе
-                order.address.point = result.point;
+                order.address.point = {
+                    lat: result.point.lat,
+                    lon: result.point.lon
+                };
                 await order.save();
                 
                 console.log(`✅ Координаты заказа обновлены: lat=${result.point.lat}, lon=${result.point.lon}`);
@@ -108,7 +111,10 @@ const updateOrderCoordinates = async () => {
                 // Обновляем координаты в адресе клиента, если найден соответствующий адрес
                 if (matchingAddress) {
                     matchingAddress.id2Gis = result.id;
-                    matchingAddress.point = result.point;
+                    matchingAddress.point = {
+                        lat: result.point.lat,
+                        lon: result.point.lon
+                    };
                     
                     // Сохраняем клиента только если еще не обновляли
                     if (!clientsUpdated.has(order.client._id.toString())) {
@@ -118,23 +124,8 @@ const updateOrderCoordinates = async () => {
                     }
                 }
             } else {
-                // Устанавливаем null координаты если не найдены
-                order.address.point = { lat: null, lon: null };
-                await order.save();
-                
-                console.log(`❌ Координаты не найдены, установлены null значения`);
+                console.log(`❌ Координаты не найдены для адреса: ${addressToGeocode}`);
                 failedCount++;
-
-                // Обновляем адрес клиента с null значениями
-                if (matchingAddress) {
-                    matchingAddress.id2Gis = null;
-                    matchingAddress.point = { lat: null, lon: null };
-                    
-                    if (!clientsUpdated.has(order.client._id.toString())) {
-                        await order.client.save();
-                        clientsUpdated.add(order.client._id.toString());
-                    }
-                }
             }
 
             // Небольшая задержка между запросами к API
