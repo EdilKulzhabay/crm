@@ -752,7 +752,7 @@ export const addOrderClientMobile = async (req, res) => {
         setImmediate(async () => {
             const orderId = order?._id
             try {
-              await getLocationsLogicQueue(orderId);
+            //   await getLocationsLogicQueue(orderId);
               console.log("Обновленные локации после заказа:");
             } catch (error) {
               console.error("Ошибка при получении локаций:", error);

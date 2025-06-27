@@ -306,7 +306,7 @@ async function distributionOrdersToFreeCourier(courierId) {
             console.log("Курьер не принял заказ");
             await Order.updateOne({_id: orders[0]._id}, { $set: { courierAggregator: null } })
             for (const orderId of orderIds) {
-                await getLocationsLogicQueue(orderId);
+                // await getLocationsLogicQueue(orderId);
             }
             return
         }
@@ -329,7 +329,7 @@ async function distributionOrdersToFreeCourier(courierId) {
             await Order.updateOne({_id: orders[0]._id}, { $set: { courierAggregator: freeCourier._id } })
             for (const orderId of orderIds) {
                 if (orderId !== orders[0]._id) {
-                    await getLocationsLogicQueue(orderId);
+                    // await getLocationsLogicQueue(orderId);
                 }
             }
         }

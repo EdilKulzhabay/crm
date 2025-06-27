@@ -547,17 +547,17 @@ export const updateOrder = async (req, res) => {
 
         if (change === "forAggregator") {
             await Order.updateOne({_id: orderId}, { $set: { forAggregator: changeData } })
-            if (order.address.point.lat && order.address.point.lon) {
-                setImmediate(async () => {
-                    const orderId = order?._id
-                    try {
-                        console.log("Добавляем заказ в очередь для распределение");
-                        await getLocationsLogicQueue(orderId);
-                    } catch (error) {
-                        console.error("Ошибка при получении локаций:", error);
-                    }
-                });
-            }
+            // if (order.address.point.lat && order.address.point.lon) {
+            //     setImmediate(async () => {
+            //         const orderId = order?._id
+            //         try {
+            //             console.log("Добавляем заказ в очередь для распределение");
+            //             await getLocationsLogicQueue(orderId);
+            //         } catch (error) {
+            //             console.error("Ошибка при получении локаций:", error);
+            //         }
+            //     });
+            // }
         }
 
         res.json({
