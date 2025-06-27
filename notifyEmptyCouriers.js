@@ -3,7 +3,7 @@
 import mongoose from 'mongoose';
 import CourierAggregator from './Models/CourierAggregator.js';
 import Order from './Models/Order.js';
-import { pushNotification } from "../pushNotification.js";
+import { pushNotification } from "./pushNotification.js";
 
 /**
  * 📱 УВЕДОМЛЕНИЯ КУРЬЕРАМ С ЗАКАЗАМИ
