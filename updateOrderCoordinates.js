@@ -44,7 +44,14 @@ const updateOrderCoordinates = async () => {
                     new mongoose.Types.ObjectId('66fc0d3e953c2dbbc86c2138')
                 ]
             },
-            "date.d": "2025-06-27",
+            _id: {
+                $nin: [
+                    new mongoose.Types.ObjectId('6860fe2848cdb02bd0b9acc2'),
+                    new mongoose.Types.ObjectId('68636ae448cdb02bd0ba8f34'),
+                    new mongoose.Types.ObjectId('6862aa3b48cdb02bd0ba6ddc')
+                ]
+            },
+            "date.d": "2025-07-01",
             $or: [
                 { "address.point": null },
                 { "address.point": { lat: null, lon: null } },
@@ -115,7 +122,8 @@ const updateOrderCoordinates = async () => {
                     { 
                         $set: { 
                             "address.point": newPoint,
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            forceUpdate: true
                         }
                     }
                 );
