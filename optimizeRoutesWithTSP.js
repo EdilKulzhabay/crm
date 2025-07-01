@@ -650,23 +650,24 @@ export async function optimizedZoneBasedDistribution(date = null, useVROOM = fal
             console.log(`\n🧠 РАСПРЕДЕЛЕНИЕ ЗОН МЕЖДУ КУРЬЕРАМИ`);
             
             // Используем ту же логику группировки, что и в оригинале
-            const courierGroups = groupZonesForCouriersAdvanced(zones, couriers.length);
+            const courierGroups = groupZonesForCouriersAdvanced(zones, couriers);
 
             // 5. Назначаем заказы с TSP оптимизацией
             let totalDistributed = 0;
             console.log(`\n👥 НАЗНАЧЕНИЕ С TSP ОПТИМИЗАЦИЕЙ:`);
 
-            for (let groupIndex = 0; groupIndex < courierGroups.length && groupIndex < couriers.length; groupIndex++) {
-                const courier = couriers[groupIndex];
-                const group = courierGroups[groupIndex];
+            for (let groupIndex = 0; groupIndex < courierGroups.length; groupIndex++) {
+                const courierGroup = courierGroups[groupIndex];
+                const courier = courierGroup.courier;
                 
                 console.log(`\n👤 КУРЬЕР: ${courier.fullName}`);
-                console.log(`   🏷️ Зоны: ${group.zones.map(z => z.id).join(', ')}`);
-                console.log(`   📦 Всего заказов: ${group.totalOrders}`);
+                console.log(`   📍 Местоположение: ${courierGroup.courierLocation.lat.toFixed(6)}, ${courierGroup.courierLocation.lon.toFixed(6)}`);
+                console.log(`   🏷️ Зоны: ${courierGroup.zones.map(z => z.id).join(', ')}`);
+                console.log(`   📦 Всего заказов: ${courierGroup.totalOrders}`);
 
                 // Собираем все заказы курьера
                 const allCourierOrders = [];
-                for (const zone of group.zones) {
+                for (const zone of courierGroup.zones) {
                     allCourierOrders.push(...zone.orders);
                 }
 
@@ -760,28 +761,42 @@ export async function optimizedZoneBasedDistribution(date = null, useVROOM = fal
 
 /**
  * 🎯 УЛУЧШЕННАЯ ГРУППИРОВКА ЗОН ДЛЯ КУРЬЕРОВ
- * Адаптированная версия оригинальной функции
+ * Учитывает текущее местоположение курьеров
  */
-function groupZonesForCouriersAdvanced(zones, courierCount) {
-    console.log(`\n🧠 ПРОДВИНУТАЯ ГРУППИРОВКА ${zones.length} ЗОН ДЛЯ ${courierCount} КУРЬЕРОВ`);
+function groupZonesForCouriersAdvanced(zones, couriers) {
+    console.log(`\n🧠 ПРОДВИНУТАЯ ГРУППИРОВКА ${zones.length} ЗОН ДЛЯ ${couriers.length} КУРЬЕРОВ С УЧЕТОМ ИХ МЕСТОПОЛОЖЕНИЯ`);
     
     if (zones.length === 0) return [];
-    if (courierCount === 0) return [];
+    if (couriers.length === 0) return [];
     
     const totalOrders = zones.reduce((sum, zone) => sum + zone.orders.length, 0);
-    const targetOrdersPerCourier = Math.ceil(totalOrders / courierCount);
+    const targetOrdersPerCourier = Math.ceil(totalOrders / couriers.length);
     const maxOrdersPerCourier = Math.min(targetOrdersPerCourier + 1, 6);
     
     console.log(`📊 Целевая нагрузка: ${targetOrdersPerCourier}, максимум: ${maxOrdersPerCourier} заказов на курьера`);
     
-    const courierGroups = Array.from({ length: courierCount }, () => ({
+    // Создаем группы с информацией о курьерах
+    const courierGroups = couriers.map((courier, index) => ({
+        courier: courier,
+        courierIndex: index,
         zones: [],
         totalOrders: 0,
         center: null,
         totalDistance: 0,
         maxDistanceBetweenZones: 0,
-        hasPriorityZone: false
+        hasPriorityZone: false,
+        // Добавляем текущие координаты курьера
+        courierLocation: {
+            lat: courier.point?.lat || 43.2, // Координаты по умолчанию для Алматы
+            lon: courier.point?.lon || 76.9
+        }
     }));
+
+    // Выводим информацию о курьерах
+    console.log(`👥 КУРЬЕРЫ И ИХ МЕСТОПОЛОЖЕНИЕ:`);
+    courierGroups.forEach((group, index) => {
+        console.log(`   ${index + 1}. ${group.courier.fullName}: ${group.courierLocation.lat.toFixed(6)}, ${group.courierLocation.lon.toFixed(6)}`);
+    });
 
     // Сортируем зоны по приоритету и размеру
     const sortedZones = [...zones].sort((a, b) => {
@@ -795,43 +810,56 @@ function groupZonesForCouriersAdvanced(zones, courierCount) {
         return b.orders.length - a.orders.length;
     });
 
-    // Назначаем зоны курьерам с учетом расстояний и нагрузки
+    // Назначаем зоны курьерам с учетом их местоположения и нагрузки
     for (const zone of sortedZones) {
         let bestCourierIndex = -1;
         let bestScore = Infinity;
         
-        for (let i = 0; i < courierCount; i++) {
+        console.log(`\n🏷️ Назначение зоны ${zone.id} (${zone.orders.length} заказов):`);
+        console.log(`   📍 Центр зоны: ${zone.center.lat.toFixed(6)}, ${zone.center.lon.toFixed(6)}`);
+        
+        for (let i = 0; i < courierGroups.length; i++) {
             const group = courierGroups[i];
             const newTotalOrders = group.totalOrders + zone.orders.length;
             
             if (newTotalOrders > maxOrdersPerCourier) {
+                console.log(`      ❌ ${group.courier.fullName}: перегрузка (${newTotalOrders}/${maxOrdersPerCourier})`);
                 continue; // Пропускаем перегруженных курьеров
             }
             
-            let score = 0;
+            // Вычисляем расстояние от курьера до центра зоны
+            const distanceToCourier = calculateDistance(
+                group.courierLocation.lat, group.courierLocation.lon,
+                zone.center.lat, zone.center.lon
+            );
             
-            if (group.zones.length === 0) {
-                score = newTotalOrders > targetOrdersPerCourier ? 
-                    (newTotalOrders - targetOrdersPerCourier) * 500 : 0;
-            } else {
-                // Вычисляем минимальное расстояние до существующих зон
-                let minDistance = Infinity;
+            let score = distanceToCourier;
+            
+            // Если у курьера уже есть зоны, учитываем расстояние до ближайшей зоны
+            if (group.zones.length > 0) {
+                let minDistanceToExistingZone = Infinity;
                 for (const existingZone of group.zones) {
                     const distance = calculateDistance(
                         zone.center.lat, zone.center.lon,
                         existingZone.center.lat, existingZone.center.lon
                     );
-                    minDistance = Math.min(minDistance, distance);
+                    minDistanceToExistingZone = Math.min(minDistanceToExistingZone, distance);
                 }
                 
-                score = minDistance;
-                if (minDistance > 3000) score *= 3;
-                if (minDistance > 5000) score *= 5;
+                // Комбинируем расстояние до курьера и до существующих зон
+                score = (distanceToCourier * 0.7) + (minDistanceToExistingZone * 0.3);
                 
-                const loadPenalty = newTotalOrders > targetOrdersPerCourier ? 
-                    (newTotalOrders - targetOrdersPerCourier) * 1000 : 0;
-                score += loadPenalty;
+                // Штрафуем за большие расстояния между зонами
+                if (minDistanceToExistingZone > 3000) score *= 2;
+                if (minDistanceToExistingZone > 5000) score *= 3;
             }
+            
+            // Штрафуем за превышение целевой нагрузки
+            const loadPenalty = newTotalOrders > targetOrdersPerCourier ? 
+                (newTotalOrders - targetOrdersPerCourier) * 1000 : 0;
+            score += loadPenalty;
+            
+            console.log(`      📊 ${group.courier.fullName}: расстояние ${Math.round(distanceToCourier)}м, score ${Math.round(score)}, нагрузка ${newTotalOrders}/${maxOrdersPerCourier}`);
             
             if (score < bestScore) {
                 bestScore = score;
@@ -848,7 +876,9 @@ function groupZonesForCouriersAdvanced(zones, courierCount) {
                 selectedGroup.hasPriorityZone = true;
             }
             
-            console.log(`👤 Курьер ${bestCourierIndex + 1}: добавлена зона ${zone.id} (${zone.orders.length} заказов)`);
+            console.log(`      ✅ Назначено курьеру: ${selectedGroup.courier.fullName} (расстояние ${Math.round(bestScore)}м)`);
+        } else {
+            console.log(`      ⚠️ Не удалось назначить зону - все курьеры перегружены`);
         }
     }
     
