@@ -321,7 +321,7 @@ app.get("/optimizeRoutes", async (req, res) => {
     try {
         console.log("🚀 Запуск оптимизации маршрутов через API");
         
-        const result = await optimizedZoneBasedDistribution("2025-07-01", useVROOM);
+        const result = await optimizedZoneBasedDistribution("2025-07-01", false);
         
         res.json({
             success: true,
