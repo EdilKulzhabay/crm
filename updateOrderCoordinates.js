@@ -47,6 +47,7 @@ const updateOrderCoordinates = async () => {
             },
             _id: {
                 $nin: [
+                    new mongoose.Types.ObjectId('68637bae48cdb02bd0bab714'),
                     new mongoose.Types.ObjectId('6860fe2848cdb02bd0b9acc2'),
                     new mongoose.Types.ObjectId('68636ae448cdb02bd0ba8f34'),
                     new mongoose.Types.ObjectId('6862aa3b48cdb02bd0ba6ddc')
