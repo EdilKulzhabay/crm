@@ -549,6 +549,44 @@ export async function optimizedZoneBasedDistribution(date = null, useVROOM = fal
         console.log(`🚀 ОПТИМИЗИРОВАННОЕ ЗОНАЛЬНОЕ РАСПРЕДЕЛЕНИЕ НА ${today}`);
         console.log("=".repeat(70));
 
+        // Сначала сбрасываем старые назначения только для новых заказов
+        console.log("🔄 Сброс старых назначений...");
+
+        // Сбрасываем назначения только для новых заказов (не начатых курьерами)
+        const resetResult = await Order.updateMany(
+            { 
+                "date.d": today,
+                forAggregator: true,
+                status: { $nin: ["onTheWay", "delivered", "cancelled"] } // Исключаем начатые, доставленные и отмененные
+            },
+            { 
+                $unset: { courierAggregator: "" }
+            }
+        );
+
+        console.log(`📊 Сброшено назначений: ${resetResult.modifiedCount} заказов`);
+
+        // Очищаем только новые заказы у курьеров (не трогаем уже начатые)
+        const couriersToUpdate = await CourierAggregator.find({ 
+            onTheLine: true, 
+            status: "active" 
+        });
+
+        for (const courier of couriersToUpdate) {
+            // Оставляем только заказы, которые уже начаты (в статусе "onTheWay")
+            const activeOrders = courier.orders.filter(order => {
+                // Проверяем, что заказ в статусе "onTheWay" (уже начат курьером)
+                return order.status && order.status === "onTheWay";
+            });
+            
+            await CourierAggregator.updateOne(
+                { _id: courier._id },
+                { $set: { orders: activeOrders } }
+            );
+        }
+
+        console.log("✅ Старые назначения сброшены (начатые заказы сохранены)\n");
+
         // 1. Получаем заказы и курьеров (аналогично оригинальной функции)
         const orders = await Order.find({
             "date.d": today,
