@@ -179,7 +179,7 @@ function groupZonesForCouriers(zones, courierCount) {
     // Подсчитываем общее количество заказов и целевую нагрузку на курьера
     const totalOrders = zones.reduce((sum, zone) => sum + zone.orders.length, 0);
     const targetOrdersPerCourier = Math.ceil(totalOrders / courierCount);
-    const maxOrdersPerCourier = Math.min(targetOrdersPerCourier + 1, 6); // Строже ограничение
+    const maxOrdersPerCourier = targetOrdersPerCourier + 3 // Строже ограничение
     
     console.log(`📊 Общий анализ:`);
     console.log(`   📦 Всего заказов: ${totalOrders}`);
