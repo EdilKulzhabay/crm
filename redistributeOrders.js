@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const CourierAggregator = require('./Models/CourierAggregator');
+import mongoose from 'mongoose';
+import { CourierAggregator } from './Models/CourierAggregator';
 
 // Подключение к MongoDB
 mongoose.connect('mongodb://localhost:27017/crm', {
