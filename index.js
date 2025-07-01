@@ -317,7 +317,7 @@ app.post("/updateUserData", AquaMarketController.updateUserData)
 
 /////////////ROUTE OPTIMIZATION - TSP
 // Endpoint для запуска оптимизации маршрутов
-app.get("/optimizeRoutes", checkAuth, async (req, res) => {
+app.get("/optimizeRoutes", async (req, res) => {
     try {
         console.log("🚀 Запуск оптимизации маршрутов через API");
         
