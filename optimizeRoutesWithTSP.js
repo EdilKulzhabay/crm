@@ -682,8 +682,6 @@ export async function optimizedZoneBasedDistribution(date = null, useVROOM = fal
                             { 
                                 $set: { 
                                     courierAggregator: courier._id,
-                                    status: "assigned",
-                                    assignedAt: new Date()
                                 }
                             }
                         );
@@ -710,7 +708,6 @@ export async function optimizedZoneBasedDistribution(date = null, useVROOM = fal
                             aquaMarketAddressLink: aquaMarket.link,
                             step: "toAquaMarket",
                             income: order.sum,
-                            assignedAt: new Date()
                         };
 
                         await CourierAggregator.updateOne(
