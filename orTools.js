@@ -169,7 +169,7 @@ const sendOrderPushNotification = async () => {
 
         const orders = courier.orders
         for (const order of orders) {
-            const messageBody = "Заказ на "
+            let messageBody = "Заказ на ";
             if (order.products.b12 > 0) {
                 messageBody += `${order.products.b12} бутылок 12.5л `
             }
