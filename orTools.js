@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import CourierRestrictions from "./Models/CourierRestrictions.js";
 import AquaMarket from "./Models/AquaMarket.js";
 import { pushNotification } from "./pushNotification.js";
+import { getDateAlmaty } from "./utils/dateUtils.js";
 // Вычисляем __dirname в ES модулях
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -228,7 +229,7 @@ export default async function orTools() {
     const year = today.getFullYear();
     const month = today.getMonth();
     const day = today.getDate();
-    const todayString = `${year}-${month}-${day}`;
+    const todayString = getDateAlmaty(date);
 
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: { $nin: ["onTheWay", "delivered", "cancelled"] }})
     
