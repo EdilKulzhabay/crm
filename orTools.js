@@ -327,3 +327,5 @@ export default async function orTools() {
     // console.log("✅ Push уведомления отправлены");
 }
 
+orTools();
+
