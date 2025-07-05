@@ -29,6 +29,7 @@ import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 
 // Импортируем функцию оптимизации маршрутов
 import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
+import runPythonVRP from "./orTools.js";
 
 mongoose
     .connect(process.env.MONGOURL)
@@ -314,6 +315,17 @@ app.post("/getCompletedOrCancelledOrdersFromCourierAggregator", CourierAggregato
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
 app.post("/updateUserData", AquaMarketController.updateUserData)
+
+/////////////ORTOOLS
+app.post("/api/vrp", async (req, res) => {
+    try {
+      const { couriers, orders, courier_restrictions } = req.body;
+      const result = await runPythonVRP(couriers, orders, courier_restrictions);
+      res.json(JSON.parse(result));
+    } catch (e) {
+      res.status(500).json({ error: e.toString() });
+    }
+  });
 
 /////////////ROUTE OPTIMIZATION - TSP
 // Endpoint для запуска оптимизации маршрутов

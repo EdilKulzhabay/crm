@@ -9,6 +9,10 @@ import numpy as np
 from matplotlib.patches import FancyBboxPatch
 import matplotlib.patches as mpatches
 import os
+import sys
+import json
+
+input_data = json.load(sys.stdin)
 
 # Удаляем старый файл визуализации, если он существует
 if os.path.exists('vrp_routes_visualization.png'):
@@ -18,52 +22,9 @@ if os.path.exists('vrp_routes_visualization.png'):
 # Общая точка возврата для всех курьеров
 common_depot = {"id": "depot", "lat": 43.16857, "lon": 76.89642}
 
-# Курьеры в разных районах города
-couriers = [
-    {"id": "courier1", "lat": 43.207262, "lon": 76.893349},  # Центр
-    {"id": "courier2", "lat": 43.22000, "lon": 76.85000},  # Запад
-    {"id": "courier3", "lat": 43.28000, "lon": 76.95000},  # Север-Восток
-]
-
-# Реальные заказы из базы данных
-orders = [
-    {"id": "order1", "lat": 43.212409, "lon": 76.842149},
-    {"id": "order2", "lat": 43.249392, "lon": 76.887507},
-    {"id": "order3", "lat": 43.245447, "lon": 76.903766},
-    {"id": "order4", "lat": 43.230026, "lon": 76.94556},
-    {"id": "order5", "lat": 43.228736, "lon": 76.839826},
-    {"id": "order6", "lat": 43.292268, "lon": 76.931119},
-    {"id": "order7", "lat": 43.261362, "lon": 76.929122},
-    {"id": "order8", "lat": 43.236701, "lon": 76.845539},
-    {"id": "order9", "lat": 43.257476, "lon": 76.905942},
-    {"id": "order10", "lat": 43.236031, "lon": 76.837653},
-]
-
-# Результаты решения VRP (из последнего запуска)
-routes = [
-    {
-        'courier_id': 'courier1',
-        'distance_km': 8.8,
-        'distance_meters': 8799,
-        'orders': ['order2', 'order9', 'order3'],
-        'orders_count': 3
-    },
-    {
-        'courier_id': 'courier2',
-        'distance_km': 6.19,
-        'distance_meters': 6189,
-        'orders': ['order8', 'order10', 'order5', 'order1'],
-        'orders_count': 4
-    },
-    {
-        'courier_id': 'courier3',
-        'distance_km': 10.22,
-        'distance_meters': 10218,
-        'orders': ['order6', 'order7', 'order4'],
-        'orders_count': 3
-    }
-]
-
+couriers = input_data["couriers"]
+orders = input_data["orders"]
+routes = input_data["routes"]
 # Создаем словари для быстрого поиска
 orders_dict = {order['id']: order for order in orders}
 couriers_dict = {courier['id']: courier for courier in couriers}
@@ -157,7 +118,7 @@ plt.figtext(0.02, 0.02, info_text, fontsize=10,
 
 plt.tight_layout()
 plt.savefig('vrp_routes_visualization.png', dpi=300, bbox_inches='tight')
-plt.show()
+# plt.show()  # Убираем показ окна, чтобы программа не блокировалась
 
 print("Визуализация сохранена в файл: vrp_routes_visualization.png")
 

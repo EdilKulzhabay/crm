@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import Order from './Models/Order.js';
-import CourierAggregator from './Models/CourierAggregator.js';
+import Order from '../Models/Order.js';
+import CourierAggregator from '../Models/CourierAggregator.js';
 
 async function checkDistribution() {
     await mongoose.connect('mongodb://127.0.0.1:27017/crm');
