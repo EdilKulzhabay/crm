@@ -7,6 +7,10 @@ import CourierRestrictions from "./Models/CourierRestrictions.js";
 import AquaMarket from "./Models/AquaMarket.js";
 import { pushNotification } from "./pushNotification.js";
 import { getDateAlmaty } from "./utils/dateUtils.js";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
+
 // Вычисляем __dirname в ES модулях
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -210,6 +214,8 @@ const sendOrderPushNotification = async () => {
 
 export default async function orTools() {
 
+    await ensureMongoConnection();
+
     await zeroing();
 
     const activeCouriers = await CourierAggregator.find({status: "active", onTheLine: true})
@@ -339,4 +345,16 @@ export default async function orTools() {
 }
 
 orTools();
+
+async function ensureMongoConnection() {
+    if (mongoose.connection.readyState === 0) {
+        const uri = "mongodb://localhost:27017/crm";
+        await mongoose.connect(uri, {
+            dbName: "crm",
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log("✅ MongoDB connected (orTools.js)");
+    }
+}
 
