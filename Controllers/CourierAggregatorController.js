@@ -7,6 +7,7 @@ import distributionUrgentOrder from "../utils/distributionUrgentOrder.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import { pushNotification } from "../pushNotification.js";
 import nodemailer from "nodemailer";
+import orTools from "../orTools.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -374,16 +375,21 @@ export const updateCourierAggregatorData = async (req, res) => {
         })
 
         if (changeField === "onTheLine" && changeData) {
-            await distributionOrdersToFreeCourier(courier._id)
+            // await distributionOrdersToFreeCourier(courier._id)
+            await orTools();
         }
 
         if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
-            // const orderIds = courier.orders.map(item => item.orderId);
-            // await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
+            const orderIds = courier.orders.map(item => item.orderId);
+            await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
             // const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
-            // await CourierAggregator.updateOne({_id: id}, { $set: {
-            //     orders: []
-            // } })
+            await CourierAggregator.updateOne({_id: id}, { $set: {
+                orders: [],
+                onTheLine: false
+            } })
+
+            await orTools();
+
             // for (const order of orders) {
             //     await getLocationsLogicQueue(order._id);
             // }
@@ -513,6 +519,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 products: courier1.order.products
             } 
         })
+
+        await CourierRestrictions.deleteMany({orderId: orderId})
         
         let sum = courier1.order.products.b12 > 0 ? courier1.order.products.b12 * order.client.price12 : 0
 
@@ -595,6 +603,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
             }
         }
 
+        await orTools();
+
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -660,10 +670,16 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         await Order.updateOne(
             { _id: orderId },
             { $set: {
-                status: "cancelled",
-                reason: reason
+                status: "awaitingOrder",
+                reason: reason,
+                courierAggregator: null
             }}
         )
+
+        await CourierRestrictions.create({
+            orderId: orderId,
+            courierId: id
+        })
 
         const courier = await CourierAggregator.findById(id)
 
@@ -714,9 +730,9 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                     // await getLocationsLogicQueue(orderId);
                 }
             }
-        } else {
-            await distributionOrdersToFreeCourier(id)
-        }
+        } 
+
+        await orTools();
 
         // await getLocationsLogicQueue(orderId);
         
