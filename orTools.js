@@ -319,11 +319,12 @@ export default async function orTools() {
         const courier = await CourierAggregator.findById(route.courier_id);
         const orders = await Order.find({_id: { $in: route.orders }});
         for (const orderId of orders) {
+
             await Order.findByIdAndUpdate(orderId._id, { $set: { courierAggregator: courier._id } });
             const order = await Order.findById(orderId._id).populate("client");
             const orderData = {
                 orderId: order._id,
-                status: "onTheWay",
+                status: order.status,
                 products: order.products,
                 sum: order.sum,
                 opForm: order.opForm,
@@ -354,11 +355,11 @@ export default async function orTools() {
 
     console.log("✅ Маршруты назначены");
 
-    // console.log("Отправляем push уведомления");
+    console.log("Отправляем push уведомления");
     
-    // await sendOrderPushNotification();
+    await sendOrderPushNotification();
 
-    // console.log("✅ Push уведомления отправлены");
+    console.log("✅ Push уведомления отправлены");
 }
 
 orTools();
