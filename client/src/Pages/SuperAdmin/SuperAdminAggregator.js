@@ -314,5 +314,12 @@ export default function SuperAdminAggregator() {
         </div>
 
         <Div />
+        <Div>
+            <LinkButton href="/aggregatorAction">
+                Начать распределение
+            </LinkButton>
+        </Div>
+
+        <Div />
     </Container>
 }
