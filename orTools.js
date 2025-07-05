@@ -153,7 +153,7 @@ const zeroing = async () => {
 
 
 const sendOrderPushNotification = async () => {
-    const couriers = await Courier.find({status: "active", onTheLine: true})
+    const couriers = await CourierAggregator.find({status: "active", onTheLine: true})
     const needOrTools = false
     for (const courier of couriers) {
 
@@ -286,7 +286,7 @@ export default async function orTools() {
     });
 
     for (const route of result) {
-        const courier = await Courier.findById(route.courier_id);
+        const courier = await CourierAggregator.findById(route.courier_id);
         const orders = await Order.find({_id: { $in: route.orders }});
         for (const orderId of orders) {
             await Order.findByIdAndUpdate(orderId, { $set: { courierAggregator: courier._id } });
