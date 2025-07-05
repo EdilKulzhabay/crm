@@ -333,6 +333,20 @@ app.get("/orTools", async (req, res) => {
     }
 });
 
+app.get("/orTools", async (req, res) => {
+    try {
+      const result = await orTools();       // ваша основная функция
+      return res.json({ success: true, data: result });
+    } catch (err) {
+      console.error("❌ orTools error:", err);   // ← увидите первопричину
+      return res.status(500).json({
+        success: false,
+        message: "Error executing Python script",
+        error: err.toString(),               // временно добавьте для отладки
+      });
+    }
+  });
+
 /////////////ROUTE OPTIMIZATION - TSP
 // Endpoint для запуска оптимизации маршрутов
 // app.get("/optimizeRoutes", async (req, res) => {
