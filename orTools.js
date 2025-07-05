@@ -338,11 +338,11 @@ export default async function orTools() {
 
     console.log("✅ Маршруты назначены");
 
-    console.log("Отправляем push уведомления");
+    // console.log("Отправляем push уведомления");
     
-    await sendOrderPushNotification();
+    // await sendOrderPushNotification();
 
-    console.log("✅ Push уведомления отправлены");
+    // console.log("✅ Push уведомления отправлены");
 }
 
 orTools();
