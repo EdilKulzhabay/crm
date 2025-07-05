@@ -277,6 +277,10 @@ export default async function orTools() {
     console.log("количество курьеров = ", couriers.length)
     console.log("количество заказов = ", orders.length)
     console.log("ограничения на заказы = ", courier_restrictions)
+
+    console.log("couriers = ", couriers)
+    console.log("orders = ", orders)
+    console.log("courier_restrictions = ", courier_restrictions)
     
     const result = await runPythonVRP(couriers, orders, courier_restrictions);
     console.log("Готовые маршруты:", result);

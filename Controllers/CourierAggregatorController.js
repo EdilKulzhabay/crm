@@ -175,7 +175,7 @@ export const courierAggregatorLogin = async(req, res) => {
         const courier = await CourierAggregator.findOne({email})
 
         if (!courier) {
-            res.status(404).json({
+            return res.status(404).json({
                 success: false,
                 message: "Неверный логин или пароль"
             })
