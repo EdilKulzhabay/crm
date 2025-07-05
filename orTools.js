@@ -1,4 +1,4 @@
-import Courier from "./Models/CourierAggregator.js"
+import CourierAggregator from "./Models/CourierAggregator.js"
 import Order from "./Models/Order.js"
 import { spawn } from "child_process";
 import path from "path";
@@ -112,9 +112,14 @@ export function runPythonVisualize(couriers, orders, routes) {
 }
 
 const zeroing = async () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
+    const todayString = `${year}-${month}-${day}`;
     const resetResult = await Order.updateMany(
         { 
-            "date.d": today,
+            "date.d": todayString,
             forAggregator: true,
             status: { $nin: ["onTheWay", "delivered", "cancelled"] } // Исключаем начатые, доставленные и отмененные
         },
@@ -210,7 +215,7 @@ export default async function orTools() {
 
     await zeroing();
 
-    const activeCouriers = await Courier.find({status: "active", onTheLine: true})
+    const activeCouriers = await CourierAggregator.find({status: "active", onTheLine: true})
 
     // Пример вызова:
     const couriers = activeCouriers.map(courier => ({
@@ -326,4 +331,3 @@ export default async function orTools() {
     console.log("✅ Push уведомления отправлены");
 }
 
-orTools();
