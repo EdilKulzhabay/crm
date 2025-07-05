@@ -1046,4 +1046,27 @@ export const getOrdersForAggregator = async (req, res) => {
     }
 }
 
+export const clearOrdersForAggregator = async (req, res) => {
+    try {
+        const today = new Date();
+        const todayString = getDateAlmaty(today);
+
+        const filter = {
+            status: { $nin: ["delivered", "cancelled"] },
+            "date.d": todayString,
+            forAggregator: true,
+        }
+
+        await Order.updateMany(filter, { $set: { forAggregator: false, courierAggregator: null } })
+
+        res.json({ success: true })
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 
