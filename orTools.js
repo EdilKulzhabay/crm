@@ -1,5 +1,6 @@
 import CourierAggregator from "./Models/CourierAggregator.js"
 import Order from "./Models/Order.js"
+import Client from "./Models/Client.js"
 import { spawn } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
