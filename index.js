@@ -231,6 +231,7 @@ app.post("/updateOrder", checkAuth, OrderController.updateOrder);
 app.post("/updateOrderTransfer", OrderController.updateOrderTransfer);
 app.post("/getCompletedOrders", checkAuth, OrderController.getCompletedOrders)
 app.post("/deleteOrder", checkAuth, OrderController.deleteOrder)
+app.post("/getOrdersForAggregator", OrderController.getOrdersForAggregator)
 
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
