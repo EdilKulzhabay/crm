@@ -306,7 +306,7 @@ export default async function orTools() {
             await Order.findByIdAndUpdate(orderId, { $set: { courierAggregator: courier._id } });
             const order = await Order.findById(orderId).populate("client");
             const orderData = {
-                orderId: order.toString(),
+                orderId: orderId,
                 status: "onTheWay",
                 products: order.products,
                 sum: order.sum,
