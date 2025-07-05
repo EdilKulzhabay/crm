@@ -58,8 +58,8 @@ print(f"Общий депо: ({common_depot['lat']}, {common_depot['lon']})", fi
 # Индекс 0 - общий депо
 # Индексы 1, 2, 3 - стартовые позиции курьеров
 # Все курьеры стартуют со своих позиций и возвращаются в общий депо (индекс 0)
-starts = [1, 2, 3]  # Стартовые позиции курьеров
-ends = [0, 0, 0]    # Все возвращаются в общий депо
+starts = list(range(1, num_couriers + 1))  # динамически 1..N
+ends = [0] * num_couriers                 # все возвращаются в депо
 
 manager = pywrapcp.RoutingIndexManager(num_locations, num_couriers, starts, ends)
 routing = pywrapcp.RoutingModel(manager)
