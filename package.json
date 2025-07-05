@@ -8,7 +8,10 @@
         "start": "node index.js",
         "server": "nodemon index.js",
         "client": "npm run start --prefix client",
-        "dev": "concurrently \"npm run server\" \"npm run client\""
+        "dev": "concurrently \"npm run server\" \"npm run client\"",
+        "test-vrp": "node test_vrp_api.js",
+        "vrp-api": "node vrp_api.js",
+        "setup-python": "./setup-python.sh"
     },
     "keywords": [],
     "author": "",

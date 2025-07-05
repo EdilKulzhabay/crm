@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import Order from './Models/Order.js';
-import CourierAggregator from './Models/CourierAggregator.js';
-import { pushNotification } from './pushNotification.js';
+import Order from '../Models/Order.js';
+import CourierAggregator from '../Models/CourierAggregator.js';
+import { pushNotification } from '../pushNotification.js';
 import { zoneBasedDistribution } from './optimizeRoutes.js';
 
 /**
