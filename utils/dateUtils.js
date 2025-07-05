@@ -12,8 +12,13 @@ export function getTodayAlmaty() {
  * Получает дату в формате YYYY-MM-DD для часового пояса Алматы
  */
 export function getDateAlmaty(date = null) {
+    let dt;
     if (date) {
-        return date;
+        dt = (date instanceof Date) ? date : new Date(date);
+    } else {
+        dt = new Date();
     }
-    return getTodayAlmaty();
+    // Алматы UTC+6
+    const almatyTime = new Date(dt.getTime() + (6 * 60 * 60 * 1000));
+    return almatyTime.toISOString().split('T')[0];
 } 

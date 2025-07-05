@@ -226,7 +226,6 @@ export default async function orTools() {
     const month = today.getMonth();
     const day = today.getDate();
     const todayString = getDateAlmaty(today);
-    console.log("todayString = ", todayString);
 
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: { $nin: ["onTheWay", "delivered", "cancelled"] }})
     
