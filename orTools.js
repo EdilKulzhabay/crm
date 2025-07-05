@@ -156,7 +156,7 @@ const zeroing = async () => {
 
 const sendOrderPushNotification = async () => {
     const couriers = await CourierAggregator.find({status: "active", onTheLine: true})
-    const needOrTools = false
+    let needOrTools = false
     for (const courier of couriers) {
 
         if (courier.orders.length === 0 || courier.orders.length === undefined || courier.orders.length === null) {
