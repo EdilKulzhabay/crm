@@ -28,7 +28,7 @@ import checkRole from "./utils/checkRole.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 
 // Импортируем функцию оптимизации маршрутов
-import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
+// import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
 import runPythonVRP from "./orTools.js";
 import orTools from "./orTools.js";
 
@@ -335,46 +335,46 @@ app.get("/orTools", async (req, res) => {
 
 /////////////ROUTE OPTIMIZATION - TSP
 // Endpoint для запуска оптимизации маршрутов
-app.get("/optimizeRoutes", async (req, res) => {
-    try {
-        console.log("🚀 Запуск оптимизации маршрутов через API");
+// app.get("/optimizeRoutes", async (req, res) => {
+//     try {
+//         console.log("🚀 Запуск оптимизации маршрутов через API");
         
-        const result = await optimizedZoneBasedDistribution("2025-07-01", false);
+//         const result = await optimizedZoneBasedDistribution("2025-07-01", false);
         
-        res.json({
-            success: true,
-            message: "Оптимизация маршрутов завершена",
-            data: result
-        });
-    } catch (error) {
-        console.error("❌ Ошибка при оптимизации маршрутов:", error);
-        res.status(500).json({
-            success: false,
-            message: "Ошибка при оптимизации маршрутов",
-            error: error.message
-        });
-    }
-});
+//         res.json({
+//             success: true,
+//             message: "Оптимизация маршрутов завершена",
+//             data: result
+//         });
+//     } catch (error) {
+//         console.error("❌ Ошибка при оптимизации маршрутов:", error);
+//         res.status(500).json({
+//             success: false,
+//             message: "Ошибка при оптимизации маршрутов",
+//             error: error.message
+//         });
+//     }
+// });
 
-// Endpoint для получения статуса оптимизации (без авторизации для тестирования)
-app.get("/optimizeRoutes/status", async (req, res) => {
-    try {
-        const { date } = req.query;
+// // Endpoint для получения статуса оптимизации (без авторизации для тестирования)
+// app.get("/optimizeRoutes/status", async (req, res) => {
+//     try {
+//         const { date } = req.query;
         
-        // Здесь можно добавить логику проверки статуса оптимизации
-        res.json({
-            success: true,
-            message: "Сервис оптимизации маршрутов доступен",
-            currentDate: date || new Date().toISOString().split('T')[0]
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Ошибка сервиса оптимизации",
-            error: error.message
-        });
-    }
-});
+//         // Здесь можно добавить логику проверки статуса оптимизации
+//         res.json({
+//             success: true,
+//             message: "Сервис оптимизации маршрутов доступен",
+//             currentDate: date || new Date().toISOString().split('T')[0]
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Ошибка сервиса оптимизации",
+//             error: error.message
+//         });
+//     }
+// });
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
