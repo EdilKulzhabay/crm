@@ -163,7 +163,7 @@ const sendOrderPushNotification = async () => {
             continue;
         }
 
-        if (courier.order && courier.order.status === "onTheWay") {
+        if (courier.order) {
             continue;
         }
 
