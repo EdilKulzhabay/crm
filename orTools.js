@@ -113,11 +113,7 @@ export function runPythonVisualize(couriers, orders, routes) {
 }
 
 const zeroing = async () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const day = today.getDate();
-    const todayString = `${year}-${month}-${day}`;
+    const todayString = getDateAlmaty();
     const resetResult = await Order.updateMany(
         { 
             "date.d": todayString,
@@ -229,7 +225,7 @@ export default async function orTools() {
     const year = today.getFullYear();
     const month = today.getMonth();
     const day = today.getDate();
-    const todayString = getDateAlmaty(date);
+    const todayString = getDateAlmaty(today);
 
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: { $nin: ["onTheWay", "delivered", "cancelled"] }})
     
