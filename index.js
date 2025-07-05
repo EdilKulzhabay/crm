@@ -218,6 +218,7 @@ app.post("/deletePromoCode", PromoCodeController.deletePromoCode);
 
 ///////ORDER
 app.get("/getFreeInfoOrder", checkAuth, OrderController.getFreeInfoOrder);
+app.get("/clearOrdersForAggregator", OrderController.clearOrdersForAggregator)
 app.post("/getAdditionalOrders", checkAuth, OrderController.getAdditionalOrders);
 app.get("/getActiveOrdersKol", checkAuth, OrderController.getActiveOrdersKol)
 app.post("/addOrder", checkAuth, OrderController.addOrder);
