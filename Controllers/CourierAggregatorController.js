@@ -892,17 +892,17 @@ export const appointmentFranchisee = async (req, res) => {
             }
 
             // Сандыбаев Айдынбек
-            // if (courierName.includes("айдынбек") && !franchiseeName.includes("айдынбек")) {
-            //     await Order.updateOne(
-            //         { _id: order._id },
-            //         {
-            //             $set: {
-            //                 transferred: true,
-            //                 transferredFranchise: "Сандыбаев Айдынбек"
-            //             }
-            //         }
-            //     );
-            // }
+            if (courierName.includes("айдынбек") && !franchiseeName.includes("айдынбек")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Сандыбаев Айдынбек"
+                        }
+                    }
+                );
+            }
 
             // Тимур Касымов
             if (courierName.includes("елдос") && !franchiseeName.includes("тимур")) {
