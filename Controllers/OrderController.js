@@ -8,6 +8,7 @@ import { SendEmailOrder } from "./SendEmailOrder.js";
 import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
+import { getDateAlmaty } from "../utils/dateUtils.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -1016,3 +1017,33 @@ export const deleteOrder = async (req, res) => {
         });
     }
 }
+
+export const getOrdersForAggregator = async (req, res) => {
+    try {
+        const { forAggregator } = req.body;
+
+        const today = new Date();
+        const todayString = getDateAlmaty(today);
+
+        const filter = {
+            status: { $nin: ["delivered", "cancelled"] },
+            "date.d": todayString,
+        }
+
+        if (forAggregator !== "all") {
+            filter.forAggregator = forAggregator
+        }
+
+        const orders = await Order.find(filter)
+
+        res.json({ orders })
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+
