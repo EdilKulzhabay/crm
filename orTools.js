@@ -253,31 +253,36 @@ export default async function orTools() {
     }, {});
 
 
-    // // Пример вызова:
+    // Пример вызова:
     // const couriers = [
-    //     {"id": "courier1", "lat": 43.207262, "lon": 76.893349},
-    //     {"id": "courier2", "lat": 43.22000, "lon": 76.85000},  
-    //     {"id": "courier3", "lat": 43.28000, "lon": 76.95000},
-    // ];
+    //     {
+    //         id: '683dd48b54ed3e4c0adcc241',
+    //         lat: 43.168277314921774,
+    //         lon: 76.89654142009347
+    //     },
+    //     {
+    //         id: '68413276b70d315d3b2b732f',
+    //         lat: 43.2044094,
+    //         lon: 76.893334
+    //     }
+    // ]
   
     // const orders = [
-    //     {"id": "order1", "lat": 43.212409, "lon": 76.842149},
-    //     {"id": "order2", "lat": 43.249392, "lon": 76.887507},
-    //     {"id": "order3", "lat": 43.245447, "lon": 76.903766},
-    //     {"id": "order4", "lat": 43.230026, "lon": 76.94556},
-    //     {"id": "order5", "lat": 43.228736, "lon": 76.839826},
-    //     {"id": "order6", "lat": 43.292268, "lon": 76.931119},
-    //     {"id": "order7", "lat": 43.261362, "lon": 76.929122},
-    //     {"id": "order8", "lat": 43.236701, "lon": 76.845539},
-    //     {"id": "order9", "lat": 43.257476, "lon": 76.905942},
-    //     {"id": "order10", "lat": 43.236031, "lon": 76.837653},
+    //     { id: '68662e7ee6675f4410cea767', lat: 43.292268, lon: 76.931119 },
+    //     { id: '68665ce0e6675f4410ceda93', lat: 43.261362, lon: 76.929122 },
+    //     { id: '6867e884e6675f4410d04ade', lat: 43.151319, lon: 76.901267 },
+    //     { id: '6867e8b0e6675f4410d04b3c', lat: 43.228644, lon: 76.866358 },
+    //     { id: '6867e8cde6675f4410d04b50', lat: 43.212045, lon: 76.872848 },
+    //     { id: '6867e8ede6675f4410d04b7a', lat: 43.254082, lon: 76.918261 },
+    //     { id: '68682a25e6675f4410d058b0', lat: 43.264191, lon: 76.932518 },
+    //     { id: '6868b92c8bc69822dd93c6c0', lat: 43.237369, lon: 76.938627 },
+    //     { id: '6868b96e8bc69822dd93c7ad', lat: 43.252214, lon: 76.90054 },
+    //     { id: '6868b9e68bc69822dd93ca39', lat: 43.242453, lon: 76.9409 },
+    //     { id: '6868ba138bc69822dd93cb3b', lat: 43.194514, lon: 76.896529 },
+    //     { id: '6868bb778bc69822dd93d2cd', lat: 43.168765, lon: 76.873977 }
     // ]
     
-    // const courier_restrictions = {
-    //     "order1": [1, 2],
-    //     "order2": [1, 2],
-    //     "order7": [2],
-    // }
+    // const courier_restrictions = {}
 
     console.log("Начало распределения в orTools.js");
     
@@ -288,6 +293,17 @@ export default async function orTools() {
     console.log("couriers = ", couriers)
     console.log("orders = ", orders)
     console.log("courier_restrictions = ", courier_restrictions)
+    
+    // Проверяем, есть ли данные для обработки
+    if (couriers.length === 0) {
+        console.log("❌ Нет курьеров с корректными координатами");
+        return;
+    }
+    
+    if (orders.length === 0) {
+        console.log("❌ Нет заказов для распределения");
+        return;
+    }
     
     const result = await runPythonVRP(couriers, orders, courier_restrictions);
     console.log("Готовые маршруты:", result);

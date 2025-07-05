@@ -13,12 +13,57 @@ couriers = input_data["couriers"]
 orders = input_data["orders"]
 courier_restrictions = input_data["courier_restrictions"]
 
+# ПРОВЕРКИ НА КОРРЕКТНОСТЬ ДАННЫХ
+print("=== ПРОВЕРКА ВХОДНЫХ ДАННЫХ ===", file=sys.stderr)
+
+# Проверяем курьеров
+valid_couriers = []
+for i, courier in enumerate(couriers):
+    if courier.get("lat") is not None and courier.get("lon") is not None:
+        valid_couriers.append(courier)
+        print(f"✅ Курьер {courier['id']}: ({courier['lat']}, {courier['lon']})", file=sys.stderr)
+    else:
+        print(f"❌ Курьер {courier['id']}: отсутствуют координаты", file=sys.stderr)
+
+# Проверяем заказы
+valid_orders = []
+for i, order in enumerate(orders):
+    if order.get("lat") is not None and order.get("lon") is not None:
+        valid_orders.append(order)
+        print(f"✅ Заказ {order['id']}: ({order['lat']}, {order['lon']})", file=sys.stderr)
+    else:
+        print(f"❌ Заказ {order['id']}: отсутствуют координаты", file=sys.stderr)
+
+# Обновляем списки валидными данными
+couriers = valid_couriers
+orders = valid_orders
+
+print(f"\nВалидные курьеры: {len(couriers)}", file=sys.stderr)
+print(f"Валидные заказы: {len(orders)}", file=sys.stderr)
+
+# Проверяем минимальные требования
+if len(couriers) == 0:
+    print("❌ ОШИБКА: Нет курьеров с корректными координатами!", file=sys.stderr)
+    print("[]", file=sys.stdout)  # Возвращаем пустой результат
+    sys.exit(0)
+
+if len(orders) == 0:
+    print("❌ ПРЕДУПРЕЖДЕНИЕ: Нет заказов для распределения!", file=sys.stderr)
+    print("[]", file=sys.stdout)  # Возвращаем пустой результат
+    sys.exit(0)
+
+if len(orders) < len(couriers):
+    print(f"❌ ПРЕДУПРЕЖДЕНИЕ: Заказов ({len(orders)}) меньше чем курьеров ({len(couriers)})", file=sys.stderr)
+    print("Некоторые курьеры останутся без заказов", file=sys.stderr)
+
+print("✅ Данные корректны, продолжаем оптимизацию...", file=sys.stderr)
+
 print("Ограничения на курьеров:", file=sys.stderr)
 for order_id, allowed_couriers in courier_restrictions.items():
     if not allowed_couriers:
         print(f"  {order_id}: исключен из обслуживания", file=sys.stderr)
     else:
-        courier_names = [couriers[i]['id'] for i in allowed_couriers]
+        courier_names = [couriers[i]['id'] for i in allowed_couriers if i < len(couriers)]
         print(f"  {order_id}: только {', '.join(courier_names)}", file=sys.stderr)
 
 # Создаем список локаций: депо + курьеры + заказы
@@ -99,9 +144,15 @@ print(f"Максимум заказов на курьера: {max_orders_per_cou
 
 # Добавляем размерность для подсчета заказов
 def unit_callback(from_index, to_index):
-    return 1
+    from_node = manager.IndexToNode(from_index)
+    to_node = manager.IndexToNode(to_index)
+    
+    # Увеличиваем счетчик только при посещении заказа (не депо и не курьера)
+    if to_node >= num_couriers + 1:  # Это заказ
+        return 1
+    return 0
 
-unit_callback_index = routing.RegisterUnaryTransitCallback(unit_callback)
+unit_callback_index = routing.RegisterTransitCallback(unit_callback)
 
 # Добавляем ограничения для каждого курьера
 for vehicle_id in range(num_couriers):
@@ -113,54 +164,38 @@ for vehicle_id in range(num_couriers):
         True,  # start cumul to zero
         f"Distance_{vehicle_id}"
     )
-    
-    # Строгое ограничение на количество заказов
-    count_dimension_name = f"Count_{vehicle_id}"
-    routing.AddDimension(
-        unit_callback_index,
-        0,  # no slack
-        max_orders_per_courier + 1,  # максимум заказов + 1 для курьера
-        True,  # start cumul to zero
-        count_dimension_name
+
+# Добавляем общую размерность для подсчета заказов
+routing.AddDimension(
+    unit_callback_index,
+    0,  # no slack
+    max_orders_per_courier,  # максимум заказов на курьера
+    True,  # start cumul to zero
+    "OrderCount"
+)
+
+# Получаем размерность для установки ограничений
+order_count_dimension = routing.GetDimensionOrDie("OrderCount")
+
+# Устанавливаем ограничения на количество заказов для каждого курьера
+for vehicle_id in range(num_couriers):
+    # Мягкое ограничение на минимальное количество заказов
+    order_count_dimension.SetCumulVarSoftLowerBound(
+        routing.End(vehicle_id), 
+        min_orders_per_courier, 
+        10000  # штраф за невыполнение минимума
     )
     
-    # Получаем размерность для установки ограничений
-    count_dimension = routing.GetDimensionOrDie(count_dimension_name)
-    
-    # Устанавливаем минимальное количество заказов
-    for node_index in range(num_locations):
-        if node_index >= num_couriers + 1:  # только для заказов
-            routing_index = manager.NodeToIndex(node_index)
-            # Если заказ назначен этому курьеру, увеличиваем счетчик
-            if routing.IsVehicleUsed(routing_index, vehicle_id):
-                count_dimension.SetCumulVarSoftLowerBound(
-                    routing.End(vehicle_id), 
-                    min_orders_per_courier, 
-                    10000  # штраф за невыполнение минимума
-                )
+    # Жесткое ограничение на максимальное количество заказов
+    order_count_dimension.SetCumulVarSoftUpperBound(
+        routing.End(vehicle_id), 
+        max_orders_per_courier, 
+        10000  # штраф за превышение максимума
+    )
 
 # Увеличиваем штраф за использование курьера для стимуляции равномерного распределения
 for vehicle_id in range(num_couriers):
     routing.SetFixedCostOfVehicle(5000, vehicle_id)
-
-# Добавляем штраф за дисбаланс нагрузки
-def balance_callback(vehicle_id):
-    """Штраф за отклонение от идеального количества заказов"""
-    def callback(from_index, to_index):
-        # Подсчитываем заказы для этого курьера
-        orders_count = 0
-        index = routing.Start(vehicle_id)
-        while not routing.IsEnd(index):
-            node = manager.IndexToNode(index)
-            if node >= num_couriers + 1:  # это заказ
-                orders_count += 1
-            index = routing.NextVar(index)
-        
-        # Штраф за отклонение от идеального количества
-        deviation = abs(orders_count - ideal_orders_per_courier)
-        return deviation * 1000  # штраф 1000 единиц за каждый лишний/недостающий заказ
-    
-    return callback
 
 # УЛУЧШЕННЫЕ ПАРАМЕТРЫ ПОИСКА
 search_params = pywrapcp.DefaultRoutingSearchParameters()
