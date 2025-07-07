@@ -1074,7 +1074,7 @@ export const fixRinat = async (req, res) => {
         const orders = await Order.find({
             $or: [
                 {"transferredFranchise": "Таскын Абикен"},
-                {"franchisee": new mongoose.Types.ObjectId('685e513a71139c8105c8f145')},
+                {"franchisee": new mongoose.Types.ObjectId('66fc0d3e953c2dbbc86c2138')},
             ],
             "date.d": "2025-06-30",
             opForm: "fakt"
