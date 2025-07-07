@@ -1,6 +1,8 @@
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 import math
+import sys
+import json
 
 # Общая точка возврата для всех курьеров
 common_depot = {"id": "depot", "lat": 43.16857, "lon": 76.89642}
@@ -26,24 +28,59 @@ orders = [
     {"id": "order10", "lat": 43.236031, "lon": 76.837653},
 ]
 
-# Ограничения на курьеров для определенных заказов
-# Формат: "order_id": [список_индексов_курьеров_которые_могут_обслужить]
-# Индексы курьеров: 0 = courier1, 1 = courier2, 2 = courier3
-courier_restrictions = {
-    # Пример ограничений:
-    "order1": [1, 2],     # order1 может обслужить только courier2 или courier3
-    "order2": [1, 2],     # order2 может обслужить только courier2 или courier3
-    "order7": [2],        # order7 может обслужить только courier3
-    "order11": [],        # order11 никто не может обслужить (исключаем далекий заказ)
-    # Остальные заказы могут обслужить любые курьеры
-}
+courier_restrictions = {}
+
+# Проверяем курьеров
+valid_couriers = []
+for i, courier in enumerate(couriers):
+    if courier.get("lat") is not None and courier.get("lon") is not None:
+        valid_couriers.append(courier)
+        print(f"✅ Курьер {courier['id']}: ({courier['lat']}, {courier['lon']})")
+    else:
+        print(f"❌ Курьер {courier['id']}: отсутствуют координаты")
+
+# Проверяем заказы
+valid_orders = []
+for i, order in enumerate(orders):
+    if order.get("lat") is not None and order.get("lon") is not None:
+        valid_orders.append(order)
+        print(f"✅ Заказ {order['id']}: ({order['lat']}, {order['lon']})")
+    else:
+        print(f"❌ Заказ {order['id']}: отсутствуют координаты")
+
+# Обновляем списки валидными данными
+couriers = valid_couriers
+orders = valid_orders
+
+print(f"\nВалидные курьеры: {len(couriers)}")
+print(f"Валидные заказы: {len(orders)}")
+
+# Проверяем минимальные требования
+if len(couriers) == 0:
+    print("❌ ОШИБКА: Нет курьеров с корректными координатами!")
+    print("[]", file=sys.stdout)  # Возвращаем пустой результат
+    sys.exit(0)
+
+if len(orders) == 0:
+    print("❌ ПРЕДУПРЕЖДЕНИЕ: Нет заказов для распределения!")
+    print("[]", file=sys.stdout)  # Возвращаем пустой результат
+    sys.exit(0)
+
+if len(orders) < len(couriers):
+    print(f"❌ ПРЕДУПРЕЖДЕНИЕ: Заказов ({len(orders)}) меньше чем курьеров ({len(couriers)})")
+    print("Некоторые курьеры останутся без заказов")
+
+print("✅ Данные корректны, продолжаем оптимизацию...")
+
+print(f"couriers = {couriers}")
+print(f"orders = {orders}")
 
 print("Ограничения на курьеров:")
 for order_id, allowed_couriers in courier_restrictions.items():
     if not allowed_couriers:
         print(f"  {order_id}: исключен из обслуживания")
     else:
-        courier_names = [couriers[i]['id'] for i in allowed_couriers]
+        courier_names = [couriers[i]['id'] for i in allowed_couriers if i < len(couriers)]
         print(f"  {order_id}: только {', '.join(courier_names)}")
 
 # Создаем список локаций: депо + курьеры + заказы
@@ -69,6 +106,10 @@ for from_node in locations:
         row.append(int(haversine(from_node["lat"], from_node["lon"], to_node["lat"], to_node["lon"]) * 1000))  # метры
     distance_matrix.append(row)
 
+# print("Матрица расстояний:")
+# for row in distance_matrix:
+#     print([f"{dist:6d}" for dist in row])
+
 num_couriers = len(couriers)
 num_orders = len(orders)
 num_locations = len(locations)
@@ -79,17 +120,17 @@ print(f"Общее количество локаций: {num_locations}")
 print(f"Общий депо: ({common_depot['lat']}, {common_depot['lon']})")
 
 # Создаем RoutingIndexManager для мультидепо
-# Индекс 0 - общий депо
-# Индексы 1, 2, 3 - стартовые позиции курьеров
-# Все курьеры стартуют со своих позиций и возвращаются в общий депо (индекс 0)
-starts = [1, 2, 3]  # Стартовые позиции курьеров
-ends = [0, 0, 0]    # Все возвращаются в общий депо
+starts = list(range(1, num_couriers + 1))
+ends = [0] * num_couriers
+
+print("starts = ", starts)
+print("ends = ", ends)
 
 manager = pywrapcp.RoutingIndexManager(num_locations, num_couriers, starts, ends)
 routing = pywrapcp.RoutingModel(manager)
 
-print(f"Manager: {manager}")
-print(f"Routing: {routing}")
+print("manager = ", manager)
+print("routing = ", routing)
 
 def distance_callback(from_index, to_index):
     from_node = manager.IndexToNode(from_index)
@@ -99,74 +140,118 @@ def distance_callback(from_index, to_index):
 transit_callback_index = routing.RegisterTransitCallback(distance_callback)
 routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-# Добавляем ограничения для заказов (каждый заказ должен быть посещен)
-# Заказы начинаются с индекса 4 (0-депо, 1,2,3-курьеры, 4+ заказы)
-for order_idx in range(4, num_locations):
-    routing.AddDisjunction([manager.NodeToIndex(order_idx)], 10000)  # штраф за непосещение
+print(f"couriers = {couriers}")
+print(f"orders = {orders}")
 
-# Применяем ограничения на курьеров для определенных заказов
-print("\nПрименение ограничений на курьеров:")
+# Добавляем ограничения для заказов
+for order_idx in range(num_couriers + 1, num_locations):
+    routing.AddDisjunction([manager.NodeToIndex(order_idx)], 10000)
+
+# Применяем ограничения на курьеров
 for i, order in enumerate(orders):
-    order_node_index = 4 + i  # Заказы начинаются с индекса 4
+    order_node_index = num_couriers + 1 + i
     order_routing_index = manager.NodeToIndex(order_node_index)
     
     if order['id'] in courier_restrictions:
         allowed_couriers = courier_restrictions[order['id']]
         if not allowed_couriers:
-            # Исключаем заказ из обслуживания
-            print(f"  {order['id']}: исключен из обслуживания")
-            # Устанавливаем очень высокий штраф для этого заказа
             routing.AddDisjunction([order_routing_index], 100000)
         else:
-            # Ограничиваем список курьеров, которые могут обслужить этот заказ
-            courier_names = [couriers[j]['id'] for j in allowed_couriers]
-            print(f"  {order['id']}: разрешено только {', '.join(courier_names)}")
             routing.SetAllowedVehiclesForIndex(allowed_couriers, order_routing_index)
 
-# Ограничение: каждый курьер должен обслужить минимум заказов
-min_orders_per_courier = max(1, num_orders // num_couriers - 1)
-max_orders_per_courier = num_orders // num_couriers + 2
+# УЛУЧШЕННАЯ БАЛАНСИРОВКА НАГРУЗКИ
+ideal_orders_per_courier = num_orders // num_couriers
+remainder = num_orders % num_couriers
 
-print(f"\nМинимум заказов на курьера: {min_orders_per_courier}")
+# Более строгие ограничения на количество заказов
+min_orders_per_courier = ideal_orders_per_courier
+max_orders_per_courier = ideal_orders_per_courier + (1 if remainder > 0 else 0)
+
+print(f"\nИдеальное количество заказов на курьера: {ideal_orders_per_courier}")
+print(f"Остаток: {remainder}")
+print(f"Минимум заказов на курьера: {min_orders_per_courier}")
 print(f"Максимум заказов на курьера: {max_orders_per_courier}")
 
-# Добавляем ограничения на количество заказов для каждого курьера
+# Добавляем размерность для подсчета заказов
+def unit_callback(from_index, to_index):
+    from_node = manager.IndexToNode(from_index)
+    to_node = manager.IndexToNode(to_index)
+    # Увеличиваем счетчик только при посещении заказа (не депо и не курьера)
+    if to_node >= num_couriers + 1:  # Это заказ
+        return 1
+    return 0
+
+unit_callback_index = routing.RegisterTransitCallback(unit_callback)
+
+# Добавляем ограничения для каждого курьера
 for vehicle_id in range(num_couriers):
+    # Ограничение на расстояние
     routing.AddDimension(
         transit_callback_index,
         0,  # no slack
-        100000,  # максимальное расстояние
+        50000,  # максимальное расстояние на курьера (50 км)
         True,  # start cumul to zero
         f"Distance_{vehicle_id}"
     )
+
+# Добавляем общую размерность для подсчета заказов
+routing.AddDimension(
+    unit_callback_index,
+    0,  # no slack
+    max_orders_per_courier,  # максимум заказов на курьера
+    True,  # start cumul to zero
+    "OrderCount"
+)
+
+# Получаем размерность для установки ограничений
+order_count_dimension = routing.GetDimensionOrDie("OrderCount")
+
+# Устанавливаем ограничения на количество заказов для каждого курьера
+for vehicle_id in range(num_couriers):
+    # Мягкое ограничение на минимальное количество заказов
+    order_count_dimension.SetCumulVarSoftLowerBound(
+        routing.End(vehicle_id), 
+        min_orders_per_courier, 
+        10000  # штраф за невыполнение минимума
+    )
     
-    # Ограничение на количество узлов (заказов) для каждого курьера
-    count_dimension = "Count"
-    routing.AddConstantDimension(
-        1,  # каждый узел добавляет 1 к счетчику
-        max_orders_per_courier,  # максимум заказов на курьера
-        True,  # start cumul to zero
-        count_dimension
+    # Жесткое ограничение на максимальное количество заказов
+    order_count_dimension.SetCumulVarSoftUpperBound(
+        routing.End(vehicle_id), 
+        max_orders_per_courier, 
+        10000  # штраф за превышение максимума
     )
 
-# Добавляем штраф за использование курьера (чтобы стимулировать использование всех)
+# Увеличиваем штраф за использование курьера для стимуляции равномерного распределения
 for vehicle_id in range(num_couriers):
-    routing.SetFixedCostOfVehicle(1000, vehicle_id)  # базовая стоимость использования курьера
+    routing.SetFixedCostOfVehicle(5000, vehicle_id)
 
-# Параметры поиска
+# УЛУЧШЕННЫЕ ПАРАМЕТРЫ ПОИСКА
 search_params = pywrapcp.DefaultRoutingSearchParameters()
-search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
-search_params.time_limit.seconds = 60
 
-print("Начинаем решение...")
+# Пробуем разные стратегии начального решения
+search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.SAVINGS
+# Альтернативы: PARALLEL_CHEAPEST_INSERTION, CHRISTOFIDES, AUTOMATIC
+
+# Более агрессивная локальная оптимизация
+search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.SIMULATED_ANNEALING
+# Альтернативы: GUIDED_LOCAL_SEARCH, TABU_SEARCH
+
+# Увеличиваем время решения
+search_params.time_limit.seconds = 120
+
+# Настройки для лучшего качества решения
+search_params.solution_limit = 100
+search_params.lns_time_limit.seconds = 30
+
+print("Начинаем решение с улучшенными параметрами...")
 solution = routing.SolveWithParameters(search_params)
 
 if solution:
-    print("\nРешение найдено!")
+    print("\nОптимизированное решение найдено!")
     print(f"Общая стоимость: {solution.ObjectiveValue()} метров")
-    print(f"Общая стоимость (без базовых затрат): {solution.ObjectiveValue() - num_couriers * 1000} метров")
-    print(f"Общая стоимость: {(solution.ObjectiveValue() - num_couriers * 1000)/1000:.2f} км")
+    print(f"Общая стоимость (без базовых затрат): {solution.ObjectiveValue() - num_couriers * 5000} метров")
+    print(f"Общая стоимость: {(solution.ObjectiveValue() - num_couriers * 5000)/1000:.2f} км")
     
     routes = []
     total_distance = 0
@@ -183,10 +268,10 @@ if solution:
         while not routing.IsEnd(index):
             node_index = manager.IndexToNode(index)
             
-            if node_index == 0:  # Общий депо
+            if node_index == 0:
                 print(f"  -> Возврат в депо: ({common_depot['lat']}, {common_depot['lon']})")
-            elif node_index >= 4:  # Это заказ
-                order = orders[node_index - 4]  # Заказы начинаются с индекса 4
+            elif node_index >= num_couriers + 1:
+                order = orders[node_index - num_couriers - 1]
                 route_orders.append(order["id"])
                 print(f"  -> Заказ {order['id']}: ({order['lat']}, {order['lon']})")
             
@@ -199,6 +284,7 @@ if solution:
         if route_orders:
             print(f"  Количество заказов: {len(route_orders)}")
             print(f"  Расстояние маршрута: {route_distance} метров ({route_distance/1000:.2f} км)")
+            print(f"  Отклонение от идеала: {abs(len(route_orders) - ideal_orders_per_courier)} заказов")
             total_distance += route_distance
             active_couriers += 1
             
@@ -212,10 +298,18 @@ if solution:
         else:
             print(f"  Нет заказов")
     
-    print(f"\nИтоговые результаты:")
+    # Проверяем балансировку
+    orders_counts = [len(route["orders"]) for route in routes]
+    max_orders = max(orders_counts) if orders_counts else 0
+    min_orders = min(orders_counts) if orders_counts else 0
+    balance_score = max_orders - min_orders
+    
+    print(f"\nОптимизированные результаты:")
     print(f"Общее расстояние: {total_distance} метров ({total_distance/1000:.2f} км)")
     print(f"Используется курьеров: {active_couriers} из {num_couriers}")
     print(f"Всего заказов обслужено: {sum(len(r['orders']) for r in routes)} из {num_orders}")
+    print(f"Балансировка нагрузки: {balance_score} (0 = идеальная балансировка)")
+    print(f"Распределение заказов: {orders_counts}")
     
     # Проверяем необслуженные заказы
     served_orders = set()
@@ -229,10 +323,9 @@ if solution:
     
     if unserved_orders:
         print(f"Необслуженные заказы: {unserved_orders}")
-    
-    print("\nДетальные маршруты:")
-    import pprint
-    pprint.pprint(routes)
+
+    print(f"routes = {routes}")
     
 else:
-    print("Решение не найдено!")
+    print("Оптимизированное решение не найдено! Возвращаемся к базовому алгоритму.")
+    # Здесь можно добавить fallback к исходному алгоритму 

@@ -25,6 +25,7 @@ export function runPythonVRP(couriers, orders, courier_restrictions) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
         const python = spawn(pythonPath, ["./orTools/vrp_solver_optimized.py"]);
+        // const python = spawn(pythonPath, ["./orTools/vrp_solver2.py"]);
 
         const input = {
             common_depot: {
@@ -70,7 +71,8 @@ export function runPythonVRP(couriers, orders, courier_restrictions) {
 export function runPythonVisualize(couriers, orders, routes) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
-        const python = spawn(pythonPath, ["./orTools/visualize_routes2.py"]);
+        // const python = spawn(pythonPath, ["./orTools/visualize_routes2.py"]);
+        const python = spawn(pythonPath, ["./orTools/visualize_routes_optimized.py"]);
 
         const input = {
             common_depot: {
@@ -229,9 +231,6 @@ export default async function orTools() {
     }));
 
     const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const day = today.getDate();
     const todayString = getDateAlmaty(today);
 
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: { $nin: ["onTheWay", "delivered", "cancelled"] }})
@@ -252,34 +251,53 @@ export default async function orTools() {
         return acc;
     }, {});
 
-
-    // Пример вызова:
+    // // Пример вызова:
     // const couriers = [
     //     {
-    //         id: '683dd48b54ed3e4c0adcc241',
+    //         id: 'courier_1',
     //         lat: 43.168277314921774,
     //         lon: 76.89654142009347
     //     },
     //     {
-    //         id: '68413276b70d315d3b2b732f',
+    //         id: 'courier_2', 
     //         lat: 43.2044094,
     //         lon: 76.893334
+    //     },
+    //     {
+    //         id: 'courier_3',
+    //         lat: 43.215678,
+    //         lon: 76.912345
+    //     },
+    //     {
+    //         id: 'courier_4',
+    //         lat: 43.198765,
+    //         lon: 76.887654
     //     }
     // ]
   
     // const orders = [
-    //     { id: '68662e7ee6675f4410cea767', lat: 43.292268, lon: 76.931119 },
-    //     { id: '68665ce0e6675f4410ceda93', lat: 43.261362, lon: 76.929122 },
-    //     { id: '6867e884e6675f4410d04ade', lat: 43.151319, lon: 76.901267 },
-    //     { id: '6867e8b0e6675f4410d04b3c', lat: 43.228644, lon: 76.866358 },
-    //     { id: '6867e8cde6675f4410d04b50', lat: 43.212045, lon: 76.872848 },
-    //     { id: '6867e8ede6675f4410d04b7a', lat: 43.254082, lon: 76.918261 },
-    //     { id: '68682a25e6675f4410d058b0', lat: 43.264191, lon: 76.932518 },
-    //     { id: '6868b92c8bc69822dd93c6c0', lat: 43.237369, lon: 76.938627 },
-    //     { id: '6868b96e8bc69822dd93c7ad', lat: 43.252214, lon: 76.90054 },
-    //     { id: '6868b9e68bc69822dd93ca39', lat: 43.242453, lon: 76.9409 },
-    //     { id: '6868ba138bc69822dd93cb3b', lat: 43.194514, lon: 76.896529 },
-    //     { id: '6868bb778bc69822dd93d2cd', lat: 43.168765, lon: 76.873977 }
+    //     { id: 'order_1', lat: 43.292268, lon: 76.931119 },
+    //     { id: 'order_2', lat: 43.261362, lon: 76.929122 },
+    //     { id: 'order_3', lat: 43.151319, lon: 76.901267 },
+    //     { id: 'order_4', lat: 43.228644, lon: 76.866358 },
+    //     { id: 'order_5', lat: 43.187654, lon: 76.898765 },
+    //     { id: 'order_6', lat: 43.254082, lon: 76.918261 },
+    //     { id: 'order_7', lat: 43.198765, lon: 76.923456 },
+    //     { id: 'order_8', lat: 43.237369, lon: 76.938627 },
+    //     { id: 'order_9', lat: 43.252214, lon: 76.90054 },
+    //     { id: 'order_10', lat: 43.187654, lon: 76.912345 },
+    //     { id: 'order_11', lat: 43.194514, lon: 76.896529 },
+    //     { id: 'order_12', lat: 43.168765, lon: 76.873977 },
+    //     { id: 'order_13', lat: 43.175432, lon: 76.923456 },
+    //     { id: 'order_14', lat: 43.234567, lon: 76.912345 },
+    //     { id: 'order_15', lat: 43.212045, lon: 76.872848 },
+    //     { id: 'order_16', lat: 43.223456, lon: 76.934567 },
+    //     { id: 'order_17', lat: 43.264191, lon: 76.932518 },
+    //     { id: 'order_18', lat: 43.245678, lon: 76.887654 },
+    //     { id: 'order_19', lat: 43.212345, lon: 76.945678 },
+    //     { id: 'order_20', lat: 43.242453, lon: 76.9409 },
+    //     { id: 'order_21', lat: 43.234567, lon: 76.923456 },
+    //     { id: 'order_22', lat: 43.198765, lon: 76.934567 }
     // ]
     
     // const courier_restrictions = {}
