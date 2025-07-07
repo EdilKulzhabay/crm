@@ -1083,11 +1083,11 @@ export const fixRinat = async (req, res) => {
 
         for (const order of orders) {
             let sum = 0;
-            if (order.products.b12 && order.client.price1) {
-                sum += Number(order.products.b12 * order.client.price1);
+            if (order.products.b12 && order.client.price12) {
+                sum += Number(order.products.b12 * order.client.price12);
             }
-            if (order.products.b19 && order.client.price2) {
-                sum += Number(order.products.b19 * order.client.price2);
+            if (order.products.b19 && order.client.price19) {
+                sum += Number(order.products.b19 * order.client.price19);
             }
             if (sum !== order.sum) {
                 console.log(order.address.actual, order.client.fullName, sum, order.sum)
