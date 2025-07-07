@@ -1092,6 +1092,8 @@ export const fixRinat = async (req, res) => {
             }
         }
 
+        res.json({ success: true })
+
     } catch (error) { 
         console.log(error);
         res.status(500).json({
