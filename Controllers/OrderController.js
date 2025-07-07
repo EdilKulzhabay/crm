@@ -1076,10 +1076,14 @@ export const fixRinat = async (req, res) => {
                 {"transferredFranchise": "Таскын Абикен"},
                 {"franchisee": new mongoose.Types.ObjectId('685e513a71139c8105c8f145')},
             ],
-            "date.d": "2025-06-30"
+            "date.d": "2025-06-30",
+            opForm: "fakt"
         }).populate("client")
 
         const message = []
+
+        let qwe = 0
+        let addresses = []
 
         for (const order of orders) {
             let sum = 0;
@@ -1093,9 +1097,11 @@ export const fixRinat = async (req, res) => {
                 console.log(order.address.actual, order.client.fullName, sum, order.sum)
                 message.push(`${order.address.actual}, ${order.client.fullName}, ${sum}, ${order.sum}`)
             }
+            qwe += sum
+            addresses.push(order.address.actual)
         }
 
-        res.json({ message })
+        res.json({ message, qwe, addresses })
 
     } catch (error) { 
         console.log(error);
