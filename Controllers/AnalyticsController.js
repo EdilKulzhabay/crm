@@ -365,10 +365,26 @@ export const getAdditionalRevenue = async (req, res) => {
             {
                 $group: {
                     _id: null, // Группируем заказы по клиентам
-                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b12", 0] }] } },
-                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b19", 0] }] } },
-                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b12", 0] }, 0] } },
-                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b19", 0] }, 0] } },
+                    totalRegularB12Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b12", 0] },
+                        { $cond: ["$transferred", 0, { $ifNull: ["$products.b12", 0] }] }
+                    ] } },
+                    totalRegularB19Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b19", 0] },
+                        { $cond: ["$transferred", 0, { $ifNull: ["$products.b19", 0] }] }
+                    ] } },
+                    totalAddtitionalB12Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b12", 0] },
+                        0
+                    ] } },
+                    totalAddtitionalB19Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b19", 0] },
+                        0
+                    ] } },
                     haveTo: { 
                         $sum: { 
                             $cond: [
@@ -482,14 +498,46 @@ export const getFranchiseeAnalytics = async (req, res) => {
                         franchiseeId: "$franchisee",
                         transferred: "$transferred"
                     },
-                    totalRegularB12Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b12", 0] }] } },
-                    totalRegularB19Bottles: { $sum: { $cond: ["$transferred", 0, { $ifNull: ["$products.b19", 0] }] } },
-                    totalAddtitionalB12Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b12", 0] }, 0] } },
-                    totalAddtitionalB19Bottles: { $sum: { $cond: ["$transferred", { $ifNull: ["$products.b19", 0] }, 0] } },
-                    totalRgularSumB19: { $sum: {$cond: ["$transferred", 0, { $multiply: [{ $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] }] } ] } },
-                    totalRgularSumB12: { $sum: {$cond: ["$transferred", 0, { $multiply: [{ $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] }] } ] } },
-                    totalAdditionalSumB19: { $sum: {$cond: ["$transferred", { $multiply: [{ $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
-                    totalAdditionalSumB12: { $sum: {$cond: ["$transferred", { $multiply: [{ $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
+                    totalRegularB12Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b12", 0] },
+                        { $cond: ["$transferred", 0, { $ifNull: ["$products.b12", 0] }] }
+                    ] } },
+                    totalRegularB19Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b19", 0] },
+                        { $cond: ["$transferred", 0, { $ifNull: ["$products.b19", 0] }] }
+                    ] } },
+                    totalAddtitionalB12Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b12", 0] },
+                        0
+                    ] } },
+                    totalAddtitionalB19Bottles: { $sum: { $cond: [
+                        { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $ifNull: ["$products.b19", 0] },
+                        0
+                    ] } },
+                    totalRgularSumB19: { $sum: {$cond: [
+                        { $and: ["$transferred", { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $multiply: [{ $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] }] },
+                        { $cond: ["$transferred", 0, { $multiply: [{ $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] }] }] }
+                    ] } },
+                    totalRgularSumB12: { $sum: {$cond: [
+                        { $and: ["$transferred", { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $multiply: [{ $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] }] },
+                        { $cond: ["$transferred", 0, { $multiply: [{ $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] }] }] }
+                    ] } },
+                    totalAdditionalSumB19: { $sum: {$cond: [
+                        { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $multiply: [{ $ifNull: ["$products.b19", 0] }, { $ifNull: ["$clientData.price19", 0] }] },
+                        0
+                    ] } },
+                    totalAdditionalSumB12: { $sum: {$cond: [
+                        { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                        { $multiply: [{ $ifNull: ["$products.b12", 0] }, { $ifNull: ["$clientData.price12", 0] }] },
+                        0
+                    ] } },
                     haveTo: { 
                         $sum: { 
                             $cond: [

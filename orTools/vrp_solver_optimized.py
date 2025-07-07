@@ -98,16 +98,40 @@ print(f"Количество заказов: {num_orders}", file=sys.stderr)
 print(f"Общее количество локаций: {num_locations}", file=sys.stderr)
 print(f"Общий депо: ({common_depot['lat']}, {common_depot['lon']})", file=sys.stderr)
 
-# Создаем RoutingIndexManager для мультидепо
+# ОТКРЫТЫЕ МАРШРУТЫ: Создаем виртуальные конечные точки
+print("\n=== НАСТРОЙКА ОТКРЫТЫХ МАРШРУТОВ ===", file=sys.stderr)
 starts = list(range(1, num_couriers + 1))
-ends = [0] * num_couriers
 
-manager = pywrapcp.RoutingIndexManager(num_locations, num_couriers, starts, ends)
+# Виртуальные конечные точки позволяют курьерам заканчивать маршрут в любом заказе
+virtual_ends = []
+for vehicle_id in range(num_couriers):
+    virtual_end_index = num_locations + vehicle_id
+    virtual_ends.append(virtual_end_index)
+
+# Общее количество локаций включая виртуальные конечные точки
+total_locations = num_locations + num_couriers
+
+print(f"Стартовые точки курьеров: {starts}", file=sys.stderr)
+print(f"Виртуальные конечные точки: {virtual_ends}", file=sys.stderr)
+print(f"Общее количество локаций (с виртуальными): {total_locations}", file=sys.stderr)
+
+manager = pywrapcp.RoutingIndexManager(total_locations, num_couriers, starts, virtual_ends)
 routing = pywrapcp.RoutingModel(manager)
 
+
+# Обновленная функция расчета расстояний для открытых маршрутов
 def distance_callback(from_index, to_index):
     from_node = manager.IndexToNode(from_index)
     to_node = manager.IndexToNode(to_index)
+    
+    # Если это переход к виртуальной конечной точке - стоимость 0 (бесплатное завершение)
+    if to_node >= num_locations:
+        return 0
+    
+    # Если это переход от виртуальной конечной точки - недопустимо
+    if from_node >= num_locations:
+        return 999999
+    
     return distance_matrix[from_node][to_node]
 
 transit_callback_index = routing.RegisterTransitCallback(distance_callback)
@@ -148,7 +172,7 @@ def unit_callback(from_index, to_index):
     to_node = manager.IndexToNode(to_index)
     
     # Увеличиваем счетчик только при посещении заказа (не депо и не курьера)
-    if to_node >= num_couriers + 1:  # Это заказ
+    if to_node >= num_couriers + 1 and to_node < num_locations:  # Это заказ (не виртуальная точка)
         return 1
     return 0
 
@@ -215,11 +239,11 @@ search_params.time_limit.seconds = 120
 search_params.solution_limit = 100
 search_params.lns_time_limit.seconds = 30
 
-print("Начинаем решение с улучшенными параметрами...", file=sys.stderr)
+print("Начинаем решение с открытыми маршрутами...", file=sys.stderr)
 solution = routing.SolveWithParameters(search_params)
 
 if solution:
-    print("\nОптимизированное решение найдено!", file=sys.stderr)
+    print("\n=== ОТКРЫТЫЕ МАРШРУТЫ НАЙДЕНЫ ===", file=sys.stderr)
     print(f"Общая стоимость: {solution.ObjectiveValue()} метров", file=sys.stderr)
     print(f"Общая стоимость (без базовых затрат): {solution.ObjectiveValue() - num_couriers * 5000} метров", file=sys.stderr)
     print(f"Общая стоимость: {(solution.ObjectiveValue() - num_couriers * 5000)/1000:.2f} км", file=sys.stderr)
@@ -233,18 +257,20 @@ if solution:
         route_distance = 0
         route_orders = []
         
-        print(f"\nМаршрут курьера {couriers[vehicle_id]['id']}:", file=sys.stderr)
+        print(f"\nОткрытый маршрут курьера {couriers[vehicle_id]['id']}:", file=sys.stderr)
         print(f"  Старт: ({couriers[vehicle_id]['lat']}, {couriers[vehicle_id]['lon']})", file=sys.stderr)
         
         while not routing.IsEnd(index):
             node_index = manager.IndexToNode(index)
             
             if node_index == 0:
-                print(f"  -> Возврат в депо: ({common_depot['lat']}, {common_depot['lon']})", file=sys.stderr)
-            elif node_index >= num_couriers + 1:
+                print(f"  -> Депо: ({common_depot['lat']}, {common_depot['lon']})", file=sys.stderr)
+            elif node_index >= num_couriers + 1 and node_index < num_locations:
                 order = orders[node_index - num_couriers - 1]
                 route_orders.append(order["id"])
                 print(f"  -> Заказ {order['id']}: ({order['lat']}, {order['lon']})", file=sys.stderr)
+            elif node_index >= num_locations:
+                print(f"  -> Завершение маршрута (виртуальная точка)", file=sys.stderr)
             
             previous_index = index
             index = solution.Value(routing.NextVar(index))
@@ -275,7 +301,7 @@ if solution:
     min_orders = min(orders_counts) if orders_counts else 0
     balance_score = max_orders - min_orders
     
-    print(f"\nОптимизированные результаты:", file=sys.stderr)
+    print(f"\n=== РЕЗУЛЬТАТЫ ОТКРЫТЫХ МАРШРУТОВ ===", file=sys.stderr)
     print(f"Общее расстояние: {total_distance} метров ({total_distance/1000:.2f} км)", file=sys.stderr)
     print(f"Используется курьеров: {active_couriers} из {num_couriers}", file=sys.stderr)
     print(f"Всего заказов обслужено: {sum(len(r['orders']) for r in routes)} из {num_orders}", file=sys.stderr)
@@ -298,5 +324,5 @@ if solution:
     print(json.dumps(routes, ensure_ascii=False))
     
 else:
-    print("Оптимизированное решение не найдено! Возвращаемся к базовому алгоритму.", file=sys.stderr)
-    # Здесь можно добавить fallback к исходному алгоритму 
+    print("Открытые маршруты не найдены!", file=sys.stderr)
+    print("[]") 
