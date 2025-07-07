@@ -1069,4 +1069,35 @@ export const clearOrdersForAggregator = async (req, res) => {
     }
 }
 
+export const fixRinat = async (req, res) => {
+    try {
+        const orders = await Order.find({
+            $or: [
+                {"transferredFranchise": "Таскын Абикен"},
+                {"franchisee": ObjectId('685e513a71139c8105c8f145')},
+            ],
+            "date.d": "2025-06-30"
+        }).populate("client")
+
+        for (const order of orders) {
+            let sum = 0;
+            if (order.products.b12 && order.client.price1) {
+                sum += Number(order.products.b12 * order.client.price1);
+            }
+            if (order.products.b19 && order.client.price2) {
+                sum += Number(order.products.b19 * order.client.price2);
+            }
+            if (sum !== order.sum) {
+                console.log(order.address.actual, order.client.fullName, sum, order.sum)
+            }
+        }
+
+    } catch (error) { 
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 
