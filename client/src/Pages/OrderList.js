@@ -420,7 +420,7 @@ export default function OrderList() {
                                                 "text-white bg-green-400": new Date(item?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
                                                 "text-white bg-blue-600": new Date(item?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
                                             })}>
-                                                Заказ: 
+                                                Заказ {userData?.role === "superAdmin" && item?.forAggregator && "Агрегатор"}: 
                                             </div>
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
@@ -462,7 +462,7 @@ export default function OrderList() {
                                                 "text-white bg-green-400": new Date(item?.date?.d).toISOString().split('T')[0] === new Date().toISOString().split('T')[0],
                                                 "text-white bg-blue-600": new Date(item?.date?.d).toISOString().split('T')[0] > new Date().toISOString().split('T')[0],
                                             })}>
-                                                Заказ: 
+                                                Заказ {userData?.role === "superAdmin" && item?.forAggregator && "Агрегатор"}: 
                                             </div>
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()

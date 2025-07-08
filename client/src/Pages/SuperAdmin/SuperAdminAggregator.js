@@ -54,18 +54,6 @@ export default function SuperAdminAggregator() {
         setTotalCouriers(filtered.length)
     }
 
-    const filterOrders = (status = orderStatus) => {
-        let filtered = [...allOrders]
-        
-        // Фильтрация по статусу
-        if (status) {
-            filtered = filtered.filter(order => order.status === status)
-        }
-        
-        setOrders(filtered)
-        setTotalOrders(filtered.length)
-    }
-
     const loadMoreCouriers = useCallback(async (page) => {
         if (loading || !hasMore) return
         setLoading(true)
@@ -109,8 +97,8 @@ export default function SuperAdminAggregator() {
             }
         )
             .then(({ data }) => {
+                setTotalOrders(data.totalOrders)
                 setAllOrders(data.orders)
-                filterOrders()
             })
             .catch((e) => {
                 console.log(e)
@@ -129,7 +117,7 @@ export default function SuperAdminAggregator() {
     }, [isActive, allCouriers])
 
     useEffect(() => {
-        filterOrders()
+        loadOrders()
     }, [orderStatus])
 
     const observer = useRef()

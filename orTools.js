@@ -121,6 +121,78 @@ export function runPythonVisualize(couriers, orders, routes) {
 
 const zeroing = async () => {
     const todayString = getDateAlmaty();
+
+    const orders = await Order.find({
+        "date.d": todayString,
+        $or: [
+            { "address.point": { $exists: false } },
+            { "address.point.lat": { $eq: null } },
+            { "address.point.lon": { $eq: null } }
+        ]
+    })
+
+    for (const order of orders) {
+        const client = await Client.findById(order.client)
+        const clientAddresses = client.addresses;
+
+        // Функция для получения ID 2GIS по адресу
+        const fetchAddressId = async (item) => {
+            try {
+                const response = await axios.get('https://catalog.api.2gis.com/3.0/items/geocode', {
+                    params: {
+                        fields: "items.point",
+                        key: "f5af220d-c60a-4cf6-a350-4a953c324a3d",
+                        q: `Алматы, ${item.street}`,
+                    },
+                });
+                console.log("response.data.result", response.data.result);
+                
+                return response.data.result.items[0] || null; // Возвращаем ID или null
+            } catch (error) {
+                console.log(`Невозможно найти адрес: ${item.street}`);
+                return null;
+            }
+        };
+
+        // Получаем IDs для всех адресов
+        const res2Gis = await Promise.allSettled(clientAddresses.map(fetchAddressId));
+        res2Gis.forEach((result, index) => {
+            console.log("result: ", result);
+            
+            if (result.status === "fulfilled") {
+                clientAddresses[index].id2Gis = result?.value?.id
+                clientAddresses[index].point = result?.value?.point
+            } else {
+                clientAddresses[index].id2Gis = null
+                clientAddresses[index].point = {lat: null, lon: null}
+            }
+        });
+
+        await Client.findByIdAndUpdate(client._id, { $set: { addresses: clientAddresses } })
+
+        const orderAddress = clientAddresses.find(address => order.address.actual.includes(address.street))
+        if (orderAddress) {
+            await Order.findByIdAndUpdate(order._id, { $set: { address: orderAddress } })
+        }
+    }
+
+    await Order.updateMany(
+        { 
+            "date.d": todayString,
+            franchisee: { 
+                $in: [
+                    new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0'), 
+                    new mongoose.Types.ObjectId('66fc0cc6953c2dbbc86c2132'), 
+                    new mongoose.Types.ObjectId('66fc0d01953c2dbbc86c2135'), 
+                    new mongoose.Types.ObjectId('66fc0d3e953c2dbbc86c2138'),
+                    new mongoose.Types.ObjectId('67010493e6648af4cb0213b7')
+                ]
+            },
+            status: { $nin: ["onTheWay", "delivered", "cancelled"] }
+        },
+        { $set: { forAggregator: true } }
+    )
+
     const resetResult = await Order.updateMany(
         { 
             "date.d": todayString,
