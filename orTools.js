@@ -289,6 +289,8 @@ const sendOrderPushNotification = async () => {
 
 export default async function orTools() {
 
+    return
+
     await ensureMongoConnection();
 
     await zeroing();

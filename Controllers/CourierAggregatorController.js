@@ -376,25 +376,30 @@ export const updateCourierAggregatorData = async (req, res) => {
             message: "Успешно изменен"
         })
 
-        if (changeField === "onTheLine" && changeData) {
-            // await distributionOrdersToFreeCourier(courier._id)
-            await orTools();
-        }
+        // Выполняем асинхронные операции после отправки ответа
+        try {
+            if (changeField === "onTheLine" && changeData) {
+                // await distributionOrdersToFreeCourier(courier._id)
+                await orTools();
+            }
 
-        if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
-            const orderIds = courier.orders.map(item => item.orderId);
-            await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
-            // const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
-            await CourierAggregator.updateOne({_id: id}, { $set: {
-                orders: [],
-                onTheLine: false
-            } })
+            if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
+                const orderIds = courier.orders.map(item => item.orderId);
+                await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
+                // const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
+                await CourierAggregator.updateOne({_id: id}, { $set: {
+                    orders: [],
+                    onTheLine: false
+                } })
 
-            await orTools();
+                await orTools();
 
-            // for (const order of orders) {
-            //     await getLocationsLogicQueue(order._id);
-            // }
+                // for (const order of orders) {
+                //     await getLocationsLogicQueue(order._id);
+                // }
+            }
+        } catch (asyncError) {
+            console.log("Ошибка в асинхронных операциях после ответа:", asyncError);
         }
     } catch (error) {
         console.log(error);
