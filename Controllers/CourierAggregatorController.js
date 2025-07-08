@@ -9,6 +9,7 @@ import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import { pushNotification } from "../pushNotification.js";
 import nodemailer from "nodemailer";
 import orTools from "../orTools.js";
+import { getDateAlmaty } from "../utils/dateUtils.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -806,7 +807,13 @@ export const getOrdersWithCourierAggregator = async (req, res) => {
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`;
         
-        let query = { courierAggregator: { $ne: null }, "date.d": todayStr };
+        let query = {
+            $or: [
+                { courierAggregator: { $ne: null } }, 
+                { forAggregator: true  }
+            ],
+            "date.d": todayStr, 
+        };
         
         // Добавляем фильтрацию по статусу заказа
         if (status && status !== "all") {
@@ -831,9 +838,11 @@ export const getOrdersWithCourierAggregator = async (req, res) => {
 export const getCompletedOrCancelledOrdersFromCourierAggregator = async (req, res) => {
     try {
         const {courierId} = req.body
+        const today = getDateAlmaty()
 
         const orders = await Order.find({
             courierAggregator: courierId,
+            "date.d": today,
             status: { $in: ["delivered", "cancelled"] }
         });
 
