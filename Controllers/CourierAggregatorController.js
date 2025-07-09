@@ -371,7 +371,7 @@ export const updateCourierAggregatorData = async (req, res) => {
         })
 
         try {
-            if ((changeField === "onTheLine" && changeData) || (changeField === "capacities")) {
+            if ((changeField === "onTheLine" && changeData) || (changeField === "capacities" && courier.onTheLine)) {
                 await orTools();
             }
 

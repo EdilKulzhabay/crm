@@ -325,7 +325,7 @@ export default async function orTools() {
     //     return acc;
     // }, {});
 
-    return
+    // return
 
     // Пример вызова:
     const couriers = [
@@ -334,28 +334,32 @@ export default async function orTools() {
             lat: 43.168277314921774,
             lon: 76.89654142009347,
             capacity_12: 10,
-            capacity_19: 33
+            capacity_19: 33,
+            capacity: 40
         },
         {
             id: 'courier_2', 
             lat: 43.168277314921774,
             lon: 76.89654142009347,
             capacity_12: 0,
-            capacity_19: 43
+            capacity_19: 0,
+            capacity: 40
         },
         {
             id: 'courier_3',
             lat: 43.168277314921774,
             lon: 76.89654142009347,
-            capacity_12: 0,
-            capacity_19: 16,
+            capacity_12: 5,
+            capacity_19: 40,
+            capacity: 50
         },
         {
             id: 'courier_4',
             lat: 43.168277314921774,
             lon: 76.89654142009347,
-            capacity_12: 20,
-            capacity_19: 20
+            capacity_12: 0,
+            capacity_19: 0,
+            capacity: 16
         }
     ]
   
@@ -391,10 +395,6 @@ export default async function orTools() {
     console.log("количество курьеров = ", couriers.length)
     console.log("количество заказов = ", orders.length)
     console.log("ограничения на заказы = ", courier_restrictions)
-
-    console.log("couriers = ", couriers)
-    console.log("orders = ", orders)
-    console.log("courier_restrictions = ", courier_restrictions)
     
     // Проверяем, есть ли данные для обработки
     if (couriers.length === 0) {
@@ -411,6 +411,17 @@ export default async function orTools() {
     console.log("Готовые маршруты:", result);
 
     await runPythonVisualize(couriers, orders, result);
+
+
+    for (const route of result) {
+        console.log(`✅ Курьер ${route.courier_id} получил ${route.orders.length} заказов`);
+        console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
+        console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
+        console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
+    }
+
+
+
     return
 
     const aquaMarket = await AquaMarket.findOne({
@@ -420,6 +431,19 @@ export default async function orTools() {
 
     for (const route of result) {
         const courier = await CourierAggregator.findById(route.courier_id);
+        
+        // Обновляем информацию о бутылках для курьера на основе нового расчета
+        await CourierAggregator.updateOne(
+            { _id: courier._id },
+            { 
+                $set: { 
+                    requiredBottles: route.required_bottles,
+                    courierShouldTake: route.courier_should_take,
+                    capacityUtilization: route.capacity_utilization
+                }
+            }
+        );
+        
         for (const orderId of route.orders) {
             await Order.findByIdAndUpdate(orderId, { $set: { courierAggregator: courier._id } });
             const order = await Order.findById(orderId).populate("client");
@@ -454,6 +478,10 @@ export default async function orTools() {
             );
         }
         
+        console.log(`✅ Курьер ${courier.fullName} получил ${route.orders.length} заказов`);
+        console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
+        console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
+        console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
     }
 
     console.log("✅ Маршруты назначены");
