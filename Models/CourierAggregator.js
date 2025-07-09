@@ -291,6 +291,14 @@ const CourierAggregatorSchema = new mongoose.Schema(
             date: {
                 type: Date,
             }
+        },
+        capacity12: {
+            type: Number,
+            default: 0,
+        },
+        capacity19: {
+            type: Number,
+            default: 0,
         }
     },
     {

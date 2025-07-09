@@ -158,8 +158,6 @@ def unit_callback(from_index, to_index):
 
 unit_callback_index = routing.RegisterTransitCallback(unit_callback)
 
-exit()
-
 # Добавляем ограничения для каждого курьера
 for vehicle_id in range(num_couriers):
     # Ограничение на расстояние

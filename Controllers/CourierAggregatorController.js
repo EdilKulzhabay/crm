@@ -314,12 +314,6 @@ export const updateCourierAggregatorData = async (req, res) => {
 
         const courier = await CourierAggregator.findById(id)
 
-        console.log("we in updateCourierAggregatorData courier.fullName = ", courier.fullName);
-
-        console.log("we in updateCourierAggregatorData req.body = ", req.body);
-        
-        
-
         if (!courier) {
             return res.status(404).json({
                 message: "Не получилось найти курьера",
@@ -327,76 +321,74 @@ export const updateCourierAggregatorData = async (req, res) => {
             });
         }
 
-        // Обработка вложенных полей
-        if (changeField.includes('.') && !changeField.includes("products")) {
-            const fields = changeField.split('.');
-            let current = courier;
-            console.log("current = ", current);
-            
-            console.log("current.orders[0] = ", current.orders[0]);
-            
-            current.orders[0].step = changeData
-            
-            // Проходим по всем уровням вложенности, кроме последнего
-            for (let i = 0; i < fields.length - 1; i++) {
-                if (!current[fields[i]]) {
-                    current[fields[i]] = {};
-                }
-                current = current[fields[i]];
+        if (changeField === "capacities") {
+            await CourierAggregator.updateOne({_id: id}, { $set: {
+                capacity12: changeData.capacity12,
+                capacity19: changeData.capacity19
+            } })
+        } else if (changeField === "order.products") {
+            if (!courier.order || !courier.order.orderId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "У курьера нет активного заказа"
+                });
             }
             
-            // Устанавливаем значение на последнем уровне
-            current[fields[fields.length - 1]] = changeData;
-            // console.log("current = ", current);
+            const order = await Order.findById(courier.order.orderId).populate("client", "price12 price19")
             
-            // console.log("current.orders[0] = ", current.orders[0]);
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Заказ не найден"
+                });
+            }
+
+            order.products = changeData;
+            await order.save();
             
-            // current.orders[0].step = changeData
+            let sum = changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0
+            sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0
+
+            courier.order.income = sum;
+            courier.order.products = changeData;
+            courier.orders[0].products = changeData;
+            await courier.save();
+        } else if (changeField === "order.step") {
+            courier.order.step = changeData;
+            if (courier.orders.length > 0) {
+                courier.orders[0].step = changeData;
+            }
+            await courier.save();
         } else {
-            // Обычное обновление поля
             await CourierAggregator.updateOne({_id: id}, { $set: {
                 [changeField]: changeData
             } })
         }
-
-        if (changeField === "order.products") {
-            const order = await Order.findById(courier.order.orderId).populate("client", "price12 price19")
-            let sum = changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0
-
-            sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0
-            await CourierAggregator.updateOne({_id: id}, { $set: {
-                "order.income": sum
-            } })
-        }
-
-        await courier.save()
 
         res.json({
             success: true,
             message: "Успешно изменен"
         })
 
-        // Выполняем асинхронные операции после отправки ответа
         try {
-            if (changeField === "onTheLine" && changeData) {
-                // await distributionOrdersToFreeCourier(courier._id)
+            if ((changeField === "onTheLine" && changeData) || (changeField === "capacities")) {
                 await orTools();
             }
 
-            if (changeField === "onTheLine" && !changeData && courier.orders.length > 0) {
-                const orderIds = courier.orders.map(item => item.orderId);
-                await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
-                // const orders = await Order.find({ _id: { $in: orderIds } }).sort({ createdAt: 1 })
-                await CourierAggregator.updateOne({_id: id}, { $set: {
-                    orders: [],
-                    onTheLine: false
-                } })
+            if (changeField === "onTheLine" && !changeData) {
+                // Получаем актуальные данные курьера после обновления
+                const updatedCourier = await CourierAggregator.findById(id);
+                
+                if (updatedCourier && updatedCourier.orders.length > 0) {
+                    const orderIds = updatedCourier.orders.map(item => item.orderId);
+                    await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
+                    await CourierAggregator.updateOne({_id: id}, { $set: {
+                        orders: [],
+                        onTheLine: false
+                    } })
 
-                await orTools();
-
-                // for (const order of orders) {
-                //     await getLocationsLogicQueue(order._id);
-                // }
+                    await orTools();
+                }
             }
         } catch (asyncError) {
             console.log("Ошибка в асинхронных операциях после ответа:", asyncError);
@@ -482,6 +474,10 @@ export const acceptOrderCourierAggregator = async (req, res) => {
                 $set: {
                     order: order
                 },
+                $inc: {
+                    capacity12: -order.products.b12,
+                    capacity19: -order.products.b19
+                },
                 $push: {
                     orders: order
                 }
@@ -529,9 +525,13 @@ export const completeOrderCourierAggregator = async (req, res) => {
 
         await CourierRestrictions.deleteMany({orderId: orderId})
         
-        let sum = courier1.order.products.b12 > 0 ? courier1.order.products.b12 * order.client.price12 : 0
-
-        sum += courier1.order.products.b19 > 0 ? courier1.order.products.b19 * order.client.price19 : 0
+        let sum = 0;
+        
+        // Проверяем, что order и products существуют
+        if (courier1.order && courier1.order.products) {
+            sum += courier1.order.products.b12 > 0 ? courier1.order.products.b12 * order.client.price12 : 0;
+            sum += courier1.order.products.b19 > 0 ? courier1.order.products.b19 * order.client.price19 : 0;
+        }
 
         await CourierAggregator.updateOne({_id: courierId}, {
             $pull: {
@@ -672,10 +672,18 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const {orderId, reason} = req.body
 
+        const order = await Order.findById(orderId)
+
         await CourierAggregator.updateOne(
             { _id: id },
             { $pull: { orders: { orderId: orderId } } },
-            { $set: {order: null} }
+            { $set: { order: null } },
+            { 
+                $inc: {
+                    capacity12: order.products.b12,
+                    capacity19: order.products.b19
+                } 
+            }
         );
 
         await Order.updateOne(
@@ -722,10 +730,10 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             await new Promise(resolve => setTimeout(resolve, 40000));
             const currentOrder = await Order.findById(courier.orders[0].orderId)
             if (currentOrder.status !== "onTheWay") {
-                // Получаем все ID заказов курьера
                 const orderIds = courier.orders.map(order => order.orderId);
+
+                await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
                 
-                // Удаляем все заказы у курьера
                 await CourierAggregator.updateOne(
                     { _id: id },
                     { 
@@ -735,18 +743,11 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                         }
                     }
                 );
-
-                // Отправляем все заказы на переназначение
-                for (const orderId of orderIds) {
-                    // await getLocationsLogicQueue(orderId);
-                }
             }
         } 
 
         await orTools();
 
-        // await getLocationsLogicQueue(orderId);
-        
         res.json({
             success: true,
             message: "Заказ отменен"

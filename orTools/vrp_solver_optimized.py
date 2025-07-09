@@ -121,18 +121,26 @@ routing = pywrapcp.RoutingModel(manager)
 
 # Обновленная функция расчета расстояний для открытых маршрутов
 def distance_callback(from_index, to_index):
-    from_node = manager.IndexToNode(from_index)
-    to_node = manager.IndexToNode(to_index)
-    
-    # Если это переход к виртуальной конечной точке - стоимость 0 (бесплатное завершение)
-    if to_node >= num_locations:
-        return 0
-    
-    # Если это переход от виртуальной конечной точки - недопустимо
-    if from_node >= num_locations:
+    try:
+        # Проверяем валидность индексов
+        if from_index < 0 or to_index < 0:
+            return 999999
+        
+        from_node = manager.IndexToNode(from_index)
+        to_node = manager.IndexToNode(to_index)
+        
+        # Если это переход к виртуальной конечной точке - стоимость 0 (бесплатное завершение)
+        if to_node >= num_locations:
+            return 0
+        
+        # Если это переход от виртуальной конечной точки - недопустимо
+        if from_node >= num_locations:
+            return 999999
+        
+        return distance_matrix[from_node][to_node]
+    except Exception as e:
+        print(f"Ошибка в distance_callback: {e}, from_index={from_index}, to_index={to_index}", file=sys.stderr)
         return 999999
-    
-    return distance_matrix[from_node][to_node]
 
 transit_callback_index = routing.RegisterTransitCallback(distance_callback)
 routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
@@ -168,13 +176,21 @@ print(f"Максимум заказов на курьера: {max_orders_per_cou
 
 # Добавляем размерность для подсчета заказов
 def unit_callback(from_index, to_index):
-    from_node = manager.IndexToNode(from_index)
-    to_node = manager.IndexToNode(to_index)
-    
-    # Увеличиваем счетчик только при посещении заказа (не депо и не курьера)
-    if to_node >= num_couriers + 1 and to_node < num_locations:  # Это заказ (не виртуальная точка)
-        return 1
-    return 0
+    try:
+        # Проверяем валидность индексов
+        if from_index < 0 or to_index < 0:
+            return 0
+        
+        from_node = manager.IndexToNode(from_index)
+        to_node = manager.IndexToNode(to_index)
+        
+        # Увеличиваем счетчик только при посещении заказа (не депо и не курьера)
+        if to_node >= num_couriers + 1 and to_node < num_locations:  # Это заказ (не виртуальная точка)
+            return 1
+        return 0
+    except Exception as e:
+        print(f"Ошибка в unit_callback: {e}, from_index={from_index}, to_index={to_index}", file=sys.stderr)
+        return 0
 
 unit_callback_index = routing.RegisterTransitCallback(unit_callback)
 
@@ -238,6 +254,104 @@ search_params.time_limit.seconds = 120
 # Настройки для лучшего качества решения
 search_params.solution_limit = 100
 search_params.lns_time_limit.seconds = 30
+
+# Регистрируем функцию для количества бутылей 12л
+def bottle12_callback(from_index, to_index):
+    try:
+        # Проверяем валидность индексов
+        if from_index < 0 or to_index < 0:
+            return 0
+        
+        to_node = manager.IndexToNode(to_index)
+        # Если переходим к заказу, возвращаем количество бутылок 12л для этого заказа
+        if to_node >= num_couriers + 1 and to_node < num_locations:
+            return orders[to_node - num_couriers - 1].get("bottles_12", 0)
+        return 0
+    except Exception as e:
+        print(f"Ошибка в bottle12_callback: {e}, from_index={from_index}, to_index={to_index}", file=sys.stderr)
+        return 0
+
+bottle12_callback_index = routing.RegisterTransitCallback(bottle12_callback)
+
+routing.AddDimensionWithVehicleCapacity(
+    bottle12_callback_index,
+    0,  # no slack
+    [c.get("capacity_12", 0) for c in couriers],  # capacity per courier
+    True,
+    "Bottle12"
+)
+
+# Регистрируем функцию для количества бутылей 19л
+def bottle19_callback(from_index, to_index):
+    try:
+        # Проверяем валидность индексов
+        if from_index < 0 or to_index < 0:
+            return 0
+        
+        to_node = manager.IndexToNode(to_index)
+        # Если переходим к заказу, возвращаем количество бутылок 19л для этого заказа
+        if to_node >= num_couriers + 1 and to_node < num_locations:
+            return orders[to_node - num_couriers - 1].get("bottles_19", 0)
+        return 0
+    except Exception as e:
+        print(f"Ошибка в bottle19_callback: {e}, from_index={from_index}, to_index={to_index}", file=sys.stderr)
+        return 0
+
+bottle19_callback_index = routing.RegisterTransitCallback(bottle19_callback)
+
+routing.AddDimensionWithVehicleCapacity(
+    bottle19_callback_index,
+    0,
+    [c.get("capacity_19", 0) for c in couriers],
+    True,
+    "Bottle19"
+)
+
+# ДОПОЛНИТЕЛЬНЫЕ ОГРАНИЧЕНИЯ: запрещаем назначать заказы с бутылками курьерам с нулевой вместимостью
+print("\n=== ПРИМЕНЕНИЕ ОГРАНИЧЕНИЙ ПО БУТЫЛКАМ ===", file=sys.stderr)
+
+for i, order in enumerate(orders):
+    order_node_index = num_couriers + 1 + i
+    order_routing_index = manager.NodeToIndex(order_node_index)
+    
+    bottles_12 = order.get("bottles_12", 0)
+    bottles_19 = order.get("bottles_19", 0)
+    
+    # Определяем курьеров, которые могут выполнить этот заказ
+    allowed_couriers_for_order = []
+    
+    for courier_id in range(num_couriers):
+        courier_capacity_12 = couriers[courier_id].get("capacity_12", 0)
+        courier_capacity_19 = couriers[courier_id].get("capacity_19", 0)
+        
+        # Проверяем, может ли курьер выполнить заказ
+        can_handle_12 = bottles_12 == 0 or courier_capacity_12 >= bottles_12
+        can_handle_19 = bottles_19 == 0 or courier_capacity_19 >= bottles_19
+        
+        if can_handle_12 and can_handle_19:
+            allowed_couriers_for_order.append(courier_id)
+    
+    # Если есть ограничения по курьерам из courier_restrictions, применяем их
+    if order['id'] in courier_restrictions:
+        restricted_couriers = courier_restrictions[order['id']]
+        if not restricted_couriers:
+            # Заказ исключен из обслуживания
+            routing.AddDisjunction([order_routing_index], 100000)
+            print(f"Заказ {order['id']}: исключен из обслуживания", file=sys.stderr)
+            continue
+        else:
+            # Пересечение ограничений по курьерам и по бутылкам
+            allowed_couriers_for_order = list(set(allowed_couriers_for_order) & set(restricted_couriers))
+    
+    if not allowed_couriers_for_order:
+        # Нет курьеров, которые могут выполнить заказ
+        routing.AddDisjunction([order_routing_index], 100000)
+        print(f"Заказ {order['id']}: НЕТ подходящих курьеров (12л:{bottles_12}, 19л:{bottles_19})", file=sys.stderr)
+    else:
+        # Ограничиваем заказ только подходящими курьерами
+        routing.SetAllowedVehiclesForIndex(allowed_couriers_for_order, order_routing_index)
+        courier_names = [couriers[c]['id'] for c in allowed_couriers_for_order]
+        print(f"Заказ {order['id']}: разрешен для {courier_names} (12л:{bottles_12}, 19л:{bottles_19})", file=sys.stderr)
 
 print("Начинаем решение с открытыми маршрутами...", file=sys.stderr)
 solution = routing.SolveWithParameters(search_params)

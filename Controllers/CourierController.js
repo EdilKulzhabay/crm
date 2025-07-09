@@ -510,6 +510,10 @@ export const updateCourierOrderStatus = async (req, res) => {
             order.products = products
             order.opForm = opForm
             order.sum = sum
+            if (order.forAggregator) {
+                order.forAggregator = false
+                order.courierAggregator = null
+            }
         }
 
         await order.save()
