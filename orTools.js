@@ -288,93 +288,103 @@ const sendOrderPushNotification = async () => {
 
 
 export default async function orTools() {
+    // await ensureMongoConnection();
+
+    // await zeroing();
+
+    // const activeCouriers = await CourierAggregator.find({status: "active", onTheLine: true})
+
+    // const couriers = activeCouriers.map(courier => ({
+    //     id: courier._id,
+    //     lat: courier.point.lat,
+    //     lon: courier.point.lon,
+    //     capacity_12: courier.capacity12,
+    //     capacity_19: courier.capacity19
+    // }));
+
+    // const today = new Date();
+    // const todayString = getDateAlmaty(today);
+
+    // const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: { $nin: ["onTheWay", "delivered", "cancelled"] }})
+    
+    // const orders = activeOrders.map(order => ({
+    //     id: order._id,
+    //     lat: order.address.point.lat,
+    //     lon: order.address.point.lon,
+    //     bottles_12: order.products.b12,
+    //     bottles_19: order.products.b19
+    // }));
+
+    // const courierRestrictions = await CourierRestrictions.find({})
+
+    // const courier_restrictions = courierRestrictions.reduce((acc, restriction) => {
+    //     if (!acc[restriction.orderId]) {
+    //         acc[restriction.orderId] = [];
+    //     }
+    //     acc[restriction.orderId].push(restriction.courierId);
+    //     return acc;
+    // }, {});
 
     return
 
-    await ensureMongoConnection();
-
-    await zeroing();
-
-    const activeCouriers = await CourierAggregator.find({status: "active", onTheLine: true})
-
     // Пример вызова:
-    const couriers = activeCouriers.map(courier => ({
-        id: courier._id,
-        lat: courier.point.lat,
-        lon: courier.point.lon
-    }));
-
-    const today = new Date();
-    const todayString = getDateAlmaty(today);
-
-    const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: { $nin: ["onTheWay", "delivered", "cancelled"] }})
-    
-    const orders = activeOrders.map(order => ({
-        id: order._id,
-        lat: order.address.point.lat,
-        lon: order.address.point.lon
-    }));
-
-    const courierRestrictions = await CourierRestrictions.find({})
-
-    const courier_restrictions = courierRestrictions.reduce((acc, restriction) => {
-        if (!acc[restriction.orderId]) {
-            acc[restriction.orderId] = [];
+    const couriers = [
+        {
+            id: 'courier_1',
+            lat: 43.168277314921774,
+            lon: 76.89654142009347,
+            capacity_12: 10,
+            capacity_19: 33
+        },
+        {
+            id: 'courier_2', 
+            lat: 43.168277314921774,
+            lon: 76.89654142009347,
+            capacity_12: 0,
+            capacity_19: 43
+        },
+        {
+            id: 'courier_3',
+            lat: 43.168277314921774,
+            lon: 76.89654142009347,
+            capacity_12: 0,
+            capacity_19: 16,
+        },
+        {
+            id: 'courier_4',
+            lat: 43.168277314921774,
+            lon: 76.89654142009347,
+            capacity_12: 20,
+            capacity_19: 20
         }
-        acc[restriction.orderId].push(restriction.courierId);
-        return acc;
-    }, {});
-
-    // // Пример вызова:
-    // const couriers = [
-    //     {
-    //         id: 'courier_1',
-    //         lat: 43.168277314921774,
-    //         lon: 76.89654142009347
-    //     },
-    //     {
-    //         id: 'courier_2', 
-    //         lat: 43.2044094,
-    //         lon: 76.893334
-    //     },
-    //     {
-    //         id: 'courier_3',
-    //         lat: 43.215678,
-    //         lon: 76.912345
-    //     },
-    //     {
-    //         id: 'courier_4',
-    //         lat: 43.198765,
-    //         lon: 76.887654
-    //     }
-    // ]
+    ]
   
-    // const orders = [
-    //     { id: 'order_1', lat: 43.292268, lon: 76.931119 },
-    //     { id: 'order_2', lat: 43.261362, lon: 76.929122 },
-    //     { id: 'order_3', lat: 43.151319, lon: 76.901267 },
-    //     { id: 'order_4', lat: 43.228644, lon: 76.866358 },
-    //     { id: 'order_5', lat: 43.187654, lon: 76.898765 },
-    //     { id: 'order_6', lat: 43.254082, lon: 76.918261 },
-    //     { id: 'order_7', lat: 43.198765, lon: 76.923456 },
-    //     { id: 'order_8', lat: 43.237369, lon: 76.938627 },
-    //     { id: 'order_9', lat: 43.252214, lon: 76.90054 },
-    //     { id: 'order_10', lat: 43.187654, lon: 76.912345 },
-    //     { id: 'order_11', lat: 43.194514, lon: 76.896529 },
-    //     { id: 'order_12', lat: 43.168765, lon: 76.873977 },
-    //     { id: 'order_13', lat: 43.175432, lon: 76.923456 },
-    //     { id: 'order_14', lat: 43.234567, lon: 76.912345 },
-    //     { id: 'order_15', lat: 43.212045, lon: 76.872848 },
-    //     { id: 'order_16', lat: 43.223456, lon: 76.934567 },
-    //     { id: 'order_17', lat: 43.264191, lon: 76.932518 },
-    //     { id: 'order_18', lat: 43.245678, lon: 76.887654 },
-    //     { id: 'order_19', lat: 43.212345, lon: 76.945678 },
-    //     { id: 'order_20', lat: 43.242453, lon: 76.9409 },
-    //     { id: 'order_21', lat: 43.234567, lon: 76.923456 },
-    //     { id: 'order_22', lat: 43.198765, lon: 76.934567 }
-    // ]
+    const orders = [
+        { id: 'order_1', lat: 43.292268, lon: 76.931119, bottles_12: 0, bottles_19: 23 },
+        { id: 'order_2', lat: 43.261362, lon: 76.929122, bottles_12: 0, bottles_19: 4 },
+        { id: 'order_3', lat: 43.151319, lon: 76.901267, bottles_12: 0, bottles_19: 3 },
+        { id: 'order_4', lat: 43.228644, lon: 76.866358, bottles_12: 2, bottles_19: 3 },
+        { id: 'order_5', lat: 43.187654, lon: 76.898765, bottles_12: 0, bottles_19: 2 },
+        { id: 'order_6', lat: 43.254082, lon: 76.918261, bottles_12: 0, bottles_19: 5 },
+        { id: 'order_7', lat: 43.198765, lon: 76.923456, bottles_12: 0, bottles_19: 4 },
+        { id: 'order_8', lat: 43.237369, lon: 76.938627, bottles_12: 0, bottles_19: 6 },
+        { id: 'order_9', lat: 43.252214, lon: 76.90054, bottles_12: 0, bottles_19: 2 },
+        { id: 'order_10', lat: 43.187654, lon: 76.912345, bottles_12: 0, bottles_19: 2 },
+        { id: 'order_11', lat: 43.194514, lon: 76.896529, bottles_12: 4, bottles_19: 0 },
+        { id: 'order_12', lat: 43.168765, lon: 76.873977, bottles_12: 0, bottles_19: 2 },
+        { id: 'order_13', lat: 43.175432, lon: 76.923456, bottles_12: 0, bottles_19: 4 },
+        { id: 'order_14', lat: 43.234567, lon: 76.912345, bottles_12: 4, bottles_19: 0 },
+        { id: 'order_15', lat: 43.212045, lon: 76.872848, bottles_12: 0, bottles_19: 15 },
+        { id: 'order_16', lat: 43.223456, lon: 76.934567, bottles_12: 0, bottles_19: 10 },
+        { id: 'order_17', lat: 43.264191, lon: 76.932518, bottles_12: 0, bottles_19: 20 },
+        { id: 'order_18', lat: 43.245678, lon: 76.887654, bottles_12: 0, bottles_19: 3 },
+        { id: 'order_19', lat: 43.212345, lon: 76.945678, bottles_12: 0, bottles_19: 4 },
+        { id: 'order_20', lat: 43.242453, lon: 76.9409, bottles_12: 0, bottles_19: 2 },
+        { id: 'order_21', lat: 43.234567, lon: 76.923456, bottles_12: 0, bottles_19: 2 },
+        { id: 'order_22', lat: 43.198765, lon: 76.934567, bottles_12: 10, bottles_19: 0 }
+    ]
     
-    // const courier_restrictions = {}
+    const courier_restrictions = {}
 
     console.log("Начало распределения в orTools.js");
     
@@ -401,6 +411,7 @@ export default async function orTools() {
     console.log("Готовые маршруты:", result);
 
     await runPythonVisualize(couriers, orders, result);
+    return
 
     const aquaMarket = await AquaMarket.findOne({
         "point.lat": { $exists: true, $ne: null },
