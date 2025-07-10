@@ -288,104 +288,35 @@ const sendOrderPushNotification = async () => {
 
 
 export default async function orTools() {
-    // await ensureMongoConnection();
-
-    // await zeroing();
-
-    // const activeCouriers = await CourierAggregator.find({status: "active", onTheLine: true})
-
-    // const couriers = activeCouriers.map(courier => ({
-    //     id: courier._id,
-    //     lat: courier.point.lat,
-    //     lon: courier.point.lon,
-    //     capacity_12: courier.capacity12,
-    //     capacity_19: courier.capacity19
-    // }));
-
-    // const today = new Date();
-    // const todayString = getDateAlmaty(today);
-
-    // const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: { $nin: ["onTheWay", "delivered", "cancelled"] }})
-    
-    // const orders = activeOrders.map(order => ({
-    //     id: order._id,
-    //     lat: order.address.point.lat,
-    //     lon: order.address.point.lon,
-    //     bottles_12: order.products.b12,
-    //     bottles_19: order.products.b19
-    // }));
-
-    // const courierRestrictions = await CourierRestrictions.find({})
-
-    // const courier_restrictions = courierRestrictions.reduce((acc, restriction) => {
-    //     if (!acc[restriction.orderId]) {
-    //         acc[restriction.orderId] = [];
-    //     }
-    //     acc[restriction.orderId].push(restriction.courierId);
-    //     return acc;
-    // }, {});
-
-    // return
 
     // Пример вызова:
+    console.log("orTools");
+    
+    return 
+
     const couriers = [
         {
             id: 'courier_1',
-            lat: 43.168277314921774,
-            lon: 76.89654142009347,
-            capacity_12: 10,
-            capacity_19: 33,
+            lat: 43.28, lon: 76.925,
+            capacity_12: 0,
+            capacity_19: 30,
             capacity: 40
         },
         {
-            id: 'courier_2', 
-            lat: 43.168277314921774,
-            lon: 76.89654142009347,
+            id: 'courier_2',
+            lat: 43.20, lon: 76.900,
             capacity_12: 0,
-            capacity_19: 0,
+            capacity_19: 15,
             capacity: 40
-        },
-        {
-            id: 'courier_3',
-            lat: 43.168277314921774,
-            lon: 76.89654142009347,
-            capacity_12: 5,
-            capacity_19: 40,
-            capacity: 50
-        },
-        {
-            id: 'courier_4',
-            lat: 43.168277314921774,
-            lon: 76.89654142009347,
-            capacity_12: 0,
-            capacity_19: 0,
-            capacity: 16
         }
     ]
-  
+
     const orders = [
         { id: 'order_1', lat: 43.292268, lon: 76.931119, bottles_12: 0, bottles_19: 23 },
         { id: 'order_2', lat: 43.261362, lon: 76.929122, bottles_12: 0, bottles_19: 4 },
-        { id: 'order_3', lat: 43.151319, lon: 76.901267, bottles_12: 0, bottles_19: 3 },
-        { id: 'order_4', lat: 43.228644, lon: 76.866358, bottles_12: 2, bottles_19: 3 },
-        { id: 'order_5', lat: 43.187654, lon: 76.898765, bottles_12: 0, bottles_19: 2 },
-        { id: 'order_6', lat: 43.254082, lon: 76.918261, bottles_12: 0, bottles_19: 5 },
-        { id: 'order_7', lat: 43.198765, lon: 76.923456, bottles_12: 0, bottles_19: 4 },
-        { id: 'order_8', lat: 43.237369, lon: 76.938627, bottles_12: 0, bottles_19: 6 },
-        { id: 'order_9', lat: 43.252214, lon: 76.90054, bottles_12: 0, bottles_19: 2 },
-        { id: 'order_10', lat: 43.187654, lon: 76.912345, bottles_12: 0, bottles_19: 2 },
-        { id: 'order_11', lat: 43.194514, lon: 76.896529, bottles_12: 4, bottles_19: 0 },
-        { id: 'order_12', lat: 43.168765, lon: 76.873977, bottles_12: 0, bottles_19: 2 },
-        { id: 'order_13', lat: 43.175432, lon: 76.923456, bottles_12: 0, bottles_19: 4 },
-        { id: 'order_14', lat: 43.234567, lon: 76.912345, bottles_12: 4, bottles_19: 0 },
-        { id: 'order_15', lat: 43.212045, lon: 76.872848, bottles_12: 0, bottles_19: 15 },
-        { id: 'order_16', lat: 43.223456, lon: 76.934567, bottles_12: 0, bottles_19: 10 },
-        { id: 'order_17', lat: 43.264191, lon: 76.932518, bottles_12: 0, bottles_19: 20 },
-        { id: 'order_18', lat: 43.245678, lon: 76.887654, bottles_12: 0, bottles_19: 3 },
-        { id: 'order_19', lat: 43.212345, lon: 76.945678, bottles_12: 0, bottles_19: 4 },
-        { id: 'order_20', lat: 43.242453, lon: 76.9409, bottles_12: 0, bottles_19: 2 },
-        { id: 'order_21', lat: 43.234567, lon: 76.923456, bottles_12: 0, bottles_19: 2 },
-        { id: 'order_22', lat: 43.198765, lon: 76.934567, bottles_12: 10, bottles_19: 0 }
+        { id: 'order_17', lat: 43.264191, lon: 76.932518, bottles_12: 0, bottles_19: 10 },
+        { id: 'order_3', lat: 43.28, lon: 76.895, bottles_12: 0, bottles_19: 4 },
+        { id: 'order_4', lat: 43.29, lon: 76.895, bottles_12: 0, bottles_19: 10 }
     ]
     
     const courier_restrictions = {}
@@ -410,13 +341,58 @@ export default async function orTools() {
     const result = await runPythonVRP(couriers, orders, courier_restrictions);
     console.log("Готовые маршруты:", result);
 
+    // Реверсируем порядок заказов в каждом маршруте
+    // for (const route of result) {
+    //     route.orders.reverse();
+    // }
+
     await runPythonVisualize(couriers, orders, result);
 
 
     for (const route of result) {
         console.log(`✅ Курьер ${route.courier_id} получил ${route.orders.length} заказов`);
         console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
-        console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
+        
+        // Проверяем, какой тип курьера
+        if (route.courier_bottles) {
+            // Курьер с конкретными типами бутылок
+            console.log(`   У курьера есть: 12л=${route.courier_bottles.bottles_12}, 19л=${route.courier_bottles.bottles_19}, всего=${route.courier_bottles.total}`);
+            
+            if (route.max_capacity) {
+                console.log(`   Максимальная вместимость: 12л=${route.max_capacity.bottles_12}, 19л=${route.max_capacity.bottles_19}, всего=${route.max_capacity.total}`);
+            }
+            
+            if (route.bottles_sufficient) {
+                if (route.refill_needed) {
+                    console.log(`   🔄 Нужно доукомплектовать: 12л=${route.refill_needed.bottles_12}, 19л=${route.refill_needed.bottles_19}, всего=${route.refill_needed.total}`);
+                    
+                    if (route.refill_point) {
+                        if (route.refill_point.after_order_id) {
+                            console.log(`   📍 Точка доукомплектования: после заказа ${route.refill_point.after_order_id}, перед заказом ${route.refill_point.before_order_id}`);
+                        } else {
+                            console.log(`   📍 Точка доукомплектования: в начале маршрута, перед заказом ${route.refill_point.before_order_id}`);
+                        }
+                    }
+                } else {
+                    console.log(`   ✅ Бутылок достаточно`);
+                }
+            } else {
+                console.log(`   ❌ Недостаточно даже с доукомплектованием!`);
+                if (route.bottles_shortage) {
+                    if (route.bottles_shortage.bottles_12 > 0) {
+                        console.log(`      Не хватает 12л: ${route.bottles_shortage.bottles_12}`);
+                    }
+                    if (route.bottles_shortage.bottles_19 > 0) {
+                        console.log(`      Не хватает 19л: ${route.bottles_shortage.bottles_19}`);
+                    }
+                }
+            }
+        } else if (route.courier_should_take) {
+            // Курьер с общей вместимостью
+            console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
+            console.log(`   Общая вместимость: ${route.courier_total_capacity} бутылок`);
+        }
+        
         console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
     }
 
@@ -424,73 +400,7 @@ export default async function orTools() {
 
     return
 
-    const aquaMarket = await AquaMarket.findOne({
-        "point.lat": { $exists: true, $ne: null },
-        "point.lon": { $exists: true, $ne: null }
-    });
-
-    for (const route of result) {
-        const courier = await CourierAggregator.findById(route.courier_id);
-        
-        // Обновляем информацию о бутылках для курьера на основе нового расчета
-        await CourierAggregator.updateOne(
-            { _id: courier._id },
-            { 
-                $set: { 
-                    requiredBottles: route.required_bottles,
-                    courierShouldTake: route.courier_should_take,
-                    capacityUtilization: route.capacity_utilization
-                }
-            }
-        );
-        
-        for (const orderId of route.orders) {
-            await Order.findByIdAndUpdate(orderId, { $set: { courierAggregator: courier._id } });
-            const order = await Order.findById(orderId).populate("client");
-        
-            const orderData = {
-                orderId: order._id,
-                status: order.status,
-                products: order.products,
-                sum: order.sum,
-                opForm: order.opForm,
-                comment: order.comment || "",
-                clientReview: order.clientReview || "",
-                clientTitle: order.client?.fullName || "",
-                clientPhone: order.client?.phone || "",
-                date: order.date,
-                clientPoints: {
-                    lat: order.address.point.lat,
-                    lon: order.address.point.lon
-                },
-                clientAddress: order.address.actual,
-                clientAddressLink: order.address.link || "",
-                aquaMarketPoints: { lat: aquaMarket.point.lat, lon: aquaMarket.point.lon },
-                aquaMarketAddress: aquaMarket.address,
-                aquaMarketAddressLink: aquaMarket.link,
-                step: "toAquaMarket",
-                income: order.sum,
-            };
-        
-            await CourierAggregator.updateOne(
-                { _id: courier._id },
-                { $push: { orders: orderData } }
-            );
-        }
-        
-        console.log(`✅ Курьер ${courier.fullName} получил ${route.orders.length} заказов`);
-        console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
-        console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
-        console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
-    }
-
-    console.log("✅ Маршруты назначены");
-
-    console.log("Отправляем push уведомления");
     
-    await sendOrderPushNotification();
-
-    console.log("✅ Push уведомления отправлены");
 }
 
 orTools();
@@ -506,4 +416,3 @@ async function ensureMongoConnection() {
         console.log("✅ MongoDB connected (orTools.js)");
     }
 }
-
