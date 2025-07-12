@@ -11,7 +11,6 @@ import nodemailer from "nodemailer";
 import orTools from "../orTools.js";
 import { getDateAlmaty } from "../utils/dateUtils.js";
 import queueOrTools from "../orToolsQueue.js";
-import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
