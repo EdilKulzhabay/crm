@@ -221,10 +221,12 @@ const zeroing = async () => {
     for (const courier of couriersToUpdate) {
 
         const activeOrder = courier.order && courier.order.orderId ? courier.order : null
+
+        const completeFirstOrder = courier.capacity12 > 0 || courier.capacity19 > 0 ? true : false
         
         await CourierAggregator.updateOne(
             { _id: courier._id },
-            { $set: { orders: activeOrder ? [activeOrder] : [] } }
+            { $set: { orders: activeOrder ? [activeOrder] : [], completeFirstOrder} }
         );
     }
     
