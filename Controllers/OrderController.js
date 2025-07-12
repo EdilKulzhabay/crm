@@ -9,7 +9,7 @@ import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import { getDateAlmaty } from "../utils/dateUtils.js";
-import orTools from "../orTools.js";
+import queueOrTools from "../orToolsQueue.js";
 
 export const addOrder = async (req, res) => {
     try {
@@ -568,7 +568,7 @@ export const updateOrder = async (req, res) => {
         });
 
         if (change === "forAggregator" && changeData === true) {
-            await orTools()
+            await queueOrTools('order_for_aggregator_' + orderId)
         }
     } catch (error) {
         console.log(error);
