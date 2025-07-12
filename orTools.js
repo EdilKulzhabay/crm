@@ -333,23 +333,26 @@ export default async function orTools() {
                 console.log(`⚠️  Курьер ${courier.fullName} имеет активный заказ ${courier.order.orderId} без координат clientPoints`);
             }
             
-            // Определяем правильный тип курьера
-            // Если нет активного заказа - курьер пустой (capacity_12 и capacity_19 должны быть 0)
-            // Если есть активный заказ - курьер загруженный (capacity_12 и capacity_19 показывают остаток)
+            // ИСПРАВЛЕННАЯ ЛОГИКА: Определяем правильный тип курьера
+            // Курьер пустой только если у него 0 и 12л, и 19л бутылок
+            // Курьер загруженный если у него есть бутылки хотя бы одного типа
             const hasActiveOrder = courierOrder !== null;
+            const capacity12 = courier.capacity12 || 0;
+            const capacity19 = courier.capacity19 || 0;
+            const isEmpty = capacity12 === 0 && capacity19 === 0;
             
             console.log(`📋 Курьер ${courier.fullName}:`);
             console.log(`   - Активный заказ: ${hasActiveOrder ? courierOrder.orderId : 'нет'}`);
-            console.log(`   - Исходные capacity: 12л=${courier.capacity12}, 19л=${courier.capacity19}, общая=${courier.capacity}`);
-            console.log(`   - Будет передан как: ${hasActiveOrder ? 'ЗАГРУЖЕННЫЙ' : 'ПУСТОЙ'}`);
-            console.log(`   - Capacity для Python: 12л=${hasActiveOrder ? courier.capacity12 : 0}, 19л=${hasActiveOrder ? courier.capacity19 : 0}`);
+            console.log(`   - Исходные capacity: 12л=${capacity12}, 19л=${capacity19}, общая=${courier.capacity}`);
+            console.log(`   - Будет передан как: ${isEmpty ? 'ПУСТОЙ' : 'ЗАГРУЖЕННЫЙ'}`);
+            console.log(`   - Capacity для Python: 12л=${capacity12}, 19л=${capacity19}`);
             
             return {
                 id: courier.fullName,
                 lat: courier.point.lat,
                 lon: courier.point.lon,
-                capacity_12: hasActiveOrder ? courier.capacity12 : 0,
-                capacity_19: hasActiveOrder ? courier.capacity19 : 0,
+                capacity_12: capacity12,  // Передаем реальное количество бутылок
+                capacity_19: capacity19,  // Передаем реальное количество бутылок
                 capacity: courier.capacity,
                 order: courierOrder,
                 completeFirstOrder: courier.completeFirstOrder
