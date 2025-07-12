@@ -54,6 +54,8 @@ export default function OrderPage() {
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleteObject, setDeleteObject] = useState(null)
 
+    const [needVerification, setNeedVerification] = useState(false)
+
     const confirmDelete = () => {
         deleteOrder()
         setDeleteModal(false)
@@ -142,6 +144,16 @@ export default function OrderPage() {
                 setOrder(data.order);
                 setOrderStatus(data.order.status);
                 setOrderCourier(data.order.courier);
+
+                const hasInvalidCoordinates = data.addresses?.some(address => 
+                    !address.point?.lat || 
+                    !address.point?.lon || 
+                    address.point.lat === null || 
+                    address.point.lon === null
+                );
+                
+                setNeedVerification(hasInvalidCoordinates);
+
                 setDate({
                     d: data.order.date.d,
                     time: data.order.date.time
@@ -222,6 +234,12 @@ export default function OrderPage() {
                 )}
                 
                 <Div>Детали заказа</Div>
+                {userData?.role === "superAdmin" && needVerification && <>
+                    <Div />
+                    <Div>
+                        <div className="text-red font-medium text-xl">Нужна верификация, у адресов нет координат</div>
+                    </Div>
+                </>}
                 <Div />
                 <Div>Клиент: {order?.franchisee?.fullName}</Div>
                 <>
