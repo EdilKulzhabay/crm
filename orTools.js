@@ -297,39 +297,64 @@ export default async function orTools() {
     await zeroing();
 
     const activeCouriers = await CourierAggregator.find({status: "active", onTheLine: true})
+    
+    console.log(`📊 Найдено активных курьеров: ${activeCouriers.length}`);
 
-    const couriers = activeCouriers.map(courier => {
-        const courierOrder = courier.order && courier.order.orderId ? {
-            orderId: courier.order.orderId,
-            status: courier.order.status,
-            lat: courier.order.address.point.lat,
-            lon: courier.order.address.point.lon
-        } : null
-        return {
-            id: courier.fullName,
-            lat: courier.point.lat,
-            lon: courier.point.lon,
-            capacity_12: courier.capacity12,
-            capacity_19: courier.capacity19,
-            capacity: courier.capacity,
-            order: courierOrder,
-            completeFirstOrder: courier.completeFirstOrder
-        }
-    })
+    const couriers = activeCouriers
+        .filter(courier => {
+            const hasValidCoords = courier.point && courier.point.lat && courier.point.lon;
+            if (!hasValidCoords) {
+                console.log(`❌ Курьер ${courier.fullName} исключен - нет координат`);
+            }
+            return hasValidCoords;
+        })
+        .map(courier => {
+            const courierOrder = courier.order && courier.order.orderId && courier.order.address && courier.order.address.point ? {
+                orderId: courier.order.orderId,
+                status: courier.order.status,
+                lat: courier.order.address.point.lat,
+                lon: courier.order.address.point.lon
+            } : null
+            
+            if (courier.order && courier.order.orderId && (!courier.order.address || !courier.order.address.point)) {
+                console.log(`⚠️  Курьер ${courier.fullName} имеет активный заказ ${courier.order.orderId} без координат`);
+            }
+            
+            return {
+                id: courier.fullName,
+                lat: courier.point.lat,
+                lon: courier.point.lon,
+                capacity_12: courier.capacity12,
+                capacity_19: courier.capacity19,
+                capacity: courier.capacity,
+                order: courierOrder,
+                completeFirstOrder: courier.completeFirstOrder
+            }
+        })
 
     const today = new Date();
     const todayString = getDateAlmaty(today);
 
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: "awaitingOrder"})
     
-    const orders = activeOrders.map(order => ({
-        id: order._id,
-        lat: order.address.point.lat,
-        lon: order.address.point.lon,
-        bottles_12: order.products.b12,
-        bottles_19: order.products.b19,
-        status: order.status
-    }));
+    console.log(`📊 Найдено заказов для распределения: ${activeOrders.length}`);
+    
+    const orders = activeOrders
+        .filter(order => {
+            const hasValidCoords = order.address && order.address.point && order.address.point.lat && order.address.point.lon;
+            if (!hasValidCoords) {
+                console.log(`❌ Заказ ${order._id} исключен - нет координат`);
+            }
+            return hasValidCoords;
+        })
+        .map(order => ({
+            id: order._id,
+            lat: order.address.point.lat,
+            lon: order.address.point.lon,
+            bottles_12: order.products.b12,
+            bottles_19: order.products.b19,
+            status: order.status
+        }));
 
     const courierRestrictions = await CourierRestrictions.find({})
 
