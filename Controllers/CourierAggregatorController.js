@@ -473,6 +473,8 @@ export const acceptOrderCourierAggregator = async (req, res) => {
 
         // Проверяем, нет ли уже этого заказа в массиве orders
         const orderExists = courier.orders.some(existingOrder => existingOrder.orderId === order.orderId);
+
+        order.status = "onTheWay"
         
         if (!orderExists) {
             await CourierAggregator.updateOne({_id: id}, {
