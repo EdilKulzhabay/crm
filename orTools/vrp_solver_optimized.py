@@ -297,14 +297,14 @@ new_orders_count = len([order for order in orders if order['id'] not in active_o
 ideal_orders_per_courier = new_orders_count // num_couriers
 remainder = new_orders_count % num_couriers
 
-min_orders_per_courier = ideal_orders_per_courier
-max_orders_per_courier = ideal_orders_per_courier + (1 if remainder > 0 else 0)
+# Убираем жесткие ограничения на количество заказов
+# Теперь распределяем гибко в зависимости от вместимости бутылок
+min_orders_per_courier = 0  # Минимум 0 заказов - курьер может не получить заказы если не подходит
+max_orders_per_courier = new_orders_count  # Максимум - все заказы (если у курьера достаточно вместимости)
 
 print(f"\nНовых заказов для распределения: {new_orders_count}", file=sys.stderr)
-print(f"Идеальное количество новых заказов на курьера: {ideal_orders_per_courier}", file=sys.stderr)
-print(f"Остаток: {remainder}", file=sys.stderr)
-print(f"Минимум новых заказов на курьера: {min_orders_per_courier}", file=sys.stderr)
-print(f"Максимум новых заказов на курьера: {max_orders_per_courier}", file=sys.stderr)
+print(f"Гибкое распределение: минимум {min_orders_per_courier}, максимум {max_orders_per_courier} заказов на курьера", file=sys.stderr)
+print(f"Распределение основано на вместимости бутылок, а не на равном количестве заказов", file=sys.stderr)
 
 # Функция для подсчета заказов
 def unit_callback(from_index, to_index):
@@ -488,23 +488,25 @@ for vehicle_id in range(num_couriers):
     has_active_order = (couriers[vehicle_id].get("order") and 
                        couriers[vehicle_id]["order"].get("status") == "onTheWay")
     
-    min_orders = min_orders_per_courier + (1 if has_active_order else 0)
-    max_orders = max_orders_per_courier + (1 if has_active_order else 0)
+    # Убираем жесткие ограничения - теперь курьер может получить от 0 до всех заказов
+    # в зависимости от вместимости бутылок
+    min_orders = 0  # Минимум 0 - курьер может не получить заказы
+    max_orders = new_orders_count + (1 if has_active_order else 0)  # Максимум - все заказы
     
-    # Делаем ограничения более мягкими
+    # Делаем ограничения очень мягкими (практически убираем)
     order_count_dimension.SetCumulVarSoftLowerBound(
         routing.End(vehicle_id), 
         min_orders, 
-        5000  # Уменьшаем штраф
+        100  # Очень маленький штраф
     )
     
     order_count_dimension.SetCumulVarSoftUpperBound(
         routing.End(vehicle_id), 
         max_orders, 
-        5000  # Уменьшаем штраф
+        100  # Очень маленький штраф
     )
     
-    print(f"Курьер {vehicle_id}: минимум {min_orders} заказов, максимум {max_orders} заказов", file=sys.stderr)
+    print(f"Курьер {vehicle_id}: гибкие ограничения {min_orders}-{max_orders} заказов (приоритет - вместимость бутылок)", file=sys.stderr)
 
 # Штраф за использование курьера - уменьшаем
 for vehicle_id in range(num_couriers):
