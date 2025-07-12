@@ -29,8 +29,7 @@ import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 
 // Импортируем функцию оптимизации маршрутов
 // import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
-import runPythonVRP from "./orTools.js";
-import orTools from "./orTools.js";
+import queueOrTools, { getQueueStatus, clearQueue } from "./orToolsQueue.js";
 
 mongoose
     .connect(process.env.MONGOURL)
@@ -326,7 +325,7 @@ app.post("/updateUserData", AquaMarketController.updateUserData)
 /////////////ORTOOLS
 app.get("/orTools", async (req, res) => {
     try {
-        await orTools();
+        await queueOrTools('api_request');
         res.json({ success: true});    
     } catch (error) {
         res.status(500).json({
@@ -337,19 +336,31 @@ app.get("/orTools", async (req, res) => {
     }
 });
 
-app.get("/orTools", async (req, res) => {
+app.get("/orTools/status", async (req, res) => {
     try {
-      const result = await orTools();       // ваша основная функция
-      return res.json({ success: true, data: result });
-    } catch (err) {
-      console.error("❌ orTools error:", err);   // ← увидите первопричину
-      return res.status(500).json({
-        success: false,
-        message: "Error executing Python script",
-        error: err.toString(),               // временно добавьте для отладки
-      });
+        const status = getQueueStatus();
+        res.json({ success: true, status });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error getting queue status",
+            error: error.message
+        });
     }
-  });
+});
+
+app.get("/orTools/clear", async (req, res) => {
+    try {
+        clearQueue();
+        res.json({ success: true, message: "Queue cleared" });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error clearing queue",
+            error: error.message
+        });
+    }
+});
 
 /////////////ROUTE OPTIMIZATION - TSP
 // Endpoint для запуска оптимизации маршрутов
