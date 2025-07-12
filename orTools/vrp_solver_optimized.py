@@ -112,11 +112,19 @@ for order in orders:
     print(f"Заказ {order['id']}: {order.get('bottles_12', 0)} x 12л + {order.get('bottles_19', 0)} x 19л = {total_bottles} бутылок{status_info}", file=sys.stderr)
 
 print("Ограничения на курьеров:", file=sys.stderr)
-for order_id, allowed_couriers in courier_restrictions.items():
-    if not allowed_couriers:
+for order_id, allowed_courier_ids in courier_restrictions.items():
+    if not allowed_courier_ids:
         print(f"  {order_id}: исключен из обслуживания", file=sys.stderr)
     else:
-        courier_names = [couriers[i]['id'] for i in allowed_couriers if i < len(couriers)]
+        # Находим индексы курьеров по их ID
+        allowed_courier_indices = []
+        for courier_id in allowed_courier_ids:
+            for i, courier in enumerate(couriers):
+                if courier['id'] == courier_id:
+                    allowed_courier_indices.append(i)
+                    break
+        
+        courier_names = [couriers[i]['id'] for i in allowed_courier_indices if i < len(couriers)]
         print(f"  {order_id}: только {', '.join(courier_names)}", file=sys.stderr)
 
 # Создаем список локаций: депо + курьеры + заказы
@@ -206,11 +214,20 @@ for i, order in enumerate(orders):
     order_routing_index = manager.NodeToIndex(order_node_index)
     
     if order['id'] in courier_restrictions:
-        allowed_couriers = courier_restrictions[order['id']]
-        if not allowed_couriers:
+        allowed_courier_ids = courier_restrictions[order['id']]
+        if not allowed_courier_ids:
             routing.AddDisjunction([order_routing_index], 100000)
         else:
-            routing.SetAllowedVehiclesForIndex(allowed_couriers, order_routing_index)
+            # Преобразуем ID курьеров в их индексы
+            allowed_courier_indices = []
+            for courier_id in allowed_courier_ids:
+                for j, courier in enumerate(couriers):
+                    if courier['id'] == courier_id:
+                        allowed_courier_indices.append(j)
+                        break
+            
+            if allowed_courier_indices:
+                routing.SetAllowedVehiclesForIndex(allowed_courier_indices, order_routing_index)
 
 # Предварительное определение типов курьеров для использования в ограничениях
 courier_capacities = []

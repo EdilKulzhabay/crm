@@ -9,6 +9,7 @@ import MyButton from "../Components/MyButton";
 import Info from "../Components/Info";
 import clsx from "clsx";
 import useFetchUserData from "../customHooks/useFetchUserData";
+import MyInput from "../Components/MyInput";
 
 export default function CourierAggregatorPage() {
     const userData = useFetchUserData()
@@ -16,6 +17,7 @@ export default function CourierAggregatorPage() {
     const [courier, setCourier] = useState(null);
     const [completedOrders, setCompletedOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [capacity, setCapacity] = useState(0);
 
     const loadCourierData = async () => {
         try {
@@ -27,6 +29,7 @@ export default function CourierAggregatorPage() {
                 }
             );
             setCourier(data.userData);
+            setCapacity(data.userData.capacity);
         } catch (error) {
             console.error("Ошибка при загрузке данных курьера:", error);
         }
@@ -47,6 +50,12 @@ export default function CourierAggregatorPage() {
         }
     }
 
+    const updateCourierAggregatorData = (id, changeField, changeData) => {
+        api.post("/updateCourierAggregatorData", {id, changeField, changeData}, {
+            headers: { "Content-Type": "application/json" },
+        }).then()
+    }
+    
 
     useEffect(() => {
         loadCourierData();
@@ -88,6 +97,26 @@ export default function CourierAggregatorPage() {
                     })}>
                         Статус: {courier.onTheLine ? "Активен" : "Неактивен"}
                     </div>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <div>
+                        Вместимость: {courier.capacity}
+                    </div>
+
+                    <MyInput
+                        value={capacity}
+                        onChange={(e) => setCapacity(e.target.value)}
+                    />
+
+                    <MyButton
+                        onClick={() => {
+                            updateCourierAggregatorData(id, "capacity", capacity)
+                        }}
+                    >
+                        Обновить
+                    </MyButton>
                 </div>
             </Li>
 
