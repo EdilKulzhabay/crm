@@ -79,6 +79,10 @@ export default function CourierAggregatorPage() {
         );
     }
 
+    const handleCapacity = (e) => {
+        setCapacity(e.target.value)
+    }
+
     return (
         <Container role={userData?.role}>
             <Div className="text-2xl font-bold">Информация о курьере</Div>
@@ -107,7 +111,8 @@ export default function CourierAggregatorPage() {
 
                     <MyInput
                         value={capacity}
-                        onChange={(e) => setCapacity(e.target.value)}
+                        change={handleCapacity}
+                        color="white"
                     />
 
                     <MyButton
