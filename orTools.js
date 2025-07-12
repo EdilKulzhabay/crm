@@ -239,9 +239,9 @@ const sendOrderPushNotification = async () => {
     let needOrTools = false
     for (const courier of couriers) {
 
-        if (courier.orders.length === 0 || courier.orders.length === undefined || courier.orders.length === null) {
-            continue;
-        }
+        // if (courier.orders.length === 0 || courier.orders.length === undefined || courier.orders.length === null) {
+        //     continue;
+        // }
 
         if (courier.order && courier.order.orderId) {
             continue;
