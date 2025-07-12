@@ -107,9 +107,11 @@ for courier in couriers:
 # Выводим информацию о заказах
 print("\n=== ИНФОРМАЦИЯ О ЗАКАЗАХ ===", file=sys.stderr)
 for order in orders:
-    total_bottles = order.get("bottles_12", 0) + order.get("bottles_19", 0)
+    bottles_12 = order.get("bottles_12") or 0
+    bottles_19 = order.get("bottles_19") or 0
+    total_bottles = bottles_12 + bottles_19
     status_info = " (АКТИВНЫЙ)" if order['id'] in active_order_ids else ""
-    print(f"Заказ {order['id']}: {order.get('bottles_12', 0)} x 12л + {order.get('bottles_19', 0)} x 19л = {total_bottles} бутылок{status_info}", file=sys.stderr)
+    print(f"Заказ {order['id']}: {bottles_12} x 12л + {bottles_19} x 19л = {total_bottles} бутылок{status_info}", file=sys.stderr)
 
 print("Ограничения на курьеров:", file=sys.stderr)
 for order_id, allowed_courier_ids in courier_restrictions.items():
@@ -333,7 +335,9 @@ def total_bottles_callback(from_index, to_index):
         # Если переходим к заказу, возвращаем общее количество бутылок
         if to_node >= num_couriers + 1 and to_node < num_locations:
             order = orders[to_node - num_couriers - 1]
-            return order.get("bottles_12", 0) + order.get("bottles_19", 0)
+            bottles_12 = order.get("bottles_12") or 0
+            bottles_19 = order.get("bottles_19") or 0
+            return bottles_12 + bottles_19
         return 0
     except Exception as e:
         print(f"Ошибка в total_bottles_callback: {e}", file=sys.stderr)
@@ -351,7 +355,7 @@ def bottles_12_callback(from_index, to_index):
         # Если переходим к заказу, возвращаем количество бутылок 12л
         if to_node >= num_couriers + 1 and to_node < num_locations:
             order = orders[to_node - num_couriers - 1]
-            return order.get("bottles_12", 0)
+            return order.get("bottles_12") or 0
         return 0
     except Exception as e:
         print(f"Ошибка в bottles_12_callback: {e}", file=sys.stderr)
@@ -367,7 +371,7 @@ def bottles_19_callback(from_index, to_index):
         # Если переходим к заказу, возвращаем количество бутылок 19л
         if to_node >= num_couriers + 1 and to_node < num_locations:
             order = orders[to_node - num_couriers - 1]
-            return order.get("bottles_19", 0)
+            return order.get("bottles_19") or 0
         return 0
     except Exception as e:
         print(f"Ошибка в bottles_19_callback: {e}", file=sys.stderr)
@@ -581,8 +585,8 @@ if solution:
             for order_id in route_orders:
                 order_data = next((o for o in orders if o["id"] == order_id), None)
                 if order_data:
-                    bottles_12 = order_data.get("bottles_12", 0)
-                    bottles_19 = order_data.get("bottles_19", 0)
+                    bottles_12 = order_data.get("bottles_12") or 0
+                    bottles_19 = order_data.get("bottles_19") or 0
                     total_bottles_12 += bottles_12
                     total_bottles_19 += bottles_19
                     total_bottles += bottles_12 + bottles_19

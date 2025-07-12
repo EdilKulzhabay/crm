@@ -309,15 +309,18 @@ export default async function orTools() {
             return hasValidCoords;
         })
         .map(courier => {
-            const courierOrder = courier.order && courier.order.orderId && courier.order.address && courier.order.address.point ? {
+            // Исправляем обработку активных заказов - координаты в clientPoints
+            const courierOrder = courier.order && courier.order.orderId && courier.order.clientPoints ? {
                 orderId: courier.order.orderId,
                 status: courier.order.status,
-                lat: courier.order.address.point.lat,
-                lon: courier.order.address.point.lon
+                lat: courier.order.clientPoints.lat,
+                lon: courier.order.clientPoints.lon,
+                bottles_12: courier.order.products ? courier.order.products.b12 : 0,
+                bottles_19: courier.order.products ? courier.order.products.b19 : 0
             } : null
             
-            if (courier.order && courier.order.orderId && (!courier.order.address || !courier.order.address.point)) {
-                console.log(`⚠️  Курьер ${courier.fullName} имеет активный заказ ${courier.order.orderId} без координат`);
+            if (courier.order && courier.order.orderId && !courier.order.clientPoints) {
+                console.log(`⚠️  Курьер ${courier.fullName} имеет активный заказ ${courier.order.orderId} без координат clientPoints`);
             }
             
             return {
