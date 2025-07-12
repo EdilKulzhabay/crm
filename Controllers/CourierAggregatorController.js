@@ -312,6 +312,8 @@ export const updateCourierAggregatorData = async (req, res) => {
     try {
         const {id, changeField, changeData} = req.body
 
+        console.log("updateCourierAggregatorData req.body = ", req.body);
+
         const courier = await CourierAggregator.findById(id)
 
         if (!courier) {
@@ -372,6 +374,9 @@ export const updateCourierAggregatorData = async (req, res) => {
 
         try {
             if ((changeField === "onTheLine" && changeData) || (changeField === "capacities" && courier.onTheLine)) {
+                await CourierAggregator.updateOne({_id: id}, { $set: {
+                    completeFirstOrder: false
+                } })
                 await orTools();
             }
 
@@ -488,11 +493,28 @@ export const acceptOrderCourierAggregator = async (req, res) => {
             await CourierAggregator.updateOne({_id: id}, {
                 $set: {
                     order: order
+                },
+                $inc: {
+                    capacity12: -order.products.b12,
+                    capacity19: -order.products.b19
                 }
             })
             console.log('Заказ уже существует в массиве orders курьера');
         }
-        
+
+        // Обновляем статус заказа в массиве orders курьера
+        await CourierAggregator.updateOne(
+            { 
+                _id: id,
+                "orders.orderId": order.orderId 
+            },
+            {
+                $set: {
+                    "orders.$.status": "onTheWay"
+                }
+            }
+        );
+
         res.json({
             success: true,
             message: "Заказ принят"
@@ -542,7 +564,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 point: {
                     lat: order.address.point.lat,
                     lon: order.address.point.lon
-                }
+                },
+                completeFirstOrder: true
             },
             $inc: {
                 income: sum // прибавит значение order.sum
@@ -558,61 +581,61 @@ export const completeOrderCourierAggregator = async (req, res) => {
             income: sum
         })
 
-        if (courier.orders.length === 0) {
-            // await distributionOrdersToFreeCourier(courierId)
-            console.log("У курьера нет заказов, отправляем на переназначение");
+        // if (courier.orders.length === 0) {
+        //     // await distributionOrdersToFreeCourier(courierId)
+        //     console.log("У курьера нет заказов, отправляем на переназначение");
             
-        } else {
-            await new Promise(resolve => setTimeout(resolve, 10000));
-            let nextOrder = courier.orders[0]
-            console.log("CourierAggregatorController 479, order = ", nextOrder);
+        // } else {
+        //     await new Promise(resolve => setTimeout(resolve, 10000));
+        //     let nextOrder = courier.orders[0]
+        //     console.log("CourierAggregatorController 479, order = ", nextOrder);
 
-            let message = ""
+        //     let message = ""
 
-            if (nextOrder?.products?.b19 > 0) {
-                message += `${nextOrder?.products?.b19} 19.8 бутылей.`
-            }
+        //     if (nextOrder?.products?.b19 > 0) {
+        //         message += `${nextOrder?.products?.b19} 19.8 бутылей.`
+        //     }
 
-            if (nextOrder?.products?.b12 > 0) {
-                message += `${nextOrder?.products?.b12} 12.5 бутылей.`
-            }
+        //     if (nextOrder?.products?.b12 > 0) {
+        //         message += `${nextOrder?.products?.b12} 12.5 бутылей.`
+        //     }
 
-            message += `Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`
+        //     message += `Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`
 
-            await pushNotification(
-                "newOrder",
-                message,
-                [courier.notificationPushToken],
-                "newOrder",
-                courier.orders[0]
-            );
-            console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
+        //     await pushNotification(
+        //         "newOrder",
+        //         message,
+        //         [courier.notificationPushToken],
+        //         "newOrder",
+        //         courier.orders[0]
+        //     );
+        //     console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
             
-            await new Promise(resolve => setTimeout(resolve, 40000));
-            const currentOrder = await Order.findById(courier.orders[0].orderId)
-            if (currentOrder.status !== "onTheWay") {
-                // Получаем все ID заказов курьера
-                // const orderIds = courier.orders.map(order => order.orderId);
+        //     await new Promise(resolve => setTimeout(resolve, 40000));
+        //     const currentOrder = await Order.findById(courier.orders[0].orderId)
+        //     if (currentOrder.status !== "onTheWay") {
+        //         // Получаем все ID заказов курьера
+        //         // const orderIds = courier.orders.map(order => order.orderId);
                 
-                // // Удаляем все заказы у курьера
-                // await CourierAggregator.updateOne(
-                //     { _id: courierId },
-                //     { 
-                //         $set: { 
-                //             orders: [],
-                //             order: null 
-                //         }
-                //     }
-                // );
+        //         // // Удаляем все заказы у курьера
+        //         // await CourierAggregator.updateOne(
+        //         //     { _id: courierId },
+        //         //     { 
+        //         //         $set: { 
+        //         //             orders: [],
+        //         //             order: null 
+        //         //         }
+        //         //     }
+        //         // );
 
-                // // Отправляем все заказы на переназначение
-                // for (const orderId of orderIds) {
-                //     await getLocationsLogicQueue(orderId);
-                // }
-                console.log("У курьера нет заказов, отправляем на переназначение");
+        //         // // Отправляем все заказы на переназначение
+        //         // for (const orderId of orderIds) {
+        //         //     await getLocationsLogicQueue(orderId);
+        //         // }
+        //         console.log("У курьера нет заказов, отправляем на переназначение");
                 
-            }
-        }
+        //     }
+        // }
 
         await orTools();
 
@@ -702,49 +725,49 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const courier = await CourierAggregator.findById(id)
 
-        if (courier.orders.length > 0) {
-            await new Promise(resolve => setTimeout(resolve, 10000));
-            let nextOrder = courier.orders[0]
-            console.log("CourierAggregatorController 479, order = ", nextOrder);
-            let message = ""
+        // if (courier.orders.length > 0) {
+        //     await new Promise(resolve => setTimeout(resolve, 10000));
+        //     let nextOrder = courier.orders[0]
+        //     console.log("CourierAggregatorController 479, order = ", nextOrder);
+        //     let message = ""
 
-            if (nextOrder?.products?.b19 > 0) {
-                message += `${nextOrder?.products?.b19} 19.8 бутылей.`
-            }
+        //     if (nextOrder?.products?.b19 > 0) {
+        //         message += `${nextOrder?.products?.b19} 19.8 бутылей.`
+        //     }
 
-            if (nextOrder?.products?.b12 > 0) {
-                message += `${nextOrder?.products?.b12} 12.5 бутылей.`
-            }
+        //     if (nextOrder?.products?.b12 > 0) {
+        //         message += `${nextOrder?.products?.b12} 12.5 бутылей.`
+        //     }
 
-            message += `Забрать из аквамаркета: ${nextOrder.aquaMarketAddress}`
+        //     message += `Забрать из аквамаркета: ${nextOrder.aquaMarketAddress}`
 
-            await pushNotification(
-                "newOrder",
-                message,
-                [courier.notificationPushToken],
-                "newOrder",
-                nextOrder
-            );
-            console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
+        //     await pushNotification(
+        //         "newOrder",
+        //         message,
+        //         [courier.notificationPushToken],
+        //         "newOrder",
+        //         nextOrder
+        //     );
+        //     console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
             
-            await new Promise(resolve => setTimeout(resolve, 40000));
-            const currentOrder = await Order.findById(courier.orders[0].orderId)
-            if (currentOrder.status !== "onTheWay") {
-                const orderIds = courier.orders.map(order => order.orderId);
+        //     await new Promise(resolve => setTimeout(resolve, 40000));
+        //     const currentOrder = await Order.findById(courier.orders[0].orderId)
+        //     if (currentOrder.status !== "onTheWay") {
+        //         const orderIds = courier.orders.map(order => order.orderId);
 
-                await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
+        //         await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
                 
-                await CourierAggregator.updateOne(
-                    { _id: id },
-                    { 
-                        $set: { 
-                            orders: [],
-                            order: null 
-                        }
-                    }
-                );
-            }
-        } 
+        //         await CourierAggregator.updateOne(
+        //             { _id: id },
+        //             { 
+        //                 $set: { 
+        //                     orders: [],
+        //                     order: null 
+        //                 }
+        //             }
+        //         );
+        //     }
+        // } 
 
         await orTools();
 
@@ -856,6 +879,47 @@ export const getCompletedOrCancelledOrdersFromCourierAggregator = async (req, re
             success: true,
             orders
         })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+}
+
+export const getCourierAggregatorIncome = async (req, res) => {
+    try {
+        const id = req.userId
+
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.status(404).json({ message: "Курьер не найден", success: false })
+        }
+
+        const today = getDateAlmaty()
+
+        const orders = await Order.find({
+            "date.d": today,
+            status: "delivered",
+            forAggregator: true,
+            courierAggregator: courier._id
+        }).populate("client")
+
+        const income = orders.reduce((acc, order) => {
+            let sum = 0
+            if (order.products.b12 > 0) {
+                sum += order.products.b12 * order.client.price12
+            }
+            if (order.products.b19 > 0) {
+                sum += order.products.b19 * order.client.price19
+            }
+            return acc + sum
+        }, 0)
+        
+        res.json({
+            success: true,
+            income
+        })
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Ошибка сервера" });
