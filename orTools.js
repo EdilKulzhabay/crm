@@ -568,7 +568,7 @@ export default async function orTools() {
     console.log("✅ Push уведомления отправлены");
 }
 
-orTools();
+// orTools();
 
 async function ensureMongoConnection() {
     if (mongoose.connection.readyState === 0) {
