@@ -338,16 +338,31 @@ for courier in couriers:
     # Проверяем, есть ли активный заказ
     has_active_order = (courier.get("order") and courier["order"].get("status") == "onTheWay")
     
-    # Определяем тип курьера по наличию бутылок
+    # ИСПРАВЛЕННАЯ ЛОГИКА: Курьер пустой только если у него 0 и 12л, и 19л
     if capacity_12 == 0 and capacity_19 == 0:
         # Курьер полностью пустой - нужно назначить заказы и показать сколько взять
         courier_type = 'empty'
         total_capacity = courier.get("capacity", 100)  # Максимальная вместимость для пустого курьера
-        print(f"Курьер {courier['id']}: ПУСТОЙ (нет бутылок), можно назначить любые заказы", file=sys.stderr)
+        print(f"Курьер {courier['id']}: ПУСТОЙ (0 бутылок 12л и 19л), можно назначить любые заказы", file=sys.stderr)
     else:
-        # Курьер уже загружен - используем имеющиеся бутылки
+        # Курьер загружен - имеет бутылки хотя бы одного типа
         courier_type = 'loaded'
         total_capacity = capacity_12 + capacity_19
+        
+        # Выводим детальную информацию о загруженности
+        bottles_info = []
+        if capacity_12 > 0:
+            bottles_info.append(f"12л={capacity_12}")
+        if capacity_19 > 0:
+            bottles_info.append(f"19л={capacity_19}")
+        
+        print(f"Курьер {courier['id']}: ЗАГРУЖЕННЫЙ ({', '.join(bottles_info)})", file=sys.stderr)
+        
+        # Проверяем ограничения по типам бутылок
+        if capacity_12 == 0:
+            print(f"  ⚠️  НЕ МОЖЕТ брать заказы с 12л бутылками (нет 12л бутылок)", file=sys.stderr)
+        if capacity_19 == 0:
+            print(f"  ⚠️  НЕ МОЖЕТ брать заказы с 19л бутылками (нет 19л бутылок)", file=sys.stderr)
         
         if has_active_order:
             active_order_id = courier["order"]["orderId"]
@@ -357,14 +372,9 @@ for courier in couriers:
                 required_19 = active_order.get("bottles_19", 0)
                 
                 if capacity_12 >= required_12 and capacity_19 >= required_19:
-                    print(f"Курьер {courier['id']}: ЗАГРУЖЕННЫЙ, достаточно бутылок для активного заказа", file=sys.stderr)
+                    print(f"  ✅ Достаточно бутылок для активного заказа", file=sys.stderr)
                 else:
-                    print(f"Курьер {courier['id']}: ЗАГРУЖЕННЫЙ, НО недостаточно бутылок для активного заказа (требуется 12л={required_12}, 19л={required_19}, имеется 12л={capacity_12}, 19л={capacity_19})", file=sys.stderr)
-                    print(f"  → Будем использовать имеющиеся бутылки, возможно маршрут будет дольше", file=sys.stderr)
-            else:
-                print(f"Курьер {courier['id']}: ЗАГРУЖЕННЫЙ, активный заказ не найден", file=sys.stderr)
-        else:
-            print(f"Курьер {courier['id']}: ЗАГРУЖЕННЫЙ, нет активных заказов", file=sys.stderr)
+                    print(f"  ⚠️  Недостаточно бутылок для активного заказа (требуется 12л={required_12}, 19л={required_19})", file=sys.stderr)
     
     courier_capacities.append(total_capacity)
     courier_types.append(courier_type)
@@ -527,12 +537,27 @@ for courier in couriers:
         courier_capacities_19.append(total_capacity)
         print(f"Курьер {courier_name}: пустой, может взять любые бутылки до {total_capacity}", file=sys.stderr)
     else:
-        # Загруженный курьер - используем имеющиеся бутылки
-        courier_capacities_12.append(capacity_12)
-        courier_capacities_19.append(capacity_19)
-        print(f"Курьер {courier_name}: загруженный, используем имеющиеся бутылки", file=sys.stderr)
+        # ИСПРАВЛЕННАЯ ЛОГИКА: Загруженный курьер - строгие ограничения по типам бутылок
+        # Если у курьера 0 бутылок определенного типа - он НЕ может брать заказы этого типа
+        if capacity_12 == 0:
+            # Курьер НЕ может брать заказы с 12л бутылками
+            courier_capacities_12.append(0)
+            print(f"Курьер {courier_name}: НЕ МОЖЕТ брать заказы с 12л (нет 12л бутылок)", file=sys.stderr)
+        else:
+            # Курьер может использовать имеющиеся 12л бутылки
+            courier_capacities_12.append(capacity_12)
+            print(f"Курьер {courier_name}: может использовать 12л бутылки (есть {capacity_12})", file=sys.stderr)
+        
+        if capacity_19 == 0:
+            # Курьер НЕ может брать заказы с 19л бутылками
+            courier_capacities_19.append(0)
+            print(f"Курьер {courier_name}: НЕ МОЖЕТ брать заказы с 19л (нет 19л бутылок)", file=sys.stderr)
+        else:
+            # Курьер может использовать имеющиеся 19л бутылки
+            courier_capacities_19.append(capacity_19)
+            print(f"Курьер {courier_name}: может использовать 19л бутылки (есть {capacity_19})", file=sys.stderr)
     
-    print(f"Курьер {courier_name}: макс. 12л={courier_capacities_12[-1]}, макс. 19л={courier_capacities_19[-1]}", file=sys.stderr)
+    print(f"Курьер {courier_name}: ИТОГО макс. 12л={courier_capacities_12[-1]}, макс. 19л={courier_capacities_19[-1]}", file=sys.stderr)
 
 # Добавляем раздельные размерности для бутылок 12л и 19л
 bottles_12_dimension = routing.AddDimensionWithVehicleCapacity(
@@ -556,11 +581,13 @@ bottles_12_dimension_obj = routing.GetDimensionOrDie("Bottles12")
 bottles_19_dimension_obj = routing.GetDimensionOrDie("Bottles19")
 
 # Устанавливаем мягкие ограничения для загруженных курьеров
-print("\n=== НАСТРОЙКА МЯГКИХ ОГРАНИЧЕНИЙ НА ТИПЫ БУТЫЛОК ===", file=sys.stderr)
+print("\n=== НАСТРОЙКА ЖЕСТКИХ ОГРАНИЧЕНИЙ НА ТИПЫ БУТЫЛОК ===", file=sys.stderr)
 for vehicle_id in range(num_couriers):
     courier = couriers[vehicle_id]
     courier_type = courier_types[vehicle_id]
     courier_name = courier.get("id", "")
+    capacity_12 = courier.get("capacity_12", 0)
+    capacity_19 = courier.get("capacity_19", 0)
     
     # Проверяем специальные ограничения
     if courier_name in COURIER_SPECIAL_RESTRICTIONS:
@@ -581,29 +608,49 @@ for vehicle_id in range(num_couriers):
             10000  # Высокий штраф за превышение специальных ограничений
         )
         
-        print(f"Курьер {courier_name}: СПЕЦИАЛЬНЫЕ ограничения 12л≤{max_bottles_12}, 19л≤{max_bottles_19} (высокий штраф)", file=sys.stderr)
+        print(f"Курьер {courier_name}: СПЕЦИАЛЬНЫЕ ограничения 12л≤{max_bottles_12}, 19л≤{max_bottles_19} (жесткие)", file=sys.stderr)
         
-    elif courier_type == 'loaded':
-        # Для загруженных курьеров устанавливаем мягкие ограничения по имеющимся бутылкам
-        capacity_12 = courier.get("capacity_12", 0)
-        capacity_19 = courier.get("capacity_19", 0)
-        
-        bottles_12_dimension_obj.SetCumulVarSoftUpperBound(
-            routing.End(vehicle_id),
-            capacity_12,
-            1000  # Уменьшаем штраф за превышение
-        )
-        
-        bottles_19_dimension_obj.SetCumulVarSoftUpperBound(
-            routing.End(vehicle_id),
-            capacity_19,
-            1000  # Уменьшаем штраф за превышение
-        )
-        
-        print(f"Курьер {courier_name} (загруженный): мягкие ограничения 12л≤{capacity_12}, 19л≤{capacity_19}", file=sys.stderr)
-    else:
-        # Пустой курьер - без ограничений на типы бутылок
+    elif courier_type == 'empty':
+        # Пустой курьер - без жестких ограничений на типы бутылок
         print(f"Курьер {courier_name} (пустой): без ограничений на типы бутылок", file=sys.stderr)
+        
+    else:
+        # ИСПРАВЛЕННАЯ ЛОГИКА: Загруженный курьер - жесткие ограничения по типам бутылок
+        # Если у курьера 0 бутылок определенного типа - жесткий запрет на заказы этого типа
+        
+        if capacity_12 == 0:
+            # ЖЕСТКИЙ ЗАПРЕТ на заказы с 12л бутылками
+            bottles_12_dimension_obj.SetCumulVarSoftUpperBound(
+                routing.End(vehicle_id),
+                0,
+                100000  # Очень высокий штраф = практически запрет
+            )
+            print(f"Курьер {courier_name}: ЖЕСТКИЙ ЗАПРЕТ на заказы с 12л (нет 12л бутылок)", file=sys.stderr)
+        else:
+            # Мягкое ограничение по имеющимся 12л бутылкам
+            bottles_12_dimension_obj.SetCumulVarSoftUpperBound(
+                routing.End(vehicle_id),
+                capacity_12,
+                1000  # Мягкий штраф за превышение
+            )
+            print(f"Курьер {courier_name}: мягкое ограничение 12л≤{capacity_12}", file=sys.stderr)
+        
+        if capacity_19 == 0:
+            # ЖЕСТКИЙ ЗАПРЕТ на заказы с 19л бутылками
+            bottles_19_dimension_obj.SetCumulVarSoftUpperBound(
+                routing.End(vehicle_id),
+                0,
+                100000  # Очень высокий штраф = практически запрет
+            )
+            print(f"Курьер {courier_name}: ЖЕСТКИЙ ЗАПРЕТ на заказы с 19л (нет 19л бутылок)", file=sys.stderr)
+        else:
+            # Мягкое ограничение по имеющимся 19л бутылкам
+            bottles_19_dimension_obj.SetCumulVarSoftUpperBound(
+                routing.End(vehicle_id),
+                capacity_19,
+                1000  # Мягкий штраф за превышение
+            )
+            print(f"Курьер {courier_name}: мягкое ограничение 19л≤{capacity_19}", file=sys.stderr)
 
 # Добавляем размерность для общей вместимости курьеров
 routing.AddDimensionWithVehicleCapacity(
