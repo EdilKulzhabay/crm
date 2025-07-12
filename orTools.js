@@ -249,6 +249,13 @@ const sendOrderPushNotification = async () => {
 
         const orders = courier.orders
         const order = orders[0]
+        
+        // Проверяем, что заказ существует
+        if (!order || !order.products) {
+            console.log(`⚠️  Курьер ${courier.fullName} не имеет назначенных заказов или заказ некорректен`);
+            continue;
+        }
+        
         let messageBody = "Заказ на ";
         if (order.products.b12 > 0) {
             messageBody += `${order.products.b12} бутылок 12.5л `
@@ -505,6 +512,39 @@ export default async function orTools() {
     
     const result = await runPythonVRP(couriers, orders, courier_restrictions);
     console.log("Готовые маршруты:", result);
+
+    // Проверяем, найдено ли решение
+    if (!result || result.length === 0) {
+        console.log("❌ Python скрипт не смог найти решение для текущих условий");
+        console.log("📊 Анализ проблемы:");
+        console.log(`   - Курьеров: ${couriers.length}`);
+        console.log(`   - Заказов: ${orders.length}`);
+        console.log(`   - Ограничений: ${Object.keys(courier_restrictions).length}`);
+        
+        // Подсчитываем общую вместимость курьеров
+        const totalCapacity = couriers.reduce((sum, courier) => sum + courier.capacity, 0);
+        const totalOrders = orders.reduce((sum, order) => sum + order.bottles_12 + order.bottles_19, 0);
+        
+        console.log(`   - Общая вместимость курьеров: ${totalCapacity} бутылок`);
+        console.log(`   - Общее количество бутылок в заказах: ${totalOrders} бутылок`);
+        
+        if (totalCapacity < totalOrders) {
+            console.log("   ⚠️  ПРОБЛЕМА: Недостаточно вместимости курьеров для всех заказов!");
+        }
+        
+        console.log("   📋 Детали по курьерам:");
+        couriers.forEach(courier => {
+            console.log(`     - ${courier.id}: вместимость=${courier.capacity}, 12л=${courier.capacity_12}, 19л=${courier.capacity_19}, активный заказ=${courier.order ? courier.order.orderId : 'нет'}`);
+        });
+        
+        console.log("   📋 Детали по ограничениям:");
+        Object.entries(courier_restrictions).forEach(([orderId, restrictions]) => {
+            console.log(`     - Заказ ${orderId}: запрещен для курьеров ${restrictions.join(', ')}`);
+        });
+        
+        console.log("⚠️  Пропускаем отправку уведомлений из-за отсутствия маршрутов");
+        return;
+    }
 
     for (const route of result) {
         const courier = couriers.find(c => c.id === route.courier_id)
