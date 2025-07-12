@@ -569,7 +569,14 @@ export default async function orTools() {
         }
     }
 
-    await runPythonVisualize(couriers, orders, result);
+    try {
+        const visualizeResult = await runPythonVisualize(couriers, orders, result);
+        console.log("Результат визуализации:", visualizeResult);
+    } catch (error) {
+        console.error("Ошибка визуализации:", error);
+        console.log("Пропускаем отправку уведомлений из-за ошибки визуализации");
+        return;
+    }
 
 
     for (const route of result) {
