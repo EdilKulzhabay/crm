@@ -207,7 +207,7 @@ const zeroing = async () => {
             status: "awaitingOrder"
         },
         { 
-            $set: { courierAggregator: "" }
+            $set: { courierAggregator: null }
         }
     );
     
