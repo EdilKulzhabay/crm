@@ -373,7 +373,7 @@ export const updateCourierAggregatorData = async (req, res) => {
         })
 
         try {
-            if ((changeField === "onTheLine" && changeData) || (changeField === "capacities" && courier.onTheLine)) {
+            if (changeField === "onTheLine" && changeData) {
                 await CourierAggregator.updateOne({_id: id}, { $set: {
                     completeFirstOrder: false
                 } })
