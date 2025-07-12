@@ -239,18 +239,46 @@ for courier in couriers:
     capacity_12 = courier.get("capacity_12", 0)
     capacity_19 = courier.get("capacity_19", 0)
     
-    # Определяем тип курьера
-    if capacity_12 == 0 and capacity_19 == 0:
-        # Курьер пустой - нужно назначить заказы и показать сколько взять
-        courier_type = 'empty'
-        if 'capacity' in courier:
-            total_capacity = courier.get("capacity", 0)
+    # Проверяем, есть ли активный заказ и достаточно ли бутылок
+    has_active_order = (courier.get("order") and courier["order"].get("status") == "onTheWay")
+    
+    if has_active_order:
+        # Находим активный заказ и проверяем требования
+        active_order_id = courier["order"]["orderId"]
+        active_order = next((o for o in orders if o["id"] == active_order_id), None)
+        
+        if active_order:
+            required_12 = active_order.get("bottles_12", 0)
+            required_19 = active_order.get("bottles_19", 0)
+            
+            # Проверяем достаточность бутылок
+            has_enough_bottles = (capacity_12 >= required_12 and capacity_19 >= required_19)
+            
+            if has_enough_bottles:
+                # Курьер загружен и может выполнить заказ
+                courier_type = 'loaded'
+                total_capacity = capacity_12 + capacity_19
+                print(f"Курьер {courier['id']}: ЗАГРУЖЕННЫЙ, достаточно бутылок для активного заказа", file=sys.stderr)
+            else:
+                # Курьер загружен, но недостаточно бутылок - делаем пустым
+                courier_type = 'empty'
+                total_capacity = courier.get("capacity", 100)  # Максимальная вместимость
+                print(f"Курьер {courier['id']}: НЕДОСТАТОЧНО БУТЫЛОК для активного заказа (требуется 12л={required_12}, 19л={required_19}, имеется 12л={capacity_12}, 19л={capacity_19}), делаем ПУСТЫМ", file=sys.stderr)
         else:
-            total_capacity = 100  # Максимальная вместимость для пустого курьера
+            # Активный заказ не найден - делаем пустым
+            courier_type = 'empty'
+            total_capacity = courier.get("capacity", 100)
+            print(f"Курьер {courier['id']}: активный заказ не найден, делаем ПУСТЫМ", file=sys.stderr)
     else:
-        # Курьер уже загружен - используем имеющиеся бутылки
-        courier_type = 'loaded'
-        total_capacity = capacity_12 + capacity_19
+        # Определяем тип курьера по наличию бутылок
+        if capacity_12 == 0 and capacity_19 == 0:
+            # Курьер пустой - нужно назначить заказы и показать сколько взять
+            courier_type = 'empty'
+            total_capacity = courier.get("capacity", 100)  # Максимальная вместимость для пустого курьера
+        else:
+            # Курьер уже загружен - используем имеющиеся бутылки
+            courier_type = 'loaded'
+            total_capacity = capacity_12 + capacity_19
     
     courier_capacities.append(total_capacity)
     courier_types.append(courier_type)
@@ -389,15 +417,55 @@ for courier in couriers:
     capacity_19 = courier.get("capacity_19", 0)
     courier_type = courier_types[couriers.index(courier)]
     
+    # Проверяем, есть ли активный заказ и достаточно ли бутылок
+    has_active_order = (courier.get("order") and courier["order"].get("status") == "onTheWay")
+    
     if courier_type == 'empty':
-        # Пустой курьер - может взять любое количество (используем общую вместимость)
+        # Пустой курьер - определяем специализацию по исходным данным
+        # Если у курьера были только 12л бутылки - он специализируется на 12л
+        # Если у курьера были только 19л бутылки - он специализируется на 19л
+        # Если у курьера не было бутылок - он может брать любые
+        
+        original_capacity_12 = courier.get("capacity_12", 0)
+        original_capacity_19 = courier.get("capacity_19", 0)
         total_capacity = courier.get("capacity", 100)
-        courier_capacities_12.append(total_capacity)  # Может взять до общей вместимости
-        courier_capacities_19.append(total_capacity)  # Может взять до общей вместимости
+        
+        # Проверяем, был ли курьер сделан пустым из-за недостаточных бутылок для активного заказа
+        was_made_empty_due_to_insufficient_bottles = False
+        if has_active_order:
+            active_order_id = courier["order"]["orderId"]
+            active_order = next((o for o in orders if o["id"] == active_order_id), None)
+            if active_order:
+                required_12 = active_order.get("bottles_12", 0)
+                required_19 = active_order.get("bottles_19", 0)
+                has_enough_bottles = (original_capacity_12 >= required_12 and original_capacity_19 >= required_19)
+                was_made_empty_due_to_insufficient_bottles = not has_enough_bottles
+        
+        if was_made_empty_due_to_insufficient_bottles:
+            # Курьер был сделан пустым из-за недостаточных бутылок - даем ему максимальную вместимость
+            courier_capacities_12.append(total_capacity)
+            courier_capacities_19.append(total_capacity)
+            print(f"Курьер {courier['id']}: недостаточно бутылок для активного заказа, даем максимальную вместимость", file=sys.stderr)
+        elif original_capacity_12 > 0 and original_capacity_19 == 0:
+            # Специализация на 12л бутылках
+            courier_capacities_12.append(total_capacity)
+            courier_capacities_19.append(0)  # Не может брать 19л
+            print(f"Курьер {courier['id']}: специализация на 12л бутылках", file=sys.stderr)
+        elif original_capacity_19 > 0 and original_capacity_12 == 0:
+            # Специализация на 19л бутылках
+            courier_capacities_12.append(0)  # Не может брать 12л
+            courier_capacities_19.append(total_capacity)
+            print(f"Курьер {courier['id']}: специализация на 19л бутылках", file=sys.stderr)
+        else:
+            # Универсальный курьер или новый курьер
+            courier_capacities_12.append(total_capacity)
+            courier_capacities_19.append(total_capacity)
+            print(f"Курьер {courier['id']}: универсальный (может брать любые бутылки)", file=sys.stderr)
     else:
-        # Загруженный курьер - ограничен имеющимися бутылками
+        # Загруженный курьер - используем имеющиеся бутылки (они достаточны для активного заказа)
         courier_capacities_12.append(capacity_12)
         courier_capacities_19.append(capacity_19)
+        print(f"Курьер {courier['id']}: загруженный, используем имеющиеся бутылки", file=sys.stderr)
     
     print(f"Курьер {courier['id']}: макс. 12л={courier_capacities_12[-1]}, макс. 19л={courier_capacities_19[-1]}", file=sys.stderr)
 
@@ -428,19 +496,21 @@ for vehicle_id in range(num_couriers):
     courier = couriers[vehicle_id]
     courier_type = courier_types[vehicle_id]
     
+    # Проверяем, есть ли активный заказ и достаточно ли бутылок
+    has_active_order = (courier.get("order") and courier["order"].get("status") == "onTheWay")
+    
     if courier_type == 'loaded':
         # Для загруженных курьеров устанавливаем мягкие ограничения
+        # (они точно имеют достаточно бутылок для активного заказа)
         capacity_12 = courier.get("capacity_12", 0)
         capacity_19 = courier.get("capacity_19", 0)
         
-        # Мягкое ограничение на бутылки 12л
         bottles_12_dimension_obj.SetCumulVarSoftUpperBound(
             routing.End(vehicle_id),
             capacity_12,
             1000  # Уменьшаем штраф за превышение
         )
         
-        # Мягкое ограничение на бутылки 19л
         bottles_19_dimension_obj.SetCumulVarSoftUpperBound(
             routing.End(vehicle_id),
             capacity_19,
@@ -449,7 +519,23 @@ for vehicle_id in range(num_couriers):
         
         print(f"Курьер {courier['id']} (загруженный): мягкие ограничения 12л≤{capacity_12}, 19л≤{capacity_19}", file=sys.stderr)
     else:
-        print(f"Курьер {courier['id']} (пустой): без ограничений на типы бутылок", file=sys.stderr)
+        # Пустой курьер - проверяем, был ли он сделан пустым из-за недостаточных бутылок
+        was_made_empty_due_to_insufficient_bottles = False
+        if has_active_order:
+            active_order_id = courier["order"]["orderId"]
+            active_order = next((o for o in orders if o["id"] == active_order_id), None)
+            if active_order:
+                capacity_12 = courier.get("capacity_12", 0)
+                capacity_19 = courier.get("capacity_19", 0)
+                required_12 = active_order.get("bottles_12", 0)
+                required_19 = active_order.get("bottles_19", 0)
+                has_enough_bottles = (capacity_12 >= required_12 and capacity_19 >= required_19)
+                was_made_empty_due_to_insufficient_bottles = not has_enough_bottles
+        
+        if was_made_empty_due_to_insufficient_bottles:
+            print(f"Курьер {courier['id']} (недостаточно бутылок для активного заказа): без ограничений на типы бутылок", file=sys.stderr)
+        else:
+            print(f"Курьер {courier['id']} (пустой): без ограничений на типы бутылок", file=sys.stderr)
 
 # Добавляем размерность для общей вместимости курьеров
 routing.AddDimensionWithVehicleCapacity(
