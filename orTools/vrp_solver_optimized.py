@@ -22,17 +22,51 @@ for i, courier in enumerate(couriers):
     if courier.get("lat") is not None and courier.get("lon") is not None:
         valid_couriers.append(courier)
         print(f"✅ Курьер {courier['id']}: ({courier['lat']}, {courier['lon']})", file=sys.stderr)
+        
+        # Проверяем активные заказы
+        if courier.get("order") and courier["order"].get("status") == "onTheWay":
+            active_order_id = courier["order"]["orderId"]
+            print(f"   🚚 Активный заказ: {active_order_id}", file=sys.stderr)
+        else:
+            print(f"   ⏳ Нет активных заказов", file=sys.stderr)
     else:
         print(f"❌ Курьер {courier['id']}: отсутствуют координаты", file=sys.stderr)
 
 # Проверяем заказы
 valid_orders = []
+active_order_ids = set()
+
+# Собираем ID активных заказов из структуры курьеров (не из списка заказов)
+for courier in valid_couriers:
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order_ids.add(courier["order"]["orderId"])
+
+# Создаем виртуальные записи для активных заказов, чтобы алгоритм мог их учесть
+active_orders_data = {}
+for courier in valid_couriers:
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order = courier["order"]
+        active_orders_data[active_order["orderId"]] = {
+            "id": active_order["orderId"],
+            "lat": active_order["lat"],
+            "lon": active_order["lon"],
+            "bottles_12": active_order.get("bottles_12", 0),
+            "bottles_19": active_order.get("bottles_19", 0),
+            "status": "onTheWay"
+        }
+
 for i, order in enumerate(orders):
     if order.get("lat") is not None and order.get("lon") is not None:
         valid_orders.append(order)
-        print(f"✅ Заказ {order['id']}: ({order['lat']}, {order['lon']})", file=sys.stderr)
+        status_info = " (АКТИВНЫЙ)" if order['id'] in active_order_ids else ""
+        print(f"✅ Заказ {order['id']}: ({order['lat']}, {order['lon']}){status_info}", file=sys.stderr)
     else:
         print(f"❌ Заказ {order['id']}: отсутствуют координаты", file=sys.stderr)
+
+# Добавляем активные заказы в список для обработки алгоритмом
+for active_order_id, active_order_data in active_orders_data.items():
+    valid_orders.append(active_order_data)
+    print(f"✅ Активный заказ {active_order_id}: ({active_order_data['lat']}, {active_order_data['lon']}) (АКТИВНЫЙ)", file=sys.stderr)
 
 # Обновляем списки валидными данными
 couriers = valid_couriers
@@ -40,6 +74,7 @@ orders = valid_orders
 
 print(f"\nВалидные курьеры: {len(couriers)}", file=sys.stderr)
 print(f"Валидные заказы: {len(orders)}", file=sys.stderr)
+print(f"Активные заказы: {len(active_order_ids)}", file=sys.stderr)
 
 # Проверяем минимальные требования
 if len(couriers) == 0:
@@ -62,18 +97,19 @@ for courier in couriers:
         total_capacity = courier.get("capacity", 0)
         capacity_12 = courier.get("capacity_12", 0)
         capacity_19 = courier.get("capacity_19", 0)
-        print(f"Курьер {courier['id']}: общая вместимость = {total_capacity} бутылок", file=sys.stderr)
     else:
         capacity_12 = courier.get("capacity_12", 0)
         capacity_19 = courier.get("capacity_19", 0)
         total_capacity = capacity_12 + capacity_19
-        print(f"Курьер {courier['id']}: 12л={capacity_12}, 19л={capacity_19}, всего={total_capacity} бутылок", file=sys.stderr)
+    
+    print(f"Курьер {courier['id']}: общая вместимость = {total_capacity} бутылок", file=sys.stderr)
 
 # Выводим информацию о заказах
 print("\n=== ИНФОРМАЦИЯ О ЗАКАЗАХ ===", file=sys.stderr)
 for order in orders:
     total_bottles = order.get("bottles_12", 0) + order.get("bottles_19", 0)
-    print(f"Заказ {order['id']}: {order.get('bottles_12', 0)} x 12л + {order.get('bottles_19', 0)} x 19л = {total_bottles} бутылок", file=sys.stderr)
+    status_info = " (АКТИВНЫЙ)" if order['id'] in active_order_ids else ""
+    print(f"Заказ {order['id']}: {order.get('bottles_12', 0)} x 12л + {order.get('bottles_19', 0)} x 19л = {total_bottles} бутылок{status_info}", file=sys.stderr)
 
 print("Ограничения на курьеров:", file=sys.stderr)
 for order_id, allowed_couriers in courier_restrictions.items():
@@ -97,210 +133,6 @@ def haversine(lat1, lon1, lat2, lon2):
         math.sin(d_lon/2) ** 2
     )
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-# Функция для оптимизации порядка заказов при необходимости доукомплектования
-def optimize_route_for_refill(route_orders, courier_id, refill_needed, orders, couriers, common_depot):
-    """
-    Оптимизирует порядок заказов для курьера, которому нужно доукомплектование.
-    Учитывает реальные потребности в бутылках и находит оптимальную точку доукомплектования.
-    """
-    if not refill_needed or not route_orders:
-        return route_orders, False, None
-    
-    courier = couriers[courier_id]
-    current_12 = courier.get("capacity_12", 0)
-    current_19 = courier.get("capacity_19", 0)
-    
-    # Вычисляем расстояния и создаем информацию о заказах
-    order_distances = []
-    for order_id in route_orders:
-        order_data = next((o for o in orders if o["id"] == order_id), None)
-        if order_data:
-            distance_to_depot = haversine(
-                order_data["lat"], order_data["lon"],
-                common_depot["lat"], common_depot["lon"]
-            )
-            distance_to_start = haversine(
-                order_data["lat"], order_data["lon"],
-                courier["lat"], courier["lon"]
-            )
-            order_distances.append({
-                "order_id": order_id,
-                "distance_to_depot": distance_to_depot,
-                "distance_to_start": distance_to_start,
-                "order_data": order_data
-            })
-    
-    # ВАРИАНТ 1: Доукомплектование в начале
-    distance_start_to_depot = haversine(
-        courier["lat"], courier["lon"],
-        common_depot["lat"], common_depot["lon"]
-    )
-    
-    orders_sorted_by_depot = sorted(order_distances, key=lambda x: x["distance_to_depot"])
-    
-    variant1_distance = distance_start_to_depot
-    current_lat, current_lon = common_depot["lat"], common_depot["lon"]
-    
-    for order_info in orders_sorted_by_depot:
-        order_data = order_info["order_data"]
-        distance = haversine(current_lat, current_lon, order_data["lat"], order_data["lon"])
-        variant1_distance += distance
-        current_lat, current_lon = order_data["lat"], order_data["lon"]
-    
-    # ВАРИАНТ 2: Умная стратегия - найти оптимальную точку доукомплектования
-    from itertools import permutations
-    
-    best_strategy = None
-    best_distance = float('inf')
-    
-    # Пробуем все возможные точки доукомплектования (после каждого заказа)
-    for refill_after_index in range(len(route_orders) + 1):  # +1 для доукомплектования в начале
-        # Создаем стратегию: заказы до доукомплектования и после
-        orders_before = route_orders[:refill_after_index]
-        orders_after = route_orders[refill_after_index:]
-        
-        # Проверяем, можем ли выполнить заказы до доукомплектования с текущими запасами
-        total_12_before = 0
-        total_19_before = 0
-        
-        for order_id in orders_before:
-            order_data = next((o for o in orders if o["id"] == order_id), None)
-            if order_data:
-                total_12_before += order_data.get("bottles_12", 0)
-                total_19_before += order_data.get("bottles_19", 0)
-        
-        # Если можем выполнить заказы до доукомплектования
-        if total_12_before <= current_12 and total_19_before <= current_19:
-            # Рассчитываем общее расстояние для этой стратегии
-            strategy_distance = 0
-            current_lat, current_lon = courier["lat"], courier["lon"]
-            
-            # Выполняем заказы до доукомплектования (оптимизируем порядок)
-            if orders_before:
-                remaining_orders = orders_before[:]
-                while remaining_orders:
-                    closest_order_id = min(remaining_orders, key=lambda oid: 
-                                         haversine(current_lat, current_lon, 
-                                                  next(o for o in orders if o["id"] == oid)["lat"],
-                                                  next(o for o in orders if o["id"] == oid)["lon"]))
-                    remaining_orders.remove(closest_order_id)
-                    order_data = next(o for o in orders if o["id"] == closest_order_id)
-                    
-                    distance = haversine(current_lat, current_lon, order_data["lat"], order_data["lon"])
-                    strategy_distance += distance
-                    current_lat, current_lon = order_data["lat"], order_data["lon"]
-            
-            # Поездка в депо для доукомплектования
-            distance_to_depot = haversine(current_lat, current_lon, common_depot["lat"], common_depot["lon"])
-            strategy_distance += distance_to_depot
-            current_lat, current_lon = common_depot["lat"], common_depot["lon"]
-            
-            # Выполняем заказы после доукомплектования (оптимизируем порядок)
-            if orders_after:
-                remaining_orders = orders_after[:]
-                while remaining_orders:
-                    closest_order_id = min(remaining_orders, key=lambda oid: 
-                                         haversine(current_lat, current_lon, 
-                                                  next(o for o in orders if o["id"] == oid)["lat"],
-                                                  next(o for o in orders if o["id"] == oid)["lon"]))
-                    remaining_orders.remove(closest_order_id)
-                    order_data = next(o for o in orders if o["id"] == closest_order_id)
-                    
-                    distance = haversine(current_lat, current_lon, order_data["lat"], order_data["lon"])
-                    strategy_distance += distance
-                    current_lat, current_lon = order_data["lat"], order_data["lon"]
-            
-            # Сохраняем лучшую стратегию
-            if strategy_distance < best_distance:
-                best_distance = strategy_distance
-                best_strategy = {
-                    "refill_after_index": refill_after_index,
-                    "orders_before": orders_before,
-                    "orders_after": orders_after,
-                    "distance": strategy_distance
-                }
-    
-    # Выбираем лучший вариант
-    print(f"  🚀 Сравнение вариантов доукомплектования:", file=sys.stderr)
-    print(f"    Вариант 1 (доукомплектование в начале): {variant1_distance:.2f} км", file=sys.stderr)
-    
-    if best_strategy is not None:
-        print(f"    Вариант 2 (умная стратегия): {best_distance:.2f} км", file=sys.stderr)
-    
-    if variant1_distance <= best_distance or best_strategy is None:
-        print(f"    ✅ Выбран вариант 1: доукомплектование в начале", file=sys.stderr)
-        optimized_route = [order_info["order_id"] for order_info in orders_sorted_by_depot]
-        refill_point = {
-            "after_order_index": None,
-            "after_order_id": None,
-            "before_order_id": optimized_route[0] if optimized_route else None,
-            "before_order_index": 0
-        }
-        return optimized_route, True, refill_point
-    else:
-        print(f"    ✅ Выбран вариант 2: умная стратегия", file=sys.stderr)
-        
-        # Формируем оптимальный маршрут
-        optimized_route = []
-        
-        # Добавляем заказы до доукомплектования (в оптимальном порядке)
-        if best_strategy["orders_before"]:
-            current_lat, current_lon = courier["lat"], courier["lon"]
-            remaining_orders = best_strategy["orders_before"][:]
-            
-            while remaining_orders:
-                closest_order_id = min(remaining_orders, key=lambda oid: 
-                                     haversine(current_lat, current_lon, 
-                                              next(o for o in orders if o["id"] == oid)["lat"],
-                                              next(o for o in orders if o["id"] == oid)["lon"]))
-                remaining_orders.remove(closest_order_id)
-                optimized_route.append(closest_order_id)
-                order_data = next(o for o in orders if o["id"] == closest_order_id)
-                current_lat, current_lon = order_data["lat"], order_data["lon"]
-        
-        # Добавляем заказы после доукомплектования (в оптимальном порядке)
-        if best_strategy["orders_after"]:
-            current_lat, current_lon = common_depot["lat"], common_depot["lon"]
-            remaining_orders = best_strategy["orders_after"][:]
-            
-            while remaining_orders:
-                closest_order_id = min(remaining_orders, key=lambda oid: 
-                                     haversine(current_lat, current_lon, 
-                                              next(o for o in orders if o["id"] == oid)["lat"],
-                                              next(o for o in orders if o["id"] == oid)["lon"]))
-                remaining_orders.remove(closest_order_id)
-                optimized_route.append(closest_order_id)
-                order_data = next(o for o in orders if o["id"] == closest_order_id)
-                current_lat, current_lon = order_data["lat"], order_data["lon"]
-        
-        before_refill_count = len(best_strategy["orders_before"])
-        after_refill_count = len(best_strategy["orders_after"])
-        
-        print(f"      До доукомплектования: {before_refill_count} заказов", file=sys.stderr)
-        print(f"      После доукомплектования: {after_refill_count} заказов", file=sys.stderr)
-        print(f"      Оптимальный порядок: {optimized_route}", file=sys.stderr)
-        
-        # Создаем информацию о точке доукомплектования
-        if best_strategy["refill_after_index"] == 0:
-            print(f"      Доукомплектование в начале маршрута", file=sys.stderr)
-            refill_point = {
-                "after_order_index": None,
-                "after_order_id": None,
-                "before_order_id": optimized_route[0] if optimized_route else None,
-                "before_order_index": 0
-            }
-        else:
-            refill_after_order = best_strategy["orders_before"][-1]
-            print(f"      Доукомплектование после заказа {refill_after_order}", file=sys.stderr)
-            refill_point = {
-                "after_order_index": best_strategy["refill_after_index"] - 1,
-                "after_order_id": refill_after_order,
-                "before_order_id": optimized_route[best_strategy["refill_after_index"]] if best_strategy["refill_after_index"] < len(optimized_route) else None,
-                "before_order_index": best_strategy["refill_after_index"]
-            }
-        
-        return optimized_route, best_strategy["refill_after_index"] == 0, refill_point  # True если доукомплектование в начале
 
 # Строим матрицу расстояний
 distance_matrix = []
@@ -338,7 +170,7 @@ print(f"Общее количество локаций (с виртуальны�
 manager = pywrapcp.RoutingIndexManager(total_locations, num_couriers, starts, virtual_ends)
 routing = pywrapcp.RoutingModel(manager)
 
-# Функция расчета расстояний для открытых маршрутов
+# Функция расчета расстояний для открытых маршрутов с учетом активных заказов
 def distance_callback(from_index, to_index):
     try:
         if from_index < 0 or to_index < 0:
@@ -355,6 +187,7 @@ def distance_callback(from_index, to_index):
         if from_node >= num_locations:
             return 999999
         
+        # Базовое расстояние между точками
         return distance_matrix[from_node][to_node]
     except Exception as e:
         print(f"Ошибка в distance_callback: {e}", file=sys.stderr)
@@ -379,17 +212,80 @@ for i, order in enumerate(orders):
         else:
             routing.SetAllowedVehiclesForIndex(allowed_couriers, order_routing_index)
 
-# БАЛАНСИРОВКА НАГРУЗКИ
-ideal_orders_per_courier = num_orders // num_couriers
-remainder = num_orders % num_couriers
+# Предварительное определение типов курьеров для использования в ограничениях
+courier_capacities = []
+courier_types = []  # Отслеживаем тип курьера: 'empty' или 'loaded'
+
+for courier in couriers:
+    capacity_12 = courier.get("capacity_12", 0)
+    capacity_19 = courier.get("capacity_19", 0)
+    
+    # Определяем тип курьера
+    if capacity_12 == 0 and capacity_19 == 0:
+        # Курьер пустой - нужно назначить заказы и показать сколько взять
+        courier_type = 'empty'
+        if 'capacity' in courier:
+            total_capacity = courier.get("capacity", 0)
+        else:
+            total_capacity = 100  # Максимальная вместимость для пустого курьера
+    else:
+        # Курьер уже загружен - используем имеющиеся бутылки
+        courier_type = 'loaded'
+        total_capacity = capacity_12 + capacity_19
+    
+    courier_capacities.append(total_capacity)
+    courier_types.append(courier_type)
+    
+    print(f"Курьер {courier['id']}: тип={courier_type}, вместимость={total_capacity} бутылок (12л={capacity_12}, 19л={capacity_19})", file=sys.stderr)
+
+# Добавляем жесткие ограничения для активных заказов
+print("\n=== НАСТРОЙКА ОГРАНИЧЕНИЙ ДЛЯ АКТИВНЫХ ЗАКАЗОВ ===", file=sys.stderr)
+for vehicle_id, courier in enumerate(couriers):
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order_id = courier["order"]["orderId"]
+        
+        # Находим индекс активного заказа
+        active_order_index = None
+        for i, order in enumerate(orders):
+            if order["id"] == active_order_id:
+                active_order_index = num_couriers + 1 + i
+                break
+        
+        if active_order_index is not None:
+            active_order_routing_index = manager.NodeToIndex(active_order_index)
+            
+            # Принудительно назначаем активный заказ этому курьеру
+            routing.SetAllowedVehiclesForIndex([vehicle_id], active_order_routing_index)
+            
+            # Добавляем высокий приоритет для активных заказов
+            routing.AddDisjunction([active_order_routing_index], 100000)  # Высокий штраф за пропуск
+            
+            # Проверяем тип курьера
+            courier_type = courier_types[vehicle_id]
+            
+            # Жесткое ограничение: курьер должен сначала ехать к активному заказу
+            routing.solver().Add(
+                routing.NextVar(routing.Start(vehicle_id)) == active_order_routing_index
+            )
+            
+            print(f"✅ Курьер {courier['id']} (тип: {courier_type}) должен СНАЧАЛА доехать до активного заказа {active_order_id}", file=sys.stderr)
+            
+            # Мягкое предпочтение для активных заказов
+            print(f"✅ Курьер {courier['id']} должен выполнить активный заказ {active_order_id}", file=sys.stderr)
+
+# БАЛАНСИРОВКА НАГРУЗКИ (только для новых заказов)
+new_orders_count = len([order for order in orders if order['id'] not in active_order_ids])
+ideal_orders_per_courier = new_orders_count // num_couriers
+remainder = new_orders_count % num_couriers
 
 min_orders_per_courier = ideal_orders_per_courier
 max_orders_per_courier = ideal_orders_per_courier + (1 if remainder > 0 else 0)
 
-print(f"\nИдеальное количество заказов на курьера: {ideal_orders_per_courier}", file=sys.stderr)
+print(f"\nНовых заказов для распределения: {new_orders_count}", file=sys.stderr)
+print(f"Идеальное количество новых заказов на курьера: {ideal_orders_per_courier}", file=sys.stderr)
 print(f"Остаток: {remainder}", file=sys.stderr)
-print(f"Минимум заказов на курьера: {min_orders_per_courier}", file=sys.stderr)
-print(f"Максимум заказов на курьера: {max_orders_per_courier}", file=sys.stderr)
+print(f"Минимум новых заказов на курьера: {min_orders_per_courier}", file=sys.stderr)
+print(f"Максимум новых заказов на курьера: {max_orders_per_courier}", file=sys.stderr)
 
 # Функция для подсчета заказов
 def unit_callback(from_index, to_index):
@@ -428,192 +324,120 @@ def total_bottles_callback(from_index, to_index):
 
 total_bottles_callback_index = routing.RegisterTransitCallback(total_bottles_callback)
 
-# Функция для подсчета бутылок 12л
-def bottle12_callback(from_index, to_index):
+# Функция для подсчета бутылок 12л в заказе
+def bottles_12_callback(from_index, to_index):
     try:
         if from_index < 0 or to_index < 0:
             return 0
         
         to_node = manager.IndexToNode(to_index)
+        # Если переходим к заказу, возвращаем количество бутылок 12л
         if to_node >= num_couriers + 1 and to_node < num_locations:
-            return orders[to_node - num_couriers - 1].get("bottles_12", 0)
+            order = orders[to_node - num_couriers - 1]
+            return order.get("bottles_12", 0)
         return 0
     except Exception as e:
-        print(f"Ошибка в bottle12_callback: {e}", file=sys.stderr)
+        print(f"Ошибка в bottles_12_callback: {e}", file=sys.stderr)
         return 0
 
-bottle12_callback_index = routing.RegisterTransitCallback(bottle12_callback)
-
-# Функция для подсчета бутылок 19л
-def bottle19_callback(from_index, to_index):
+# Функция для подсчета бутылок 19л в заказе
+def bottles_19_callback(from_index, to_index):
     try:
         if from_index < 0 or to_index < 0:
             return 0
         
         to_node = manager.IndexToNode(to_index)
+        # Если переходим к заказу, возвращаем количество бутылок 19л
         if to_node >= num_couriers + 1 and to_node < num_locations:
-            return orders[to_node - num_couriers - 1].get("bottles_19", 0)
+            order = orders[to_node - num_couriers - 1]
+            return order.get("bottles_19", 0)
         return 0
     except Exception as e:
-        print(f"Ошибка в bottle19_callback: {e}", file=sys.stderr)
+        print(f"Ошибка в bottles_19_callback: {e}", file=sys.stderr)
         return 0
 
-bottle19_callback_index = routing.RegisterTransitCallback(bottle19_callback)
+bottles_12_callback_index = routing.RegisterTransitCallback(bottles_12_callback)
+bottles_19_callback_index = routing.RegisterTransitCallback(bottles_19_callback)
 
-# Определяем, какие курьеры имеют конкретные ограничения по типам бутылок
-couriers_with_specific_capacity = []
-couriers_with_general_capacity = []
+# Раздельные ограничения на бутылки 12л и 19л для каждого курьера
+courier_capacities_12 = []
+courier_capacities_19 = []
 
-for i, courier in enumerate(couriers):
-    # Курьер имеет конкретные типы бутылок, если у него есть хотя бы одна бутылка 12л или 19л
-    has_specific_bottles = (courier.get("capacity_12", 0) > 0 or courier.get("capacity_19", 0) > 0)
+for courier in couriers:
+    capacity_12 = courier.get("capacity_12", 0)
+    capacity_19 = courier.get("capacity_19", 0)
+    courier_type = courier_types[couriers.index(courier)]
     
-    if has_specific_bottles:
-        couriers_with_specific_capacity.append(i)
+    if courier_type == 'empty':
+        # Пустой курьер - может взять любое количество (используем общую вместимость)
+        total_capacity = courier.get("capacity", 100)
+        courier_capacities_12.append(total_capacity)  # Может взять до общей вместимости
+        courier_capacities_19.append(total_capacity)  # Может взять до общей вместимости
     else:
-        couriers_with_general_capacity.append(i)
-
-print(f"\nКурьеры с общей вместимостью: {[couriers[i]['id'] for i in couriers_with_general_capacity]}", file=sys.stderr)
-print(f"Курьеры с конкретными типами бутылок: {[couriers[i]['id'] for i in couriers_with_specific_capacity]}", file=sys.stderr)
-
-# Добавляем размерности в зависимости от типа курьеров
-if couriers_with_general_capacity:
-    # Для курьеров с общей вместимостью - только общее ограничение
-    courier_capacities = []
-    for courier in couriers:
-        if 'capacity' in courier:
-            total_capacity = courier.get("capacity", 0)
-        else:
-            total_capacity = courier.get("capacity_12", 0) + courier.get("capacity_19", 0)
-        courier_capacities.append(total_capacity)
+        # Загруженный курьер - ограничен имеющимися бутылками
+        courier_capacities_12.append(capacity_12)
+        courier_capacities_19.append(capacity_19)
     
-    routing.AddDimensionWithVehicleCapacity(
-        total_bottles_callback_index,
-        0,  # no slack
-        courier_capacities,  # общая вместимость каждого курьера
-        True,
-        "TotalBottles"
-    )
+    print(f"Курьер {courier['id']}: макс. 12л={courier_capacities_12[-1]}, макс. 19л={courier_capacities_19[-1]}", file=sys.stderr)
 
-if couriers_with_specific_capacity:
-    # Для курьеров с конкретными типами - отдельные ограничения
-    courier_capacities_12 = []
-    courier_capacities_19 = []
+# Добавляем раздельные размерности для бутылок 12л и 19л
+bottles_12_dimension = routing.AddDimensionWithVehicleCapacity(
+    bottles_12_callback_index,
+    0,  # no slack
+    courier_capacities_12,  # вместимость 12л для каждого курьера
+    True,
+    "Bottles12"
+)
+
+bottles_19_dimension = routing.AddDimensionWithVehicleCapacity(
+    bottles_19_callback_index,
+    0,  # no slack
+    courier_capacities_19,  # вместимость 19л для каждого курьера
+    True,
+    "Bottles19"
+)
+
+# Получаем размерности для установки мягких ограничений
+bottles_12_dimension_obj = routing.GetDimensionOrDie("Bottles12")
+bottles_19_dimension_obj = routing.GetDimensionOrDie("Bottles19")
+
+# Устанавливаем мягкие ограничения для загруженных курьеров
+print("\n=== НАСТРОЙКА МЯГКИХ ОГРАНИЧЕНИЙ НА ТИПЫ БУТЫЛОК ===", file=sys.stderr)
+for vehicle_id in range(num_couriers):
+    courier = couriers[vehicle_id]
+    courier_type = courier_types[vehicle_id]
     
-    for courier in couriers:
-        # Курьер имеет конкретные типы бутылок, если у него есть хотя бы одна бутылка 12л или 19л
-        has_specific_bottles = (courier.get("capacity_12", 0) > 0 or courier.get("capacity_19", 0) > 0)
+    if courier_type == 'loaded':
+        # Для загруженных курьеров устанавливаем мягкие ограничения
+        capacity_12 = courier.get("capacity_12", 0)
+        capacity_19 = courier.get("capacity_19", 0)
         
-        if has_specific_bottles:
-            # Для курьеров с конкретными типами используем максимальную вместимость каждого типа
-            # Вместимость = текущие бутылки + возможность доукомплектовать до capacity
-            total_capacity = courier.get("capacity", 0)
-            current_12 = courier.get("capacity_12", 0)
-            current_19 = courier.get("capacity_19", 0)
-            current_total = current_12 + current_19
-            
-            # Если общая вместимость больше текущих бутылок, можно доукомплектовать
-            if total_capacity > current_total:
-                additional_capacity = total_capacity - current_total
-                # Распределяем дополнительную вместимость пропорционально текущим запасам
-                if current_total > 0:
-                    ratio_12 = current_12 / current_total
-                    ratio_19 = current_19 / current_total
-                    max_capacity_12 = current_12 + int(additional_capacity * ratio_12)
-                    max_capacity_19 = current_19 + int(additional_capacity * ratio_19)
-                else:
-                    # Если нет текущих бутылок, можно взять любые до общей вместимости
-                    max_capacity_12 = total_capacity
-                    max_capacity_19 = total_capacity
-            else:
-                max_capacity_12 = current_12
-                max_capacity_19 = current_19
-            
-            courier_capacities_12.append(max_capacity_12)
-            courier_capacities_19.append(max_capacity_19)
-        else:
-            # Для курьеров с общей вместимостью ставим большие значения
-            courier_capacities_12.append(1000)
-            courier_capacities_19.append(1000)
-    
-    routing.AddDimensionWithVehicleCapacity(
-        bottle12_callback_index,
-        0,
-        courier_capacities_12,
-        True,
-        "Bottle12"
-    )
-    
-    routing.AddDimensionWithVehicleCapacity(
-        bottle19_callback_index,
-        0,
-        courier_capacities_19,
-        True,
-        "Bottle19"
-    )
-
-# Применяем дополнительные ограничения для курьеров с конкретными типами бутылок
-print("\n=== ПРИМЕНЕНИЕ ОГРАНИЧЕНИЙ ПО ТИПАМ БУТЫЛОК ===", file=sys.stderr)
-
-for i, order in enumerate(orders):
-    order_node_index = num_couriers + 1 + i
-    order_routing_index = manager.NodeToIndex(order_node_index)
-    
-    bottles_12 = order.get("bottles_12", 0)
-    bottles_19 = order.get("bottles_19", 0)
-    
-    # Определяем курьеров, которые могут выполнить этот заказ
-    allowed_couriers_for_order = []
-    
-    for courier_id in range(num_couriers):
-        if courier_id in couriers_with_general_capacity:
-            # Курьер с общей вместимостью может взять любой заказ
-            allowed_couriers_for_order.append(courier_id)
-        else:
-            # Курьер с конкретными типами - проверяем совместимость с максимальной вместимостью
-            total_capacity = couriers[courier_id].get("capacity", 0)
-            current_12 = couriers[courier_id].get("capacity_12", 0)
-            current_19 = couriers[courier_id].get("capacity_19", 0)
-            current_total = current_12 + current_19
-            
-            # Вычисляем максимальную возможную вместимость каждого типа
-            if total_capacity > current_total:
-                additional_capacity = total_capacity - current_total
-                if current_total > 0:
-                    ratio_12 = current_12 / current_total
-                    ratio_19 = current_19 / current_total
-                    max_capacity_12 = current_12 + int(additional_capacity * ratio_12)
-                    max_capacity_19 = current_19 + int(additional_capacity * ratio_19)
-                else:
-                    max_capacity_12 = total_capacity
-                    max_capacity_19 = total_capacity
-            else:
-                max_capacity_12 = current_12
-                max_capacity_19 = current_19
-            
-            can_handle_12 = bottles_12 == 0 or max_capacity_12 >= bottles_12
-            can_handle_19 = bottles_19 == 0 or max_capacity_19 >= bottles_19
-            
-            if can_handle_12 and can_handle_19:
-                allowed_couriers_for_order.append(courier_id)
-    
-    # Применяем ограничения из courier_restrictions
-    if order['id'] in courier_restrictions:
-        restricted_couriers = courier_restrictions[order['id']]
-        if not restricted_couriers:
-            routing.AddDisjunction([order_routing_index], 100000)
-            print(f"Заказ {order['id']}: исключен из обслуживания", file=sys.stderr)
-            continue
-        else:
-            allowed_couriers_for_order = list(set(allowed_couriers_for_order) & set(restricted_couriers))
-    
-    if not allowed_couriers_for_order:
-        routing.AddDisjunction([order_routing_index], 100000)
-        print(f"Заказ {order['id']}: НЕТ подходящих курьеров (12л:{bottles_12}, 19л:{bottles_19})", file=sys.stderr)
+        # Мягкое ограничение на бутылки 12л
+        bottles_12_dimension_obj.SetCumulVarSoftUpperBound(
+            routing.End(vehicle_id),
+            capacity_12,
+            1000  # Уменьшаем штраф за превышение
+        )
+        
+        # Мягкое ограничение на бутылки 19л
+        bottles_19_dimension_obj.SetCumulVarSoftUpperBound(
+            routing.End(vehicle_id),
+            capacity_19,
+            1000  # Уменьшаем штраф за превышение
+        )
+        
+        print(f"Курьер {courier['id']} (загруженный): мягкие ограничения 12л≤{capacity_12}, 19л≤{capacity_19}", file=sys.stderr)
     else:
-        routing.SetAllowedVehiclesForIndex(allowed_couriers_for_order, order_routing_index)
-        courier_names = [couriers[c]['id'] for c in allowed_couriers_for_order]
-        print(f"Заказ {order['id']}: разрешен для {courier_names} (12л:{bottles_12}, 19л:{bottles_19})", file=sys.stderr)
+        print(f"Курьер {courier['id']} (пустой): без ограничений на типы бутылок", file=sys.stderr)
+
+# Добавляем размерность для общей вместимости курьеров
+routing.AddDimensionWithVehicleCapacity(
+    total_bottles_callback_index,
+    0,  # no slack
+    courier_capacities,  # общая вместимость каждого курьера
+    True,
+    "TotalBottles"
+)
 
 # Добавляем ограничения на расстояние
 for vehicle_id in range(num_couriers):
@@ -629,7 +453,7 @@ for vehicle_id in range(num_couriers):
 routing.AddDimension(
     unit_callback_index,
     0,  # no slack
-    max_orders_per_courier,  # максимум заказов на курьера
+    max_orders_per_courier + 1,  # максимум заказов на курьера + активный заказ
     True,  # start cumul to zero
     "OrderCount"
 )
@@ -639,32 +463,52 @@ order_count_dimension = routing.GetDimensionOrDie("OrderCount")
 
 # Устанавливаем ограничения на количество заказов для каждого курьера
 for vehicle_id in range(num_couriers):
+    # Учитываем активный заказ при расчете ограничений
+    has_active_order = (couriers[vehicle_id].get("order") and 
+                       couriers[vehicle_id]["order"].get("status") == "onTheWay")
+    
+    min_orders = min_orders_per_courier + (1 if has_active_order else 0)
+    max_orders = max_orders_per_courier + (1 if has_active_order else 0)
+    
+    # Делаем ограничения более мягкими
     order_count_dimension.SetCumulVarSoftLowerBound(
         routing.End(vehicle_id), 
-        min_orders_per_courier, 
-        10000
+        min_orders, 
+        5000  # Уменьшаем штраф
     )
     
     order_count_dimension.SetCumulVarSoftUpperBound(
         routing.End(vehicle_id), 
-        max_orders_per_courier, 
-        10000
+        max_orders, 
+        5000  # Уменьшаем штраф
     )
+    
+    print(f"Курьер {vehicle_id}: минимум {min_orders} заказов, максимум {max_orders} заказов", file=sys.stderr)
 
-# Штраф за использование курьера
+# Штраф за использование курьера - уменьшаем
 for vehicle_id in range(num_couriers):
-    routing.SetFixedCostOfVehicle(5000, vehicle_id)
+    routing.SetFixedCostOfVehicle(1000, vehicle_id)  # Уменьшаем штраф
 
-# ПАРАМЕТРЫ ПОИСКА
+# ПАРАМЕТРЫ ПОИСКА - делаем более агрессивными
 search_params = pywrapcp.DefaultRoutingSearchParameters()
-search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.SAVINGS
-search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.SIMULATED_ANNEALING
-search_params.time_limit.seconds = 120
-search_params.solution_limit = 100
-search_params.lns_time_limit.seconds = 30
+search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.AUTOMATIC  # Изменяем стратегию
+search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.AUTOMATIC  # Изменяем метод
+search_params.time_limit.seconds = 30  # Уменьшаем время
+search_params.solution_limit = 50  # Уменьшаем лимит решений
 
-print("Начинаем решение с открытыми маршрутами...", file=sys.stderr)
+print("Начинаем решение с открытыми маршрутами и учетом активных заказов...", file=sys.stderr)
+print("Параметры поиска:", file=sys.stderr)
+print(f"  Стратегия первого решения: AUTOMATIC", file=sys.stderr)
+print(f"  Метод локального поиска: AUTOMATIC", file=sys.stderr)
+print(f"  Лимит времени: 30 секунд", file=sys.stderr)
+print(f"  Лимит решений: 50", file=sys.stderr)
+
 solution = routing.SolveWithParameters(search_params)
+
+# Добавляем дополнительную отладочную информацию
+print(f"Решение найдено: {solution is not None}", file=sys.stderr)
+if solution:
+    print(f"Статус решения: {routing.status()}", file=sys.stderr)
 
 if solution:
     print("\n=== ОТКРЫТЫЕ МАРШРУТЫ НАЙДЕНЫ ===", file=sys.stderr)
@@ -684,6 +528,10 @@ if solution:
         print(f"\nМаршрут курьера {couriers[vehicle_id]['id']}:", file=sys.stderr)
         print(f"  Старт: ({couriers[vehicle_id]['lat']}, {couriers[vehicle_id]['lon']})", file=sys.stderr)
         
+        # Проверяем, есть ли активный заказ
+        has_active_order = (couriers[vehicle_id].get("order") and 
+                           couriers[vehicle_id]["order"].get("status") == "onTheWay")
+        
         while not routing.IsEnd(index):
             node_index = manager.IndexToNode(index)
             
@@ -692,7 +540,12 @@ if solution:
             elif node_index >= num_couriers + 1 and node_index < num_locations:
                 order = orders[node_index - num_couriers - 1]
                 route_orders.append(order["id"])
-                print(f"  -> Заказ {order['id']}: ({order['lat']}, {order['lon']})", file=sys.stderr)
+                
+                # Отмечаем активные заказы
+                if has_active_order and order["id"] == couriers[vehicle_id]["order"]["orderId"]:
+                    print(f"  -> Заказ {order['id']}: ({order['lat']}, {order['lon']}) [АКТИВНЫЙ]", file=sys.stderr)
+                else:
+                    print(f"  -> Заказ {order['id']}: ({order['lat']}, {order['lon']}) [НОВЫЙ]", file=sys.stderr)
             elif node_index >= num_locations:
                 print(f"  -> Завершение маршрута", file=sys.stderr)
             
@@ -717,87 +570,61 @@ if solution:
                     total_bottles_19 += bottles_19
                     total_bottles += bottles_12 + bottles_19
             
-            # Проверяем вместимость курьера
-            # Курьер имеет конкретные типы бутылок, если у него есть хотя бы одна бутылка 12л или 19л
-            courier_has_specific_bottles = (couriers[vehicle_id].get("capacity_12", 0) > 0 or couriers[vehicle_id].get("capacity_19", 0) > 0)
+            # Получаем информацию о курьере
+            courier = couriers[vehicle_id]
+            courier_type = courier_types[vehicle_id]
+            courier_capacity_12 = courier.get("capacity_12", 0)
+            courier_capacity_19 = courier.get("capacity_19", 0)
             
-            if courier_has_specific_bottles:
-                # У курьера есть конкретные типы бутылок
-                courier_capacity_12 = couriers[vehicle_id].get("capacity_12", 0)
-                courier_capacity_19 = couriers[vehicle_id].get("capacity_19", 0)
-                courier_total_capacity = courier_capacity_12 + courier_capacity_19
-                
-                # Вычисляем максимальную возможную вместимость
-                total_capacity = couriers[vehicle_id].get("capacity", 0)
-                current_total = courier_capacity_12 + courier_capacity_19
-                
-                if total_capacity > current_total:
-                    additional_capacity = total_capacity - current_total
-                    if current_total > 0:
-                        ratio_12 = courier_capacity_12 / current_total
-                        ratio_19 = courier_capacity_19 / current_total
-                        max_capacity_12 = courier_capacity_12 + int(additional_capacity * ratio_12)
-                        max_capacity_19 = courier_capacity_19 + int(additional_capacity * ratio_19)
-                    else:
-                        max_capacity_12 = total_capacity
-                        max_capacity_19 = total_capacity
-                else:
-                    max_capacity_12 = courier_capacity_12
-                    max_capacity_19 = courier_capacity_19
-                
-                print(f"  Количество заказов: {len(route_orders)}", file=sys.stderr)
-                print(f"  Требуется бутылок: 12л={total_bottles_12}, 19л={total_bottles_19}, всего={total_bottles}", file=sys.stderr)
-                print(f"  У курьера есть: 12л={courier_capacity_12}, 19л={courier_capacity_19}, всего={courier_total_capacity}", file=sys.stderr)
-                print(f"  Максимальная вместимость: 12л={max_capacity_12}, 19л={max_capacity_19}, всего={total_capacity}", file=sys.stderr)
-                
-                # Проверяем достаточность с учетом возможности доукомплектования
-                can_handle_with_refill = (total_bottles_12 <= max_capacity_12 and total_bottles_19 <= max_capacity_19)
-                
-                if can_handle_with_refill:
-                    # Рассчитываем необходимое доукомплектование
-                    refill_12 = max(0, total_bottles_12 - courier_capacity_12)
-                    refill_19 = max(0, total_bottles_19 - courier_capacity_19)
-                    
-                    if refill_12 > 0 or refill_19 > 0:
-                        print(f"  🔄 Нужно доукомплектовать: 12л={refill_12}, 19л={refill_19}", file=sys.stderr)
-                    else:
-                        print(f"  ✅ Бутылок достаточно", file=sys.stderr)
-                else:
-                    print(f"  ❌ Недостаточно даже с доукомплектованием!", file=sys.stderr)
-                    shortage_12 = max(0, total_bottles_12 - max_capacity_12)
-                    shortage_19 = max(0, total_bottles_19 - max_capacity_19)
-                    if shortage_12 > 0:
-                        print(f"     Не хватает 12л: {shortage_12}", file=sys.stderr)
-                    if shortage_19 > 0:
-                        print(f"     Не хватает 19л: {shortage_19}", file=sys.stderr)
-                
+            # Логика расчета в зависимости от типа курьера
+            if courier_type == 'empty':
+                # Пустой курьер - должен взять именно то, что требуется для заказов
                 bottles_12_needed = total_bottles_12
                 bottles_19_needed = total_bottles_19
+                courier_total_capacity = courier.get("capacity", 100)
+                
+                print(f"  Тип курьера: ПУСТОЙ", file=sys.stderr)
+                print(f"  Курьер должен взять: 12л={bottles_12_needed}, 19л={bottles_19_needed}", file=sys.stderr)
+                
+                # Для пустых курьеров показываем что нужно взять
+                courier_should_take = {
+                    "bottles_12": bottles_12_needed,
+                    "bottles_19": bottles_19_needed,
+                    "total": bottles_12_needed + bottles_19_needed
+                }
                 
             else:
-                # У курьера общая вместимость - нужно показать сколько взять
-                courier_total_capacity = couriers[vehicle_id].get("capacity", 0)
+                # Загруженный курьер - используем имеющиеся бутылки, НЕ показываем "сколько взять"
+                courier_total_capacity = courier_capacity_12 + courier_capacity_19
                 
-                print(f"  Количество заказов: {len(route_orders)}", file=sys.stderr)
-                print(f"  Требуется бутылок: 12л={total_bottles_12}, 19л={total_bottles_19}, всего={total_bottles}", file=sys.stderr)
-                print(f"  Общая вместимость курьера: {courier_total_capacity} бутылок", file=sys.stderr)
-                print(f"  Курьер должен взять: 12л={total_bottles_12}, 19л={total_bottles_19}", file=sys.stderr)
+                print(f"  Тип курьера: ЗАГРУЖЕННЫЙ", file=sys.stderr)
+                print(f"  Имеющиеся бутылки: 12л={courier_capacity_12}, 19л={courier_capacity_19}", file=sys.stderr)
                 
-                if total_bottles > courier_total_capacity:
-                    print(f"  ❌ ОШИБКА: Требуется {total_bottles} бутылок, но общая вместимость {courier_total_capacity}", file=sys.stderr)
-                else:
-                    print(f"  ✅ Помещается в общую вместимость", file=sys.stderr)
+                # Проверяем достаточность бутылок
+                if total_bottles_12 > courier_capacity_12:
+                    print(f"  ⚠️  ВНИМАНИЕ: Требуется 12л={total_bottles_12}, но у курьера только {courier_capacity_12}", file=sys.stderr)
+                if total_bottles_19 > courier_capacity_19:
+                    print(f"  ⚠️  ВНИМАНИЕ: Требуется 19л={total_bottles_19}, но у курьера только {courier_capacity_19}", file=sys.stderr)
                 
-                bottles_12_needed = total_bottles_12
-                bottles_19_needed = total_bottles_19
+                # Для загруженных курьеров НЕ показываем "сколько взять" - они уже загружены
+                courier_should_take = {
+                    "bottles_12": 0,  # Не нужно брать - уже есть
+                    "bottles_19": 0,  # Не нужно брать - уже есть
+                    "total": 0
+                }
             
+            # Проверяем общую вместимость
+            if total_bottles > courier_total_capacity:
+                print(f"  ❌ ОШИБКА: Требуется {total_bottles} бутылок, но общая вместимость {courier_total_capacity}", file=sys.stderr)
+            
+            print(f"  Количество заказов: {len(route_orders)}", file=sys.stderr)
+            print(f"  Требуется бутылок: 12л={total_bottles_12}, 19л={total_bottles_19}, всего={total_bottles}", file=sys.stderr)
             print(f"  Использование вместимости: {100*total_bottles/max(courier_total_capacity,1):.1f}%", file=sys.stderr)
             
             total_distance += route_distance
             active_couriers += 1
             
-            # Формируем информацию о курьере
-            courier_info = {
+            routes.append({
                 "courier_id": couriers[vehicle_id]["id"],
                 "orders": route_orders,
                 "orders_count": len(route_orders),
@@ -808,70 +635,13 @@ if solution:
                     "bottles_19": total_bottles_19,
                     "total": total_bottles
                 },
+                "courier_should_take": courier_should_take,
                 "capacity_utilization": {
                     "percent": round(100 * total_bottles / max(courier_total_capacity, 1), 1)
-                }
-            }
-            
-            if courier_has_specific_bottles:
-                # У курьера есть конкретные типы бутылок
-                courier_info["courier_bottles"] = {
-                    "bottles_12": courier_capacity_12,
-                    "bottles_19": courier_capacity_19,
-                    "total": courier_total_capacity
-                }
-                courier_info["max_capacity"] = {
-                    "bottles_12": max_capacity_12,
-                    "bottles_19": max_capacity_19,
-                    "total": total_capacity
-                }
-                courier_info["bottles_sufficient"] = can_handle_with_refill
-                
-                # Рассчитываем необходимое доукомплектование
-                refill_12 = max(0, total_bottles_12 - courier_capacity_12)
-                refill_19 = max(0, total_bottles_19 - courier_capacity_19)
-                
-                if refill_12 > 0 or refill_19 > 0:
-                    courier_info["refill_needed"] = {
-                        "bottles_12": refill_12,
-                        "bottles_19": refill_19,
-                        "total": refill_12 + refill_19
-                    }
-                    
-                    # Оптимизируем порядок заказов для доукомплектования
-                    route_orders, refill_in_start, refill_point = optimize_route_for_refill(
-                        route_orders, 
-                        vehicle_id, 
-                        True, 
-                        orders, 
-                        couriers, 
-                        common_depot
-                    )
-                    courier_info["orders"] = route_orders
-                    
-                    # Используем информацию о точке доукомплектования из функции оптимизации
-                    if refill_point:
-                        courier_info["refill_point"] = refill_point
-                        if refill_point["after_order_id"]:
-                            print(f"  📍 Доукомплектование после заказа {refill_point['after_order_id']}, перед заказом {refill_point['before_order_id']}", file=sys.stderr)
-                        else:
-                            print(f"  📍 Доукомплектование в начале маршрута, перед заказом {refill_point['before_order_id']}", file=sys.stderr)
-                
-                if not can_handle_with_refill:
-                    courier_info["bottles_shortage"] = {
-                        "bottles_12": max(0, total_bottles_12 - max_capacity_12),
-                        "bottles_19": max(0, total_bottles_19 - max_capacity_19)
-                    }
-            else:
-                # У курьера общая вместимость - показываем сколько взять
-                courier_info["courier_total_capacity"] = courier_total_capacity
-                courier_info["courier_should_take"] = {
-                    "bottles_12": bottles_12_needed,
-                    "bottles_19": bottles_19_needed,
-                    "total": bottles_12_needed + bottles_19_needed
-                }
-            
-            routes.append(courier_info)
+                },
+                "has_active_order": has_active_order,
+                "courier_type": courier_type
+            })
         else:
             print(f"  Нет заказов", file=sys.stderr)
     
@@ -885,6 +655,7 @@ if solution:
     print(f"Общее расстояние: {total_distance} метров ({total_distance/1000:.2f} км)", file=sys.stderr)
     print(f"Используется курьеров: {active_couriers} из {num_couriers}", file=sys.stderr)
     print(f"Всего заказов обслужено: {sum(len(r['orders']) for r in routes)} из {num_orders}", file=sys.stderr)
+    print(f"Активных заказов: {len(active_order_ids)}", file=sys.stderr)
     print(f"Балансировка нагрузки: {balance_score} (0 = идеальная балансировка)", file=sys.stderr)
     print(f"Распределение заказов: {orders_counts}", file=sys.stderr)
     
@@ -893,32 +664,13 @@ if solution:
     for route in routes:
         courier_id = route["courier_id"]
         required = route["required_bottles"]
+        should_take = route["courier_should_take"]
         utilization = route["capacity_utilization"]["percent"]
+        active_status = " (с активным заказом)" if route["has_active_order"] else ""
         
-        print(f"  {courier_id}:", file=sys.stderr)
+        print(f"  {courier_id}{active_status}:", file=sys.stderr)
         print(f"    Требуется: 12л={required['bottles_12']}, 19л={required['bottles_19']}", file=sys.stderr)
-        
-        if "courier_bottles" in route:
-            # У курьера есть конкретные типы бутылок
-            courier_bottles = route["courier_bottles"]
-            print(f"    У курьера есть: 12л={courier_bottles['bottles_12']}, 19л={courier_bottles['bottles_19']}", file=sys.stderr)
-            
-            if route["bottles_sufficient"]:
-                print(f"    ✅ Бутылок достаточно", file=sys.stderr)
-            else:
-                print(f"    ❌ Недостаточно бутылок!", file=sys.stderr)
-                if "bottles_shortage" in route:
-                    shortage = route["bottles_shortage"]
-                    if shortage["bottles_12"] > 0:
-                        print(f"       Не хватает 12л: {shortage['bottles_12']}", file=sys.stderr)
-                    if shortage["bottles_19"] > 0:
-                        print(f"       Не хватает 19л: {shortage['bottles_19']}", file=sys.stderr)
-        else:
-            # У курьера общая вместимость
-            should_take = route["courier_should_take"]
-            print(f"    Курьер должен взять: 12л={should_take['bottles_12']}, 19л={should_take['bottles_19']}", file=sys.stderr)
-            print(f"    Общая вместимость: {route['courier_total_capacity']} бутылок", file=sys.stderr)
-        
+        print(f"    Взять: 12л={should_take['bottles_12']}, 19л={should_take['bottles_19']}", file=sys.stderr)
         print(f"    Использование: {utilization}%", file=sys.stderr)
     
     # Проверяем необслуженные заказы

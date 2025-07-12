@@ -299,6 +299,14 @@ const CourierAggregatorSchema = new mongoose.Schema(
         capacity19: {
             type: Number,
             default: 0,
+        },
+        capacity: {
+            type: Number,
+            default: 0,
+        },
+        completeFirstOrder: {
+            type: Boolean,
+            default: false,
         }
     },
     {
