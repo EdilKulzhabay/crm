@@ -138,16 +138,85 @@ for order_id, allowed_courier_ids in courier_restrictions.items():
     if not allowed_courier_ids:
         print(f"  {order_id}: исключен из обслуживания", file=sys.stderr)
     else:
-        # Находим индексы курьеров по их ID
-        allowed_courier_indices = []
+        # Преобразуем ID курьеров в их имена для отладки
+        courier_names = []
         for courier_id in allowed_courier_ids:
-            for i, courier in enumerate(couriers):
-                if courier['id'] == courier_id:
-                    allowed_courier_indices.append(i)
+            # Ищем курьера по ID (может быть ObjectId или имя)
+            found_courier = None
+            for courier in couriers:
+                if str(courier.get('id', '')) == str(courier_id):
+                    found_courier = courier
                     break
+            
+            if found_courier:
+                courier_names.append(found_courier['id'])
+            else:
+                # Если не найден по ID, возможно это уже имя курьера
+                courier_names.append(str(courier_id))
         
-        courier_names = [couriers[i]['id'] for i in allowed_courier_indices if i < len(couriers)]
         print(f"  {order_id}: только {', '.join(courier_names)}", file=sys.stderr)
+
+# Проверяем совместимость активных заказов с ограничениями
+print("\n=== ПРОВЕРКА СОВМЕСТИМОСТИ АКТИВНЫХ ЗАКАЗОВ С ОГРАНИЧЕНИЯМИ ===", file=sys.stderr)
+for courier in couriers:
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order_id = courier["order"]["orderId"]
+        courier_id = courier["id"]
+        
+        # Проверяем, есть ли ограничения для этого активного заказа
+        if active_order_id in courier_restrictions:
+            allowed_courier_ids = courier_restrictions[active_order_id]
+            
+            # Проверяем, разрешен ли этот курьер для активного заказа
+            courier_allowed = False
+            for allowed_id in allowed_courier_ids:
+                if str(courier_id) == str(allowed_id):
+                    courier_allowed = True
+                    break
+            
+            if not courier_allowed:
+                print(f"🚫 КОНФЛИКТ: Курьер {courier_id} должен выполнить активный заказ {active_order_id}, но исключен из ограничений!", file=sys.stderr)
+                print(f"   Разрешенные курьеры: {allowed_courier_ids}", file=sys.stderr)
+                print(f"   ИСПРАВЛЕНИЕ: Добавляем курьера {courier_id} в разрешенные для заказа {active_order_id}", file=sys.stderr)
+                
+                # Автоматически разрешаем курьеру выполнить его активный заказ
+                courier_restrictions[active_order_id].append(courier_id)
+            else:
+                print(f"✅ Курьер {courier_id} разрешен для активного заказа {active_order_id}", file=sys.stderr)
+        else:
+            print(f"✅ Активный заказ {active_order_id} курьера {courier_id} не имеет ограничений", file=sys.stderr)
+
+# Проверяем достаточность бутылок для активных заказов
+print("\n=== ПРОВЕРКА ДОСТАТОЧНОСТИ БУТЫЛОК ДЛЯ АКТИВНЫХ ЗАКАЗОВ ===", file=sys.stderr)
+for courier in couriers:
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order_id = courier["order"]["orderId"]
+        courier_id = courier["id"]
+        
+        # Находим активный заказ в списке заказов
+        active_order = next((o for o in orders if o["id"] == active_order_id), None)
+        if active_order:
+            required_12 = active_order.get("bottles_12", 0)
+            required_19 = active_order.get("bottles_19", 0)
+            available_12 = courier.get("capacity_12", 0)
+            available_19 = courier.get("capacity_19", 0)
+            
+            print(f"Курьер {courier_id} - активный заказ {active_order_id}:", file=sys.stderr)
+            print(f"  Требуется: 12л={required_12}, 19л={required_19}", file=sys.stderr)
+            print(f"  Доступно: 12л={available_12}, 19л={available_19}", file=sys.stderr)
+            
+            if available_12 < required_12 or available_19 < required_19:
+                print(f"  ⚠️  НЕДОСТАТОЧНО БУТЫЛОК! Курьер не может выполнить активный заказ", file=sys.stderr)
+                print(f"  💡 РЕШЕНИЕ: Курьер должен доехать до базы и взять недостающие бутылки", file=sys.stderr)
+                
+                # Для курьера Бекет с специальными ограничениями проверяем совместимость
+                if courier_id in COURIER_SPECIAL_RESTRICTIONS:
+                    restrictions = COURIER_SPECIAL_RESTRICTIONS[courier_id]
+                    if required_12 > restrictions["max_bottles_12"]:
+                        print(f"  🚫 КРИТИЧЕСКАЯ ОШИБКА: Курьер {courier_id} не может перевозить {required_12} бутылок 12л (лимит: {restrictions['max_bottles_12']})", file=sys.stderr)
+                        print(f"  💡 РЕШЕНИЕ: Переназначить заказ другому курьеру", file=sys.stderr)
+            else:
+                print(f"  ✅ Достаточно бутылок для выполнения заказа", file=sys.stderr)
 
 # Создаем список локаций: депо + курьеры + заказы
 locations = [common_depot] + couriers + orders
@@ -239,17 +308,24 @@ for i, order in enumerate(orders):
         allowed_courier_ids = courier_restrictions[order['id']]
         if not allowed_courier_ids:
             routing.AddDisjunction([order_routing_index], 100000)
+            print(f"Заказ {order['id']}: полностью исключен из обслуживания", file=sys.stderr)
         else:
             # Преобразуем ID курьеров в их индексы
             allowed_courier_indices = []
             for courier_id in allowed_courier_ids:
                 for j, courier in enumerate(couriers):
-                    if courier['id'] == courier_id:
+                    # Сравниваем как строки для совместимости с ObjectId
+                    if str(courier['id']) == str(courier_id):
                         allowed_courier_indices.append(j)
                         break
             
             if allowed_courier_indices:
                 routing.SetAllowedVehiclesForIndex(allowed_courier_indices, order_routing_index)
+                print(f"Заказ {order['id']}: разрешен только для курьеров с индексами {allowed_courier_indices}", file=sys.stderr)
+            else:
+                # Если не нашли ни одного соответствующего курьера, исключаем заказ
+                routing.AddDisjunction([order_routing_index], 100000)
+                print(f"Заказ {order['id']}: не найдено соответствующих курьеров, исключен", file=sys.stderr)
 
 # Предварительное определение типов курьеров для использования в ограничениях
 courier_capacities = []
