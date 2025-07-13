@@ -299,34 +299,6 @@ routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 for order_idx in range(num_couriers + 1, num_locations):
     routing.AddDisjunction([manager.NodeToIndex(order_idx)], 10000)
 
-# Применяем ограничения на курьеров (только из courier_restrictions)
-for i, order in enumerate(orders):
-    order_node_index = num_couriers + 1 + i
-    order_routing_index = manager.NodeToIndex(order_node_index)
-    
-    if order['id'] in courier_restrictions:
-        allowed_courier_ids = courier_restrictions[order['id']]
-        if not allowed_courier_ids:
-            routing.AddDisjunction([order_routing_index], 100000)
-            print(f"Заказ {order['id']}: полностью исключен из обслуживания", file=sys.stderr)
-        else:
-            # Преобразуем ID курьеров в их индексы
-            allowed_courier_indices = []
-            for courier_id in allowed_courier_ids:
-                for j, courier in enumerate(couriers):
-                    # Сравниваем как строки для совместимости с ObjectId
-                    if str(courier['id']) == str(courier_id):
-                        allowed_courier_indices.append(j)
-                        break
-            
-            if allowed_courier_indices:
-                routing.SetAllowedVehiclesForIndex(allowed_courier_indices, order_routing_index)
-                print(f"Заказ {order['id']}: разрешен только для курьеров с индексами {allowed_courier_indices}", file=sys.stderr)
-            else:
-                # Если не нашли ни одного соответствующего курьера, исключаем заказ
-                routing.AddDisjunction([order_routing_index], 100000)
-                print(f"Заказ {order['id']}: не найдено соответствующих курьеров, исключен", file=sys.stderr)
-
 # Предварительное определение типов курьеров для использования в ограничениях
 courier_capacities = []
 courier_types = []  # Отслеживаем тип курьера: 'empty' или 'loaded'
@@ -380,6 +352,104 @@ for courier in couriers:
     courier_types.append(courier_type)
     
     print(f"Курьер {courier['id']}: тип={courier_type}, вместимость={total_capacity} бутылок (12л={capacity_12}, 19л={capacity_19})", file=sys.stderr)
+
+# ДОБАВЛЯЕМ СТРОГУЮ ПРОВЕРКУ СОВМЕСТИМОСТИ ЗАКАЗОВ С ТИПАМИ БУТЫЛОК КУРЬЕРОВ
+print("\n=== ПРОВЕРКА СОВМЕСТИМОСТИ ЗАКАЗОВ С ТИПАМИ БУТЫЛОК КУРЬЕРОВ ===", file=sys.stderr)
+
+# Заменяем старые ограничения на новые, учитывающие совместимость по типам бутылок
+for i, order in enumerate(orders):
+    order_node_index = num_couriers + 1 + i
+    order_routing_index = manager.NodeToIndex(order_node_index)
+    
+    order_bottles_12 = order.get("bottles_12", 0)
+    order_bottles_19 = order.get("bottles_19", 0)
+    
+    # Определяем курьеров, которые могут выполнить этот заказ по типам бутылок
+    compatible_courier_indices = []
+    
+    for courier_idx, courier in enumerate(couriers):
+        courier_capacity_12 = courier.get("capacity_12", 0)
+        courier_capacity_19 = courier.get("capacity_19", 0)
+        courier_name = courier.get("id", "")
+        courier_type = courier_types[courier_idx]
+        
+        # Проверяем специальные ограничения для курьера
+        if courier_name in COURIER_SPECIAL_RESTRICTIONS:
+            special_restrictions = COURIER_SPECIAL_RESTRICTIONS[courier_name]
+            max_bottles_12 = special_restrictions["max_bottles_12"]
+            max_bottles_19 = special_restrictions["max_bottles_19"]
+            
+            # Проверяем совместимость со специальными ограничениями
+            if order_bottles_12 <= max_bottles_12 and order_bottles_19 <= max_bottles_19:
+                compatible_courier_indices.append(courier_idx)
+                print(f"  ✅ Заказ {order['id']} совместим с курьером {courier_name} (специальные ограничения)", file=sys.stderr)
+            else:
+                print(f"  🚫 Заказ {order['id']} НЕ совместим с курьером {courier_name} (специальные ограничения: требуется 12л={order_bottles_12}, 19л={order_bottles_19})", file=sys.stderr)
+        
+        elif courier_type == 'empty':
+            # Пустой курьер может взять любой заказ
+            compatible_courier_indices.append(courier_idx)
+            print(f"  ✅ Заказ {order['id']} совместим с ПУСТЫМ курьером {courier_name}", file=sys.stderr)
+        
+        else:
+            # СТРОГАЯ ПРОВЕРКА для загруженных курьеров
+            can_handle_12 = (order_bottles_12 == 0) or (courier_capacity_12 > 0 and courier_capacity_12 >= order_bottles_12)
+            can_handle_19 = (order_bottles_19 == 0) or (courier_capacity_19 > 0 and courier_capacity_19 >= order_bottles_19)
+            
+            if can_handle_12 and can_handle_19:
+                compatible_courier_indices.append(courier_idx)
+                print(f"  ✅ Заказ {order['id']} совместим с ЗАГРУЖЕННЫМ курьером {courier_name} (есть 12л={courier_capacity_12}, 19л={courier_capacity_19})", file=sys.stderr)
+            else:
+                reasons = []
+                if not can_handle_12:
+                    if order_bottles_12 > 0 and courier_capacity_12 == 0:
+                        reasons.append(f"нет 12л бутылок для заказа с {order_bottles_12} x 12л")
+                    elif order_bottles_12 > courier_capacity_12:
+                        reasons.append(f"недостаточно 12л: нужно {order_bottles_12}, есть {courier_capacity_12}")
+                
+                if not can_handle_19:
+                    if order_bottles_19 > 0 and courier_capacity_19 == 0:
+                        reasons.append(f"нет 19л бутылок для заказа с {order_bottles_19} x 19л")
+                    elif order_bottles_19 > courier_capacity_19:
+                        reasons.append(f"недостаточно 19л: нужно {order_bottles_19}, есть {courier_capacity_19}")
+                
+                print(f"  🚫 Заказ {order['id']} НЕ совместим с курьером {courier_name} ({'; '.join(reasons)})", file=sys.stderr)
+    
+    # Применяем ограничения совместимости
+    if not compatible_courier_indices:
+        # Если ни один курьер не может выполнить заказ - исключаем его
+        routing.AddDisjunction([order_routing_index], 100000)
+        print(f"  ❌ ЗАКАЗ {order['id']} ИСКЛЮЧЕН: ни один курьер не может его выполнить", file=sys.stderr)
+    else:
+        # Если есть ограничения из courier_restrictions, учитываем их
+        if order['id'] in courier_restrictions:
+            allowed_courier_ids = courier_restrictions[order['id']]
+            if allowed_courier_ids:
+                # Преобразуем ID в индексы
+                restricted_courier_indices = []
+                for courier_id in allowed_courier_ids:
+                    for j, courier in enumerate(couriers):
+                        if str(courier['id']) == str(courier_id):
+                            restricted_courier_indices.append(j)
+                            break
+                
+                # Пересечение: курьеры, которые и совместимы по бутылкам, и разрешены ограничениями
+                final_allowed_indices = list(set(compatible_courier_indices) & set(restricted_courier_indices))
+                
+                if final_allowed_indices:
+                    routing.SetAllowedVehiclesForIndex(final_allowed_indices, order_routing_index)
+                    print(f"  ✅ Заказ {order['id']}: разрешен для курьеров с индексами {final_allowed_indices} (совместимость + ограничения)", file=sys.stderr)
+                else:
+                    routing.AddDisjunction([order_routing_index], 100000)
+                    print(f"  ❌ ЗАКАЗ {order['id']} ИСКЛЮЧЕН: нет курьеров, совместимых по бутылкам И разрешенных ограничениями", file=sys.stderr)
+            else:
+                # Заказ полностью исключен ограничениями
+                routing.AddDisjunction([order_routing_index], 100000)
+                print(f"  ❌ ЗАКАЗ {order['id']} ИСКЛЮЧЕН: полностью исключен ограничениями", file=sys.stderr)
+        else:
+            # Нет ограничений - разрешаем всем совместимым курьерам
+            routing.SetAllowedVehiclesForIndex(compatible_courier_indices, order_routing_index)
+            print(f"  ✅ Заказ {order['id']}: разрешен для совместимых курьеров с индексами {compatible_courier_indices}", file=sys.stderr)
 
 # Добавляем жесткие ограничения для активных заказов
 print("\n=== НАСТРОЙКА ОГРАНИЧЕНИЙ ДЛЯ АКТИВНЫХ ЗАКАЗОВ ===", file=sys.stderr)
@@ -709,9 +779,51 @@ for vehicle_id in range(num_couriers):
     
     print(f"Курьер {vehicle_id}: гибкие ограничения {min_orders}-{max_orders} заказов (приоритет - вместимость бутылок)", file=sys.stderr)
 
-# Штраф за использование курьера - уменьшаем
+# Убираем штраф за использование курьера - используем всех доступных курьеров
 for vehicle_id in range(num_couriers):
-    routing.SetFixedCostOfVehicle(1000, vehicle_id)  # Уменьшаем штраф
+    routing.SetFixedCostOfVehicle(0, vehicle_id)  # Никакого штрафа за использование курьера
+
+# Добавляем мягкое ограничение на максимальное количество заказов на курьера
+# для более равномерного распределения
+ideal_orders_per_courier = max(1, new_orders_count // num_couriers)
+max_orders_per_courier_soft = ideal_orders_per_courier + 2  # Мягкий лимит
+
+print(f"Идеальное количество заказов на курьера: {ideal_orders_per_courier}", file=sys.stderr)
+print(f"Мягкий лимит заказов на курьера: {max_orders_per_courier_soft}", file=sys.stderr)
+
+# Устанавливаем более строгие мягкие ограничения для лучшего распределения
+for vehicle_id in range(num_couriers):
+    # Учитываем активный заказ при расчете ограничений
+    has_active_order = (couriers[vehicle_id].get("order") and 
+                       couriers[vehicle_id]["order"].get("status") == "onTheWay")
+    
+    # Мягкое ограничение сверху - поощряем равномерное распределение
+    max_orders_with_active = max_orders_per_courier_soft + (1 if has_active_order else 0)
+    
+    order_count_dimension.SetCumulVarSoftUpperBound(
+        routing.End(vehicle_id), 
+        max_orders_with_active, 
+        500  # Увеличиваем штраф за превышение для лучшего распределения
+    )
+    
+    # Мягкое ограничение снизу - поощряем использование каждого курьера
+    min_orders = 1 if not has_active_order else 0  # Минимум 1 заказ для курьеров без активных заказов
+    
+    if not has_active_order:
+        # ЖЕСТКОЕ ОГРАНИЧЕНИЕ: каждый курьер без активного заказа ДОЛЖЕН получить минимум 1 заказ
+        order_count_dimension.SetCumulVarSoftLowerBound(
+            routing.End(vehicle_id), 
+            min_orders, 
+            1000000  # МАКСИМАЛЬНЫЙ штраф = принудительное использование всех курьеров
+        )
+        print(f"Курьер {vehicle_id}: ПРИНУДИТЕЛЬНОЕ требование минимум {min_orders} заказов (штраф: 1000000)", file=sys.stderr)
+    else:
+        order_count_dimension.SetCumulVarSoftLowerBound(
+            routing.End(vehicle_id), 
+            min_orders, 
+            10000  # Штраф за неиспользование курьера
+        )
+        print(f"Курьер {vehicle_id}: мягкое ограничение минимум {min_orders} заказов (штраф: 10000)", file=sys.stderr)
 
 # ПАРАМЕТРЫ ПОИСКА - делаем более агрессивными
 search_params = pywrapcp.DefaultRoutingSearchParameters()
