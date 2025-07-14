@@ -1114,11 +1114,26 @@ export const appointmentFranchisee = async (req, res) => {
 //     }
 //   )
 
+
+
+// db.orders.updateMany(
+//     {
+//       _id: {
+//         $in: [
+//           ObjectId("6873d8bdde2bde4ca3aba428")
+//         ]
+//       }
+//     },
+//     {
+//       $set: { status: "awaitingOrder" }
+//     }
+//   )
+
 //   db.orders.updateMany(
 //     {
 //       _id: {
 //         $in: [
-//           ObjectId("6874a0dfc7cc88c130090e9b")
+//           ObjectId("6870af365904dd05de7bbacd")
 //         ]
 //       }
 //     },
@@ -1126,4 +1141,7 @@ export const appointmentFranchisee = async (req, res) => {
 //       $set: { forAggregator: false }
 //     }
 //   )
+
+//   db.courieraggregators.updateOne({fullName: 'Василий Яковлев'}, {$set: { order: null, orders:[]}})
+//   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[]}})
   
