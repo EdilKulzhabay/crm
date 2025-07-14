@@ -1101,24 +1101,29 @@ export const appointmentFranchisee = async (req, res) => {
 
 // db.orders.updateMany(
 //     {
-//         franchisee: { $in: [ObjectId('66f15c557a27c92d447a16a0'), ObjectId('66fc0cc6953c2dbbc86c2132'), ObjectId('66fc0d01953c2dbbc86c2135'), ObjectId('66fc0d3e953c2dbbc86c2138')]},
-//         "date.d": "2025-06-24"
+//       _id: {
+//         $in: [
+//           ObjectId("6874959dc7cc88c13008eda2"),
+//           ObjectId("687495d4c7cc88c13008edc4"),
+//           ObjectId("6874960ac7cc88c13008f22e")
+//         ]
+//       }
 //     },
-//     { $set: { forAggregator: true } }
-// );
-
-
-// db.orders.find(
 //     {
-//         franchisee: { $in: [ObjectId('66f15c557a27c92d447a16a0'), ObjectId('66fc0cc6953c2dbbc86c2132'), ObjectId('66fc0d01953c2dbbc86c2135'), ObjectId('66fc0d3e953c2dbbc86c2138')]},
-//         "date.d": "2025-06-24"
+//       $set: { forAggregator: true }
 //     }
-// );
+//   )
 
-
-// db.courieraggregators.updateOne(
-//     { email: "Tibetwater@inbox.ru" },
-//     { 
-//       $pull: { orders: { orderId: "68480f47a558b7df88e00886" } },
+//   db.orders.updateMany(
+//     {
+//       _id: {
+//         $in: [
+//           ObjectId("6874a0dfc7cc88c130090e9b")
+//         ]
+//       }
 //     },
-//   );
+//     {
+//       $set: { forAggregator: false }
+//     }
+//   )
+  
