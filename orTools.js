@@ -125,7 +125,8 @@ export function runPythonVisualize(couriers, orders, routes) {
 }
 
 const zeroing = async () => {
-    const todayString = getDateAlmaty();
+    // const todayString = getDateAlmaty();
+    const todayString = "2025-07-14"
 
     // const orders = await Order.find({
     //     "date.d": todayString,
@@ -488,7 +489,8 @@ export default async function orTools() {
         })
 
     const today = new Date();
-    const todayString = getDateAlmaty(today);
+    // const todayString = getDateAlmaty(today);
+    const todayString = "2025-07-14"
 
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: "awaitingOrder"})
     
