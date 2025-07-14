@@ -715,18 +715,18 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         await Order.updateOne(
             { _id: orderId },
             { $set: {
-                status: "awaitingOrder",
+                status: "cancelled",
                 reason: reason,
                 courierAggregator: null
             }}
         )
 
-        await CourierRestrictions.create({
-            orderId: orderId,
-            courierId: id
-        })
+        // await CourierRestrictions.create({
+        //     orderId: orderId,
+        //     courierId: id
+        // })
 
-        const courier = await CourierAggregator.findById(id)
+        // const courier = await CourierAggregator.findById(id)
 
         // if (courier.orders.length > 0) {
         //     await new Promise(resolve => setTimeout(resolve, 10000));
@@ -772,13 +772,13 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         //     }
         // } 
 
-        await queueOrTools();
+        
 
         res.json({
             success: true,
             message: "Заказ отменен"
         })
-        
+        await queueOrTools();
     } catch (error) {
         console.log(error);
         res.status(500).json({
