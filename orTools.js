@@ -290,7 +290,7 @@ const sendOrderPushNotification = async () => {
         );
 
         // Ждем 20 секунд для решения курьера
-        await new Promise(resolve => setTimeout(resolve, 20000));
+        await new Promise(resolve => setTimeout(resolve, 40000));
         console.log(`⏳ Ожидание решения курьера по заказу ${order.orderId} завершено`);
 
         const checkOrder = await Order.findById(order.orderId)
