@@ -38,8 +38,8 @@ export default function SuperAdminCancelledOrders() {
                     <div>Отмененные заказы:</div>
                 </Div>
 
-                {orders && orders.length > 0 && orders.map((order) => (
-                    <div key={order._id}>
+                {orders && orders.length > 0 && orders.map((item) => (
+                    <div key={item._id}>
                         <Li icon={item?.franchisee?._id === "66f15c557a27c92d447a16a0"}>
                             <div className="flex items-center gap-x-3 flex-wrap">
                                 <div className={clsx("", {
