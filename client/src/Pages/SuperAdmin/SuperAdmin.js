@@ -10,6 +10,7 @@ import useFetchUserData from "../../customHooks/useFetchUserData";
 export default function SuperAdmin() {
     const [info, setInfo] = useState({});
     const userData = useFetchUserData();
+    const [cancelledOrdersCount, setCancelledOrdersCount] = useState(0);
 
     useEffect(() => {
         api.get("/getMainPageInfoSA", {
@@ -17,6 +18,18 @@ export default function SuperAdmin() {
         })
             .then(({ data }) => {
                 setInfo(data)
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    }, []);
+
+    useEffect(() => {
+        api.get("/getCancelledOrdersCount", {
+            headers: { "Content-Type": "application/json" },
+        })
+            .then(({ data }) => {
+                setCancelledOrdersCount(data.count)
             })
             .catch((e) => {
                 console.log(e);
@@ -36,6 +49,12 @@ export default function SuperAdmin() {
         <Container role={userData?.role}>
             <Div>
                 <div>Главная панель</div>
+            </Div>
+            <Div />
+            <Div>
+                <LinkButton href="/superAdminCancelledOrders">
+                    <div>Отмененные заказы: <Info>{cancelledOrdersCount}</Info></div>
+                </LinkButton>
             </Div>
             <Div />
             <Div>
