@@ -8,11 +8,117 @@ import Container from "../../Components/Container";
 import clsx from "clsx";
 import OrderInfo from "../../Components/OrderInfo";
 import useFetchUserData from "../../customHooks/useFetchUserData";
+import ChooseFranchiseeModal from "../../Components/ChooseFranchiseeModal";
+
+import useScrollPosition from "../../customHooks/useScrollPosition";
+
+const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 
 export default function SuperAdminCancelledOrders() {
+    const scrollPosition = useScrollPosition();
     const userData = useFetchUserData();
     const [orders, setOrders] = useState([]);
+    const [additionalOrders, setAdditionalOrders] = useState([])
+    const [search, setSearch] = useState("");
+    const [searchF, setSearchF] = useState("");
+    const [sa, setSa] = useState(false)
+    const [searchStatus, setSearchStatus] = useState(false);
+    const [dates, setDates] = useState({
+        startDate: getCurrentDate(),
+        endDate: getCurrentDate(),
+    });
+    const [franchiseesModal, setFranchiseesModal] = useState(false);
+    const [franchisee, setFranchisee] = useState(null);
+    const [order, setOrder] = useState(null)
+    const [totalOrders, setTotalOrders] = useState(0)
+
+    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [status, setStatus] = useState("");
+
+    const closeSnack = () => {
+        setOpen(false);
+    };
+
+    const closeFranchiseeModal = () => {
+        setFranchiseesModal(false);
+    };
+
+    const chooseFranchisee = (chFranchisee) => {
+        setFranchisee(chFranchisee);
+        setFranchiseesModal(false);
+    };
+
+    const getAdditionalOrders = () => {
+        api.post("/getAdditionalOrders", {...dates}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            setAdditionalOrders(data.orders)
+        }).catch((e) => {
+            console.log(e);
+        })
+    }
+
+    useEffect(() => {
+        getAdditionalOrders()
+    }, []);
+
+    const updateOrderTransfer = () => {
+        api.post("/updateOrderTransfer", {orderId: order, change: "transferredFranchise", changeData: franchisee?.fullName}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            if (data.success) {
+                setOpen(true)
+                setMessage(data.message)
+                setStatus("success")
+                const temporaryOrders = [...orders]
+                temporaryOrders.forEach((item) => {
+                    if (item._id === order) {
+                        item.transferred = true
+                        item.transferredFranchise = franchisee?.fullName
+                    }
+                })
+                setOrders(temporaryOrders)
+            }
+        }).catch((e) => {})
+    }
+
+    const closeOrderTransfer = (id) => {
+        api.post("/updateOrderTransfer", {orderId: id, change: "transferredFranchise", changeData: ""}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            if (data.success) {
+                setOpen(true)
+                setMessage(data.message)
+                setStatus("success")
+                const temporaryOrders = [...orders]
+                temporaryOrders.forEach((item) => {
+                    if (item._id === id) {
+                        item.transferred = false
+                        item.transferredFranchise = ""
+                    }
+                })
+                setOrders(temporaryOrders)
+            }
+        }).catch((e) => {})
+    }
+
+    useEffect(() => {
+        if (order && franchisee) {
+            updateOrderTransfer()
+        }
+    }, [franchisee])
 
     const getCancelledOrders = () => {
         api.get("/getCancelledOrders", {
@@ -30,6 +136,13 @@ export default function SuperAdminCancelledOrders() {
 
     return (
         <div className="relative">
+            {franchiseesModal && (
+                    <ChooseFranchiseeModal
+                        closeFranchiseeModal={closeFranchiseeModal}
+                        chooseFranchisee={chooseFranchisee}
+                        scrollPosition={scrollPosition}
+                    />
+                )}
             <Container role={userData?.role}>
                 
                 <Div>Список заказов</Div>
