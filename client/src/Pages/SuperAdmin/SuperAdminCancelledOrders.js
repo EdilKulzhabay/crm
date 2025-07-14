@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState, useEffect } from "react";
-import api from "../api";
-import Div from "../Components/Div";
-import Li from "../Components/Li";
-import MyButton from "../Components/MyButton";
-import LinkButton from "../Components/LinkButton";
-import Container from "../Components/Container";
+import api from "../../api";
+import Div from "../../Components/Div";
+import Li from "../../Components/Li";
+import MyButton from "../../Components/MyButton";
+import LinkButton from "../../Components/LinkButton";
+import Container from "../../Components/Container";
 import clsx from "clsx";
-import OrderInfo from "../Components/OrderInfo";
-import useFetchUserData from "../customHooks/useFetchUserData";
+import OrderInfo from "../../Components/OrderInfo";
+import useFetchUserData from "../../customHooks/useFetchUserData";
 
 
 export default function SuperAdminCancelledOrders() {
