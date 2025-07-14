@@ -1116,4 +1116,40 @@ export const fixRinat = async (req, res) => {
     }
 }
 
+export const getCancelledOrders = async (req, res) => {
+    try {
+        const today = new Date();
+        const todayString = getDateAlmaty(today);
 
+        const orders = await Order.find({
+            status: "cancelled",
+            "date.d": todayString,
+        }).populate("client")
+
+        res.json({ orders, success: true })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getCancelledOrdersCount = async (req, res) => {
+    try {
+        const today = new Date();
+        const todayString = getDateAlmaty(today);
+
+        const count = await Order.countDocuments({
+            status: "cancelled",
+            "date.d": todayString,
+        })
+
+        res.json({ count, success: true })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

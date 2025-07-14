@@ -233,6 +233,8 @@ app.post("/getCompletedOrders", checkAuth, OrderController.getCompletedOrders)
 app.post("/deleteOrder", checkAuth, OrderController.deleteOrder)
 app.post("/getOrdersForAggregator", OrderController.getOrdersForAggregator)
 app.get("/fixRinat", OrderController.fixRinat)
+app.get("/getCancelledOrders", OrderController.getCancelledOrders)
+app.get("/getCancelledOrdersCount", OrderController.getCancelledOrdersCount)
 
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
