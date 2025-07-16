@@ -1160,7 +1160,8 @@ export const getResultForToday = async (req, res) => {
         const todayString = getDateAlmaty(today);
 
         const orders = await Order.find({
-            "date.d": todayString
+            "date.d": todayString,
+            forAggregator: true
         }).populate("franchisee")
 
         const deliveredOrders = {} 
