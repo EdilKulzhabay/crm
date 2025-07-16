@@ -250,16 +250,17 @@ const zeroing = async () => {
     console.log("✅ Старые назначения сброшены (начатые заказы сохранены)\n");
 }
 
+// Глобальный объект для отслеживания отправленных уведомлений в текущей сессии
+const sentNotifications = new Set();
+// Ограничение частоты отправки уведомлений (минимальный интервал в миллисекундах)
+const NOTIFICATION_COOLDOWN = 60000; // 1 минута
+const lastNotificationTime = new Map(); // Время последнего уведомления для каждого курьера
 
 const sendOrderPushNotification = async () => {
     const couriers = await CourierAggregator.find({status: "active", onTheLine: true})
     let needOrTools = false
+    
     for (const courier of couriers) {
-
-        // if (courier.orders.length === 0 || courier.orders.length === undefined || courier.orders.length === null) {
-        //     continue;
-        // }
-
         if (courier.order && courier.order.orderId) {
             continue;
         }
@@ -273,6 +274,36 @@ const sendOrderPushNotification = async () => {
             continue;
         }
         
+        // ПРОВЕРКА ЧАСТОТЫ: Не отправляем уведомления слишком часто
+        const lastNotification = lastNotificationTime.get(courier._id.toString());
+        const now = Date.now();
+        
+        if (lastNotification && (now - lastNotification) < NOTIFICATION_COOLDOWN) {
+            const remainingTime = Math.ceil((NOTIFICATION_COOLDOWN - (now - lastNotification)) / 1000);
+            console.log(`⏳ Курьер ${courier.fullName} получил уведомление недавно, ждем еще ${remainingTime} секунд`);
+            continue;
+        }
+        
+        // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
+        const notificationKey = `${courier._id}_${order.orderId}`;
+        
+        // Проверяем, не было ли уже отправлено уведомление для этого заказа в текущей сессии
+        if (sentNotifications.has(notificationKey)) {
+            console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже отправлено в этой сессии, пропускаем`);
+            continue;
+        }
+        
+        // Проверяем в базе данных, не было ли уже отправлено уведомление
+        const existingRestriction = await CourierRestrictions.findOne({
+            orderId: order.orderId,
+            courierId: courier._id
+        });
+        
+        if (existingRestriction) {
+            console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже было отправлено ранее, пропускаем`);
+            continue;
+        }
+        
         let messageBody = "Заказ на ";
         if (order.products.b12 > 0) {
             messageBody += `${order.products.b12} бутылок 12.5л `
@@ -281,15 +312,26 @@ const sendOrderPushNotification = async () => {
             messageBody += `${order.products.b19} бутылок 19.8л`
         }
         
-        await pushNotification(
-            "newOrder",
-            messageBody,
-            [courier.notificationPushToken],
-            "newOrder",
-            order
-        );
+        try {
+            await pushNotification(
+                "newOrder",
+                messageBody,
+                [courier.notificationPushToken],
+                "newOrder",
+                order
+            );
+            
+            // Отмечаем уведомление как отправленное
+            sentNotifications.add(notificationKey);
+            lastNotificationTime.set(courier._id.toString(), now);
+            console.log(`✅ Уведомление отправлено курьеру ${courier.fullName} для заказа ${order.orderId}`);
+            
+        } catch (error) {
+            console.error(`❌ Ошибка отправки уведомления курьеру ${courier.fullName}:`, error);
+            continue;
+        }
 
-        // Ждем 20 секунд для решения курьера
+        // Ждем 40 секунд для решения курьера
         await new Promise(resolve => setTimeout(resolve, 40000));
         console.log(`⏳ Ожидание решения курьера по заказу ${order.orderId} завершено`);
 
@@ -306,15 +348,15 @@ const sendOrderPushNotification = async () => {
                 { $set: { order: null, orders: [] } },
             );
         }
-
     }
 
+    // УБИРАЕМ РЕКУРСИВНЫЙ ВЫЗОВ: Вместо этого возвращаем флаг
     if (needOrTools) {
-        // Вызываем orTools напрямую, чтобы избежать циклической зависимости
-        // Это внутренний вызов, который должен выполниться сразу
-        console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
-        await orTools();
+        console.log("🔄 Требуется перезапуск orTools после отклонения заказов курьерами");
+        return true; // Возвращаем флаг вместо вызова orTools()
     }
+    
+    return false; // Нет необходимости в перезапуске
 }
 
 // Функция для очистки дубликатов заказов
@@ -688,14 +730,14 @@ export default async function orTools() {
         return;
     }
 
-    for (const route of result) {
-        const courier = couriers.find(c => c.id === route.courier_id)
+    // for (const route of result) {
+    //     const courier = couriers.find(c => c.id === route.courier_id)
         
-        // Проверяем, есть ли у курьера активный заказ
-        if (!courier.completeFirstOrder && courier.order === null) {
-            route.orders.reverse()
-        }
-    }
+    //     // Проверяем, есть ли у курьера активный заказ
+    //     if (!courier.completeFirstOrder && courier.order === null) {
+    //         route.orders.reverse()
+    //     }
+    // }
 
     try {
         const visualizeResult = await runPythonVisualize(couriers, orders, result);
@@ -829,12 +871,17 @@ export default async function orTools() {
 
     console.log("Отправляем push уведомления");
     
-    await sendOrderPushNotification();
+    const needOrTools = await sendOrderPushNotification();
+
+    if (needOrTools) {
+        console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
+        await orTools();
+    }
 
     console.log("✅ Push уведомления отправлены");
 }
 
-// orTools();
+orTools();
 
 async function ensureMongoConnection() {
     if (mongoose.connection.readyState === 0) {
