@@ -235,7 +235,7 @@ app.post("/getOrdersForAggregator", OrderController.getOrdersForAggregator)
 app.get("/fixRinat", OrderController.fixRinat)
 app.get("/getCancelledOrders", OrderController.getCancelledOrders)
 app.get("/getCancelledOrdersCount", OrderController.getCancelledOrdersCount)
-
+app.get("/getResultForToday", OrderController.getResultForToday)
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
 app.get("/getFirstQueue", DepartmentController.getFirstQueue)

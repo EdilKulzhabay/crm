@@ -1153,3 +1153,36 @@ export const getCancelledOrdersCount = async (req, res) => {
         });
     }
 }
+
+export const getResultForToday = async (req, res) => {
+    try {
+        const today = new Date();
+        const todayString = getDateAlmaty(today);
+
+        const orders = await Order.find({
+            "date.d": todayString
+        }).populate("user")
+
+        const deliveredOrders = {} 
+        orders.map((order) => {
+            if (order.status === "delivered") {
+                deliveredOrders[order.user.fullName] += 1
+            }
+        })
+
+        const activeOrders = {}
+        orders.map((order) => {
+            if (order.status !== "delivered" && order.status !== "cancelled") {
+                activeOrders[order.user.fullName] += 1
+            }
+        })
+        
+
+        res.json({ deliveredOrders, activeOrders })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
