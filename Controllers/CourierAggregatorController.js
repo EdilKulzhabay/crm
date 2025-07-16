@@ -12,6 +12,17 @@ import orTools from "../orTools.js";
 import { getDateAlmaty } from "../utils/dateUtils.js";
 import queueOrTools from "../orToolsQueue.js";
 
+// Функция для сброса ограничений уведомлений (будет импортирована из orTools.js)
+let resetNotificationLimits = null;
+
+// Динамический импорт для избежания циклических зависимостей
+const loadResetFunction = async () => {
+    if (!resetNotificationLimits) {
+        const orToolsModule = await import("../orTools.js");
+        resetNotificationLimits = orToolsModule.resetNotificationLimits;
+    }
+};
+
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
     port: 465, // Или 587 для TLS
@@ -776,10 +787,11 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const order = await Order.findById(orderId)
 
+        // ИСПРАВЛЕНИЕ: Объединяем $set и $inc в один объект
         await CourierAggregator.updateOne(
             { _id: id },
-            { $set: { order: null, orders: [] } },
             { 
+                $set: { order: null, orders: [] },
                 $inc: {
                     capacity12: order.products.b12,
                     capacity19: order.products.b19
@@ -795,6 +807,20 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                 courierAggregator: null
             }}
         )
+
+        // СБРАСЫВАЕМ ОГРАНИЧЕНИЯ УВЕДОМЛЕНИЙ для этого курьера
+        try {
+            await loadResetFunction();
+            if (resetNotificationLimits) {
+                resetNotificationLimits(id.toString());
+                console.log(`🔄 Сброшены ограничения уведомлений для курьера ${id}`);
+            }
+        } catch (error) {
+            console.log("⚠️ Не удалось сбросить ограничения уведомлений:", error.message);
+        }
+
+        console.log(`✅ Заказ ${orderId} отменен курьером ${id}`);
+        console.log(`   Возвращено бутылок: 12л=${order.products.b12}, 19л=${order.products.b19}`);
 
         res.json({
             success: true,
