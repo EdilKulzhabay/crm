@@ -124,7 +124,349 @@ export function runPythonVisualize(couriers, orders, routes) {
     });
 }
 
+const zeroing = async () => {
+    const todayString = getDateAlmaty();
 
+    // const orders = await Order.find({
+    //     "date.d": todayString,
+    //     status: "delivered",
+    //     forAggregator: true,
+    //     $or: [
+    //         { "address.point": { $exists: false } },
+    //         { "address.point.lat": { $eq: null } },
+    //         { "address.point.lon": { $eq: null } }
+    //     ]
+    // })
+
+    // for (const order of orders) {
+    //     const client = await Client.findById(order.client)
+    //     const clientAddresses = client.addresses;
+
+    //     // Функция для получения ID 2GIS по адресу
+    //     const fetchAddressId = async (item) => {
+    //         try {
+    //             const response = await axios.get('https://catalog.api.2gis.com/3.0/items/geocode', {
+    //                 params: {
+    //                     fields: "items.point",
+    //                     key: "f5af220d-c60a-4cf6-a350-4a953c324a3d",
+    //                     q: `Алматы, ${item.street}`,
+    //                 },
+    //             });
+    //             console.log("response.data.result", response.data.result);
+                
+    //             return response.data.result.items[0] || null; // Возвращаем ID или null
+    //         } catch (error) {
+    //             console.log(`Невозможно найти адрес: ${item.street}`);
+    //             return null;
+    //         }
+    //     };
+
+    //     // Получаем IDs для всех адресов
+    //     const res2Gis = await Promise.allSettled(clientAddresses.map(fetchAddressId));
+    //     res2Gis.forEach((result, index) => {
+    //         console.log("result: ", result);
+            
+    //         if (result.status === "fulfilled") {
+    //             clientAddresses[index].id2Gis = result?.value?.id
+    //             clientAddresses[index].point = result?.value?.point
+    //         } else {
+    //             clientAddresses[index].id2Gis = null
+    //             clientAddresses[index].point = {lat: null, lon: null}
+    //         }
+    //     });
+
+    //     await Client.findByIdAndUpdate(client._id, { $set: { addresses: clientAddresses } })
+
+    //     const orderAddress = clientAddresses.find(address => order.address.actual.includes(address.street))
+    //     if (orderAddress) {
+    //         await Order.findByIdAndUpdate(order._id, { $set: { address: orderAddress } })
+    //     }
+    // }
+
+    // await Order.updateMany(
+    //     { 
+    //         "date.d": todayString,
+    //         franchisee: { 
+    //             $in: [
+    //                 new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0'), 
+    //                 new mongoose.Types.ObjectId('66fc0cc6953c2dbbc86c2132'), 
+    //                 new mongoose.Types.ObjectId('66fc0d01953c2dbbc86c2135'), 
+    //                 new mongoose.Types.ObjectId('66fc0d3e953c2dbbc86c2138'),
+    //                 new mongoose.Types.ObjectId('67010493e6648af4cb0213b7')
+    //             ]
+    //         },
+    //         status: { $nin: ["onTheWay", "delivered", "cancelled"] }
+    //     },
+    //     { $set: { forAggregator: true } }
+    // )
+
+    const resetResult = await Order.updateMany(
+        { 
+            "date.d": todayString,
+            forAggregator: true,
+            status: "awaitingOrder"
+        },
+        { 
+            $set: { courierAggregator: null }
+        }
+    );
+    
+    console.log(`📊 Сброшено назначений: ${resetResult.modifiedCount} заказов`);
+
+    const couriersToUpdate = await CourierAggregator.find({ 
+        onTheLine: true, 
+        status: "active" 
+    });
+    
+    for (const courier of couriersToUpdate) {
+
+        const activeOrder = courier.order && courier.order.orderId ? courier.order : null
+
+        const completeFirstOrder = courier.capacity12 > 0 || courier.capacity19 > 0 ? true : false
+        
+        // ПРОВЕРКА НА ДУБЛИКАТЫ: Убеждаемся что активный заказ не дублируется
+        let ordersToSet = [];
+        if (activeOrder) {
+            // Проверяем, нет ли уже этого заказа в массиве orders
+            const existingOrder = courier.orders.find(order => 
+                order.orderId.toString() === activeOrder.orderId.toString()
+            );
+            
+            if (!existingOrder) {
+                ordersToSet = [activeOrder];
+                console.log(`✅ Активный заказ ${activeOrder.orderId} добавлен курьеру ${courier.fullName}`);
+            } else {
+                ordersToSet = [existingOrder];
+                console.log(`✅ Активный заказ ${activeOrder.orderId} уже есть у курьера ${courier.fullName}`);
+            }
+        }
+        
+        await CourierAggregator.updateOne(
+            { _id: courier._id },
+            { $set: { orders: ordersToSet, completeFirstOrder} }
+        );
+    }
+    
+    console.log("✅ Старые назначения сброшены (начатые заказы сохранены)\n");
+}
+
+// Глобальный объект для отслеживания отправленных уведомлений в текущей сессии
+const sentNotifications = new Set();
+// Ограничение частоты отправки уведомлений (минимальный интервал в миллисекундах)
+const NOTIFICATION_COOLDOWN = 60000; // 1 минута
+const lastNotificationTime = new Map(); // Время последнего уведомления для каждого курьера
+
+const sendOrderPushNotification = async () => {
+    const couriers = await CourierAggregator.find({status: "active", onTheLine: true})
+    let needOrTools = false
+    
+    for (const courier of couriers) {
+        if (courier.order && courier.order.orderId) {
+            continue;
+        }
+
+        const orders = courier.orders
+        const order = orders[0]
+        
+        // Проверяем, что заказ существует
+        if (!order || !order.products) {
+            console.log(`⚠️  Курьер ${courier.fullName} не имеет назначенных заказов или заказ некорректен`);
+            continue;
+        }
+        
+        // ПРОВЕРКА ЧАСТОТЫ: Не отправляем уведомления слишком часто
+        const lastNotification = lastNotificationTime.get(courier._id.toString());
+        const now = Date.now();
+        
+        if (lastNotification && (now - lastNotification) < NOTIFICATION_COOLDOWN) {
+            const remainingTime = Math.ceil((NOTIFICATION_COOLDOWN - (now - lastNotification)) / 1000);
+            console.log(`⏳ Курьер ${courier.fullName} получил уведомление недавно, ждем еще ${remainingTime} секунд`);
+            continue;
+        }
+        
+        // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
+        const notificationKey = `${courier._id}_${order.orderId}`;
+        
+        // Проверяем, не было ли уже отправлено уведомление для этого заказа в текущей сессии
+        if (sentNotifications.has(notificationKey)) {
+            console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже отправлено в этой сессии, пропускаем`);
+            continue;
+        }
+        
+        // Проверяем в базе данных, не было ли уже отправлено уведомление
+        const existingRestriction = await CourierRestrictions.findOne({
+            orderId: order.orderId,
+            courierId: courier._id
+        });
+        
+        if (existingRestriction) {
+            console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже было отправлено ранее, пропускаем`);
+            continue;
+        }
+        
+        let messageBody = "Заказ на ";
+        if (order.products.b12 > 0) {
+            messageBody += `${order.products.b12} бутылок 12.5л `
+        }
+        if (order.products.b19 > 0) {
+            messageBody += `${order.products.b19} бутылок 19.8л`
+        }
+        
+        try {
+            await pushNotification(
+                "newOrder",
+                messageBody,
+                [courier.notificationPushToken],
+                "newOrder",
+                order
+            );
+            
+            // Отмечаем уведомление как отправленное
+            sentNotifications.add(notificationKey);
+            lastNotificationTime.set(courier._id.toString(), now);
+            console.log(`✅ Уведомление отправлено курьеру ${courier.fullName} для заказа ${order.orderId}`);
+            
+        } catch (error) {
+            console.error(`❌ Ошибка отправки уведомления курьеру ${courier.fullName}:`, error);
+            continue;
+        }
+
+        // Ждем 40 секунд для решения курьера
+        await new Promise(resolve => setTimeout(resolve, 40000));
+        console.log(`⏳ Ожидание решения курьера по заказу ${order.orderId} завершено`);
+
+        const checkOrder = await Order.findById(order.orderId)
+        if (checkOrder.status !== "onTheWay") {
+            needOrTools = true
+            await CourierRestrictions.create({
+                orderId: order.orderId,
+                courierId: courier._id
+            })
+            await Order.findByIdAndUpdate(order.orderId, { $set: { courierAggregator: null } })
+            await CourierAggregator.updateOne(
+                { _id: courier._id },
+                { $set: { order: null, orders: [] } },
+            );
+        }
+    }
+
+    // УБИРАЕМ РЕКУРСИВНЫЙ ВЫЗОВ: Вместо этого возвращаем флаг
+    if (needOrTools) {
+        console.log("🔄 Требуется перезапуск orTools после отклонения заказов курьерами");
+        return true; // Возвращаем флаг вместо вызова orTools()
+    }
+    
+    return false; // Нет необходимости в перезапуске
+}
+
+// Функция для очистки дубликатов заказов
+const cleanupDuplicateOrders = async () => {
+    console.log("🧹 ОЧИСТКА ДУБЛИКАТОВ ЗАКАЗОВ");
+    
+    try {
+        // Получаем всех курьеров с заказами
+        const couriers = await CourierAggregator.find({
+            onTheLine: true,
+            status: "active",
+            orders: { $exists: true, $not: { $size: 0 } }
+        });
+        
+        let totalDuplicatesRemoved = 0;
+        
+        for (const courier of couriers) {
+            const orderIds = courier.orders.map(order => order.orderId.toString());
+            const uniqueOrderIds = [...new Set(orderIds)];
+            
+            if (orderIds.length !== uniqueOrderIds.length) {
+                console.log(`⚠️  Курьер ${courier.fullName} имеет дубликаты заказов:`);
+                console.log(`   Всего заказов: ${orderIds.length}`);
+                console.log(`   Уникальных: ${uniqueOrderIds.length}`);
+                console.log(`   Дубликатов: ${orderIds.length - uniqueOrderIds.length}`);
+                
+                // Создаем уникальный массив заказов
+                const uniqueOrders = [];
+                const seenOrderIds = new Set();
+                
+                for (const order of courier.orders) {
+                    const orderIdStr = order.orderId.toString();
+                    if (!seenOrderIds.has(orderIdStr)) {
+                        uniqueOrders.push(order);
+                        seenOrderIds.add(orderIdStr);
+                    }
+                }
+                
+                // Обновляем курьера с уникальными заказами
+                await CourierAggregator.updateOne(
+                    { _id: courier._id },
+                    { $set: { orders: uniqueOrders } }
+                );
+                
+                const duplicatesRemoved = orderIds.length - uniqueOrderIds.length;
+                totalDuplicatesRemoved += duplicatesRemoved;
+                
+                console.log(`✅ Удалено ${duplicatesRemoved} дубликатов у курьера ${courier.fullName}`);
+            }
+        }
+        
+        // Проверяем заказы, которые могут быть назначены нескольким курьерам
+        const allOrderIds = await CourierAggregator.distinct("orders.orderId");
+        
+        for (const orderId of allOrderIds) {
+            const couriersWithOrder = await CourierAggregator.find({
+                "orders.orderId": orderId
+            });
+            
+            if (couriersWithOrder.length > 1) {
+                console.log(`⚠️  КОНФЛИКТ: Заказ ${orderId} найден у ${couriersWithOrder.length} курьеров:`);
+                couriersWithOrder.forEach(courier => {
+                    console.log(`   - ${courier.fullName}`);
+                });
+                
+                // Проверяем, какому курьеру действительно назначен заказ в базе
+                const order = await Order.findById(orderId);
+                if (order && order.courierAggregator) {
+                    const correctCourier = couriersWithOrder.find(c => 
+                        c._id.toString() === order.courierAggregator.toString()
+                    );
+                    
+                    if (correctCourier) {
+                        console.log(`✅ Заказ должен быть у курьера ${correctCourier.fullName}`);
+                        
+                        // Удаляем заказ у всех остальных курьеров
+                        await CourierAggregator.updateMany(
+                            { 
+                                _id: { $ne: correctCourier._id },
+                                "orders.orderId": orderId 
+                            },
+                            { 
+                                $pull: { 
+                                    orders: { orderId: orderId } 
+                                } 
+                            }
+                        );
+                        
+                        totalDuplicatesRemoved += couriersWithOrder.length - 1;
+                        console.log(`🔄 Заказ ${orderId} удален у ${couriersWithOrder.length - 1} курьеров`);
+                    }
+                } else {
+                    console.log(`⚠️  Заказ ${orderId} не имеет назначенного курьера в базе, удаляем у всех`);
+                    
+                    await CourierAggregator.updateMany(
+                        { "orders.orderId": orderId },
+                        { $pull: { orders: { orderId: orderId } } }
+                    );
+                    
+                    totalDuplicatesRemoved += couriersWithOrder.length;
+                }
+            }
+        }
+        
+        console.log(`✅ Очистка завершена. Удалено дубликатов: ${totalDuplicatesRemoved}`);
+        
+    } catch (error) {
+        console.error("❌ Ошибка при очистке дубликатов:", error);
+    }
+};
 
 export default async function orTools() {
 

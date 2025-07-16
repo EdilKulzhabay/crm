@@ -721,59 +721,6 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             }}
         )
 
-        // await CourierRestrictions.create({
-        //     orderId: orderId,
-        //     courierId: id
-        // })
-
-        // const courier = await CourierAggregator.findById(id)
-
-        // if (courier.orders.length > 0) {
-        //     await new Promise(resolve => setTimeout(resolve, 10000));
-        //     let nextOrder = courier.orders[0]
-        //     console.log("CourierAggregatorController 479, order = ", nextOrder);
-        //     let message = ""
-
-        //     if (nextOrder?.products?.b19 > 0) {
-        //         message += `${nextOrder?.products?.b19} 19.8 бутылей.`
-        //     }
-
-        //     if (nextOrder?.products?.b12 > 0) {
-        //         message += `${nextOrder?.products?.b12} 12.5 бутылей.`
-        //     }
-
-        //     message += `Забрать из аквамаркета: ${nextOrder.aquaMarketAddress}`
-
-        //     await pushNotification(
-        //         "newOrder",
-        //         message,
-        //         [courier.notificationPushToken],
-        //         "newOrder",
-        //         nextOrder
-        //     );
-        //     console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
-            
-        //     await new Promise(resolve => setTimeout(resolve, 40000));
-        //     const currentOrder = await Order.findById(courier.orders[0].orderId)
-        //     if (currentOrder.status !== "onTheWay") {
-        //         const orderIds = courier.orders.map(order => order.orderId);
-
-        //         await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
-                
-        //         await CourierAggregator.updateOne(
-        //             { _id: id },
-        //             { 
-        //                 $set: { 
-        //                     orders: [],
-        //                     order: null 
-        //                 }
-        //             }
-        //         );
-        //     }
-        // } 
-
-        
-
         res.json({
             success: true,
             message: "Заказ отменен"
@@ -1133,18 +1080,24 @@ export const appointmentFranchisee = async (req, res) => {
 //     {
 //       _id: {
 //         $in: [
-//           ObjectId("6874b83c3b2f39f74d1f76b4"),
-//           ObjectId("6875437828192aeb917f6b87"),
-//           ObjectId("6875437828192aeb917f6b87"),
-//           ObjectId("687543b428192aeb917f6ca3"),
+//           ObjectId("68774a7576e0bf50af856e45")
 //         ]
 //       }
 //     },
 //     {
-//       $set: { forAggregator: true }
+//       $set: { forAggregator: false, status: "awaitingOrder", courierAggregator: null }
 //     }
 //   )
 
-//   db.courieraggregators.updateOne({fullName: 'Василий Яковлев'}, {$set: { order: null, orders:[], completeFirstOrder: true}})
-//   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[], onTheLine: false}})
+//   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, {$set: { order: null, orders:[]}})
+//   db.courieraggregators.updateOne({fullName: 'Василий Яковлев'}, {$set: { order: null, orders:[]}})
+//   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[]}})
+  
+// db.orders.find({
+//     "date.d": "2025-07-16",
+//     $or: [
+//       { "products.b12": { $in: [null, ""] } },
+//       { "products.b19": { $in: [null, ""] } }
+//     ]
+//   })
   

@@ -12,6 +12,10 @@ admin.initializeApp({
 
 let expo = new Expo({ useFcmV1: true });
 
+// Система отслеживания отправленных уведомлений для предотвращения дублирования
+const sentNotifications = new Map();
+const NOTIFICATION_DEDUP_WINDOW = 30000; // 30 секунд для дедупликации
+
 // Валидация входных данных
 function validateNotificationData(messageTitle, messageBody, expoTokens, newStatus, order) {
     if (!messageTitle || typeof messageTitle !== 'string') {
@@ -31,6 +35,13 @@ function validateNotificationData(messageTitle, messageBody, expoTokens, newStat
     }
 }
 
+// Функция для создания уникального ключа уведомления
+function createNotificationKey(messageTitle, messageBody, expoTokens, newStatus, order) {
+    const orderId = order?.orderId || order?._id || 'no-order';
+    const tokensHash = expoTokens.sort().join('|');
+    return `${messageTitle}_${messageBody}_${tokensHash}_${newStatus}_${orderId}`;
+}
+
 export const pushNotification = async (messageTitle, messageBody, expoTokens, newStatus, order) => {
     try {
         // Валидация входных данных
@@ -48,7 +59,23 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
             throw new Error('Нет валидных токенов для отправки');
         }
 
+        // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
+        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, order);
+        const now = Date.now();
+        
+        // Проверяем, не было ли уже отправлено такое же уведомление недавно
+        const lastSent = sentNotifications.get(notificationKey);
+        if (lastSent && (now - lastSent) < NOTIFICATION_DEDUP_WINDOW) {
+            const remainingTime = Math.ceil((NOTIFICATION_DEDUP_WINDOW - (now - lastSent)) / 1000);
+            console.log(`⚠️  ДУБЛИКАТ: Аналогичное уведомление было отправлено ${remainingTime} секунд назад, пропускаем`);
+            console.log(`   Ключ: ${notificationKey}`);
+            return;
+        }
+
         console.log(`Отправка уведомления "${messageTitle}" на ${validTokens.length} устройств`);
+
+        let successCount = 0;
+        let errorCount = 0;
 
         for (const token of validTokens) {
             try {
@@ -70,6 +97,7 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
 
                     const ticket = await expo.sendPushNotificationsAsync([message]);
                     console.log("Expo push notification ticket:", ticket);
+                    successCount++;
                 } else {
                     // Отправка через Firebase
                     const message = {
@@ -100,12 +128,31 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
 
                     const response = await admin.messaging().send(message);
                     console.log("Firebase message sent successfully:", response);
+                    successCount++;
                 }
             } catch (tokenError) {
                 console.error(`Ошибка при отправке уведомления на токен ${token}:`, tokenError);
+                errorCount++;
                 // Продолжаем отправку на другие токены
             }
         }
+
+        // Отмечаем уведомление как отправленное только если была хотя бы одна успешная отправка
+        if (successCount > 0) {
+            sentNotifications.set(notificationKey, now);
+            console.log(`✅ Уведомление успешно отправлено: ${successCount} успешно, ${errorCount} ошибок`);
+            
+            // Очищаем старые записи (старше 5 минут)
+            const cleanupTime = now - (5 * 60 * 1000);
+            for (const [key, timestamp] of sentNotifications.entries()) {
+                if (timestamp < cleanupTime) {
+                    sentNotifications.delete(key);
+                }
+            }
+        } else {
+            console.log(`❌ Не удалось отправить уведомление ни на одно устройство`);
+        }
+
     } catch (error) {
         console.error("Критическая ошибка при отправке уведомлений:", error);
         throw error;
