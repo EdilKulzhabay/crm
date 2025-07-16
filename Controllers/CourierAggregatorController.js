@@ -767,7 +767,12 @@ export const cancelOrderCourierAggregator = async (req, res) => {
     try {
         const id = req.userId
 
+        console.log("we in cancelOrderCourierAggregator courierId = ", id);
+
         const {orderId, reason} = req.body
+
+        console.log("we in cancelOrderCourierAggregator orderId, reason = ", orderId, reason);
+        
 
         const order = await Order.findById(orderId)
 
