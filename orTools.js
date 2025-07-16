@@ -250,30 +250,16 @@ const zeroing = async () => {
     console.log("✅ Старые назначения сброшены (начатые заказы сохранены)\n");
 }
 
-// Глобальный объект для отслеживания отправленных уведомлений в текущей сессии
-const sentNotifications = new Set();
-// Ограничение частоты отправки уведомлений (минимальный интервал в миллисекундах)
-const NOTIFICATION_COOLDOWN = 60000; // 1 минута
-const lastNotificationTime = new Map(); // Время последнего уведомления для каждого курьера
-
-// Функция для сброса ограничений уведомлений для конкретного курьера
-export const resetNotificationLimits = (courierId) => {
-    lastNotificationTime.delete(courierId);
-    console.log(`🔄 Сброшены ограничения уведомлений для курьера ${courierId}`);
-};
-
-// Функция для полной очистки всех ограничений уведомлений
-export const clearAllNotificationLimits = () => {
-    sentNotifications.clear();
-    lastNotificationTime.clear();
-    console.log(`🧹 Очищены все ограничения уведомлений`);
-};
 
 const sendOrderPushNotification = async () => {
     const couriers = await CourierAggregator.find({status: "active", onTheLine: true})
     let needOrTools = false
-    
     for (const courier of couriers) {
+
+        // if (courier.orders.length === 0 || courier.orders.length === undefined || courier.orders.length === null) {
+        //     continue;
+        // }
+
         if (courier.order && courier.order.orderId) {
             continue;
         }
@@ -287,44 +273,6 @@ const sendOrderPushNotification = async () => {
             continue;
         }
         
-        // ПРОВЕРКА ЧАСТОТЫ: Не отправляем уведомления слишком часто
-        const lastNotification = lastNotificationTime.get(courier._id.toString());
-        const now = Date.now();
-        
-        if (lastNotification && (now - lastNotification) < NOTIFICATION_COOLDOWN) {
-            const remainingTime = Math.ceil((NOTIFICATION_COOLDOWN - (now - lastNotification)) / 1000);
-            console.log(`⏳ Курьер ${courier.fullName} получил уведомление недавно, ждем еще ${remainingTime} секунд`);
-            
-            // ИСПРАВЛЕНИЕ: Если это новый заказ (не тот, который только что отменили), 
-            // то сбрасываем ограничение частоты для этого курьера
-            const notificationKey = `${courier._id}_${order.orderId}`;
-            if (!sentNotifications.has(notificationKey)) {
-                console.log(`🔄 Сбрасываем ограничение частоты для курьера ${courier.fullName} - новый заказ`);
-                lastNotificationTime.delete(courier._id.toString());
-            }
-            continue;
-        }
-        
-        // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
-        // const notificationKey = `${courier._id}_${order.orderId}`;
-        
-        // // Проверяем, не было ли уже отправлено уведомление для этого заказа в текущей сессии
-        // if (sentNotifications.has(notificationKey)) {
-        //     console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже отправлено в этой сессии, пропускаем`);
-        //     continue;
-        // }
-        
-        // // Проверяем в базе данных, не было ли уже отправлено уведомление
-        // const existingRestriction = await CourierRestrictions.findOne({
-        //     orderId: order.orderId,
-        //     courierId: courier._id
-        // });
-        
-        // if (existingRestriction) {
-        //     console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже было отправлено ранее, пропускаем`);
-        //     continue;
-        // }
-        
         let messageBody = "Заказ на ";
         if (order.products.b12 > 0) {
             messageBody += `${order.products.b12} бутылок 12.5л `
@@ -333,26 +281,15 @@ const sendOrderPushNotification = async () => {
             messageBody += `${order.products.b19} бутылок 19.8л`
         }
         
-        try {
-            await pushNotification(
-                "newOrder",
-                messageBody,
-                [courier.notificationPushToken],
-                "newOrder",
-                order
-            );
-            
-            // Отмечаем уведомление как отправленное
-            sentNotifications.add(notificationKey);
-            lastNotificationTime.set(courier._id.toString(), now);
-            console.log(`✅ Уведомление отправлено курьеру ${courier.fullName} для заказа ${order.orderId}`);
-            
-        } catch (error) {
-            console.error(`❌ Ошибка отправки уведомления курьеру ${courier.fullName}:`, error);
-            continue;
-        }
+        await pushNotification(
+            "newOrder",
+            messageBody,
+            [courier.notificationPushToken],
+            "newOrder",
+            order
+        );
 
-        // Ждем 40 секунд для решения курьера
+        // Ждем 20 секунд для решения курьера
         await new Promise(resolve => setTimeout(resolve, 40000));
         console.log(`⏳ Ожидание решения курьера по заказу ${order.orderId} завершено`);
 
@@ -369,15 +306,19 @@ const sendOrderPushNotification = async () => {
                 { $set: { order: null, orders: [] } },
             );
         }
+
     }
 
-    // УБИРАЕМ РЕКУРСИВНЫЙ ВЫЗОВ: Вместо этого возвращаем флаг
     if (needOrTools) {
+        // Вызываем orTools напрямую, чтобы избежать циклической зависимости
+        // Это внутренний вызов, который должен выполниться сразу
+        console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
+        await orTools();
         console.log("🔄 Требуется перезапуск orTools после отклонения заказов курьерами");
         return true; // Возвращаем флаг вместо вызова orTools()
     }
     
-    return false; // Нет необходимости в перезапуске
+    return false;
 }
 
 // Функция для очистки дубликатов заказов
@@ -492,9 +433,6 @@ const cleanupDuplicateOrders = async () => {
 export default async function orTools() {
     await ensureMongoConnection();
 
-    // ОЧИСТКА ОГРАНИЧЕНИЙ УВЕДОМЛЕНИЙ ПЕРЕД НАЧАЛОМ НОВОГО ЦИКЛА
-    clearAllNotificationLimits();
-
     // ОЧИСТКА ДУБЛИКАТОВ ПЕРЕД НАЧАЛОМ РАБОТЫ
     await cleanupDuplicateOrders();
 
@@ -514,14 +452,18 @@ export default async function orTools() {
         })
         .map(courier => {
             // Исправляем обработку активных заказов - координаты в clientPoints
-            const courierOrder = courier.order && courier.order.orderId && courier.order.clientPoints ? {
-                orderId: courier.order.orderId,
-                status: courier.order.status,
-                lat: courier.order.clientPoints.lat,
-                lon: courier.order.clientPoints.lon,
-                bottles_12: courier.order.products ? courier.order.products.b12 : 0,
-                bottles_19: courier.order.products ? courier.order.products.b19 : 0
-            } : null
+            let courierOrder = null;
+            if (courier.order && courier.order.orderId && courier.order.clientPoints) {
+                courierOrder = {
+                    orderId: courier.order.orderId,
+                    status: courier.order.status,
+                    lat: courier.order.clientPoints.lat,
+                    lon: courier.order.clientPoints.lon,
+                    bottles_12: courier.order.products ? courier.order.products.b12 : 0,
+                    bottles_19: courier.order.products ? courier.order.products.b19 : 0,
+                    orderName: courier.order.clientTitle || courier.order.orderId // Используем clientTitle если есть, иначе orderId
+                };
+            }
             
             if (courier.order && courier.order.orderId && !courier.order.clientPoints) {
                 console.log(`⚠️  Курьер ${courier.fullName} имеет активный заказ ${courier.order.orderId} без координат clientPoints`);
@@ -556,7 +498,7 @@ export default async function orTools() {
     const today = new Date();
     const todayString = getDateAlmaty(today);
 
-    const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: "awaitingOrder"})
+    const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: "awaitingOrder"}).populate("client")
     
     console.log(`📊 Найдено заказов для распределения: ${activeOrders.length}`);
     
@@ -574,7 +516,8 @@ export default async function orTools() {
             lon: order.address.point.lon,
             bottles_12: order.products.b12,
             bottles_19: order.products.b19,
-            status: order.status
+            status: order.status,
+            orderName: order.client.fullName
         }));
 
     const courierRestrictions = await CourierRestrictions.find({})
@@ -754,14 +697,14 @@ export default async function orTools() {
         return;
     }
 
-    // for (const route of result) {
-    //     const courier = couriers.find(c => c.id === route.courier_id)
+    for (const route of result) {
+        const courier = couriers.find(c => c.id === route.courier_id)
         
-    //     // Проверяем, есть ли у курьера активный заказ
-    //     if (!courier.completeFirstOrder && courier.order === null) {
-    //         route.orders.reverse()
-    //     }
-    // }
+        // Проверяем, есть ли у курьера активный заказ
+        if (!courier.completeFirstOrder && courier.order === null) {
+            route.orders.reverse()
+        }
+    }
 
     try {
         const visualizeResult = await runPythonVisualize(couriers, orders, result);

@@ -86,13 +86,16 @@ for route in routes:
 
 for order in all_orders_for_viz:
     if order['id'] in served_orders:
+        # Используем orderName если доступно, иначе id
+        order_display_name = order.get('orderName', order['id'])
+        
         if order['id'] in active_orders:
             # Активные заказы - красный круг с толстой границей
             plt.scatter(order['lon'], order['lat'], 
                        c='red', s=120, marker='o', 
                        edgecolors='darkred', linewidth=3,
                        alpha=0.8, zorder=6)
-            plt.annotate(f"{order['id']} [АКТИВНЫЙ]", (order['lon'], order['lat']), 
+            plt.annotate(f"{order_display_name} [АКТИВНЫЙ]", (order['lon'], order['lat']), 
                         xytext=(5, 5), textcoords='offset points', fontsize=8, 
                         bbox=dict(boxstyle="round,pad=0.3", facecolor="red", alpha=0.7))
         else:
@@ -100,14 +103,15 @@ for order in all_orders_for_viz:
             plt.scatter(order['lon'], order['lat'], 
                        c='lightgreen', s=80, marker='o', 
                        alpha=0.7, zorder=5)
-            plt.annotate(f"{order['id']} [НОВЫЙ]", (order['lon'], order['lat']), 
+            plt.annotate(f"{order_display_name} [НОВЫЙ]", (order['lon'], order['lat']), 
                         xytext=(5, 5), textcoords='offset points', fontsize=8)
     else:
         # Необслуженные заказы
+        order_display_name = order.get('orderName', order['id'])
         plt.scatter(order['lon'], order['lat'], 
                    c='lightcoral', s=80, marker='x', 
                    alpha=0.7, zorder=5)
-        plt.annotate(f"{order['id']} (не обслужен)", (order['lon'], order['lat']), 
+        plt.annotate(f"{order_display_name} (не обслужен)", (order['lon'], order['lat']), 
                     xytext=(5, 5), textcoords='offset points', fontsize=8)
 
 # Отображаем маршруты с учетом активных заказов
@@ -291,16 +295,19 @@ for i, route in enumerate(routes):
     print(f"  Старт: ({courier['lat']:.3f}, {courier['lon']:.3f})")
     
     if active_orders_in_route:
-        print(f"  🚚 Активные заказы: {', '.join(active_orders_in_route)}")
+        active_order_names = [orders_dict[order_id].get('orderName', order_id) for order_id in active_orders_in_route]
+        print(f"  🚚 Активные заказы: {', '.join(active_order_names)}")
     if new_orders_in_route:
-        print(f"  📦 Новые заказы: {', '.join(new_orders_in_route)}")
+        new_order_names = [orders_dict[order_id].get('orderName', order_id) for order_id in new_orders_in_route]
+        print(f"  📦 Новые заказы: {', '.join(new_order_names)}")
     
     print(f"  📊 Всего заказов: {len(route['orders'])} (активных: {len(active_orders_in_route)}, новых: {len(new_orders_in_route)})")
     print(f"  🛣️  Расстояние: {route['distance_km']} км")
     
     if route['orders']:
         last_order = orders_dict[route['orders'][-1]]
-        print(f"  🏁 Завершение: ({last_order['lat']:.3f}, {last_order['lon']:.3f}) - {last_order['id']}")
+        last_order_name = last_order.get('orderName', last_order['id'])
+        print(f"  🏁 Завершение: ({last_order['lat']:.3f}, {last_order['lon']:.3f}) - {last_order_name}")
         
         # Проверяем правильность последовательности (активные заказы должны быть первыми)
         if active_orders_in_route:
@@ -320,10 +327,12 @@ for route in routes:
 # Считаем необслуженными только новые заказы (не активные)
 unserved = [order['id'] for order in orders if order['id'] not in served_orders]
 if unserved:
-    print(f"\n❌ Необслуженные заказы: {', '.join(unserved)}")
+    unserved_names = [orders_dict[order_id].get('orderName', order_id) for order_id in unserved]
+    print(f"\n❌ Необслуженные заказы: {', '.join(unserved_names)}")
     for order_id in unserved:
         order = orders_dict[order_id]
-        print(f"  {order_id} (НОВЫЙ): ({order['lat']:.3f}, {order['lon']:.3f})")
+        order_name = order.get('orderName', order_id)
+        print(f"  {order_name} (НОВЫЙ): ({order['lat']:.3f}, {order['lon']:.3f})")
 
 print(f"\n📈 Итоговая статистика:")
 print(f"  Общее расстояние: {sum(route['distance_km'] for route in routes):.2f} км")
