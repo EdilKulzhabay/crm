@@ -306,24 +306,24 @@ const sendOrderPushNotification = async () => {
         }
         
         // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
-        const notificationKey = `${courier._id}_${order.orderId}`;
+        // const notificationKey = `${courier._id}_${order.orderId}`;
         
-        // Проверяем, не было ли уже отправлено уведомление для этого заказа в текущей сессии
-        if (sentNotifications.has(notificationKey)) {
-            console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже отправлено в этой сессии, пропускаем`);
-            continue;
-        }
+        // // Проверяем, не было ли уже отправлено уведомление для этого заказа в текущей сессии
+        // if (sentNotifications.has(notificationKey)) {
+        //     console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже отправлено в этой сессии, пропускаем`);
+        //     continue;
+        // }
         
-        // Проверяем в базе данных, не было ли уже отправлено уведомление
-        const existingRestriction = await CourierRestrictions.findOne({
-            orderId: order.orderId,
-            courierId: courier._id
-        });
+        // // Проверяем в базе данных, не было ли уже отправлено уведомление
+        // const existingRestriction = await CourierRestrictions.findOne({
+        //     orderId: order.orderId,
+        //     courierId: courier._id
+        // });
         
-        if (existingRestriction) {
-            console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже было отправлено ранее, пропускаем`);
-            continue;
-        }
+        // if (existingRestriction) {
+        //     console.log(`⚠️  Уведомление для заказа ${order.orderId} курьера ${courier.fullName} уже было отправлено ранее, пропускаем`);
+        //     continue;
+        // }
         
         let messageBody = "Заказ на ";
         if (order.products.b12 > 0) {
