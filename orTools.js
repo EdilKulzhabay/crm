@@ -256,6 +256,19 @@ const sentNotifications = new Set();
 const NOTIFICATION_COOLDOWN = 60000; // 1 минута
 const lastNotificationTime = new Map(); // Время последнего уведомления для каждого курьера
 
+// Функция для сброса ограничений уведомлений для конкретного курьера
+export const resetNotificationLimits = (courierId) => {
+    lastNotificationTime.delete(courierId);
+    console.log(`🔄 Сброшены ограничения уведомлений для курьера ${courierId}`);
+};
+
+// Функция для полной очистки всех ограничений уведомлений
+export const clearAllNotificationLimits = () => {
+    sentNotifications.clear();
+    lastNotificationTime.clear();
+    console.log(`🧹 Очищены все ограничения уведомлений`);
+};
+
 const sendOrderPushNotification = async () => {
     const couriers = await CourierAggregator.find({status: "active", onTheLine: true})
     let needOrTools = false
@@ -281,6 +294,14 @@ const sendOrderPushNotification = async () => {
         if (lastNotification && (now - lastNotification) < NOTIFICATION_COOLDOWN) {
             const remainingTime = Math.ceil((NOTIFICATION_COOLDOWN - (now - lastNotification)) / 1000);
             console.log(`⏳ Курьер ${courier.fullName} получил уведомление недавно, ждем еще ${remainingTime} секунд`);
+            
+            // ИСПРАВЛЕНИЕ: Если это новый заказ (не тот, который только что отменили), 
+            // то сбрасываем ограничение частоты для этого курьера
+            const notificationKey = `${courier._id}_${order.orderId}`;
+            if (!sentNotifications.has(notificationKey)) {
+                console.log(`🔄 Сбрасываем ограничение частоты для курьера ${courier.fullName} - новый заказ`);
+                lastNotificationTime.delete(courier._id.toString());
+            }
             continue;
         }
         
@@ -470,6 +491,9 @@ const cleanupDuplicateOrders = async () => {
 
 export default async function orTools() {
     await ensureMongoConnection();
+
+    // ОЧИСТКА ОГРАНИЧЕНИЙ УВЕДОМЛЕНИЙ ПЕРЕД НАЧАЛОМ НОВОГО ЦИКЛА
+    clearAllNotificationLimits();
 
     // ОЧИСТКА ДУБЛИКАТОВ ПЕРЕД НАЧАЛОМ РАБОТЫ
     await cleanupDuplicateOrders();

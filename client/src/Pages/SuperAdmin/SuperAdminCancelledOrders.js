@@ -99,6 +99,7 @@ export default function SuperAdminCancelledOrders() {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             console.log(data);
+            getCancelledOrders();
         })
     }
 
@@ -107,6 +108,7 @@ export default function SuperAdminCancelledOrders() {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             console.log(data);
+            getCancelledOrders();
         })
     }
 
