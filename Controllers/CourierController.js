@@ -523,7 +523,7 @@ export const updateCourierOrderStatus = async (req, res) => {
         const client = await Client.findById(clientId2)
         const expoTokens = client?.expoPushToken || []
 
-        if (expoTokens.length > 0 && expoTokens[0] !== null) {
+        if (expoTokens.length > 0 && (expoTokens[0] !== null || expoTokens[0] !== undefined || expoTokens[0] !== "")) {
             const messageTitle = "Обновление статуса заказа"
 
             const messageBody = `Статус: ${newStatus === "delivered" ? "Доставлено" : "В пути"} (${order?.address?.name})`
