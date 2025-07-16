@@ -1161,19 +1161,19 @@ export const getResultForToday = async (req, res) => {
 
         const orders = await Order.find({
             "date.d": todayString
-        }).populate("user")
+        }).populate("franchisee")
 
         const deliveredOrders = {} 
         orders.map((order) => {
             if (order.status === "delivered") {
-                deliveredOrders[order.user.fullName] += 1
+                deliveredOrders[order.franchisee.fullName] += 1
             }
         })
 
         const activeOrders = {}
         orders.map((order) => {
             if (order.status !== "delivered" && order.status !== "cancelled") {
-                activeOrders[order.user.fullName] += 1
+                activeOrders[order.franchisee.fullName] += 1
             }
         })
         
