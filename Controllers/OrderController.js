@@ -1164,19 +1164,28 @@ export const getResultForToday = async (req, res) => {
         }).populate("franchisee")
 
         const deliveredOrders = {} 
-        orders.map((order) => {
-            if (order.status === "delivered") {
-                deliveredOrders[order.franchisee.fullName] += 1
-            }
-        })
-
         const activeOrders = {}
-        orders.map((order) => {
-            if (order.status !== "delivered" && order.status !== "cancelled") {
-                activeOrders[order.franchisee.fullName] += 1
-            }
-        })
         
+        orders.forEach((order) => {
+            if (!order.franchisee) {
+                console.log(`⚠️  Заказ ${order._id} не имеет франчайзи`);
+                return;
+            }
+            
+            const franchiseeName = order.franchisee.fullName;
+            
+            if (order.status === "delivered") {
+                deliveredOrders[franchiseeName] = (deliveredOrders[franchiseeName] || 0) + 1;
+            }
+            
+            if (order.status !== "delivered" && order.status !== "cancelled") {
+                activeOrders[franchiseeName] = (activeOrders[franchiseeName] || 0) + 1;
+            }
+        });
+
+        console.log("📊 Статистика заказов на сегодня:");
+        console.log("   Доставленные заказы:", deliveredOrders);
+        console.log("   Активные заказы:", activeOrders);
 
         res.json({ deliveredOrders, activeOrders })
     } catch (error) {
