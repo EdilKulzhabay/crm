@@ -567,9 +567,9 @@ export const updateOrder = async (req, res) => {
             message: "Заказ успешно изменен",
         });
 
-        if (change === "forAggregator" && changeData === true) {
-            await queueOrTools('order_for_aggregator_' + orderId)
-        }
+        // if (change === "forAggregator" && changeData === true) {
+        //     await queueOrTools('order_for_aggregator_' + orderId)
+        // }
     } catch (error) {
         console.log(error);
         res.status(500).json({
