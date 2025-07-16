@@ -1076,6 +1076,13 @@ export const appointmentFranchisee = async (req, res) => {
 //     }
 //   )
 
+// db.orders.countDocuments({
+//     "date.d": "2025-07-16",
+//     status: "delivered",
+//     forAggregator: true,
+//     franchisee: {$ne: ObjectId('66f15c557a27c92d447a16a0')}
+// })
+
 //   db.orders.updateMany(
 //     {
 //       _id: {
