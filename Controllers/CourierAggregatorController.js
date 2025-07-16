@@ -536,9 +536,80 @@ export const completeOrderCourierAggregator = async (req, res) => {
     try {
         const {orderId, courierId} = req.body
 
-        const order = await Order.findById(orderId).populate("client", "price19 price12")
+        const order = await Order.findById(orderId)
+            .populate("client", "price19 price12")
+            .populate("franchisee", "fullName")
 
         const courier1 = await CourierAggregator.findById(courierId)
+
+        const courierName = courier1?.fullName?.toLowerCase() || '';
+        const franchiseeName = order?.franchisee?.fullName?.toLowerCase() || '';
+
+        // Яковлев Василий
+        if (courierName.includes("василий") && !franchiseeName.includes("василий")) {
+            await Order.updateOne(
+                { _id: order._id },
+                {
+                    $set: {
+                        status: "delivered",
+                        courierAggregator: courierId,
+                        products: courier1.order.products,
+                        transferred: true,
+                        transferredFranchise: "Яковлев Василий"
+                    }
+                }
+            );
+        }
+
+        // Таскын Абикен
+        if (courierName.includes("тасқын") && !franchiseeName.includes("таскын")) {
+            await Order.updateOne(
+                { _id: order._id },
+                {
+                    $set: {
+                        status: "delivered",
+                        courierAggregator: courierId,
+                        products: courier1.order.products,
+                        transferred: true,
+                        transferredFranchise: "Таскын Абикен"
+                    }
+                }
+            );
+        }
+
+        // Сандыбаев Айдынбек
+        if (courierName.includes("айдынбек") && !franchiseeName.includes("айдынбек")) {
+            await Order.updateOne(
+                { _id: order._id },
+                {
+                    $set: {
+                        status: "delivered",
+                        courierAggregator: courierId,
+                        products: courier1.order.products,
+                        transferred: true,
+                        transferredFranchise: "Сандыбаев Айдынбек"
+                    }
+                }
+            );
+        }
+
+        // Сапарбаев Бекет
+        if (courierName.includes("бекет") && !franchiseeName.includes("бекет")) {
+            await Order.updateOne(
+                { _id: order._id },
+                {
+                    $set: {
+                        status: "delivered",
+                        courierAggregator: courierId,
+                        products: courier1.order.products,
+                        transferred: true,
+                        transferredFranchise: "Сапарбаев Бекет"
+                    }
+                }
+            );
+        }
+        
+
 
         await Order.updateOne({_id: orderId}, { 
             $set: {
@@ -640,7 +711,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         //     }
         // }
 
-        await queueOrTools();
+        // await queueOrTools();
 
     } catch (error) {
         console.log(error);
@@ -725,7 +796,6 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             success: true,
             message: "Заказ отменен"
         })
-        await queueOrTools();
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -933,6 +1003,19 @@ export const appointmentFranchisee = async (req, res) => {
                 );
             }
 
+            // Сапарбаев Бекет
+            if (courierName.includes("бекет") && !franchiseeName.includes("бекет")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            transferred: true,
+                            transferredFranchise: "Сапарбаев Бекет"
+                        }
+                    }
+                );
+            }
+
             // Тимур Касымов
             if (courierName.includes("елдос") && !franchiseeName.includes("тимур")) {
                 await Order.updateOne(
@@ -1011,19 +1094,6 @@ export const appointmentFranchisee = async (req, res) => {
                 );
             }
 
-            // Сапарбаев Бекет
-            if (courierName.includes("бекет") && !franchiseeName.includes("бекет")) {
-                await Order.updateOne(
-                    { _id: order._id },
-                    {
-                        $set: {
-                            transferred: true,
-                            transferredFranchise: "Сапарбаев Бекет"
-                        }
-                    }
-                );
-            }
-
             // Кудайберди Кулжабай
             // if (courierName.includes("кұдайберді") && !franchiseeName.includes("кудайберди")) {
             //     await Order.updateOne(
@@ -1065,16 +1135,17 @@ export const appointmentFranchisee = async (req, res) => {
 
 // db.orders.updateMany(
 //     {
-//       _id: {
+//         _id: {
 //         $in: [
-//           ObjectId("687509ae28192aeb917f011b")
+//             ObjectId("687726b35b0b9d6a4dc6b05a"),
+//             ObjectId("68766f485b0b9d6a4dc67de8"),
 //         ]
-//       }
+//         }
 //     },
 //     {
-//       $set: { status: "awaitingOrder", forAggregator: true, courierAggregator: null }
+//         $set: { status: "awaitingOrder", forAggregator: false, courierAggregator: null }
 //     }
-//   )
+// )
 
 // db.orders.countDocuments({
 //     "date.d": "2025-07-16",
@@ -1083,18 +1154,20 @@ export const appointmentFranchisee = async (req, res) => {
 //     franchisee: {$ne: ObjectId('66f15c557a27c92d447a16a0')}
 // })
 
-//   db.orders.updateMany(
+// db.orders.updateMany({"date.d": "2025-07-17"}, {$set: {forAggregator: false, status: "awaitingOrder", courierAggregator: null}})
+
+// db.orders.updateMany(
 //     {
-//       _id: {
+//         _id: {
 //         $in: [
-//           ObjectId("68774a7576e0bf50af856e45")
+//             ObjectId("6874b83c3b2f39f74d1f76b4")
 //         ]
-//       }
+//         }
 //     },
 //     {
-//       $set: { forAggregator: false, status: "awaitingOrder", courierAggregator: null }
+//         $set: { forAggregator: false, status: "awaitingOrder", courierAggregator: null }
 //     }
-//   )
+// )
 
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, {$set: { order: null, orders:[]}})
 //   db.courieraggregators.updateOne({fullName: 'Василий Яковлев'}, {$set: { order: null, orders:[]}})

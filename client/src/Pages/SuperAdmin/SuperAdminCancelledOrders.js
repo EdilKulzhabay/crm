@@ -94,24 +94,20 @@ export default function SuperAdminCancelledOrders() {
         }).catch((e) => {})
     }
 
-    const closeOrderTransfer = (id) => {
-        api.post("/updateOrderTransfer", {orderId: id, change: "transferredFranchise", changeData: ""}, {
+    const addOrderToAggregator = (id) => {
+        api.post("/addOrderToAggregator", {orderId: id}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
-            if (data.success) {
-                setOpen(true)
-                setMessage(data.message)
-                setStatus("success")
-                const temporaryOrders = [...orders]
-                temporaryOrders.forEach((item) => {
-                    if (item._id === id) {
-                        item.transferred = false
-                        item.transferredFranchise = ""
-                    }
-                })
-                setOrders(temporaryOrders)
-            }
-        }).catch((e) => {})
+            console.log(data);
+        })
+    }
+
+    const toTomorrow = (id) => {
+        api.post("/toTomorrow", {orderId: id}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            console.log(data);
+        })
     }
 
     useEffect(() => {
@@ -177,7 +173,10 @@ export default function SuperAdminCancelledOrders() {
                                 >
                                     Просмотр
                                 </LinkButton>
-                                {userData?.role === "superAdmin" && <>
+                                <MyButton click={() => {addOrderToAggregator(item?._id)}}>Добавить в агрегатор</MyButton>
+                                <MyButton click={() => {toTomorrow(item?._id)}}>На завтра</MyButton>
+                                <div>Причина: <span className="text-red">{item?.reason}</span></div>
+                                {/* {userData?.role === "superAdmin" && <>
                                     {item?.transferred && 
                                     <div className={clsx("", {
                                         "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
@@ -189,7 +188,7 @@ export default function SuperAdminCancelledOrders() {
                                         <span className="text-green-400">
                                             Отменить
                                         </span></MyButton>}
-                                    </>}
+                                    </>} */}
                                 <div>{item?.courier?.fullName}</div>
                             </div>
                         </Li>

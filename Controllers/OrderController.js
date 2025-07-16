@@ -1196,3 +1196,45 @@ export const getResultForToday = async (req, res) => {
         });
     }
 }
+
+export const toTomorrow = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowString = getDateAlmaty(tomorrow);
+        
+        await Order.findByIdAndUpdate(orderId, { 
+            $set: { 
+                "date.d": tomorrowString,
+                forAggregator: true,
+                status: "awaitingOrder",
+                courierAggregator: null
+            } 
+        })
+
+        res.json({ success: true })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const addOrderToAggregator = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+
+        await Order.findByIdAndUpdate(orderId, { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } })
+
+        res.json({ success: true })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

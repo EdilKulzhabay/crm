@@ -234,12 +234,6 @@ export default function OrderPage() {
                 )}
                 
                 <Div>Детали заказа</Div>
-                {userData?.role === "superAdmin" && needVerification && <>
-                    <Div />
-                    <Div>
-                        <div className="text-red font-medium text-xl">Нужна верификация, у адресов нет координат</div>
-                    </Div>
-                </>}
                 <Div />
                 <Div>Клиент: {order?.franchisee?.fullName}</Div>
                 <>
@@ -414,8 +408,8 @@ export default function OrderPage() {
                 {userData?.role === "superAdmin" && <>
                     <Div>
                         <div className="flex items-center gap-x-3">
-                            <div>Для агрегатора?</div>
-                            <MyButton click={() => {updateOrder("forAggregator", true)}}>Да</MyButton>
+                            <div>Для агрегатора? {order?.forAggregator ? "Да" : "Нет"}</div>
+                            <MyButton click={() => {updateOrder("forAggregator", !order?.forAggregator)}}>Изменить</MyButton>
                         </div>
                     </Div>
                 </>}

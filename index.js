@@ -236,6 +236,9 @@ app.get("/fixRinat", OrderController.fixRinat)
 app.get("/getCancelledOrders", OrderController.getCancelledOrders)
 app.get("/getCancelledOrdersCount", OrderController.getCancelledOrdersCount)
 app.get("/getResultForToday", OrderController.getResultForToday)
+app.post("/toTomorrow", OrderController.toTomorrow)
+app.post("/addOrderToAggregator", OrderController.addOrderToAggregator)
+
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
 app.get("/getFirstQueue", DepartmentController.getFirstQueue)
@@ -327,8 +330,8 @@ app.post("/updateUserData", AquaMarketController.updateUserData)
 /////////////ORTOOLS
 app.get("/orTools", async (req, res) => {
     try {
+        res.json({ success: true}); 
         await queueOrTools('api_request');
-        res.json({ success: true});    
     } catch (error) {
         res.status(500).json({
             success: false,
