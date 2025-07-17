@@ -697,14 +697,14 @@ export default async function orTools() {
         return;
     }
 
-    for (const route of result) {
-        const courier = couriers.find(c => c.id === route.courier_id)
+    // for (const route of result) {
+    //     const courier = couriers.find(c => c.id === route.courier_id)
         
-        // Проверяем, есть ли у курьера активный заказ
-        if (!courier.completeFirstOrder && courier.order === null) {
-            route.orders.reverse()
-        }
-    }
+    //     // Проверяем, есть ли у курьера активный заказ
+    //     if (!courier.completeFirstOrder && courier.order === null) {
+    //         route.orders.reverse()
+    //     }
+    // }
 
     try {
         const visualizeResult = await runPythonVisualize(couriers, orders, result);
