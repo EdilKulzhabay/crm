@@ -251,7 +251,7 @@ print(f"Общее количество локаций: {num_locations}", file=s
 
 # ОТКРЫТЫЕ МАРШРУТЫ: Создаем виртуальные конечные точки
 print("\n=== НАСТРОЙКА ОТКРЫТЫХ МАРШРУТОВ ===", file=sys.stderr)
-starts = list(range(0, num_couriers + 1))
+starts = list(range(1, num_couriers + 1))
 
 # Виртуальные конечные точки позволяют курьерам заканчивать маршрут в любом заказе
 virtual_ends = []
