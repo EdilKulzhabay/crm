@@ -219,7 +219,7 @@ for courier in couriers:
                 print(f"  ✅ Достаточно бутылок для выполнения заказа", file=sys.stderr)
 
 # Создаем список локаций: депо + курьеры + заказы
-locations = couriers + orders
+locations = [common_depot] + couriers + orders
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Радиус Земли в км
@@ -251,7 +251,7 @@ print(f"Общее количество локаций: {num_locations}", file=s
 
 # ОТКРЫТЫЕ МАРШРУТЫ: Создаем виртуальные конечные точки
 print("\n=== НАСТРОЙКА ОТКРЫТЫХ МАРШРУТОВ ===", file=sys.stderr)
-starts = list(range(0, num_couriers))
+starts = list(range(0, num_couriers + 1))
 
 # Виртуальные конечные точки позволяют курьерам заканчивать маршрут в любом заказе
 virtual_ends = []
