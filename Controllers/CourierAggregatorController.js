@@ -971,6 +971,35 @@ export const getCourierAggregatorIncome = async (req, res) => {
     }
 }
 
+export const clearCourierAggregatorOrders = async (req, res) => {
+    try {
+        const {courierId} = req.body
+
+        const courier = await CourierAggregator.findById(courierId)
+
+        if (!courier) {
+            return res.status(404).json({ message: "Курьер не найден", success: false })
+        }
+        
+        const orderId = courier.order.orderId
+
+        await Order.updateOne(
+            { _id: orderId },
+            { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } }
+        )
+        
+        await CourierAggregator.updateOne(
+            { _id: courierId },
+            { $set: { order: null, orders: [] } }
+        )
+
+        res.json({ message: "Заказы курьера очищены", success: true })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера", success: false });
+    }
+}
+
 export const appointmentFranchisee = async (req, res) => {
     try {
         const today = new Date();
@@ -1183,12 +1212,12 @@ export const appointmentFranchisee = async (req, res) => {
 //     {
 //         _id: {
 //         $in: [
-//             ObjectId("6874b83c3b2f39f74d1f76b4")
+//             ObjectId("68790385347a61c83c9cf201")
 //         ]
 //         }
 //     },
 //     {
-//         $set: { forAggregator: false, status: "awaitingOrder", courierAggregator: null }
+//         $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null }
 //     }
 // )
 
@@ -1204,10 +1233,52 @@ export const appointmentFranchisee = async (req, res) => {
 //         }
 //     }
 // )
-//   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, {$set: { onTheLine: false}})
-//   db.courieraggregators.updateOne({fullName: 'Василий Яковлев'}, {$set: { order: null, orders:[]}})
-//   db.courieraggregators.updateOne({fullName: 'Тасқын Әбікен'}, {$set: { orders:[]}})
-//   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[], onTheLine: false}})
+
+//   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, {$set: {  order:
+//     {
+//         orderId: '6879d531347a61c83c9d38c0',
+//         status: 'onTheWay',
+//         products: { b12: 0, b19: 2 },
+//         sum: 2600,
+//         opForm: 'fakt',
+//         comment: '',
+//         clientReview: '',
+//         date: { d: '2025-07-18', time: '' },
+//         clientTitle: 'Smart Medical - Samal',
+//         clientPhone: '87017558032',
+//         clientPoints: { lat: 43.234822, lon: 76.953763 },
+//         clientAddress: 'Микрорайон Самал-1, 23 кв. 72; 1 этаж',
+//         clientAddressLink: 'https://go.2gis.com/EjqTk',
+//         aquaMarketPoints: { lat: 43.168573, lon: 76.896437 },
+//         aquaMarketAddress: 'Баязитовой 12 1',
+//         aquaMarketAddressLink: 'https://go.2gis.com/ZJw6E',
+//         step: 'toClient',
+//         income: 2600,
+//         _id: ObjectId('687a13f8ca79cb6a34d182e5')
+//     }, orders:[{orderId: '6879d531347a61c83c9d38c0',
+//         status: 'onTheWay',
+//         products: { b12: 0, b19: 2 },
+//         sum: 2600,
+//         opForm: 'fakt',
+//         comment: '',
+//         clientReview: '',
+//         date: { d: '2025-07-18', time: '' },
+//         clientTitle: 'Smart Medical - Samal',
+//         clientPhone: '87017558032',
+//         clientPoints: { lat: 43.234822, lon: 76.953763 },
+//         clientAddress: 'Микрорайон Самал-1, 23 кв. 72; 1 этаж',
+//         clientAddressLink: 'https://go.2gis.com/EjqTk',
+//         aquaMarketPoints: { lat: 43.168573, lon: 76.896437 },
+//         aquaMarketAddress: 'Баязитовой 12 1',
+//         aquaMarketAddressLink: 'https://go.2gis.com/ZJw6E',
+//         step: 'toClient',
+//         income: 2600,
+//         _id: ObjectId('687a13f8ca79cb6a34d182e5')}]
+//    }})
+//   db.courieraggregators.updateOne({fullName: 'Василий Яковлев'}, { $set: { order: null, orders:[] }})
+//   db.courieraggregators.updateOne({fullName: 'Тасқын Әбікен'}, { $set: {order: null, orders:[] }})
+//   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
+//   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
   
 // db.orders.find({
 //     "date.d": "2025-07-16",
