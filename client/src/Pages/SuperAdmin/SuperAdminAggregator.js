@@ -9,6 +9,7 @@ import MyButton from "../../Components/MyButton"
 import MyInput from "../../Components/MyInput"
 import Info from "../../Components/Info"
 import clsx from "clsx"
+import MySnackBar from "../../Components/MySnackBar";
 
 export default function SuperAdminAggregator() {
     const userData = useFetchUserData()
@@ -24,6 +25,14 @@ export default function SuperAdminAggregator() {
     const [totalOrders, setTotalOrders] = useState(0)
     const [isActive, setIsActive] = useState("all")
     const [orderStatus, setOrderStatus] = useState("all")
+
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [status, setStatus] = useState("");
+
+    const closeSnack = () => {
+        setOpen(false);
+    };
 
     const handleSearchF = (e) => {
         setSearchF(e.target.value)
@@ -141,6 +150,23 @@ export default function SuperAdminAggregator() {
         }).then()
     }
 
+    const clearCourierAggregatorOrders = (id) => {
+        api.post("/clearCourierAggregatorOrders", {courierId: id}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            if (data.success) {
+                setOpen(true)
+                setMessage("Курьер успешно обновлен")
+                setStatus("success")
+            }
+        }).catch((e) => {
+            setOpen(true)
+            setMessage("Ошибка при обновлении курьера")
+            setStatus("error")
+            console.log(e)
+        })
+    }
+
     return <Container role={userData?.role}>
         <Div>Агрегатор курьеров</Div>
         <Div />
@@ -201,6 +227,7 @@ export default function SuperAdminAggregator() {
                                         Перейти
                                     </LinkButton>
                                     <MyButton click={() => {updateCourierAggregatorData(courier?.id, courier.onTheLine ? false : true)}}>{!courier.onTheLine ? "Активен" : "Неактивен"}</MyButton>
+                                    <MyButton click={() => {clearCourierAggregatorOrders(courier?.id)}}>Обновить</MyButton>
                                 </div>
                             </Li>
                         </div>
@@ -307,6 +334,13 @@ export default function SuperAdminAggregator() {
                 Начать распределение
             </LinkButton>
         </Div>
+
+        <MySnackBar
+            open={open}
+            text={message}
+            status={status}
+            close={closeSnack}
+        />
 
         <Div />
     </Container>
