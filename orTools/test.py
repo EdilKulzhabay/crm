@@ -4,6 +4,7 @@ from ortools.constraint_solver import pywrapcp
 import math
 from datetime import datetime, timedelta
 import sys
+import copy
 
 input_data = json.load(sys.stdin)
 common_depot = input_data["common_depot"]
@@ -468,8 +469,44 @@ def solve_vrp_no_depot_time(couriers, orders):
         print("3. Невозможная конфигурация маршрутов", file=sys.stderr)
         return [], {"couriers": couriers, "orders": orders, "routes": []}
 
-# Запускаем решатель
-assigned_orders_result, visualization_data = solve_vrp_no_depot_time(couriers_data, orders_data)
+# --- ДВУХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ ---
+# 1. Разделяем заказы на срочные и обычные
+urgent_orders = []
+regular_orders = []
+for order in orders_data:
+    if order.get('isUrgent', False):
+        urgent_orders.append(order)
+    else:
+        regular_orders.append(order)
+
+# 2. Копируем курьеров для первого этапа
+couriers_for_urgent = copy.deepcopy(couriers_data)
+
+# 3. Сначала решаем только для срочных заказов
+assigned_urgent, _ = solve_vrp_no_depot_time(couriers_for_urgent, urgent_orders)
+
+# 4. Обновляем состояние курьеров после срочных заказов
+# Для каждого курьера уменьшаем вместимость и обновляем координаты, если он что-то развёз
+for assignment in assigned_urgent:
+    courier = next((c for c in couriers_data if c['id'] == assignment['courier_id']), None)
+    order = next((o for o in urgent_orders if o['id'] == assignment['order_id']), None)
+    if courier and order:
+        # Уменьшаем вместимость
+        courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - order.get('bottles_12', 0))
+        courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - order.get('bottles_19', 0))
+        # Обновляем координаты курьера на координаты последнего заказа (если нужно)
+        courier['lat'] = order['lat']
+        courier['lon'] = order['lon']
+
+# 5. Решаем для обычных заказов с учётом уже назначенных срочных
+assigned_regular, _ = solve_vrp_no_depot_time(couriers_data, regular_orders)
+
+# 6. Объединяем результаты
+assigned_orders_result = assigned_urgent + assigned_regular
+
+# --- ДАЛЬШЕ ПО СТАРОЙ ЛОГИКЕ ---
+# routes_output = []
+# ...
 
 # Выводим результат назначения заказов
 print("\nНазначенные заказы:", file=sys.stderr)
