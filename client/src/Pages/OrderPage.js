@@ -56,6 +56,8 @@ export default function OrderPage() {
 
     const [needVerification, setNeedVerification] = useState(false)
 
+    const [priority, setPriority] = useState("")
+
     const confirmDelete = () => {
         deleteOrder()
         setDeleteModal(false)
@@ -288,10 +290,10 @@ export default function OrderPage() {
                                         }
                                     }}
                                     onChange={(event) => {
-                                        handleProductsChange(event);
+                                        setPriority(event.target.value);
                                     }}
                                 />{" "}
-                                ] шт
+                                ] 
                             </div>
                         </div>
                     </Li>
@@ -404,6 +406,48 @@ export default function OrderPage() {
                 }
 
                 <Div />
+
+                {userData?.role === "superAdmin" && <>
+                    <Div>
+                        <div className="flex items-center gap-x-3">
+                            <div>Срочный заказ? {order?.isUrgent ? "Да" : "Нет"}</div>
+                            <MyButton click={() => {updateOrder("isUrgent", !order?.isUrgent)}}>Изменить</MyButton>
+                        </div>
+                    </Div>
+                    <Div />
+                    {/* <Div>
+                        <div className="flex items-center gap-x-3">
+                            <div>Приоритет: {order?.priority}</div>
+                            <div>
+                                [{" "}
+                                <input
+                                    size={13}
+                                    style={{ fontSize: '16px' }}
+                                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                                    name="priority"
+                                    value={priority}
+                                    inputMode="numeric"
+                                    pattern="\d*"
+                                    onKeyPress={(event) => {
+                                        if (!/[0-9]/.test(event.key)) {
+                                            event.preventDefault(); // блокирует ввод символов, кроме цифр
+                                        }
+                                    }}
+                                    onChange={(event) => {
+                                        handleProductsChange(event);
+                                    }}
+                                />{" "}
+                                ] шт
+                            </div>
+                        </div>
+                    </Div>
+                    {priority !== "" && <Div>
+                        <MyButton click={() => {
+                            updateOrder("priority", priority)
+                        }}>Применить</MyButton>
+                    </Div>}
+                    <Div /> */}
+                </>}
 
                 {userData?.role === "superAdmin" && <>
                     <Div>

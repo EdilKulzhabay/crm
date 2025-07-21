@@ -353,7 +353,6 @@ export const updateCourierAggregatorData = async (req, res) => {
             }
 
             order.products = changeData;
-            await order.save();
             
             let sum = changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0
             sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0
@@ -361,6 +360,8 @@ export const updateCourierAggregatorData = async (req, res) => {
             courier.order.income = sum;
             courier.order.products = changeData;
             courier.orders[0].products = changeData;
+            order.sum = sum;
+            await order.save();
             await courier.save();
         } else if (changeField === "order.step") {
             courier.order.step = changeData;
@@ -1212,7 +1213,7 @@ export const appointmentFranchisee = async (req, res) => {
 //     {
 //         _id: {
 //         $in: [
-//             ObjectId("68790385347a61c83c9cf201")
+//             ObjectId("687a5b6aa2e95a48596647ab")
 //         ]
 //         }
 //     },
