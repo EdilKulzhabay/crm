@@ -797,13 +797,27 @@ for vehicle_id in range(num_couriers):
     has_active_order = (couriers[vehicle_id].get("order") and 
                        couriers[vehicle_id]["order"].get("status") == "onTheWay")
     
+    # Улучшенная логика распределения: учитываем вместимость курьера
+    courier_capacity = courier_capacities[vehicle_id]
+    courier_type = courier_types[vehicle_id]
+    
+    # Рассчитываем оптимальное количество заказов на основе вместимости
+    if courier_type == 'empty':
+        # Пустой курьер может взять больше заказов
+        optimal_orders = min(new_orders_count, courier_capacity // 2)  # Примерно половина вместимости
+    else:
+        # Загруженный курьер - ограничиваем количеством заказов, которые поместятся в оставшуюся вместимость
+        current_bottles = couriers[vehicle_id].get("capacity_12", 0) + couriers[vehicle_id].get("capacity_19", 0)
+        remaining_capacity = courier_capacity - current_bottles
+        optimal_orders = max(1, remaining_capacity // 3)  # Примерно 3 бутылки на заказ
+    
     # Мягкое ограничение сверху - поощряем равномерное распределение
-    max_orders_with_active = max_orders_per_courier_soft + (1 if has_active_order else 0)
+    max_orders_with_active = optimal_orders + (1 if has_active_order else 0)
     
     order_count_dimension.SetCumulVarSoftUpperBound(
         routing.End(vehicle_id), 
         max_orders_with_active, 
-        500  # Увеличиваем штраф за превышение для лучшего распределения
+        1000  # Увеличиваем штраф за превышение для лучшего распределения
     )
     
     # Мягкое ограничение снизу - поощряем использование каждого курьера
@@ -814,30 +828,85 @@ for vehicle_id in range(num_couriers):
         order_count_dimension.SetCumulVarSoftLowerBound(
             routing.End(vehicle_id), 
             min_orders, 
-            1000000  # МАКСИМАЛЬНЫЙ штраф = принудительное использование всех курьеров
+            500000  # Уменьшаем штраф, но все еще высокий
         )
-        print(f"Курьер {vehicle_id}: ПРИНУДИТЕЛЬНОЕ требование минимум {min_orders} заказов (штраф: 1000000)", file=sys.stderr)
+        print(f"Курьер {vehicle_id}: ПРИНУДИТЕЛЬНОЕ требование минимум {min_orders} заказов (штраф: 500000)", file=sys.stderr)
     else:
         order_count_dimension.SetCumulVarSoftLowerBound(
             routing.End(vehicle_id), 
             min_orders, 
-            10000  # Штраф за неиспользование курьера
+            5000  # Уменьшаем штраф за неиспользование курьера
         )
-        print(f"Курьер {vehicle_id}: мягкое ограничение минимум {min_orders} заказов (штраф: 10000)", file=sys.stderr)
+        print(f"Курьер {vehicle_id}: мягкое ограничение минимум {min_orders} заказов (штраф: 5000)", file=sys.stderr)
+    
+    print(f"Курьер {vehicle_id}: оптимальное количество заказов: {optimal_orders} (вместимость: {courier_capacity}, тип: {courier_type})", file=sys.stderr)
 
-# ПАРАМЕТРЫ ПОИСКА - делаем более агрессивными
+# Ограничения по максимальному расстоянию для каждого курьера (в метрах)
+MAX_DISTANCE_PER_COURIER = 25000  # Увеличиваем до 25 км для лучшей эффективности
+
+print("\n=== ПРОВЕРКА ОГРАНИЧЕНИЙ ПО РАССТОЯНИЮ ===", file=sys.stderr)
+
+# Дополнительная проверка расстояний для каждого заказа
+for i, order in enumerate(orders):
+    order_node_index = num_couriers + 1 + i
+    order_routing_index = manager.NodeToIndex(order_node_index)
+    
+    # Проверяем расстояние от каждого курьера до заказа
+    distance_restricted_couriers = []
+    
+    for courier_idx, courier in enumerate(couriers):
+        # Рассчитываем расстояние от курьера до заказа
+        courier_lat = courier["lat"]
+        courier_lon = courier["lon"]
+        order_lat = order["lat"]
+        order_lon = order["lon"]
+        
+        distance_meters = int(haversine(courier_lat, courier_lon, order_lat, order_lon) * 1000)
+        
+        if distance_meters > MAX_DISTANCE_PER_COURIER:
+            print(f"  🚫 Заказ {order['id']} слишком далеко от курьера {courier['id']}: {distance_meters}m > {MAX_DISTANCE_PER_COURIER}m", file=sys.stderr)
+            distance_restricted_couriers.append(courier_idx)
+        else:
+            print(f"  ✅ Заказ {order['id']} в пределах досягаемости курьера {courier['id']}: {distance_meters}m", file=sys.stderr)
+    
+    # Если есть курьеры, которые слишком далеко, исключаем их из разрешенных
+    if distance_restricted_couriers:
+        # Получаем текущие разрешенные курьеры для этого заказа
+        current_allowed_vehicles = []
+        for vehicle_id in range(num_couriers):
+            if routing.IsVehicleAllowedForIndex(vehicle_id, order_routing_index):
+                current_allowed_vehicles.append(vehicle_id)
+        
+        # Удаляем курьеров, которые слишком далеко
+        new_allowed_vehicles = [v for v in current_allowed_vehicles if v not in distance_restricted_couriers]
+        
+        if new_allowed_vehicles:
+            routing.SetAllowedVehiclesForIndex(new_allowed_vehicles, order_routing_index)
+            print(f"  🔄 Заказ {order['id']}: удалены курьеры {distance_restricted_couriers} из-за расстояния, остались {new_allowed_vehicles}", file=sys.stderr)
+        else:
+            # Если все курьеры слишком далеко, исключаем заказ
+            routing.AddDisjunction([order_routing_index], 100000)
+            print(f"  ❌ ЗАКАЗ {order['id']} ИСКЛЮЧЕН: все курьеры слишком далеко", file=sys.stderr)
+
+# Улучшаем параметры поиска для лучшей эффективности
 search_params = pywrapcp.DefaultRoutingSearchParameters()
-search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.AUTOMATIC  # Изменяем стратегию
-search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.AUTOMATIC  # Изменяем метод
-search_params.time_limit.seconds = 30  # Уменьшаем время
-search_params.solution_limit = 50  # Уменьшаем лимит решений
+search_params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC  # Лучшая стратегия для VRP
+search_params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH  # Более эффективный поиск
+search_params.time_limit.seconds = 60  # Увеличиваем время для лучшего решения
+search_params.solution_limit = 100  # Увеличиваем лимит решений
+search_params.log_search = True  # Включаем логирование для отладки
+
+# Добавляем параметры для лучшего распределения
+search_params.use_cp_sat = False  # Используем CP-SAT для лучших решений
+search_params.use_unfiltered_first_solution_strategy = True  # Позволяем нефильтрованные решения
 
 print("Начинаем решение с открытыми маршрутами и учетом активных заказов...", file=sys.stderr)
 print("Параметры поиска:", file=sys.stderr)
-print(f"  Стратегия первого решения: AUTOMATIC", file=sys.stderr)
-print(f"  Метод локального поиска: AUTOMATIC", file=sys.stderr)
-print(f"  Лимит времени: 30 секунд", file=sys.stderr)
-print(f"  Лимит решений: 50", file=sys.stderr)
+print(f"  Стратегия первого решения: PATH_CHEAPEST_ARC", file=sys.stderr)
+print(f"  Метод локального поиска: GUIDED_LOCAL_SEARCH", file=sys.stderr)
+print(f"  Лимит времени: 60 секунд", file=sys.stderr)
+print(f"  Лимит решений: 100", file=sys.stderr)
+print(f"  Максимальное расстояние на курьера: {MAX_DISTANCE_PER_COURIER/1000:.1f} км", file=sys.stderr)
 
 solution = routing.SolveWithParameters(search_params)
 
@@ -1076,3 +1145,4 @@ if solution:
     
 else:
     print("Маршруты не найдены!", file=sys.stderr)
+    print("[]") 

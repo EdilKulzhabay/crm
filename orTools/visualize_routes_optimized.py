@@ -5,6 +5,8 @@
 """
 
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from matplotlib.lines import Line2D
 import numpy as np
 from matplotlib.patches import FancyBboxPatch
 import matplotlib.patches as mpatches
@@ -57,8 +59,9 @@ orders_dict = {order['id']: order for order in all_orders_for_viz}
 couriers_dict = {courier['id']: courier for courier in couriers}
 
 # Настройка графика
-plt.figure(figsize=(15, 12))
-colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown']
+plt.figure(figsize=(20, 16))
+# Цвета для курьеров (расширенный набор)
+colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 'magenta', 'yellow', 'black', 'navy', 'teal', 'maroon']
 
 # Отображаем общий депо
 plt.scatter(common_depot['lon'], common_depot['lat'], 
@@ -82,7 +85,8 @@ for i, courier in enumerate(couriers):
 # Отображаем заказы с разделением на активные и новые
 served_orders = set()
 for route in routes:
-    served_orders.update(route['orders'])
+    if 'orders' in route and route['orders']:
+        served_orders.update(route['orders'])
 
 for order in all_orders_for_viz:
     if order['id'] in served_orders:
@@ -116,6 +120,10 @@ for order in all_orders_for_viz:
 
 # Отображаем маршруты с учетом активных заказов
 for i, route in enumerate(routes):
+    # Пропускаем маршруты без заказов
+    if 'orders' not in route or not route['orders']:
+        continue
+        
     courier = couriers_dict[route['courier_id']]
     color = colors[i]
     
@@ -168,18 +176,18 @@ for i, route in enumerate(routes):
 
 # Создаем легенду для типов заказов
 legend_elements = [
-    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', 
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='red', 
                markersize=10, markeredgecolor='darkred', markeredgewidth=2,
                label='Активные заказы'),
-    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='lightgreen', 
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='lightgreen', 
                markersize=8, label='Новые заказы'),
-    plt.Line2D([0], [0], marker='x', color='w', markerfacecolor='lightcoral', 
+    Line2D([0], [0], marker='x', color='w', markerfacecolor='lightcoral', 
                markersize=8, label='Необслуженные заказы'),
-    plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='black', 
+    Line2D([0], [0], marker='s', color='w', markerfacecolor='black', 
                markersize=10, label='Общий депо'),
-    plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='gray', 
+    Line2D([0], [0], marker='^', color='w', markerfacecolor='gray', 
                markersize=8, label='Курьеры без активных заказов'),
-    plt.Line2D([0], [0], marker='D', color='w', markerfacecolor='gray', 
+    Line2D([0], [0], marker='D', color='w', markerfacecolor='gray', 
                markersize=8, label='Курьеры с активными заказами')
 ]
 
@@ -189,7 +197,7 @@ for i, route in enumerate(routes):
     courier_id = route['courier_id']
     color = colors[i % len(colors)]  # Используем модуль для предотвращения выхода за границы
     courier_color_elements.append(
-        plt.Line2D([0], [0], color=color, linewidth=3, 
+        Line2D([0], [0], color=color, linewidth=3, 
                    label=f'{courier_id} - {color}')
     )
 
@@ -200,7 +208,7 @@ for courier in couriers:
     if courier['id'] not in used_courier_ids:
         color = colors[unused_courier_index % len(colors)]
         courier_color_elements.append(
-            plt.Line2D([0], [0], color=color, linewidth=3, 
+            Line2D([0], [0], color=color, linewidth=3, 
                        label=f'{courier["id"]} - {color} (без заказов)')
         )
         unused_courier_index += 1
@@ -211,8 +219,8 @@ plt.ylabel('Широта', fontsize=12)
 
 # Подсчитываем статистику
 total_active_orders = len(active_orders)
-total_new_orders = sum(len(route['orders']) for route in routes) - total_active_orders
-total_distance = sum(route["distance_km"] for route in routes)
+total_new_orders = sum(len(route['orders']) for route in routes if 'orders' in route and route['orders']) - total_active_orders
+total_distance = sum(route["distance_km"] for route in routes if "distance_km" in route)
 
 plt.title(f'VRP Решение: Маршруты с активными заказами\n' + 
           f'Активных заказов: {total_active_orders}, Новых заказов: {total_new_orders}, ' + 
@@ -237,7 +245,13 @@ plt.grid(True, alpha=0.3)
 
 # Добавляем детальную информацию о маршрутах
 info_text = "Детали маршрутов:\n"
+route_details_text = "Детальное описание маршрутов:\n\n"
+
 for i, route in enumerate(routes):
+    # Пропускаем маршруты без заказов
+    if 'orders' not in route or not route['orders']:
+        continue
+        
     courier_id = route['courier_id']
     color = colors[i % len(colors)]
     active_count = sum(1 for order_id in route['orders'] if order_id in active_orders)
@@ -246,9 +260,60 @@ for i, route in enumerate(routes):
     info_text += f"• {courier_id} ({color}): {route['orders_count']} заказов "
     info_text += f"(активных: {active_count}, новых: {new_count}), "
     info_text += f"{route['distance_km']} км\n"
+    
+    # Добавляем детальное описание маршрута
+    route_details_text += f"Маршрут для курьера {courier_id}:\n"
+    
+    # Начальная точка
+    courier = couriers_dict[courier_id]
+    if courier_id in courier_active_orders:
+        active_order_id = courier_active_orders[courier_id]
+        active_order = active_orders_data[active_order_id]
+        route_details_text += f" -> {active_order_id} (активный заказ) (12л: {active_order.get('bottles_12', 0)}, 19л: {active_order.get('bottles_19', 0)}, Время: текущее)\n"
+    else:
+        route_details_text += f" -> courier_{courier_id}_start (12л: 0, 19л: 0, Время: текущее)\n"
+    
+    # Последовательность заказов с реальным временем
+    arrival_times = route.get('arrival_times', {})
+    for j, order_id in enumerate(route['orders']):
+        order = orders_dict[order_id]
+        
+        # Используем реальное время прибытия, если доступно
+        if order_id in arrival_times:
+            arrival_seconds = arrival_times[order_id]
+            # Конвертируем секунды в часы и минуты (секунды от начала дня)
+            hours = int(arrival_seconds // 3600)
+            minutes = int((arrival_seconds % 3600) // 60)
+            time_str = f"{hours:02d}:{minutes:02d}"
+        else:
+            # Если время не найдено, используем примерное
+            current_time_minutes = 0
+            for k in range(j + 1):
+                travel_time = 8 if k == 0 else 6
+                current_time_minutes += travel_time
+                service_time = 15  # 15 минут обслуживания
+                current_time_minutes += service_time
+            
+            hours = current_time_minutes // 60
+            minutes = current_time_minutes % 60
+            time_str = f"{hours:02d}:{minutes:02d}"
+        
+        # Подсчитываем текущую загрузку
+        current_load_12 = sum(orders_dict[prev_order_id].get('bottles_12', 0) for prev_order_id in route['orders'][:j+1])
+        current_load_19 = sum(orders_dict[prev_order_id].get('bottles_19', 0) for prev_order_id in route['orders'][:j+1])
+        
+        route_details_text += f" -> {order_id} (12л: {current_load_12}, 19л: {current_load_19}, Время: {time_str})\n"
+    
+    route_details_text += "\n"
 
+# Добавляем основную информацию в левый нижний угол
 plt.figtext(0.02, 0.02, info_text, fontsize=10, 
            bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.8))
+
+# Добавляем детальное описание маршрутов в правую часть
+plt.figtext(0.02, 0.35, route_details_text, fontsize=8, 
+           bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue", alpha=0.9),
+           verticalalignment='top')
 
 plt.tight_layout()
 plt.savefig('vrp_routes_visualization.png', dpi=300, bbox_inches='tight')
@@ -283,6 +348,10 @@ if unused_couriers:
         print(f"    {courier_info}")
 
 for i, route in enumerate(routes):
+    # Пропускаем маршруты без заказов
+    if 'orders' not in route or not route['orders']:
+        continue
+        
     courier = couriers_dict[route['courier_id']]
     courier_id = route['courier_id']
     color = colors[i % len(colors)]
@@ -322,7 +391,8 @@ for i, route in enumerate(routes):
 # Проверяем необслуженные заказы
 served_orders = set()
 for route in routes:
-    served_orders.update(route['orders'])
+    if 'orders' in route and route['orders']:
+        served_orders.update(route['orders'])
 
 # Считаем необслуженными только новые заказы (не активные)
 unserved = [order['id'] for order in orders if order['id'] not in served_orders]
@@ -335,12 +405,12 @@ if unserved:
         print(f"  {order_name} (НОВЫЙ): ({order['lat']:.3f}, {order['lon']:.3f})")
 
 print(f"\n📈 Итоговая статистика:")
-print(f"  Общее расстояние: {sum(route['distance_km'] for route in routes):.2f} км")
+print(f"  Общее расстояние: {sum(route['distance_km'] for route in routes if 'distance_km' in route):.2f} км")
 print(f"  Используется курьеров: {len(routes)}/{len(couriers)}")
-print(f"  Обслужено заказов: {sum(route['orders_count'] for route in routes)}/{len(all_orders_for_viz)}")
+print(f"  Обслужено заказов: {sum(route['orders_count'] for route in routes if 'orders_count' in route)}/{len(all_orders_for_viz)}")
 print(f"  Активных заказов: {len(active_orders)}")
 print(f"  Новых заказов для распределения: {len(orders)}")
-print(f"  Новых заказов обслужено: {sum(route['orders_count'] for route in routes) - len(active_orders)}")
+print(f"  Новых заказов обслужено: {sum(route['orders_count'] for route in routes if 'orders_count' in route) - len(active_orders)}")
 print(f"  Новых заказов не обслужено: {len(unserved)}")
 
 # Проверка корректности обработки активных заказов

@@ -101,6 +101,14 @@ const OrderSchema = new mongoose.Schema(
         forAggregator: {
             type: Boolean,
             default: false
+        },
+        priority: {
+            type: Number,
+            default: 3
+        },
+        isUrgent: {
+            type: Boolean,
+            default: false
         }
     },
     {
