@@ -92,7 +92,7 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     return distance
 
 # Изменяем скорость курьеров на 60 км/ч
-speed_mps = 60 * 1000 / 3600  # Скорость в метрах в секунду (60 км/ч)
+speed_mps = 25 * 1000 / 3600  # Скорость в метрах в секунду (60 км/ч)
 
 def create_time_matrix(locations, speed_mps=speed_mps):
     """Создает матрицу времени в пути между всеми локациями (в секундах)."""
@@ -113,8 +113,8 @@ def solve_vrp_no_depot_time(couriers, orders):
     """Решает задачу VRP без возвращения в депо, с учетом активных заказов и временных окон."""
 
     # Определяем текущее время в Алматы динамически
-    # now = datetime.now()  # Используем актуальное текущее время
-    now = datetime(2025, 7, 21, 10, 30, 0)
+    now = datetime.now()  # Используем актуальное текущее время
+    # now = datetime(2025, 7, 21, 10, 30, 0)
     print(now, file=sys.stderr)
     current_time_in_seconds = now.hour * 3600 + now.minute * 60 + now.second
 
