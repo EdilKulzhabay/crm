@@ -851,12 +851,12 @@ export default async function orTools() {
 
     console.log("Отправляем push уведомления");
     
-    const needOrTools = await sendOrderPushNotification();
+    // const needOrTools = await sendOrderPushNotification();
 
-    if (needOrTools) {
-        console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
-        await orTools();
-    }
+    // if (needOrTools) {
+    //     console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
+    //     await orTools();
+    // }
 
     console.log("✅ Push уведомления отправлены");
 }
