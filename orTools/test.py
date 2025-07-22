@@ -319,10 +319,13 @@ def solve_vrp_no_depot_time(couriers, orders):
         'OrderCount'
     )
     order_count_dimension = routing.GetDimensionOrDie('OrderCount')
-    # Устанавливаем минимум 1 заказ для каждого курьера
+    
+    # Мягкое ограничение: предпочитаем курьеров с заказами, но не требуем обязательно
+    # Добавляем штраф за курьеров без заказов
     for vehicle_id in range(num_vehicles):
         index = routing.Start(vehicle_id)
-        order_count_dimension.CumulVar(index).SetMin(1)
+        # Штраф за курьера без заказов (мягкое ограничение)
+        order_count_dimension.CumulVar(index).SetMax(0).SetPenalty(1000)
 
     # Устанавливаем начальное время для всех курьеров равным текущему времени
     for i in range(num_vehicles):
