@@ -227,6 +227,7 @@ export const getOrders = async (req, res) => {
         const filter = {
             "date.d": { $gte: startDate, $lte: endDate },
             status: { $nin: ["delivered", "cancelled"] },
+            forAggregator: false
         }
 
         // Добавляем фильтр по франчайзи для админа
@@ -320,6 +321,44 @@ export const getOrders = async (req, res) => {
         });
     }
 };
+
+export const getOrdersForAggregatorMoreDetails = async (req, res) => {
+    try {
+
+        const today = getDateAlmaty()
+
+        const { courierFullName } = req.body;
+
+        const courierFilter = {}
+
+        if (courierFullName && courierFullName !== "") {
+            courierFilter.fullName = { $regex: courierFullName, $options: "i" }
+        }
+
+        const couriers = await Courier.find(courierFilter)
+
+        const courierIds = couriers.map(courier => courier._id)
+
+        const orderFilter = {
+            "date.d": today,
+            status: { $nin: ["delivered", "cancelled"] },
+        }
+
+        if (courierFullName === "") {
+            orderFilter.forAggregator = true
+        } else {
+            orderFilter.courierAggregator = { $in: courierIds }
+        }
+
+        const orders = await Order.find(orderFilter).populate("courierAggregator")
+
+        res.json({ orders, success: true })
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Что-то пошло не так" })
+    }
+}
 
 export const getClientOrders = async (req, res) => {
     try {
