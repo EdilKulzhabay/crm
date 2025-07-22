@@ -734,6 +734,10 @@ export default async function orTools() {
         }
     }
 
+    console.log("orders = ", orders)
+    console.log("couriers = ", couriers)
+    console.log("result = ", result)
+
     try {
         const visualizeResult = await runPythonVisualize(couriers, allOrders, result);
         console.log("Результат визуализации:", visualizeResult);
