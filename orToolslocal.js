@@ -601,8 +601,21 @@ export default async function orTools() {
         return;
     }
 
+    for (const courier of couriers) {
+        const activeOrder = courier.order;
+        if (activeOrder && activeOrder.orderId) {
+            const alreadyIncluded = orders.find(o => o.id === activeOrder.orderId);
+            if (!alreadyIncluded) {
+                const fullOrder = allOrders.find(o => o.id === activeOrder.orderId);
+                if (fullOrder) {
+                    orders.push(fullOrder);
+                }
+            }
+        }
+    }
+
     try {
-        const visualizeResult = await runPythonVisualize(couriers, orders, result);
+        const visualizeResult = await runPythonVisualize(couriers, allOrders, result);
         console.log("Результат визуализации:", visualizeResult);
     } catch (error) {
         console.error("Ошибка визуализации:", error);
