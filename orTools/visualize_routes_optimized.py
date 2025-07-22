@@ -55,7 +55,7 @@ for active_order_data in active_orders_data.values():
     all_orders_for_viz.append(active_order_data)
 
 # Создаем словари для быстрого поиска (включая активные заказы)
-orders_dict = {order['_id']: order for order in all_orders_for_viz}
+orders_dict = {order['id']: order for order in all_orders_for_viz}
 couriers_dict = {courier['_id']: courier for courier in couriers}
 
 # Настройка графика
