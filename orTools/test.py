@@ -300,33 +300,6 @@ def solve_vrp_no_depot_time(couriers, orders):
     )
     time_dimension = routing.GetDimensionOrDie('Time')
 
-    # --- Измерение для количества заказов (OrderCount) ---
-    def count_callback(from_index):
-        node = manager.IndexToNode(from_index)
-        # Считаем только заказы (не стартовые точки и не активные заказы, не депо)
-        if (node != depot_index and
-            not all_locations[node].get('is_courier_start', False) and
-            not all_locations[node].get('is_active_order', False)):
-            return 1
-        return 0
-
-    count_callback_index = routing.RegisterUnaryTransitCallback(count_callback)
-    routing.AddDimension(
-        count_callback_index,
-        0,  # slack
-        len(order_location_indices),  # максимум заказов
-        True,  # start_cumul_to_zero
-        'OrderCount'
-    )
-    order_count_dimension = routing.GetDimensionOrDie('OrderCount')
-    
-    # Мягкое ограничение: предпочитаем курьеров с заказами, но не требуем обязательно
-    # Добавляем штраф за курьеров без заказов
-    for vehicle_id in range(num_vehicles):
-        index = routing.Start(vehicle_id)
-        # Штраф за курьера без заказов (мягкое ограничение)
-        order_count_dimension.CumulVar(index).SetMax(0).SetPenalty(1000)
-
     # Устанавливаем начальное время для всех курьеров равным текущему времени
     for i in range(num_vehicles):
         start_index = routing.Start(i)
