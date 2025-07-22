@@ -35,7 +35,7 @@ active_orders_data = {}
 
 for courier in couriers:
     if courier.get("order") and courier["order"].get("status") == "onTheWay":
-        active_order_id = courier["order"]["orderId"]
+        active_order_id = courier["order"]["id"]  # Используем "id" вместо "orderId"
         active_orders.add(active_order_id)
         courier_active_orders[courier['id']] = active_order_id
         
