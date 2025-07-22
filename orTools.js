@@ -503,6 +503,44 @@ export default async function orTools() {
 
     const allOrders = await Order.find({forAggregator: true, "date.d": todayString, status: {$nin: ["delivered", "cancelled"]}}).populate("client")
 
+    const allOrders2 = allOrders
+        .filter(order => {
+            const hasValidCoords = order.address && order.address.point && order.address.point.lat && order.address.point.lon;
+            if (!hasValidCoords) {
+                console.log(`❌ Заказ ${order._id} исключен - нет координат`);
+            }
+            return hasValidCoords;
+        })
+        .map(order => {
+            // Парсим временное окно из поля date.time
+            if (order.date && order.date.time) {
+                return {
+                    id: order._id,
+                    lat: order.address.point.lat,
+                    lon: order.address.point.lon,
+                    bottles_12: order.products.b12,
+                    bottles_19: order.products.b19,
+                    status: order.status,
+                    orderName: order.client.fullName,
+                    "date.time": order.date.time,
+                    priority: order.priority || 3, // Приоритет: 1-высокий, 2-средний, 3-низкий
+                    is_urgent: order.isUrgent || false, // Срочный заказ
+                };
+            }
+
+            return {
+                id: order._id,
+                lat: order.address.point.lat,
+                lon: order.address.point.lon,
+                bottles_12: order.products.b12,
+                bottles_19: order.products.b19,
+                status: order.status,
+                orderName: order.client.fullName,
+                priority: order.priority || 3, // Приоритет: 1-высокий, 2-средний, 3-низкий
+                is_urgent: order.isUrgent || false, // Срочный заказ
+            };
+        });
+
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: "awaitingOrder"}).populate("client")
     
     console.log(`📊 Найдено заказов для распределения: ${activeOrders.length}`);
@@ -740,7 +778,7 @@ export default async function orTools() {
     console.log("result = ", result)
 
     try {
-        const visualizeResult = await runPythonVisualize(couriers, allOrders, result);
+        const visualizeResult = await runPythonVisualize(couriers, allOrders2, result);
         console.log("Результат визуализации:", visualizeResult);
     } catch (error) {
         console.error("Ошибка визуализации:", error);
