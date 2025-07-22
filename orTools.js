@@ -79,7 +79,8 @@ export function runPythonVisualize(couriers, orders, routes) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
         // const python = spawn(pythonPath, ["./orTools/visualize_routes2.py"]);
-        const python = spawn(pythonPath, ["./orTools/visualize_routes_optimized.py"]);
+        // const python = spawn(pythonPath, ["./orTools/visualize_routes_optimized.py"]);
+        const python = spawn(pythonPath, ["./orTools/visualize_routes_optimized_fixed.py"]);
 
         const input = {
             common_depot: {
