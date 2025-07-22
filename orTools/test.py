@@ -349,8 +349,20 @@ def solve_vrp_no_depot_time(couriers, orders):
         
         if order_data:
             # Более разумные штрафы
-            penalty = 100000 if order_data.get('isUrgent', False) else 50000
+            penalty = 100000 if order_data.get('isUrgent', False) or order_data.get('is_urgent', False) else 50000
             routing.AddDisjunction([manager.NodeToIndex(node_idx)], penalty)
+
+    # Добавляем ограничение на максимальное количество заказов на курьера
+    max_orders_per_courier = 8  # Максимум 8 заказов на курьера
+    for vehicle_id in range(num_vehicles):
+        # Создаем список всех заказов для этого курьера
+        order_nodes_for_vehicle = []
+        for node_idx in order_location_indices:
+            order_nodes_for_vehicle.append(manager.NodeToIndex(node_idx))
+        
+        if order_nodes_for_vehicle:
+            # Ограничиваем количество заказов для каждого курьера
+            routing.AddDisjunction(order_nodes_for_vehicle, 0, max_orders_per_courier)
 
     # --- Параметры поиска и решение ---
 
@@ -477,7 +489,8 @@ def solve_vrp_no_depot_time(couriers, orders):
 urgent_orders = []
 regular_orders = []
 for order in orders_data:
-    if order.get('isUrgent', False):
+    # Проверяем оба варианта поля срочности
+    if order.get('isUrgent', False) or order.get('is_urgent', False):
         urgent_orders.append(order)
     else:
         regular_orders.append(order)
