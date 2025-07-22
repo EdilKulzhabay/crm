@@ -290,10 +290,10 @@ export default function OrderPage() {
                                         }
                                     }}
                                     onChange={(event) => {
-                                        setPriority(event.target.value);
+                                        handleProductsChange(event);
                                     }}
                                 />{" "}
-                                ] 
+                                ] шт
                             </div>
                         </div>
                     </Li>
