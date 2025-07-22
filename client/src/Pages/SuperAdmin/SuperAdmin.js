@@ -55,6 +55,9 @@ export default function SuperAdmin() {
                 <LinkButton href="/superAdminCancelledOrders">
                     <div>ПРОБЛЕМНЫЕ ЗАКАЗЫ: <Info>{cancelledOrdersCount}</Info></div>
                 </LinkButton>
+                <LinkButton href="/superAdminAggregatorOrders">
+                    <div>АГРЕГАТОР ЗАКАЗОВ</div>
+                </LinkButton>
             </Div>
             <Div />
             <Div>
