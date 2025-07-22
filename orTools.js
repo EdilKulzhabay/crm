@@ -500,6 +500,8 @@ export default async function orTools() {
     const today = new Date();
     const todayString = getDateAlmaty(today);
 
+    const allOrders = await Order.find({forAggregator: true, "date.d": todayString, status: {$nin: ["delivered", "cancelled"]}}).populate("client")
+
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: "awaitingOrder"}).populate("client")
     
     console.log(`📊 Найдено заказов для распределения: ${activeOrders.length}`);
@@ -719,8 +721,21 @@ export default async function orTools() {
         return;
     }
 
+    for (const courier of couriers) {
+        const activeOrder = courier.order;
+        if (activeOrder && activeOrder.orderId) {
+            const alreadyIncluded = orders.find(o => o.id === activeOrder.orderId);
+            if (!alreadyIncluded) {
+                const fullOrder = allOrders.find(o => o.id === activeOrder.orderId);
+                if (fullOrder) {
+                    orders.push(fullOrder);
+                }
+            }
+        }
+    }
+
     try {
-        const visualizeResult = await runPythonVisualize(couriers, orders, result);
+        const visualizeResult = await runPythonVisualize(couriers, allOrders, result);
         console.log("Результат визуализации:", visualizeResult);
     } catch (error) {
         console.error("Ошибка визуализации:", error);

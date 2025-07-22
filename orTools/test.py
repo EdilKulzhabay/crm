@@ -177,25 +177,24 @@ def solve_vrp_no_depot_time(couriers, orders):
     start_nodes = []  
     order_location_indices = [] 
 
-    # 1. Добавляем начальные точки курьеров
-    for i, courier in enumerate(couriers):
-        if courier['order']:
-            # Если есть активный заказ, начальная точка - это место активного заказа
-            active_order_data = {
-                'id': f'active_order_{courier["id"]}',
-                'lat': courier['order']['lat'],
-                'lon': courier['order']['lon'],
-                'bottles_12': courier['order'].get('bottles_12', 0),
-                'bottles_19': courier['order'].get('bottles_19', 0),
+    # 1. Добавляем стартовые точки курьеров
+    for courier in couriers:
+        # Если у курьера есть активный заказ, используем его координаты
+        if courier.get('order'):
+            active_order = courier['order']
+            all_locations.append({
+                'id': f"active_order_{courier['id']}",
+                'lat': active_order['lat'],
+                'lon': active_order['lon'],
+                'bottles_12': 0,
+                'bottles_19': 0,
                 'is_active_order': True,
                 'courier_id': courier['id']
-            }
-            all_locations.append(active_order_data)
-            start_nodes.append(len(all_locations) - 1)
+            })
         else:
-            # Если активного заказа нет, начальная точка - текущее местоположение курьера
+            # Иначе используем текущие координаты курьера
             all_locations.append({
-                'id': f'courier_{courier["id"]}_start',
+                'id': f"courier_{courier['id']}_start",
                 'lat': courier['lat'],
                 'lon': courier['lon'],
                 'bottles_12': 0,
@@ -203,7 +202,7 @@ def solve_vrp_no_depot_time(couriers, orders):
                 'is_courier_start': True,
                 'courier_id': courier['id']
             })
-            start_nodes.append(len(all_locations) - 1)
+        start_nodes.append(len(all_locations) - 1)
 
     # 2. Добавляем точки новых заказов
     for order in orders:
@@ -362,7 +361,7 @@ def solve_vrp_no_depot_time(couriers, orders):
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
     search_parameters.local_search_metaheuristic = (
         routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
-    search_parameters.time_limit.FromSeconds(60)  # Увеличиваем время поиска
+    search_parameters.time_limit.FromSeconds(30)  # Увеличиваем время поиска
 
     # Решаем задачу
     solution = routing.SolveWithParameters(search_parameters)
@@ -379,6 +378,7 @@ def solve_vrp_no_depot_time(couriers, orders):
             plan_output = f'Маршрут для курьера {couriers[vehicle_id]["id"]}:\n'
             route_distance = 0
             route_orders = []  # Список заказов для этого курьера
+            route_orders_set = set()  # Set для уникальности заказов
 
             while not routing.IsEnd(index):
                 node_index = manager.IndexToNode(index)
@@ -401,7 +401,7 @@ def solve_vrp_no_depot_time(couriers, orders):
                     not all_locations[node_index].get('is_active_order', False)):
                     
                     order_data = next((ord for ord in orders if ord['id'] == all_locations[node_index]['id']), None)
-                    if order_data:
+                    if order_data and order_data['id'] not in visited_nodes_in_solution:
                         assigned_orders.append({
                             'order_id': order_data['id'],
                             'courier_id': couriers[vehicle_id]['id'],
@@ -411,7 +411,10 @@ def solve_vrp_no_depot_time(couriers, orders):
                             'isUrgent': order_data.get('isUrgent', False)
                         })
                         visited_nodes_in_solution.add(order_data['id'])
-                        route_orders.append(order_data['id'])  # Добавляем заказ в маршрут
+                        # Добавляем заказ в маршрут только если его там еще нет
+                        if order_data['id'] not in route_orders_set:
+                            route_orders.append(order_data['id'])
+                            route_orders_set.add(order_data['id'])
 
                 index = solution.Value(routing.NextVar(index))
 
@@ -479,24 +482,53 @@ for order in orders_data:
     else:
         regular_orders.append(order)
 
+print(f"Срочных заказов: {len(urgent_orders)}, обычных заказов: {len(regular_orders)}", file=sys.stderr)
+
 # 2. Копируем курьеров для первого этапа
+import copy
 couriers_for_urgent = copy.deepcopy(couriers_data)
 
 # 3. Сначала решаем только для срочных заказов
-assigned_urgent, _ = solve_vrp_no_depot_time(couriers_for_urgent, urgent_orders)
+if urgent_orders:
+    print(f"Обрабатываем {len(urgent_orders)} срочных заказов...", file=sys.stderr)
+    # Передаем только срочные заказы, а не все заказы
+    assigned_urgent, _ = solve_vrp_no_depot_time(couriers_for_urgent, urgent_orders)
+    print(f"Назначено {len(assigned_urgent)} срочных заказов", file=sys.stderr)
+else:
+    assigned_urgent = []
+    print("Срочных заказов нет", file=sys.stderr)
 
 # 4. Обновляем состояние курьеров после срочных заказов
-# Для каждого курьера уменьшаем вместимость и обновляем координаты, если он что-то развёз
+# Группируем назначения по курьерам
+courier_assignments = {}
 for assignment in assigned_urgent:
-    courier = next((c for c in couriers_data if c['id'] == assignment['courier_id']), None)
-    order = next((o for o in urgent_orders if o['id'] == assignment['order_id']), None)
-    if courier and order:
-        # Уменьшаем вместимость
-        courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - order.get('bottles_12', 0))
-        courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - order.get('bottles_19', 0))
-        # Обновляем координаты курьера на координаты последнего заказа (если нужно)
-        courier['lat'] = order['lat']
-        courier['lon'] = order['lon']
+    courier_id = assignment['courier_id']
+    if courier_id not in courier_assignments:
+        courier_assignments[courier_id] = []
+    courier_assignments[courier_id].append(assignment)
+
+# Обновляем каждого курьера
+for courier_id, assignments in courier_assignments.items():
+    courier = next((c for c in couriers_data if c['id'] == courier_id), None)
+    if courier:
+        # Сортируем назначения по времени прибытия
+        assignments.sort(key=lambda x: x['arrival_time_seconds'])
+        
+        # Уменьшаем вместимость на все назначенные заказы
+        for assignment in assignments:
+            order = next((o for o in urgent_orders if o['id'] == assignment['order_id']), None)
+            if order:
+                courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - order.get('bottles_12', 0))
+                courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - order.get('bottles_19', 0))
+        
+        # Обновляем координаты курьера на координаты последнего заказа
+        if assignments:
+            last_assignment = assignments[-1]
+            last_order = next((o for o in urgent_orders if o['id'] == last_assignment['order_id']), None)
+            if last_order:
+                courier['lat'] = last_order['lat']
+                courier['lon'] = last_order['lon']
+                print(f"Курьер {courier_id} перемещен в ({last_order['lat']:.6f}, {last_order['lon']:.6f})", file=sys.stderr)
 
 # 5. Решаем для обычных заказов с учётом уже назначенных срочных
 assigned_regular, _ = solve_vrp_no_depot_time(couriers_data, regular_orders)
@@ -591,5 +623,8 @@ for vehicle_id in range(len(couriers_data)):
         }
         
         routes_output.append(route_info)
+
+for route in routes_output:
+    route["orders"] = list(dict.fromkeys(route["orders"]))  # удаляет дубликаты и сохраняет порядок
 
 print(json.dumps(routes_output))
