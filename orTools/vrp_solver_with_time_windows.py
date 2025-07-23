@@ -275,7 +275,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     routing.AddDimension(
         transit_callback_index,
         7200,  # slack_max (2 часа)
-        86400,  # максимальное время маршрута (24 часа)
+        28800,  # максимальное время маршрута (8 часов вместо 24)
         False,  # start_cumul_to_zero - НЕ устанавливаем в ноль
         'Time'
     )
@@ -285,6 +285,36 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     for i in range(num_couriers):
         start_index = routing.Start(i)
         time_dimension.CumulVar(start_index).SetRange(current_time_in_seconds, current_time_in_seconds)
+    
+    # ОГРАНИЧЕНИЯ НА КОЛИЧЕСТВО ЗАКАЗОВ ДЛЯ РАВНОМЕРНОГО РАСПРЕДЕЛЕНИЯ
+    # Функция подсчета заказов
+    def order_count_callback(from_index, to_index):
+        try:
+            if from_index < 0 or to_index < 0:
+                return 0
+            
+            to_node = manager.IndexToNode(to_index)
+            if to_node >= num_couriers + 1 and to_node < num_locations:
+                return 1
+            return 0
+        except Exception as e:
+            print(f"Ошибка в order_count_callback: {e}", file=sys.stderr)
+            return 0
+    
+    order_count_callback_index = routing.RegisterTransitCallback(order_count_callback)
+    
+    # Максимальное количество заказов на курьера (более равномерное распределение)
+    max_orders_per_courier = max(1, min(8, num_orders // num_couriers + 2))  # Динамически рассчитываем
+    print(f"Максимальное количество заказов на курьера: {max_orders_per_courier}", file=sys.stderr)
+    
+    # Добавляем ограничение на количество заказов
+    routing.AddDimension(
+        order_count_callback_index,
+        0,  # slack_max
+        max_orders_per_courier,  # максимальное количество заказов
+        True,  # start_cumul_to_zero
+        'OrderCount'
+    )
     
     # Временные окна для заказов
     for order in orders_data:
@@ -481,6 +511,86 @@ if couriers_without_orders and regular_orders:
         else:
             print(f"⚠️  Нет доступных заказов для курьера {courier['id']}", file=sys.stderr)
 
+# 11. БАЛАНСИРОВКА НАГРУЗКИ - ПЕРЕРАСПРЕДЕЛЕНИЕ ИЗБЫТОЧНЫХ ЗАКАЗОВ
+print("=== БАЛАНСИРОВКА НАГРУЗКИ ===", file=sys.stderr)
+
+# Подсчитываем количество заказов у каждого курьера
+courier_order_counts = {}
+for route in all_routes:
+    courier_id = route['courier_id']
+    courier_order_counts[courier_id] = len(route['orders'])
+
+# Находим курьеров с избыточной нагрузкой
+max_recommended_orders = max(1, min(8, len(orders) // len(couriers) + 1))
+print(f"Рекомендуемое максимальное количество заказов на курьера: {max_recommended_orders}", file=sys.stderr)
+
+overloaded_couriers = []
+underloaded_couriers = []
+
+for courier_id, order_count in courier_order_counts.items():
+    if order_count > max_recommended_orders:
+        overloaded_couriers.append((courier_id, order_count))
+        print(f"⚠️  Курьер {courier_id} перегружен: {order_count} заказов", file=sys.stderr)
+    elif order_count < max_recommended_orders and order_count > 0:
+        underloaded_couriers.append((courier_id, order_count))
+        print(f"📊 Курьер {courier_id} недогружен: {order_count} заказов", file=sys.stderr)
+
+# Пытаемся перераспределить заказы от перегруженных к недогруженным
+for overloaded_courier_id, overloaded_count in overloaded_couriers:
+    if not underloaded_couriers:
+        break
+        
+    # Находим маршрут перегруженного курьера
+    overloaded_route = next((r for r in all_routes if r['courier_id'] == overloaded_courier_id), None)
+    if not overloaded_route or len(overloaded_route['orders']) <= 1:
+        continue
+    
+    # Берем последние заказы (не активные) для перераспределения
+    orders_to_redistribute = []
+    for order_id in reversed(overloaded_route['orders']):
+        # Проверяем, что это не активный заказ
+        is_active = False
+        for courier in couriers:
+            if (courier.get("order") and courier["order"].get("status") == "onTheWay" and 
+                courier["order"]["orderId"] == order_id):
+                is_active = True
+                break
+        
+        if not is_active and len(orders_to_redistribute) < (overloaded_count - max_recommended_orders):
+            orders_to_redistribute.append(order_id)
+    
+    # Перераспределяем заказы
+    for order_id in orders_to_redistribute:
+        if not underloaded_couriers:
+            break
+            
+        # Находим наименее загруженного курьера
+        underloaded_courier_id, underloaded_count = min(underloaded_couriers, key=lambda x: x[1])
+        
+        # Удаляем заказ у перегруженного курьера
+        overloaded_route['orders'].remove(order_id)
+        
+        # Добавляем заказ недогруженному курьеру
+        underloaded_route = next((r for r in all_routes if r['courier_id'] == underloaded_courier_id), None)
+        if underloaded_route:
+            underloaded_route['orders'].append(order_id)
+            print(f"🔄 Заказ {order_id} перераспределен от {overloaded_courier_id} к {underloaded_courier_id}", file=sys.stderr)
+        
+        # Обновляем счетчики
+        courier_order_counts[overloaded_courier_id] -= 1
+        courier_order_counts[underloaded_courier_id] += 1
+        
+        # Обновляем списки
+        for i, (courier_id, count) in enumerate(overloaded_couriers):
+            if courier_id == overloaded_courier_id:
+                overloaded_couriers[i] = (courier_id, count - 1)
+                break
+        
+        for i, (courier_id, count) in enumerate(underloaded_couriers):
+            if courier_id == underloaded_courier_id:
+                underloaded_couriers[i] = (courier_id, count + 1)
+                break
+
 # Формируем финальный результат
 final_routes = []
 for route in all_routes:
@@ -553,5 +663,22 @@ print(f"Активных заказов назначено: {len(assigned_active
 print(f"Срочных заказов назначено: {len(assigned_urgent)}", file=sys.stderr)
 print(f"Обычных заказов назначено: {len(assigned_regular)}", file=sys.stderr)
 print(f"Всего маршрутов: {len(final_routes)}", file=sys.stderr)
+
+# Статистика по загрузке курьеров
+print(f"\n=== СТАТИСТИКА ЗАГРУЗКИ КУРЬЕРОВ ===", file=sys.stderr)
+for route in final_routes:
+    courier_id = route['courier_id']
+    order_count = len(route['orders'])
+    print(f"Курьер {courier_id}: {order_count} заказов", file=sys.stderr)
+
+# Проверяем равномерность распределения
+order_counts = [len(route['orders']) for route in final_routes]
+if order_counts:
+    avg_orders = sum(order_counts) / len(order_counts)
+    max_orders = max(order_counts)
+    min_orders = min(order_counts)
+    print(f"Среднее количество заказов: {avg_orders:.1f}", file=sys.stderr)
+    print(f"Максимум заказов: {max_orders}, Минимум заказов: {min_orders}", file=sys.stderr)
+    print(f"Разброс нагрузки: {max_orders - min_orders} заказов", file=sys.stderr)
 
 print(json.dumps(final_routes, ensure_ascii=False)) 
