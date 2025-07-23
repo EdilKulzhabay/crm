@@ -318,33 +318,36 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     demand_callback_index_12 = routing.RegisterUnaryTransitCallback(demand_callback_12)
     demand_callback_index_19 = routing.RegisterUnaryTransitCallback(demand_callback_19)
     
-    # Добавляем ограничения вместимости для каждого курьера
-    for i in range(num_couriers):
-        courier = couriers_data[i]
+    # Добавляем ограничения вместимости для всех курьеров сразу
+    vehicle_capacities_12 = []
+    vehicle_capacities_19 = []
+    
+    for courier in couriers_data:
         capacity_12 = courier.get('capacity_12', 0)
         capacity_19 = courier.get('capacity_19', 0)
-        
+        vehicle_capacities_12.append(capacity_12)
+        vehicle_capacities_19.append(capacity_19)
         print(f"Курьер {courier['id']}: вместимость 12л={capacity_12}, 19л={capacity_19}", file=sys.stderr)
-        
-        # Ограничение по 12л бутылкам
-        if capacity_12 > 0:
-            routing.AddDimensionWithVehicleCapacity(
-                demand_callback_index_12,
-                0,  # null capacity slack
-                [capacity_12],  # vehicle maximum capacities
-                True,  # start cumul to zero
-                'Capacity12'
-            )
-        
-        # Ограничение по 19л бутылкам
-        if capacity_19 > 0:
-            routing.AddDimensionWithVehicleCapacity(
-                demand_callback_index_19,
-                0,  # null capacity slack
-                [capacity_19],  # vehicle maximum capacities
-                True,  # start cumul to zero
-                'Capacity19'
-            )
+    
+    # Ограничение по 12л бутылкам для всех курьеров
+    if any(cap > 0 for cap in vehicle_capacities_12):
+        routing.AddDimensionWithVehicleCapacity(
+            demand_callback_index_12,
+            0,  # null capacity slack
+            vehicle_capacities_12,  # vehicle maximum capacities
+            True,  # start cumul to zero
+            'Capacity12'
+        )
+    
+    # Ограничение по 19л бутылкам для всех курьеров
+    if any(cap > 0 for cap in vehicle_capacities_19):
+        routing.AddDimensionWithVehicleCapacity(
+            demand_callback_index_19,
+            0,  # null capacity slack
+            vehicle_capacities_19,  # vehicle maximum capacities
+            True,  # start cumul to zero
+            'Capacity19'
+        )
     
     # Добавляем ограничения для заказов с более мягкими штрафами
     for order_idx in range(num_couriers + 1, num_locations):
