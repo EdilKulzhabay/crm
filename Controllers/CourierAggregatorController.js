@@ -1141,13 +1141,13 @@ export const appointmentFranchisee = async (req, res) => {
 //     {
 //         _id: {
 //             $in: [
-//                 ObjectId("687f1fd3d2b79cff02f606d7")
+//                 ObjectId("68809cb915526d48c4d92e46")
                 
 //             ]
 //         }
 //     },
 //     {
-//         $set: { status: "awaitingOrder", forAggregator: true, courierAggregator: null }
+//         $set: { status: "delivered" }
 //     }
 // )
 

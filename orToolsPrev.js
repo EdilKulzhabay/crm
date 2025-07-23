@@ -24,7 +24,7 @@ const pythonPath = process.platform === "win32"
 export function runPythonVRP(couriers, orders, courier_restrictions) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
-        const python = spawn(pythonPath, ["./orTools/vrp_solver_with_time_windows.py"]);
+        const python = spawn(pythonPath, ["./orTools/vrp_solver_optimized.py"]);
 
         const input = {
             common_depot: {
@@ -75,7 +75,7 @@ export function runPythonVRP(couriers, orders, courier_restrictions) {
 export function runPythonVisualize(couriers, orders, routes) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
-        const python = spawn(pythonPath, ["./orTools/testViz.py"]);
+        const python = spawn(pythonPath, ["./orTools/vizPrev.py"]);
 
         const input = {
             common_depot: {
@@ -351,7 +351,7 @@ const cleanupDuplicateOrders = async () => {
     }
 };
 
-export default async function testOrTools() {
+export default async function orTools() {
     await ensureMongoConnection();
 
     // ОЧИСТКА ДУБЛИКАТОВ ПЕРЕД НАЧАЛОМ РАБОТЫ
@@ -514,134 +514,134 @@ export default async function testOrTools() {
     }
 
 
-    // for (const route of result) {
-    //     const courier = couriers.find(c => c.id === route.courier_id)
-    //     const hasActiveOrder = courier.order && courier.order.status === "onTheWay"
-    //     const isEmptyCourier = courier.capacity_12 === 0 && courier.capacity_19 === 0
+    for (const route of result) {
+        const courier = couriers.find(c => c.id === route.courier_id)
+        const hasActiveOrder = courier.order && courier.order.status === "onTheWay"
+        const isEmptyCourier = courier.capacity_12 === 0 && courier.capacity_19 === 0
         
-    //     console.log(`✅ Курьер ${route.courier_id} получил ${route.orders.length} заказов`);
-    //     console.log(`   Тип курьера: ${route.courier_type || (isEmptyCourier ? 'ПУСТОЙ' : 'ЗАГРУЖЕННЫЙ')}`);
-    //     console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
-    //     console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
-    //     console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
-    //     console.log(`   Активный заказ: ${hasActiveOrder ? courier.order.orderId : 'нет'}`);
-    //     console.log(`   Завершил первый заказ: ${courier.completeFirstOrder ? 'да' : 'нет'}`);
+        console.log(`✅ Курьер ${route.courier_id} получил ${route.orders.length} заказов`);
+        console.log(`   Тип курьера: ${route.courier_type || (isEmptyCourier ? 'ПУСТОЙ' : 'ЗАГРУЖЕННЫЙ')}`);
+        console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
+        console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
+        console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
+        console.log(`   Активный заказ: ${hasActiveOrder ? courier.order.orderId : 'нет'}`);
+        console.log(`   Завершил первый заказ: ${courier.completeFirstOrder ? 'да' : 'нет'}`);
         
-    //     if (hasActiveOrder) {
-    //         const activeOrderIndex = route.orders.indexOf(courier.order.orderId)
-    //         if (activeOrderIndex === 0) {
-    //             console.log(`   ✅ Активный заказ идет первым в маршруте`);
-    //         } else if (activeOrderIndex > 0) {
-    //             console.log(`   ⚠️  Активный заказ идет ${activeOrderIndex + 1}-м в маршруте (должен быть первым)`);
-    //         } else {
-    //             console.log(`   ❌ Активный заказ не найден в маршруте`);
-    //         }
-    //     }
-    // }
+        if (hasActiveOrder) {
+            const activeOrderIndex = route.orders.indexOf(courier.order.orderId)
+            if (activeOrderIndex === 0) {
+                console.log(`   ✅ Активный заказ идет первым в маршруте`);
+            } else if (activeOrderIndex > 0) {
+                console.log(`   ⚠️  Активный заказ идет ${activeOrderIndex + 1}-м в маршруте (должен быть первым)`);
+            } else {
+                console.log(`   ❌ Активный заказ не найден в маршруте`);
+            }
+        }
+    }
 
 
-    // const aquaMarket = await AquaMarket.findOne({
-    //     "point.lat": { $exists: true, $ne: null },
-    //     "point.lon": { $exists: true, $ne: null }
-    // });
+    const aquaMarket = await AquaMarket.findOne({
+        "point.lat": { $exists: true, $ne: null },
+        "point.lon": { $exists: true, $ne: null }
+    });
 
-    // for (const route of result) {
-    //     const courier = await CourierAggregator.findOne({fullName: route.courier_id});
+    for (const route of result) {
+        const courier = await CourierAggregator.findOne({fullName: route.courier_id});
         
-    //     // ПРОВЕРКА НА ДУБЛИКАТЫ: Получаем текущие заказы курьера
-    //     const existingOrderIds = courier.orders.map(order => order.orderId.toString());
-    //     console.log(`📋 Курьер ${courier.fullName} уже имеет заказы: ${existingOrderIds.join(', ')}`);
+        // ПРОВЕРКА НА ДУБЛИКАТЫ: Получаем текущие заказы курьера
+        const existingOrderIds = courier.orders.map(order => order.orderId.toString());
+        console.log(`📋 Курьер ${courier.fullName} уже имеет заказы: ${existingOrderIds.join(', ')}`);
         
-    //     for (const orderId of route.orders) {
-    //         // ПРОВЕРКА 1: Проверяем, нет ли уже этого заказа у курьера
-    //         if (existingOrderIds.includes(orderId.toString())) {
-    //             console.log(`⚠️  ДУБЛИКАТ НАЙДЕН: Заказ ${orderId} уже есть у курьера ${courier.fullName}, пропускаем`);
-    //             continue;
-    //         }
+        for (const orderId of route.orders) {
+            // ПРОВЕРКА 1: Проверяем, нет ли уже этого заказа у курьера
+            if (existingOrderIds.includes(orderId.toString())) {
+                console.log(`⚠️  ДУБЛИКАТ НАЙДЕН: Заказ ${orderId} уже есть у курьера ${courier.fullName}, пропускаем`);
+                continue;
+            }
             
-    //         // ПРОВЕРКА 2: Проверяем, не назначен ли заказ другому курьеру
-    //         const existingAssignment = await Order.findById(orderId);
-    //         if (existingAssignment && existingAssignment.courierAggregator && 
-    //             existingAssignment.courierAggregator.toString() !== courier._id.toString()) {
-    //             console.log(`⚠️  КОНФЛИКТ: Заказ ${orderId} уже назначен другому курьеру, пропускаем`);
-    //             continue;
-    //         }
+            // ПРОВЕРКА 2: Проверяем, не назначен ли заказ другому курьеру
+            const existingAssignment = await Order.findById(orderId);
+            if (existingAssignment && existingAssignment.courierAggregator && 
+                existingAssignment.courierAggregator.toString() !== courier._id.toString()) {
+                console.log(`⚠️  КОНФЛИКТ: Заказ ${orderId} уже назначен другому курьеру, пропускаем`);
+                continue;
+            }
             
-    //         // ПРОВЕРКА 3: Убеждаемся, что заказ не находится у других курьеров
-    //         const otherCouriersWithOrder = await CourierAggregator.find({
-    //             _id: { $ne: courier._id },
-    //             "orders.orderId": orderId
-    //         });
+            // ПРОВЕРКА 3: Убеждаемся, что заказ не находится у других курьеров
+            const otherCouriersWithOrder = await CourierAggregator.find({
+                _id: { $ne: courier._id },
+                "orders.orderId": orderId
+            });
             
-    //         if (otherCouriersWithOrder.length > 0) {
-    //             console.log(`⚠️  НАЙДЕН У ДРУГИХ: Заказ ${orderId} найден у курьеров: ${otherCouriersWithOrder.map(c => c.fullName).join(', ')}`);
-    //             // Удаляем заказ у других курьеров
-    //             await CourierAggregator.updateMany(
-    //                 { 
-    //                     _id: { $ne: courier._id },
-    //                     "orders.orderId": orderId 
-    //                 },
-    //                 { 
-    //                     $pull: { 
-    //                         orders: { orderId: orderId } 
-    //                     } 
-    //                 }
-    //             );
-    //             console.log(`🔄 Заказ ${orderId} удален у других курьеров`);
-    //         }
+            if (otherCouriersWithOrder.length > 0) {
+                console.log(`⚠️  НАЙДЕН У ДРУГИХ: Заказ ${orderId} найден у курьеров: ${otherCouriersWithOrder.map(c => c.fullName).join(', ')}`);
+                // Удаляем заказ у других курьеров
+                await CourierAggregator.updateMany(
+                    { 
+                        _id: { $ne: courier._id },
+                        "orders.orderId": orderId 
+                    },
+                    { 
+                        $pull: { 
+                            orders: { orderId: orderId } 
+                        } 
+                    }
+                );
+                console.log(`🔄 Заказ ${orderId} удален у других курьеров`);
+            }
             
-    //         await Order.findByIdAndUpdate(orderId, { $set: { courierAggregator: courier._id } });
-    //         const order = await Order.findById(orderId).populate("client");
+            await Order.findByIdAndUpdate(orderId, { $set: { courierAggregator: courier._id } });
+            const order = await Order.findById(orderId).populate("client");
         
-    //         const orderData = {
-    //             orderId: order._id,
-    //             status: order.status,
-    //             products: order.products,
-    //             sum: order.sum,
-    //             opForm: order.opForm,
-    //             comment: order.comment || "",
-    //             clientReview: order.clientReview || "",
-    //             clientTitle: order.client?.fullName || "",
-    //             clientPhone: order.client?.phone || "",
-    //             date: order.date,
-    //             clientPoints: {
-    //                 lat: order.address.point.lat,
-    //                 lon: order.address.point.lon
-    //             },
-    //             clientAddress: order.address.actual,
-    //             clientAddressLink: order.address.link || "",
-    //             aquaMarketPoints: { lat: aquaMarket.point.lat, lon: aquaMarket.point.lon },
-    //             aquaMarketAddress: aquaMarket.address,
-    //             aquaMarketAddressLink: aquaMarket.link,
-    //             step: "toAquaMarket",
-    //             income: order.sum,
-    //         };
+            const orderData = {
+                orderId: order._id,
+                status: order.status,
+                products: order.products,
+                sum: order.sum,
+                opForm: order.opForm,
+                comment: order.comment || "",
+                clientReview: order.clientReview || "",
+                clientTitle: order.client?.fullName || "",
+                clientPhone: order.client?.phone || "",
+                date: order.date,
+                clientPoints: {
+                    lat: order.address.point.lat,
+                    lon: order.address.point.lon
+                },
+                clientAddress: order.address.actual,
+                clientAddressLink: order.address.link || "",
+                aquaMarketPoints: { lat: aquaMarket.point.lat, lon: aquaMarket.point.lon },
+                aquaMarketAddress: aquaMarket.address,
+                aquaMarketAddressLink: aquaMarket.link,
+                step: "toAquaMarket",
+                income: order.sum,
+            };
         
-    //         // БЕЗОПАСНОЕ ДОБАВЛЕНИЕ: Используем $addToSet вместо $push для предотвращения дубликатов
-    //         await CourierAggregator.updateOne(
-    //             { _id: courier._id },
-    //             { $addToSet: { orders: orderData } }
-    //         );
+            // БЕЗОПАСНОЕ ДОБАВЛЕНИЕ: Используем $addToSet вместо $push для предотвращения дубликатов
+            await CourierAggregator.updateOne(
+                { _id: courier._id },
+                { $addToSet: { orders: orderData } }
+            );
             
-    //         console.log(`✅ Заказ ${orderId} успешно добавлен курьеру ${courier.fullName}`);
-    //     }
+            console.log(`✅ Заказ ${orderId} успешно добавлен курьеру ${courier.fullName}`);
+        }
         
-    //     console.log(`✅ Курьер ${courier.fullName} получил ${route.orders.length} заказов`);
-    //     console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
-    //     console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
-    //     console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
-    // }
+        console.log(`✅ Курьер ${courier.fullName} получил ${route.orders.length} заказов`);
+        console.log(`   Требуется бутылок: 12л=${route.required_bottles.bottles_12}, 19л=${route.required_bottles.bottles_19}, всего=${route.required_bottles.total}`);
+        console.log(`   Курьер должен взять: 12л=${route.courier_should_take.bottles_12}, 19л=${route.courier_should_take.bottles_19}, всего=${route.courier_should_take.total}`);
+        console.log(`   Использование вместимости: ${route.capacity_utilization.percent}%`);
+    }
 
     console.log("✅ Маршруты назначены");
 
     console.log("Отправляем push уведомления");
     
-    // const needOrTools = await sendOrderPushNotification();
+    const needOrTools = await sendOrderPushNotification();
 
-    // if (needOrTools) {
-    //     console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
-    //     await orTools();
-    // }
+    if (needOrTools) {
+        console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
+        await orTools();
+    }
 
     console.log("✅ Push уведомления отправлены");
 }
