@@ -165,8 +165,8 @@ def solve_vrp_no_depot_time(couriers, orders):
         return []
 
     # Проверяем возможность выполнения заказов по вместимости
-    total_bottles_12 = sum((order.get('bottles_12', 0) or 0) for order in orders)
-    total_bottles_19 = sum((order.get('bottles_19', 0) or 0) for order in orders)
+    total_bottles_12 = sum(order.get('bottles_12', 0) for order in orders)
+    total_bottles_19 = sum(order.get('bottles_19', 0) for order in orders)
     total_capacity_12 = sum(courier['capacity_12'] for courier in couriers)
     total_capacity_19 = sum(courier['capacity_19'] for courier in couriers)
 
@@ -299,36 +299,6 @@ def solve_vrp_no_depot_time(couriers, orders):
         'Time'
     )
     time_dimension = routing.GetDimensionOrDie('Time')
-
-    # --- Измерение для количества заказов (OrderCount) ---
-    def count_callback(from_index):
-        node = manager.IndexToNode(from_index)
-        # Считаем только заказы (не стартовые точки и не активные заказы, не депо)
-        if (node != depot_index and
-            not all_locations[node].get('is_courier_start', False) and
-            not all_locations[node].get('is_active_order', False)):
-            return 1
-        return 0
-
-    count_callback_index = routing.RegisterUnaryTransitCallback(count_callback)
-    routing.AddDimension(
-        count_callback_index,
-        0,  # slack
-        len(order_location_indices),  # максимум заказов
-        True,  # start_cumul_to_zero
-        'OrderCount'
-    )
-    order_count_dimension = routing.GetDimensionOrDie('OrderCount')
-    
-    # Мягкое ограничение: штрафуем за курьера без заказов (максимальный штраф)
-    for vehicle_id in range(num_vehicles):
-        index = routing.Start(vehicle_id)
-        # Добавляем мягкое ограничение: предпочитаем курьеров с заказами
-        routing.solver().Add(order_count_dimension.CumulVar(index) >= 0)
-        # Убираем принудительное удаление значения 0, так как это может создать противоречие
-        # routing.solver().Add(order_count_dimension.CumulVar(index).RemoveValue(0))
-        # Вместо этого используем штраф за пустые маршруты
-        routing.solver().AddPenaltyTerm(order_count_dimension.CumulVar(index) == 0, 1000000)
 
     # Устанавливаем начальное время для всех курьеров равным текущему времени
     for i in range(num_vehicles):
@@ -472,9 +442,9 @@ def solve_vrp_no_depot_time(couriers, orders):
                     "travel_time_hours": round(route_time/60, 2),
                     "distance_km": round(route_time/60 * 30, 2),  # Примерное расстояние (30 км/ч)
                     "required_bottles": {
-                        "bottles_12": sum((o.get('bottles_12', 0) or 0) for o in orders if o['id'] in route_orders),
-                        "bottles_19": sum((o.get('bottles_19', 0) or 0) for o in orders if o['id'] in route_orders),
-                        "total": sum((o.get('bottles_12', 0) or 0) + (o.get('bottles_19', 0) or 0) for o in orders if o['id'] in route_orders)
+                        "bottles_12": sum(o.get('bottles_12', 0) for o in orders if o['id'] in route_orders),
+                        "bottles_19": sum(o.get('bottles_19', 0) for o in orders if o['id'] in route_orders),
+                        "total": sum(o.get('bottles_12', 0) + o.get('bottles_19', 0) for o in orders if o['id'] in route_orders)
                     },
                     "courier_bottles": {
                         "bottles_12": couriers[vehicle_id].get("capacity_12", 0),
@@ -561,8 +531,8 @@ for courier_id, assignments in courier_assignments.items():
         for assignment in assignments:
             order = next((o for o in urgent_orders if o['id'] == assignment['order_id']), None)
             if order:
-                courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - (order.get('bottles_12', 0) or 0))
-                courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - (order.get('bottles_19', 0) or 0))
+                courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - order.get('bottles_12', 0))
+                courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - order.get('bottles_19', 0))
         
         # Обновляем координаты курьера на координаты последнего заказа
         if assignments:
