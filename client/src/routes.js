@@ -59,7 +59,6 @@ import SuperAdminAggregator from "./Pages/SuperAdmin/SuperAdminAggregator";
 import CourierAggregatorPage from "./Pages/CourierAggregatorPage";
 import SuperAdminAggregatorAction from "./Pages/SuperAdmin/SuperAdminAggregatorAction";
 import SuperAdminCancelledOrders from "./Pages/SuperAdmin/SuperAdminCancelledOrders";
-import SuperAdminAggregatorOrders from "./Pages/SuperAdmin/SuperAdminAggregatorOrders";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -117,8 +116,6 @@ export const router = createBrowserRouter([
     { path: "/courierAggregatorPage/:id", element: <CourierAggregatorPage /> },
     { path: "/aggregatorAction", element: <SuperAdminAggregatorAction /> },
     { path: "/superAdminCancelledOrders", element: <SuperAdminCancelledOrders /> },
-    { path: "/superAdminAggregatorOrders", element: <SuperAdminAggregatorOrders /> },
-    
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
