@@ -616,7 +616,14 @@ export const completeOrderCourierAggregator = async (req, res) => {
             );
         }
         
-
+        if (order.products.b12 !== courier1.order.products.b12 || order.products.b19 !== courier1.order.products.b19) {
+            await CourierAggregator.updateOne({_id: courierId}, {
+                $set: {
+                    capacity12: courier1.capacity12 + (courier1.order.products.b12 - order.products.b12),
+                    capacity19: courier1.capacity19 + (courier1.order.products.b19 - order.products.b19)
+                }
+            })
+        }
 
         await Order.updateOne({_id: orderId}, { 
             $set: {
@@ -653,8 +660,6 @@ export const completeOrderCourierAggregator = async (req, res) => {
             }
         })
 
-        const courier = await CourierAggregator.findById(courierId)
-
         res.json({
             success: true,
             message: "Заказ завершен",
@@ -662,63 +667,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
             income: sum
         })
 
-        // if (courier.orders.length === 0) {
-        //     // await distributionOrdersToFreeCourier(courierId)
-        //     console.log("У курьера нет заказов, отправляем на переназначение");
-            
-        // } else {
-        //     await new Promise(resolve => setTimeout(resolve, 10000));
-        //     let nextOrder = courier.orders[0]
-        //     console.log("CourierAggregatorController 479, order = ", nextOrder);
-
-        //     let message = ""
-
-        //     if (nextOrder?.products?.b19 > 0) {
-        //         message += `${nextOrder?.products?.b19} 19.8 бутылей.`
-        //     }
-
-        //     if (nextOrder?.products?.b12 > 0) {
-        //         message += `${nextOrder?.products?.b12} 12.5 бутылей.`
-        //     }
-
-        //     message += `Забрать из аквамаркета: ${courier.orders[0].aquaMarketAddress}`
-
-        //     await pushNotification(
-        //         "newOrder",
-        //         message,
-        //         [courier.notificationPushToken],
-        //         "newOrder",
-        //         courier.orders[0]
-        //     );
-        //     console.log("CourierAggregatorController 487, отправили уведомление о заказе курьеру");
-            
-        //     await new Promise(resolve => setTimeout(resolve, 40000));
-        //     const currentOrder = await Order.findById(courier.orders[0].orderId)
-        //     if (currentOrder.status !== "onTheWay") {
-        //         // Получаем все ID заказов курьера
-        //         // const orderIds = courier.orders.map(order => order.orderId);
-                
-        //         // // Удаляем все заказы у курьера
-        //         // await CourierAggregator.updateOne(
-        //         //     { _id: courierId },
-        //         //     { 
-        //         //         $set: { 
-        //         //             orders: [],
-        //         //             order: null 
-        //         //         }
-        //         //     }
-        //         // );
-
-        //         // // Отправляем все заказы на переназначение
-        //         // for (const orderId of orderIds) {
-        //         //     await getLocationsLogicQueue(orderId);
-        //         // }
-        //         console.log("У курьера нет заказов, отправляем на переназначение");
-                
-        //     }
-        // }
-
-        // await queueOrTools();
+        await queueOrTools();
 
     } catch (error) {
         console.log(error);
