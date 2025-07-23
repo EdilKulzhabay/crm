@@ -212,11 +212,21 @@ plt.ylabel('Широта', fontsize=12)
 # Подсчитываем статистику
 total_active_orders = len(active_orders)
 total_new_orders = sum(len(route['orders']) for route in routes) - total_active_orders
-total_distance = sum(route["distance_km"] for route in routes)
+
+# Обрабатываем разные форматы данных (старый с distance_km и новый с travel_time)
+if 'distance_km' in routes[0] if routes else {}:
+    # Старый формат с расстоянием
+    total_distance = sum(route["distance_km"] for route in routes)
+    distance_text = f"Общее расстояние: {total_distance:.2f} км"
+else:
+    # Новый формат со временем
+    total_time_minutes = sum(route.get("travel_time_minutes", 0) for route in routes)
+    total_time_hours = total_time_minutes / 60
+    distance_text = f"Общее время: {total_time_hours:.2f} часов"
 
 plt.title(f'VRP Решение: Маршруты с активными заказами\n' + 
           f'Активных заказов: {total_active_orders}, Новых заказов: {total_new_orders}, ' + 
-          f'Общее расстояние: {total_distance:.2f} км', fontsize=14)
+          distance_text, fontsize=14)
 
 # Основная легенда для курьеров (стартовые позиции)
 main_legend = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Курьеры (стартовые позиции)')
@@ -243,9 +253,18 @@ for i, route in enumerate(routes):
     active_count = sum(1 for order_id in route['orders'] if order_id in active_orders)
     new_count = len(route['orders']) - active_count
     
+    # Обрабатываем разные форматы данных
+    if 'distance_km' in route:
+        # Старый формат с расстоянием
+        metric_text = f"{route['distance_km']} км"
+    else:
+        # Новый формат со временем
+        travel_time_hours = route.get("travel_time_minutes", 0) / 60
+        metric_text = f"{travel_time_hours:.2f} часов"
+    
     info_text += f"• {courier_id} ({color}): {route['orders_count']} заказов "
     info_text += f"(активных: {active_count}, новых: {new_count}), "
-    info_text += f"{route['distance_km']} км\n"
+    info_text += f"{metric_text}\n"
 
 plt.figtext(0.02, 0.02, info_text, fontsize=10, 
            bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.8))
@@ -302,7 +321,15 @@ for i, route in enumerate(routes):
         print(f"  📦 Новые заказы: {', '.join(new_order_names)}")
     
     print(f"  📊 Всего заказов: {len(route['orders'])} (активных: {len(active_orders_in_route)}, новых: {len(new_orders_in_route)})")
-    print(f"  🛣️  Расстояние: {route['distance_km']} км")
+    
+    # Обрабатываем разные форматы данных
+    if 'distance_km' in route:
+        # Старый формат с расстоянием
+        print(f"  🛣️  Расстояние: {route['distance_km']} км")
+    else:
+        # Новый формат со временем
+        travel_time_hours = route.get("travel_time_minutes", 0) / 60
+        print(f"  ⏱️  Время в пути: {travel_time_hours:.2f} часов")
     
     if route['orders']:
         last_order = orders_dict[route['orders'][-1]]
@@ -335,7 +362,18 @@ if unserved:
         print(f"  {order_name} (НОВЫЙ): ({order['lat']:.3f}, {order['lon']:.3f})")
 
 print(f"\n📈 Итоговая статистика:")
-print(f"  Общее расстояние: {sum(route['distance_km'] for route in routes):.2f} км")
+
+# Обрабатываем разные форматы данных
+if 'distance_km' in routes[0] if routes else {}:
+    # Старый формат с расстоянием
+    total_distance = sum(route['distance_km'] for route in routes)
+    print(f"  Общее расстояние: {total_distance:.2f} км")
+else:
+    # Новый формат со временем
+    total_time_minutes = sum(route.get("travel_time_minutes", 0) for route in routes)
+    total_time_hours = total_time_minutes / 60
+    print(f"  Общее время в пути: {total_time_hours:.2f} часов")
+
 print(f"  Используется курьеров: {len(routes)}/{len(couriers)}")
 print(f"  Обслужено заказов: {sum(route['orders_count'] for route in routes)}/{len(all_orders_for_viz)}")
 print(f"  Активных заказов: {len(active_orders)}")
