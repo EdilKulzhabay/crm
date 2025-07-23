@@ -99,18 +99,35 @@ orders = valid_orders
 print(f"Количество валидных заказов: {len(orders)}", file=sys.stderr)
 
 # ДВУХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ
-print("=== ДВУХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ ===", file=sys.stderr)
+print("=== ТРЕХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ ===", file=sys.stderr)
 
 # 1. Разделяем заказы на активные, срочные и обычные
 active_orders_list = []
 urgent_orders = []
 regular_orders = []
 
+# Сначала обрабатываем активные заказы из структуры курьеров
+for courier in couriers:
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order = courier["order"]
+        active_order_data = {
+            "id": active_order["orderId"],
+            "lat": active_order["lat"],
+            "lon": active_order["lon"],
+            "bottles_12": active_order.get("bottles_12", 0),
+            "bottles_19": active_order.get("bottles_19", 0),
+            "status": "onTheWay"
+        }
+        active_orders_list.append(active_order_data)
+        print(f"🚚 АКТИВНЫЙ заказ {active_order['orderId']} добавлен в приоритетную очередь", file=sys.stderr)
+
+# Затем обрабатываем обычные заказы
 for order in orders:
-    # Проверяем, является ли заказ активным
-    if order.get('status') == 'onTheWay':
-        active_orders_list.append(order)
-        print(f"🚚 АКТИВНЫЙ заказ {order['id']} добавлен в приоритетную очередь", file=sys.stderr)
+    # Проверяем, является ли заказ активным (уже добавлен выше)
+    is_active = any(active_order['id'] == order['id'] for active_order in active_orders_list)
+    
+    if is_active:
+        continue  # Пропускаем, если уже добавлен как активный
     # Проверяем срочность
     elif order.get('isUrgent', False) or order.get('is_urgent', False):
         urgent_orders.append(order)
@@ -205,6 +222,10 @@ search_params.time_limit.seconds = 30
 
 def solve_vrp_for_orders(couriers_data, orders_data):
     """Решает VRP для заданного набора заказов"""
+    if not orders_data:
+        print("Нет заказов для распределения", file=sys.stderr)
+        return []
+    
     # Создаем список локаций: депо + курьеры + заказы
     locations = [common_depot] + couriers_data + orders_data
     
@@ -214,6 +235,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     num_couriers = len(couriers_data)
     num_orders = len(orders_data)
     num_locations = len(locations)
+    
+    print(f"Решаем VRP: {num_couriers} курьеров, {num_orders} заказов", file=sys.stderr)
     
     # ОТКРЫТЫЕ МАРШРУТЫ: Создаем виртуальные конечные точки
     starts = list(range(1, num_couriers + 1))
@@ -271,20 +294,30 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         
         routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     
-    # Добавляем размерность для времени
+    # Добавляем размерность для времени с более мягкими ограничениями
     routing.AddDimension(
         transit_callback_index,
         7200,  # slack_max (2 часа)
-        28800,  # максимальное время маршрута (8 часов вместо 24)
+        43200,  # максимальное время маршрута (12 часов вместо 8)
         False,  # start_cumul_to_zero - НЕ устанавливаем в ноль
         'Time'
     )
     time_dimension = routing.GetDimensionOrDie('Time')
     
     # Устанавливаем начальное время для всех курьеров равным текущему времени
-    for i in range(num_couriers):
-        start_index = routing.Start(i)
-        time_dimension.CumulVar(start_index).SetRange(current_time_in_seconds, current_time_in_seconds)
+    try:
+        for i in range(num_couriers):
+            start_index = routing.Start(i)
+            # Используем более мягкие ограничения времени
+            min_time = max(0, current_time_in_seconds - 3600)  # Разрешаем отклонение на 1 час назад
+            max_time = current_time_in_seconds + 3600  # Разрешаем отклонение на 1 час вперед
+            time_dimension.CumulVar(start_index).SetRange(min_time, max_time)
+    except Exception as e:
+        print(f"Ошибка при установке времени старта: {e}", file=sys.stderr)
+        # Пробуем без ограничений времени
+        for i in range(num_couriers):
+            start_index = routing.Start(i)
+            time_dimension.CumulVar(start_index).SetRange(0, 86400)
     
     # ОГРАНИЧЕНИЯ НА КОЛИЧЕСТВО ЗАКАЗОВ ДЛЯ РАВНОМЕРНОГО РАСПРЕДЕЛЕНИЯ
     # Функция подсчета заказов
@@ -303,8 +336,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     
     order_count_callback_index = routing.RegisterTransitCallback(order_count_callback)
     
-    # Максимальное количество заказов на курьера (более равномерное распределение)
-    max_orders_per_courier = max(1, min(8, num_orders // num_couriers + 2))  # Динамически рассчитываем
+    # Максимальное количество заказов на курьера (более мягкие ограничения)
+    max_orders_per_courier = max(1, min(12, num_orders // num_couriers + 3))  # Увеличиваем лимит
     print(f"Максимальное количество заказов на курьера: {max_orders_per_courier}", file=sys.stderr)
     
     # Добавляем ограничение на количество заказов
@@ -316,7 +349,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         'OrderCount'
     )
     
-    # Временные окна для заказов
+    # Временные окна для заказов (только если есть)
     for order in orders_data:
         if 'date.time' in order:
             order_node_index = None
@@ -326,57 +359,66 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     break
     
             if order_node_index is not None:
-                order_index = manager.NodeToIndex(order_node_index)
-                time_window_str = order['date.time'].split(' - ')
-                start_time_str = time_window_str[0]
-                end_time_str = time_window_str[1]
+                try:
+                    order_index = manager.NodeToIndex(order_node_index)
+                    time_window_str = order['date.time'].split(' - ')
+                    start_time_str = time_window_str[0]
+                    end_time_str = time_window_str[1]
     
-                start_h, start_m = map(int, start_time_str.split(':'))
-                end_h, end_m = map(int, end_time_str.split(':'))
-                
-                start_time_seconds = start_h * 3600 + start_m * 60
-                end_time_seconds = end_h * 3600 + end_m * 60
+                    start_h, start_m = map(int, start_time_str.split(':'))
+                    end_h, end_m = map(int, end_time_str.split(':'))
+                    
+                    start_time_seconds = start_h * 3600 + start_m * 60
+                    end_time_seconds = end_h * 3600 + end_m * 60
     
-                # Убедимся, что временное окно не в прошлом
-                start_time_seconds = max(start_time_seconds, current_time_in_seconds)
-                
-                # Для срочных заказов делаем временные окна более строгими
-                if order.get('isUrgent', False) or order.get('is_urgent', False):
-                    print(f"🚨 Срочный заказ {order['id']} с временным окном: {start_time_str}-{end_time_str}", file=sys.stderr)
-                    # Уменьшаем допустимое время ожидания для срочных заказов
-                    max_wait_for_urgent = 30 * 60  # 30 минут для срочных
-                    if start_time_seconds > current_time_in_seconds + max_wait_for_urgent:
-                        print(f"⚠️  Срочный заказ {order['id']} пропущен - слишком долгое ожидание", file=sys.stderr)
-                        continue
-                
-                time_dimension.CumulVar(order_index).SetRange(int(start_time_seconds), int(end_time_seconds))
+                    # Убедимся, что временное окно не в прошлом
+                    start_time_seconds = max(start_time_seconds, current_time_in_seconds)
+                    
+                    # Для срочных заказов делаем временные окна более строгими
+                    if order.get('isUrgent', False) or order.get('is_urgent', False):
+                        print(f"🚨 Срочный заказ {order['id']} с временным окном: {start_time_str}-{end_time_str}", file=sys.stderr)
+                        # Уменьшаем допустимое время ожидания для срочных заказов
+                        max_wait_for_urgent = 30 * 60  # 30 минут для срочных
+                        if start_time_seconds > current_time_in_seconds + max_wait_for_urgent:
+                            print(f"⚠️  Срочный заказ {order['id']} пропущен - слишком долгое ожидание", file=sys.stderr)
+                            continue
+                    
+                    time_dimension.CumulVar(order_index).SetRange(int(start_time_seconds), int(end_time_seconds))
+                except Exception as e:
+                    print(f"Ошибка при установке временного окна для заказа {order['id']}: {e}", file=sys.stderr)
+                    continue
     
-    # Решаем задачу
-    solution = routing.SolveWithParameters(search_params)
-    
-    if solution:
-        routes = []
-        for vehicle_id in range(num_couriers):
-            index = routing.Start(vehicle_id)
-            route_orders = []
-            
-            while not routing.IsEnd(index):
-                node_index = manager.IndexToNode(index)
-                
-                if node_index >= num_couriers + 1 and node_index < num_locations:
-                    order = orders_data[node_index - num_couriers - 1]
-                    route_orders.append(order["id"])
-                
-                index = solution.Value(routing.NextVar(index))
-            
-            if route_orders:
-                routes.append({
-                    "courier_id": couriers_data[vehicle_id]["id"],
-                    "orders": route_orders
-                })
+    # Решаем задачу с обработкой ошибок
+    try:
+        solution = routing.SolveWithParameters(search_params)
         
-        return routes
-    else:
+        if solution:
+            routes = []
+            for vehicle_id in range(num_couriers):
+                index = routing.Start(vehicle_id)
+                route_orders = []
+                
+                while not routing.IsEnd(index):
+                    node_index = manager.IndexToNode(index)
+                    
+                    if node_index >= num_couriers + 1 and node_index < num_locations:
+                        order = orders_data[node_index - num_couriers - 1]
+                        route_orders.append(order["id"])
+                    
+                    index = solution.Value(routing.NextVar(index))
+                
+                if route_orders:
+                    routes.append({
+                        "courier_id": couriers_data[vehicle_id]["id"],
+                        "orders": route_orders
+                    })
+            
+            return routes
+        else:
+            print("Алгоритм не смог найти решение", file=sys.stderr)
+            return []
+    except Exception as e:
+        print(f"Ошибка при решении VRP: {e}", file=sys.stderr)
         return []
 
 # 2. Копируем курьеров для первого этапа
@@ -386,8 +428,12 @@ couriers_for_active = copy.deepcopy(couriers)
 assigned_active = []
 if active_orders_list:
     print(f"Обрабатываем {len(active_orders_list)} активных заказов...", file=sys.stderr)
-    assigned_active = solve_vrp_for_orders(couriers_for_active, active_orders_list)
-    print(f"Назначено {len(assigned_active)} активных заказов", file=sys.stderr)
+    try:
+        assigned_active = solve_vrp_for_orders(couriers_for_active, active_orders_list)
+        print(f"Назначено {len(assigned_active)} активных заказов", file=sys.stderr)
+    except Exception as e:
+        print(f"Ошибка при решении для активных заказов: {e}", file=sys.stderr)
+        assigned_active = []
 else:
     print("Активных заказов нет", file=sys.stderr)
 
@@ -423,8 +469,12 @@ for courier_id, assigned_order_ids in courier_assignments.items():
 assigned_urgent = []
 if urgent_orders:
     print(f"Обрабатываем {len(urgent_orders)} срочных заказов...", file=sys.stderr)
-    assigned_urgent = solve_vrp_for_orders(couriers, urgent_orders)
-    print(f"Назначено {len(assigned_urgent)} срочных заказов", file=sys.stderr)
+    try:
+        assigned_urgent = solve_vrp_for_orders(couriers, urgent_orders)
+        print(f"Назначено {len(assigned_urgent)} срочных заказов", file=sys.stderr)
+    except Exception as e:
+        print(f"Ошибка при решении для срочных заказов: {e}", file=sys.stderr)
+        assigned_urgent = []
 else:
     print("Срочных заказов нет", file=sys.stderr)
 
@@ -455,7 +505,12 @@ for courier_id, assigned_order_ids in courier_assignments.items():
                 print(f"Курьер {courier_id} перемещен в ({last_order['lat']:.6f}, {last_order['lon']:.6f})", file=sys.stderr)
 
 # 7. Решаем для обычных заказов
-assigned_regular = solve_vrp_for_orders(couriers, regular_orders)
+try:
+    assigned_regular = solve_vrp_for_orders(couriers, regular_orders)
+    print(f"Назначено {len(assigned_regular)} обычных заказов", file=sys.stderr)
+except Exception as e:
+    print(f"Ошибка при решении для обычных заказов: {e}", file=sys.stderr)
+    assigned_regular = []
 
 # 8. Объединяем результаты
 all_routes = assigned_active + assigned_urgent + assigned_regular
