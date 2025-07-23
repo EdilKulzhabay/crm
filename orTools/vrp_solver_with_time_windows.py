@@ -130,7 +130,10 @@ for order in orders:
         continue  # Пропускаем, если уже добавлен как активный
     
     # ПРИОРИТЕТ 1: Срочные заказы (isUrgent: true)
-    if order.get('isUrgent', False) or order.get('is_urgent', False):
+    is_urgent = order.get('isUrgent', False) or order.get('is_urgent', False)
+    print(f"Проверка заказа {order['id']}: isUrgent={order.get('isUrgent', 'НЕТ')}, is_urgent={order.get('is_urgent', 'НЕТ')}, итого={is_urgent}", file=sys.stderr)
+    
+    if is_urgent:
         urgent_orders.append(order)
         print(f"🚨 СРОЧНЫЙ заказ {order['id']} добавлен в приоритетную очередь", file=sys.stderr)
     else:
@@ -708,56 +711,88 @@ if not assigned_regular and regular_orders:
 # 8. Объединяем результаты
 all_routes = assigned_active + assigned_urgent + assigned_regular
 
-# 9. ОБЯЗАТЕЛЬНОЕ НАЗНАЧЕНИЕ АКТИВНЫХ ЗАКАЗОВ
-# Проверяем, что все активные заказы назначены
-assigned_courier_ids = {route['courier_id'] for route in all_routes}
-assigned_order_ids = set()
+# ИСПРАВЛЕНИЕ ДУБЛИКАТОВ: Объединяем маршруты одного курьера
+print("=== ОБЪЕДИНЕНИЕ ДУБЛИКАТОВ КУРЬЕРОВ ===", file=sys.stderr)
+consolidated_routes = {}
+
 for route in all_routes:
-    assigned_order_ids.update(route['orders'])
+    courier_id = route["courier_id"]
+    if courier_id not in consolidated_routes:
+        consolidated_routes[courier_id] = {
+            "courier_id": courier_id,
+            "orders": route["orders"].copy()
+        }
+        print(f"Создан маршрут для курьера {courier_id}: {len(route['orders'])} заказов", file=sys.stderr)
+    else:
+        # Объединяем заказы, избегая дубликатов
+        existing_orders = set(consolidated_routes[courier_id]["orders"])
+        new_orders = route["orders"]
+        
+        for order_id in new_orders:
+            if order_id not in existing_orders:
+                consolidated_routes[courier_id]["orders"].append(order_id)
+                existing_orders.add(order_id)
+        
+        print(f"Объединен маршрут курьера {courier_id}: добавлено {len(new_orders)} заказов, всего {len(consolidated_routes[courier_id]['orders'])}", file=sys.stderr)
 
-# Находим курьеров без маршрутов и их активные заказы
-unassigned_couriers = []
+# Преобразуем обратно в список
+all_routes = list(consolidated_routes.values())
+print(f"После объединения: {len(all_routes)} уникальных курьеров", file=sys.stderr)
+
+# 9. ОБЯЗАТЕЛЬНОЕ НАЗНАЧЕНИЕ АКТИВНЫХ ЗАКАЗОВ
+print("=== ПРОВЕРКА АКТИВНЫХ ЗАКАЗОВ ===", file=sys.stderr)
+
+# Проверяем, что все активные заказы назначены правильным курьерам
 for courier in couriers:
-    if courier['id'] not in assigned_courier_ids:
-        if courier.get("order") and courier["order"].get("status") == "onTheWay":
-            active_order_id = courier["order"]["orderId"]
-            if active_order_id not in assigned_order_ids:
-                # Создаем маршрут только с активным заказом
-                unassigned_couriers.append({
-                    "courier_id": courier['id'],
-                    "orders": [active_order_id]
-                })
-                print(f"🚚 Принудительно назначен активный заказ {active_order_id} курьеру {courier['id']}", file=sys.stderr)
-
-# Добавляем маршруты для курьеров с активными заказами
-all_routes.extend(unassigned_couriers)
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order_id = courier["order"]["orderId"]
+        courier_id = courier["id"]
+        
+        # Ищем маршрут этого курьера
+        courier_route = next((route for route in all_routes if route["courier_id"] == courier_id), None)
+        
+        if courier_route:
+            if active_order_id in courier_route["orders"]:
+                print(f"✅ Курьер {courier_id}: активный заказ {active_order_id} найден в маршруте", file=sys.stderr)
+            else:
+                print(f"❌ Курьер {courier_id}: активный заказ {active_order_id} НЕ найден в маршруте, добавляем", file=sys.stderr)
+                courier_route["orders"].insert(0, active_order_id)  # Добавляем в начало
+        else:
+            print(f"❌ Курьер {courier_id}: маршрут не найден, создаем новый", file=sys.stderr)
+            all_routes.append({
+                "courier_id": courier_id,
+                "orders": [active_order_id]
+            })
 
 # 10. НАЗНАЧЕНИЕ МИНИМУМА ОДНОГО ЗАКАЗА КАЖДОМУ КУРЬЕРУ
-# Находим курьеров без заказов
-couriers_with_orders = {route['courier_id'] for route in all_routes}
-couriers_without_orders = [c for c in couriers if c['id'] not in couriers_with_orders]
+print("=== ПРОВЕРКА МИНИМУМА ЗАКАЗОВ ===", file=sys.stderr)
 
-if couriers_without_orders and regular_orders:
-    print(f"Назначаем минимум один заказ курьерам без заказов: {len(couriers_without_orders)}", file=sys.stderr)
-    
-    # Находим заказы, которые еще не назначены
-    all_assigned_orders = set()
-    for route in all_routes:
-        all_assigned_orders.update(route['orders'])
-    
-    available_orders = [o for o in regular_orders if o['id'] not in all_assigned_orders]
-    
-    # Назначаем по одному заказу каждому курьеру без заказов
-    for i, courier in enumerate(couriers_without_orders):
-        if i < len(available_orders):
-            order = available_orders[i]
-            all_routes.append({
-                "courier_id": courier['id'],
-                "orders": [order['id']]
-            })
-            print(f"📦 Назначен заказ {order['id']} курьеру {courier['id']} (минимум)", file=sys.stderr)
-        else:
-            print(f"⚠️  Нет доступных заказов для курьера {courier['id']}", file=sys.stderr)
+# Проверяем, что все курьеры получили хотя бы один заказ
+assigned_courier_ids = {route['courier_id'] for route in all_routes}
+
+for courier in couriers:
+    courier_id = courier["id"]
+    if courier_id not in assigned_courier_ids:
+        print(f"⚠️  Курьер {courier_id} не получил ни одного заказа", file=sys.stderr)
+        
+        # Если у курьера нет активного заказа, даем ему первый доступный обычный заказ
+        if not courier.get("order") or courier["order"].get("status") != "onTheWay":
+            if regular_orders:
+                first_order = regular_orders[0]
+                all_routes.append({
+                    "courier_id": courier_id,
+                    "orders": [first_order["id"]]
+                })
+                regular_orders.pop(0)  # Убираем из списка доступных
+                print(f"📦 Курьеру {courier_id} назначен заказ {first_order['id']} для обеспечения минимума", file=sys.stderr)
+            elif urgent_orders:
+                first_urgent = urgent_orders[0]
+                all_routes.append({
+                    "courier_id": courier_id,
+                    "orders": [first_urgent["id"]]
+                })
+                urgent_orders.pop(0)  # Убираем из списка доступных
+                print(f"🚨 Курьеру {courier_id} назначен срочный заказ {first_urgent['id']} для обеспечения минимума", file=sys.stderr)
 
 # 11. БАЛАНСИРОВКА НАГРУЗКИ - ПЕРЕРАСПРЕДЕЛЕНИЕ ИЗБЫТОЧНЫХ ЗАКАЗОВ
 print("=== БАЛАНСИРОВКА НАГРУЗКИ ===", file=sys.stderr)
