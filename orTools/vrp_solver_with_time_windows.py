@@ -99,18 +99,26 @@ orders = valid_orders
 print(f"Количество валидных заказов: {len(orders)}", file=sys.stderr)
 
 # ДВУХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ
-# 1. Разделяем заказы на срочные и обычные
+print("=== ДВУХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ ===", file=sys.stderr)
+
+# 1. Разделяем заказы на активные, срочные и обычные
+active_orders_list = []
 urgent_orders = []
 regular_orders = []
+
 for order in orders:
-    # Проверяем оба варианта поля срочности
-    if order.get('isUrgent', False) or order.get('is_urgent', False):
+    # Проверяем, является ли заказ активным
+    if order.get('status') == 'onTheWay':
+        active_orders_list.append(order)
+        print(f"🚚 АКТИВНЫЙ заказ {order['id']} добавлен в приоритетную очередь", file=sys.stderr)
+    # Проверяем срочность
+    elif order.get('isUrgent', False) or order.get('is_urgent', False):
         urgent_orders.append(order)
         print(f"🚨 СРОЧНЫЙ заказ {order['id']} добавлен в приоритетную очередь", file=sys.stderr)
     else:
         regular_orders.append(order)
 
-print(f"Срочных заказов: {len(urgent_orders)}, обычных заказов: {len(regular_orders)}", file=sys.stderr)
+print(f"Активных заказов: {len(active_orders_list)}, срочных заказов: {len(urgent_orders)}, обычных заказов: {len(regular_orders)}", file=sys.stderr)
 
 # Специальные ограничения для конкретных курьеров
 COURIER_SPECIAL_RESTRICTIONS = {}
@@ -341,31 +349,62 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     else:
         return []
 
-# ДВУХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ
-print("=== ДВУХЭТАПНОЕ РАСПРЕДЕЛЕНИЕ ЗАКАЗОВ ===", file=sys.stderr)
-
 # 2. Копируем курьеров для первого этапа
-couriers_for_urgent = copy.deepcopy(couriers)
+couriers_for_active = copy.deepcopy(couriers)
 
-# 3. Сначала решаем только для срочных заказов
-assigned_urgent = []
-if urgent_orders:
-    print(f"Обрабатываем {len(urgent_orders)} срочных заказов...", file=sys.stderr)
-    assigned_urgent = solve_vrp_for_orders(couriers_for_urgent, urgent_orders)
-    print(f"Назначено {len(assigned_urgent)} срочных заказов", file=sys.stderr)
+# 3. Сначала решаем для активных заказов (обязательно)
+assigned_active = []
+if active_orders_list:
+    print(f"Обрабатываем {len(active_orders_list)} активных заказов...", file=sys.stderr)
+    assigned_active = solve_vrp_for_orders(couriers_for_active, active_orders_list)
+    print(f"Назначено {len(assigned_active)} активных заказов", file=sys.stderr)
 else:
-    print("Срочных заказов нет", file=sys.stderr)
+    print("Активных заказов нет", file=sys.stderr)
 
-# 4. Обновляем состояние курьеров после срочных заказов
-# Группируем назначения по курьерам
+# 4. Обновляем состояние курьеров после активных заказов
 courier_assignments = {}
-for assignment in assigned_urgent:
+for assignment in assigned_active:
     courier_id = assignment['courier_id']
     if courier_id not in courier_assignments:
         courier_assignments[courier_id] = []
     courier_assignments[courier_id].extend(assignment['orders'])
 
 # Обновляем каждого курьера
+for courier_id, assigned_order_ids in courier_assignments.items():
+    courier = next((c for c in couriers if c['id'] == courier_id), None)
+    if courier:
+        # Уменьшаем вместимость на все назначенные заказы
+        for order_id in assigned_order_ids:
+            order = next((o for o in active_orders_list if o['id'] == order_id), None)
+            if order:
+                courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - order.get('bottles_12', 0))
+                courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - order.get('bottles_19', 0))
+        
+        # Обновляем координаты курьера на координаты последнего заказа
+        if assigned_order_ids:
+            last_order_id = assigned_order_ids[-1]
+            last_order = next((o for o in active_orders_list if o['id'] == last_order_id), None)
+            if last_order:
+                courier['lat'] = last_order['lat']
+                courier['lon'] = last_order['lon']
+                print(f"Курьер {courier_id} перемещен в ({last_order['lat']:.6f}, {last_order['lon']:.6f})", file=sys.stderr)
+
+# 5. Решаем для срочных заказов
+assigned_urgent = []
+if urgent_orders:
+    print(f"Обрабатываем {len(urgent_orders)} срочных заказов...", file=sys.stderr)
+    assigned_urgent = solve_vrp_for_orders(couriers, urgent_orders)
+    print(f"Назначено {len(assigned_urgent)} срочных заказов", file=sys.stderr)
+else:
+    print("Срочных заказов нет", file=sys.stderr)
+
+# 6. Обновляем состояние курьеров после срочных заказов
+for assignment in assigned_urgent:
+    courier_id = assignment['courier_id']
+    if courier_id not in courier_assignments:
+        courier_assignments[courier_id] = []
+    courier_assignments[courier_id].extend(assignment['orders'])
+
 for courier_id, assigned_order_ids in courier_assignments.items():
     courier = next((c for c in couriers if c['id'] == courier_id), None)
     if courier:
@@ -385,11 +424,62 @@ for courier_id, assigned_order_ids in courier_assignments.items():
                 courier['lon'] = last_order['lon']
                 print(f"Курьер {courier_id} перемещен в ({last_order['lat']:.6f}, {last_order['lon']:.6f})", file=sys.stderr)
 
-# 5. Решаем для обычных заказов с учётом уже назначенных срочных
+# 7. Решаем для обычных заказов
 assigned_regular = solve_vrp_for_orders(couriers, regular_orders)
 
-# 6. Объединяем результаты
-all_routes = assigned_urgent + assigned_regular
+# 8. Объединяем результаты
+all_routes = assigned_active + assigned_urgent + assigned_regular
+
+# 9. ОБЯЗАТЕЛЬНОЕ НАЗНАЧЕНИЕ АКТИВНЫХ ЗАКАЗОВ
+# Проверяем, что все активные заказы назначены
+assigned_courier_ids = {route['courier_id'] for route in all_routes}
+assigned_order_ids = set()
+for route in all_routes:
+    assigned_order_ids.update(route['orders'])
+
+# Находим курьеров без маршрутов и их активные заказы
+unassigned_couriers = []
+for courier in couriers:
+    if courier['id'] not in assigned_courier_ids:
+        if courier.get("order") and courier["order"].get("status") == "onTheWay":
+            active_order_id = courier["order"]["orderId"]
+            if active_order_id not in assigned_order_ids:
+                # Создаем маршрут только с активным заказом
+                unassigned_couriers.append({
+                    "courier_id": courier['id'],
+                    "orders": [active_order_id]
+                })
+                print(f"🚚 Принудительно назначен активный заказ {active_order_id} курьеру {courier['id']}", file=sys.stderr)
+
+# Добавляем маршруты для курьеров с активными заказами
+all_routes.extend(unassigned_couriers)
+
+# 10. НАЗНАЧЕНИЕ МИНИМУМА ОДНОГО ЗАКАЗА КАЖДОМУ КУРЬЕРУ
+# Находим курьеров без заказов
+couriers_with_orders = {route['courier_id'] for route in all_routes}
+couriers_without_orders = [c for c in couriers if c['id'] not in couriers_with_orders]
+
+if couriers_without_orders and regular_orders:
+    print(f"Назначаем минимум один заказ курьерам без заказов: {len(couriers_without_orders)}", file=sys.stderr)
+    
+    # Находим заказы, которые еще не назначены
+    all_assigned_orders = set()
+    for route in all_routes:
+        all_assigned_orders.update(route['orders'])
+    
+    available_orders = [o for o in regular_orders if o['id'] not in all_assigned_orders]
+    
+    # Назначаем по одному заказу каждому курьеру без заказов
+    for i, courier in enumerate(couriers_without_orders):
+        if i < len(available_orders):
+            order = available_orders[i]
+            all_routes.append({
+                "courier_id": courier['id'],
+                "orders": [order['id']]
+            })
+            print(f"📦 Назначен заказ {order['id']} курьеру {courier['id']} (минимум)", file=sys.stderr)
+        else:
+            print(f"⚠️  Нет доступных заказов для курьера {courier['id']}", file=sys.stderr)
 
 # Формируем финальный результат
 final_routes = []
@@ -458,7 +548,8 @@ for route in all_routes:
         
         final_routes.append(route_info)
 
-print(f"\n=== РЕЗУЛЬТАТЫ ДВУХЭТАПНОГО РАСПРЕДЕЛЕНИЯ ===", file=sys.stderr)
+print(f"\n=== РЕЗУЛЬТАТЫ ТРЕХЭТАПНОГО РАСПРЕДЕЛЕНИЯ ===", file=sys.stderr)
+print(f"Активных заказов назначено: {len(assigned_active)}", file=sys.stderr)
 print(f"Срочных заказов назначено: {len(assigned_urgent)}", file=sys.stderr)
 print(f"Обычных заказов назначено: {len(assigned_regular)}", file=sys.stderr)
 print(f"Всего маршрутов: {len(final_routes)}", file=sys.stderr)
