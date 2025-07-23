@@ -771,6 +771,8 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             success: true,
             message: "Заказ отменен"
         })
+
+        await queueOrTools();
     } catch (error) {
         console.log(error);
         res.status(500).json({
