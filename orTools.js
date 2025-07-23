@@ -24,9 +24,9 @@ const pythonPath = process.platform === "win32"
 export function runPythonVRP(couriers, orders, courier_restrictions) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
-        // const python = spawn(pythonPath, ["./orTools/test.py"]);
+        const python = spawn(pythonPath, ["./orTools/test.py"]);
         // const python = spawn(pythonPath, ["./orTools/vrp_solver_with_time_windows.py"]);
-        const python = spawn(pythonPath, ["./orTools/vrp_solver_optimized.py"]);
+        // const python = spawn(pythonPath, ["./orTools/vrp_solver_optimized.py"]);
         // const python = spawn(pythonPath, ["./orTools/vrp_solver2.py"]);
 
         const input = {
