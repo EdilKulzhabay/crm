@@ -30,7 +30,6 @@ import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 // Импортируем функцию оптимизации маршрутов
 // import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
 import queueOrTools, { getQueueStatus, clearQueue } from "./orToolsQueue.js";
-import bullmqApi from "./bullmqApi.js";
 
 mongoose
     .connect(process.env.MONGOURL)
@@ -189,7 +188,6 @@ app.post("/clientAddPassword", ClientController.clientAddPassword);
 app.get("/checkClientsCoincidences", ClientController.checkClientsCoincidences)
 app.get("/addPhoneForAddress", ClientController.addPhoneForAddress)
 app.post("/transferOrders", ClientController.transferOrders)
-app.post("/getOrdersForAggregatorMoreDetails", OrderController.getOrdersForAggregatorMoreDetails)
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
@@ -369,9 +367,6 @@ app.get("/orTools/clear", async (req, res) => {
         });
     }
 });
-
-/////////////BULLMQ ORTOOLS API
-app.use("/api/bullmq", bullmqApi);
 
 /////////////ROUTE OPTIMIZATION - TSP
 // Endpoint для запуска оптимизации маршрутов
