@@ -566,53 +566,52 @@ except Exception as e:
     print(f"Ошибка при решении для обычных заказов: {e}", file=sys.stderr)
     assigned_regular = []
 
-# FALLBACK: Если алгоритм не смог найти решение, используем простое распределение
+# FALLBACK: Если алгоритм не смог найти решение, используем распределение по принципу ближайшего курьера
 if not assigned_regular and regular_orders:
-    print("🔄 Используем fallback распределение для обычных заказов с учетом вместимости", file=sys.stderr)
+    print("🔄 Используем fallback распределение для обычных заказов с учетом вместимости и расстояния", file=sys.stderr)
     assigned_regular = []
-    
-    # Создаем копии курьеров для отслеживания оставшейся вместимости
+    # Копии курьеров для отслеживания вместимости и текущей позиции
     courier_capacities = {}
+    courier_positions = {}
     for courier in couriers:
         courier_capacities[courier["id"]] = {
             "capacity_12": courier.get("capacity_12", 0),
             "capacity_19": courier.get("capacity_19", 0)
         }
-    
-    # Простое распределение заказов по курьерам с учетом вместимости
+        courier_positions[courier["id"]] = (courier["lat"], courier["lon"])
     for order in regular_orders:
         order_bottles_12 = order.get("bottles_12", 0)
         order_bottles_19 = order.get("bottles_19", 0)
-        
-        # Ищем курьера с достаточной вместимостью
-        assigned = False
+        min_dist = float('inf')
+        best_courier = None
         for courier in couriers:
             courier_id = courier["id"]
             capacity = courier_capacities[courier_id]
-            
             if (capacity["capacity_12"] >= order_bottles_12 and 
                 capacity["capacity_19"] >= order_bottles_19):
-                
-                # Находим или создаем маршрут для этого курьера
-                existing_route = next((route for route in assigned_regular if route["courier_id"] == courier_id), None)
-                if existing_route:
-                    existing_route["orders"].append(order["id"])
-                else:
-                    assigned_regular.append({
-                        "courier_id": courier_id,
-                        "orders": [order["id"]]
-                    })
-                
-                # Обновляем оставшуюся вместимость
-                capacity["capacity_12"] -= order_bottles_12
-                capacity["capacity_19"] -= order_bottles_19
-                assigned = True
-                print(f"Fallback: заказ {order['id']} назначен курьеру {courier_id} (осталось: 12л={capacity['capacity_12']}, 19л={capacity['capacity_19']})", file=sys.stderr)
-                break
-        
-        if not assigned:
+                cur_lat, cur_lon = courier_positions[courier_id]
+                dist = haversine_distance(cur_lat, cur_lon, order["lat"], order["lon"])
+                if dist < min_dist:
+                    min_dist = dist
+                    best_courier = courier
+        if best_courier:
+            courier_id = best_courier["id"]
+            # Находим или создаем маршрут для этого курьера
+            existing_route = next((route for route in assigned_regular if route["courier_id"] == courier_id), None)
+            if existing_route:
+                existing_route["orders"].append(order["id"])
+            else:
+                assigned_regular.append({
+                    "courier_id": courier_id,
+                    "orders": [order["id"]]
+                })
+            # Обновляем вместимость и позицию курьера
+            courier_capacities[courier_id]["capacity_12"] -= order_bottles_12
+            courier_capacities[courier_id]["capacity_19"] -= order_bottles_19
+            courier_positions[courier_id] = (order["lat"], order["lon"])
+            print(f"Fallback: заказ {order['id']} назначен ближайшему курьеру {courier_id} (осталось: 12л={courier_capacities[courier_id]['capacity_12']}, 19л={courier_capacities[courier_id]['capacity_19']})", file=sys.stderr)
+        else:
             print(f"⚠️  Fallback: заказ {order['id']} не может быть назначен - нет курьера с достаточной вместимостью", file=sys.stderr)
-    
     print(f"Fallback: назначено {len(assigned_regular)} маршрутов для {len(regular_orders)} заказов", file=sys.stderr)
 
 # 8. Объединяем результаты
