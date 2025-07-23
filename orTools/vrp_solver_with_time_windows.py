@@ -57,7 +57,8 @@ def create_time_matrix(locations, speed_mps=speed_mps):
 print("=== ПРОВЕРКА ВХОДНЫХ ДАННЫХ ===", file=sys.stderr)
 
 # Определяем текущее время в Алматы динамически
-now = datetime.now()
+# now = datetime.now()
+now = datetime.strptime("09:45:00", "%H:%M:%S")
 current_time_in_seconds = now.hour * 3600 + now.minute * 60 + now.second
 print(f"Текущее время: {now.strftime('%H:%M:%S')} ({current_time_in_seconds} секунд)", file=sys.stderr)
 
@@ -232,20 +233,46 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     if not orders_data:
         print("Нет заказов для распределения", file=sys.stderr)
         return []
+
+    updated_couriers = []
+    
+    for courier in couriers_data:
+        courier_copy = courier.copy()
+        
+        if courier.get("order") and courier["order"].get("status") == "onTheWay":
+            active_order = courier["order"]
+            
+            # Рассчитываем время в пути к активному заказу
+            distance = haversine_distance(
+                courier["lat"], courier["lon"],
+                active_order["lat"], active_order["lon"]
+            )
+            travel_time = distance / speed_mps
+            
+            # Если курьер еще в пути, используем позицию активного заказа
+            if travel_time > 0:
+                courier_copy["lat"] = active_order["lat"]
+                courier_copy["lon"] = active_order["lon"]
+                print(f"Курьер {courier['id']}: позиция обновлена на активный заказ", file=sys.stderr)
+        
+        updated_couriers.append(courier_copy)
+    
+    working_couriers = updated_couriers
     
     # Локации: только курьеры и заказы (депо не включаем)
-    locations = couriers_data + orders_data
+    locations = working_couriers + orders_data
     
-    num_couriers = len(couriers_data)
+    num_couriers = len(working_couriers)
     num_orders = len(orders_data)
     num_locations = len(locations)
     
     print(f"Решаем VRP: {num_couriers} курьеров, {num_orders} заказов", file=sys.stderr)
+    print(f"DEBUG: num_locations={num_locations}, num_couriers={num_couriers}, type(num_locations)={type(num_locations)}, type(num_couriers)={type(num_couriers)}", file=sys.stderr)
     
-    # Начальные точки маршрутов — позиции курьеров
-    starts = list(range(num_couriers))
-    # Конечные точки маршрутов — по умолчанию (маршрут заканчивается на последнем заказе)
-    manager = pywrapcp.RoutingIndexManager(num_locations, num_couriers, starts)
+    # Создаем RoutingIndexManager и RoutingModel
+    # Используем конструктор с депо (первый узел)
+    depot_index = 0
+    manager = pywrapcp.RoutingIndexManager(num_locations, num_couriers, depot_index)
     routing = pywrapcp.RoutingModel(manager)
     
     # Функция расчета времени
@@ -264,7 +291,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     locations[to_node]['lat'], locations[to_node]['lon']
                 ) / speed_mps
             
-            service_time_per_order = 15 * 60
+            service_time_per_order = 5 * 60
             if to_node >= num_couriers:
                 travel_time += service_time_per_order
             return int(travel_time)
@@ -298,8 +325,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
             return 0
     demand_callback_index_12 = routing.RegisterUnaryTransitCallback(demand_callback_12)
     demand_callback_index_19 = routing.RegisterUnaryTransitCallback(demand_callback_19)
-    vehicle_capacities_12 = [c.get('capacity_12', 0) for c in couriers_data]
-    vehicle_capacities_19 = [c.get('capacity_19', 0) for c in couriers_data]
+    vehicle_capacities_12 = [c.get('capacity_12', 0) for c in working_couriers]
+    vehicle_capacities_19 = [c.get('capacity_19', 0) for c in working_couriers]
     if any(cap > 0 for cap in vehicle_capacities_12):
         routing.AddDimensionWithVehicleCapacity(
             demand_callback_index_12, 0, vehicle_capacities_12, True, 'Capacity12')
@@ -309,27 +336,30 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     # Штрафы за пропуск заказов
     for order_idx in range(num_couriers, num_locations):
         order = orders_data[order_idx - num_couriers]
-        penalty = 50000 if order.get('isUrgent', False) or order.get('is_urgent', False) else 5000
-        routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
+        
+        if order.get('isUrgent', False) or order.get('is_urgent', False):
+            # СРОЧНЫЕ ЗАКАЗЫ - НЕ ДОБАВЛЯЕМ В DISJUNCTION
+            # OR-Tools ОБЯЗАТЕЛЬНО должен их выполнить
+            pass
+        else:
+            if order.get('date.time', '') != "":
+                # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - штраф больше чем без окна
+                penalty = 50000
+                routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
+            else:
+                # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА
+                penalty = 5000
+                routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     # Временные окна
     routing.AddDimension(
         transit_callback_index,
-        14400,  # slack_max (4 часа)
-        86400,  # максимальное время маршрута (24 часа)
+        3600,  # slack_max (1 час вместо 30 минут)
+        18000,  # максимальное время маршрута (5 часов)
         False,
         'Time'
     )
     time_dimension = routing.GetDimensionOrDie('Time')
-    try:
-        for i in range(num_couriers):
-            start_index = routing.Start(i)
-            time_dimension.CumulVar(start_index).SetRange(0, 86400)
-    except Exception as e:
-        print(f"Ошибка при установке времени старта: {e}", file=sys.stderr)
-        for i in range(num_couriers):
-            start_index = routing.Start(i)
-            time_dimension.CumulVar(start_index).SetRange(0, 86400)
-    # Ограничение на количество заказов
+
     def order_count_callback(from_index, to_index):
         try:
             to_node = manager.IndexToNode(to_index)
@@ -339,8 +369,9 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         except Exception as e:
             print(f"Ошибка в order_count_callback: {e}", file=sys.stderr)
             return 0
+            
     order_count_callback_index = routing.RegisterTransitCallback(order_count_callback)
-    max_orders_per_courier = max(1, min(20, num_orders // num_couriers + 5))
+    max_orders_per_courier = max(1, min(20, num_orders // num_couriers + 3))
     routing.AddDimension(
         order_count_callback_index,
         0,
@@ -348,6 +379,14 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         True,
         'OrderCount'
     )
+    
+    # Штраф за пустых курьеров (если курьер не получил ни одного заказа)
+    for vehicle_id in range(num_couriers):
+        start_index = routing.Start(vehicle_id)
+        # Очень большой штраф если курьер остается без заказов
+        empty_courier_penalty = 1000000  # 1 миллион - практически невозможно заплатить
+        routing.AddDisjunction([start_index], empty_courier_penalty)
+        
     # Временные окна для заказов
     for order in orders_data:
         if 'date.time' in order:
@@ -367,13 +406,16 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     start_time_seconds = start_h * 3600 + start_m * 60
                     end_time_seconds = end_h * 3600 + end_m * 60
                     start_time_seconds = max(start_time_seconds, 0)
-                    if order.get('isUrgent', False) or order.get('is_urgent', False):
-                        max_wait_for_urgent = 60 * 60
-                        if start_time_seconds > 0 + max_wait_for_urgent:
-                            continue
-                    time_dimension.CumulVar(order_index).SetRange(int(start_time_seconds), int(end_time_seconds + 3600))
+                    
+                    # Увеличиваем буфер времени для большей гибкости
+                    buffer_time = 3600  # 1 час вместо 30 минут
+                    time_dimension.CumulVar(order_index).SetRange(
+                        int(start_time_seconds), 
+                        int(end_time_seconds + buffer_time)
+                    )
                 except Exception as e:
                     print(f"Ошибка при установке временного окна для заказа {order['id']}: {e}", file=sys.stderr)
+                    # Продолжаем работу без временного окна для этого заказа
                     continue
     # Решаем задачу
     try:
@@ -398,7 +440,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     index = solution.Value(routing.NextVar(index))
                 if route_orders:
                     routes.append({
-                        "courier_id": couriers_data[vehicle_id]["id"],
+                        "courier_id": working_couriers[vehicle_id]["id"],
                         "orders": route_orders
                     })
             return routes
@@ -412,25 +454,13 @@ def solve_vrp_for_orders(couriers_data, orders_data):
 # 2. Копируем курьеров для первого этапа
 couriers_for_active = copy.deepcopy(couriers)
 
-# 3. Сначала решаем для активных заказов (обязательно)
+# 3. Назначаем активные заказы напрямую (без VRP)
 assigned_active = []
-if active_orders_list:
-    print(f"Обрабатываем {len(active_orders_list)} активных заказов...", file=sys.stderr)
-    try:
-        assigned_active = solve_vrp_for_orders(couriers_for_active, active_orders_list)
-        print(f"Назначено {len(assigned_active)} активных заказов", file=sys.stderr)
-    except Exception as e:
-        print(f"Ошибка при решении для активных заказов: {e}", file=sys.stderr)
-        assigned_active = []
-else:
-    print("Активных заказов нет", file=sys.stderr)
 
-# FALLBACK: Если алгоритм не смог найти решение для активных заказов
-if not assigned_active and active_orders_list:
-    print("🔄 Используем fallback распределение для активных заказов", file=sys.stderr)
-    assigned_active = []
+if active_orders_list:
+    print(f"Назначаем {len(active_orders_list)} активных заказов напрямую...", file=sys.stderr)
     
-    # Принудительное назначение активных заказов их курьерам
+    # Простое назначение активных заказов их курьерам
     for courier in couriers:
         if courier.get("order") and courier["order"].get("status") == "onTheWay":
             active_order_id = courier["order"]["orderId"]
@@ -438,184 +468,33 @@ if not assigned_active and active_orders_list:
                 "courier_id": courier["id"],
                 "orders": [active_order_id]
             })
-            print(f"Fallback: активный заказ {active_order_id} назначен курьеру {courier['id']}", file=sys.stderr)
-    
-    print(f"Fallback: назначено {len(assigned_active)} маршрутов для {len(active_orders_list)} активных заказов", file=sys.stderr)
-
-# 4. Обновляем состояние курьеров после активных заказов
-courier_assignments = {}
-for assignment in assigned_active:
-    courier_id = assignment['courier_id']
-    if courier_id not in courier_assignments:
-        courier_assignments[courier_id] = []
-    courier_assignments[courier_id].extend(assignment['orders'])
-
-# Обновляем каждого курьера
-for courier_id, assigned_order_ids in courier_assignments.items():
-    courier = next((c for c in couriers if c['id'] == courier_id), None)
-    if courier:
-        # Уменьшаем вместимость на все назначенные заказы
-        for order_id in assigned_order_ids:
-            order = next((o for o in active_orders_list if o['id'] == order_id), None)
-            if order:
-                courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - order.get('bottles_12', 0))
-                courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - order.get('bottles_19', 0))
-        
-        # Обновляем координаты курьера на координаты последнего заказа
-        if assigned_order_ids:
-            last_order_id = assigned_order_ids[-1]
-            last_order = next((o for o in active_orders_list if o['id'] == last_order_id), None)
-            if last_order:
-                courier['lat'] = last_order['lat']
-                courier['lon'] = last_order['lon']
-                print(f"Курьер {courier_id} перемещен в ({last_order['lat']:.6f}, {last_order['lon']:.6f})", file=sys.stderr)
-
-# 5. Решаем для срочных заказов
-assigned_urgent = []
-if urgent_orders:
-    print(f"Обрабатываем {len(urgent_orders)} срочных заказов...", file=sys.stderr)
-    try:
-        assigned_urgent = solve_vrp_for_orders(couriers, urgent_orders)
-        print(f"Назначено {len(assigned_urgent)} срочных заказов", file=sys.stderr)
-    except Exception as e:
-        print(f"Ошибка при решении для срочных заказов: {e}", file=sys.stderr)
-        assigned_urgent = []
+            print(f"Активный заказ {active_order_id} назначен курьеру {courier['id']}", file=sys.stderr)
 else:
-    print("Срочных заказов нет", file=sys.stderr)
+    print("Активных заказов нет", file=sys.stderr)
 
-# FALLBACK: Если алгоритм не смог найти решение для срочных заказов
-if not assigned_urgent and urgent_orders:
-    print("🔄 Используем fallback распределение для срочных заказов с учетом вместимости", file=sys.stderr)
-    assigned_urgent = []
-    
-    # Создаем копии курьеров для отслеживания оставшейся вместимости
-    courier_capacities = {}
-    for courier in couriers:
-        courier_capacities[courier["id"]] = {
-            "capacity_12": courier.get("capacity_12", 0),
-            "capacity_19": courier.get("capacity_19", 0)
-        }
-    
-    # Простое распределение срочных заказов по курьерам с учетом вместимости
-    for order in urgent_orders:
-        order_bottles_12 = order.get("bottles_12", 0)
-        order_bottles_19 = order.get("bottles_19", 0)
-        
-        # Ищем курьера с достаточной вместимостью
-        assigned = False
-        for courier in couriers:
-            courier_id = courier["id"]
-            capacity = courier_capacities[courier_id]
-            
-            if (capacity["capacity_12"] >= order_bottles_12 and 
-                capacity["capacity_19"] >= order_bottles_19):
-                
-                # Находим или создаем маршрут для этого курьера
-                existing_route = next((route for route in assigned_urgent if route["courier_id"] == courier_id), None)
-                if existing_route:
-                    existing_route["orders"].append(order["id"])
-                else:
-                    assigned_urgent.append({
-                        "courier_id": courier_id,
-                        "orders": [order["id"]]
-                    })
-                
-                # Обновляем оставшуюся вместимость
-                capacity["capacity_12"] -= order_bottles_12
-                capacity["capacity_19"] -= order_bottles_19
-                assigned = True
-                print(f"Fallback: срочный заказ {order['id']} назначен курьеру {courier_id} (осталось: 12л={capacity['capacity_12']}, 19л={capacity['capacity_19']})", file=sys.stderr)
-                break
-        
-        if not assigned:
-            print(f"⚠️  Fallback: срочный заказ {order['id']} не может быть назначен - нет курьера с достаточной вместимостью", file=sys.stderr)
-    
-    print(f"Fallback: назначено {len(assigned_urgent)} маршрутов для {len(urgent_orders)} срочных заказов", file=sys.stderr)
+# 4. Обновляем позиции курьеров (вместимость уже обновлена в системе)
+for courier in couriers:
+    if courier.get("order") and courier["order"].get("status") == "onTheWay":
+        active_order = courier["order"]
+        courier['lat'] = active_order['lat']
+        courier['lon'] = active_order['lon']
+        print(f"Курьер {courier['id']} перемещен в ({active_order['lat']:.6f}, {active_order['lon']:.6f})", file=sys.stderr)
 
-# 6. Обновляем состояние курьеров после срочных заказов
-for assignment in assigned_urgent:
-    courier_id = assignment['courier_id']
-    if courier_id not in courier_assignments:
-        courier_assignments[courier_id] = []
-    courier_assignments[courier_id].extend(assignment['orders'])
+# 5. Назначаем остальные заказы
+assigned_orders = []
 
-for courier_id, assigned_order_ids in courier_assignments.items():
-    courier = next((c for c in couriers if c['id'] == courier_id), None)
-    if courier:
-        # Уменьшаем вместимость на все назначенные заказы
-        for order_id in assigned_order_ids:
-            order = next((o for o in urgent_orders if o['id'] == order_id), None)
-            if order:
-                courier['capacity_12'] = max(0, courier.get('capacity_12', 0) - order.get('bottles_12', 0))
-                courier['capacity_19'] = max(0, courier.get('capacity_19', 0) - order.get('bottles_19', 0))
-        
-        # Обновляем координаты курьера на координаты последнего заказа
-        if assigned_order_ids:
-            last_order_id = assigned_order_ids[-1]
-            last_order = next((o for o in urgent_orders if o['id'] == last_order_id), None)
-            if last_order:
-                courier['lat'] = last_order['lat']
-                courier['lon'] = last_order['lon']
-                print(f"Курьер {courier_id} перемещен в ({last_order['lat']:.6f}, {last_order['lon']:.6f})", file=sys.stderr)
+remaining_orders = urgent_orders + regular_orders
+if remaining_orders:
+    print(f"Обрабатываем {len(urgent_orders)} срочных и {len(regular_orders)} обычных заказов...", file=sys.stderr)
+    try:
+        assigned_orders = solve_vrp_for_orders(couriers, remaining_orders)
+        print(f"Назначено {len(assigned_orders)} заказов", file=sys.stderr)
+    except Exception as e:
+        print(f"Ошибка при решении для заказов: {e}", file=sys.stderr)
+        assigned_orders = []
 
-# 7. Решаем для обычных заказов
-try:
-    assigned_regular = solve_vrp_for_orders(couriers, regular_orders)
-    print(f"Назначено {len(assigned_regular)} обычных заказов", file=sys.stderr)
-except Exception as e:
-    print(f"Ошибка при решении для обычных заказов: {e}", file=sys.stderr)
-    assigned_regular = []
-
-# FALLBACK: Если алгоритм не смог найти решение, используем распределение по принципу ближайшего курьера
-if not assigned_regular and regular_orders:
-    print("🔄 Используем fallback распределение для обычных заказов с учетом вместимости и расстояния", file=sys.stderr)
-    assigned_regular = []
-    # Копии курьеров для отслеживания вместимости и текущей позиции
-    courier_capacities = {}
-    courier_positions = {}
-    for courier in couriers:
-        courier_capacities[courier["id"]] = {
-            "capacity_12": courier.get("capacity_12", 0),
-            "capacity_19": courier.get("capacity_19", 0)
-        }
-        courier_positions[courier["id"]] = (courier["lat"], courier["lon"])
-    for order in regular_orders:
-        order_bottles_12 = order.get("bottles_12", 0)
-        order_bottles_19 = order.get("bottles_19", 0)
-        min_dist = float('inf')
-        best_courier = None
-        for courier in couriers:
-            courier_id = courier["id"]
-            capacity = courier_capacities[courier_id]
-            if (capacity["capacity_12"] >= order_bottles_12 and 
-                capacity["capacity_19"] >= order_bottles_19):
-                cur_lat, cur_lon = courier_positions[courier_id]
-                dist = haversine_distance(cur_lat, cur_lon, order["lat"], order["lon"])
-                if dist < min_dist:
-                    min_dist = dist
-                    best_courier = courier
-        if best_courier:
-            courier_id = best_courier["id"]
-            # Находим или создаем маршрут для этого курьера
-            existing_route = next((route for route in assigned_regular if route["courier_id"] == courier_id), None)
-            if existing_route:
-                existing_route["orders"].append(order["id"])
-            else:
-                assigned_regular.append({
-                    "courier_id": courier_id,
-                    "orders": [order["id"]]
-                })
-            # Обновляем вместимость и позицию курьера
-            courier_capacities[courier_id]["capacity_12"] -= order_bottles_12
-            courier_capacities[courier_id]["capacity_19"] -= order_bottles_19
-            courier_positions[courier_id] = (order["lat"], order["lon"])
-            print(f"Fallback: заказ {order['id']} назначен ближайшему курьеру {courier_id} (осталось: 12л={courier_capacities[courier_id]['capacity_12']}, 19л={courier_capacities[courier_id]['capacity_19']})", file=sys.stderr)
-        else:
-            print(f"⚠️  Fallback: заказ {order['id']} не может быть назначен - нет курьера с достаточной вместимостью", file=sys.stderr)
-    print(f"Fallback: назначено {len(assigned_regular)} маршрутов для {len(regular_orders)} заказов", file=sys.stderr)
-
-# 8. Объединяем результаты
-all_routes = assigned_active + assigned_urgent + assigned_regular
+# 6. Объединяем результаты
+all_routes = assigned_active + assigned_orders
 
 # ИСПРАВЛЕНИЕ ДУБЛИКАТОВ: Объединяем маршруты одного курьера
 print("=== ОБЪЕДИНЕНИЕ ДУБЛИКАТОВ КУРЬЕРОВ ===", file=sys.stderr)
@@ -645,7 +524,7 @@ for route in all_routes:
 all_routes = list(consolidated_routes.values())
 print(f"После объединения: {len(all_routes)} уникальных курьеров", file=sys.stderr)
 
-# 9. ОБЯЗАТЕЛЬНОЕ НАЗНАЧЕНИЕ АКТИВНЫХ ЗАКАЗОВ
+# 7. ПРОВЕРКА АКТИВНЫХ ЗАКАЗОВ
 print("=== ПРОВЕРКА АКТИВНЫХ ЗАКАЗОВ ===", file=sys.stderr)
 
 # Проверяем, что все активные заказы назначены правильным курьерам
@@ -657,128 +536,10 @@ for courier in couriers:
         # Ищем маршрут этого курьера
         courier_route = next((route for route in all_routes if route["courier_id"] == courier_id), None)
         
-        if courier_route:
-            if active_order_id in courier_route["orders"]:
-                print(f"✅ Курьер {courier_id}: активный заказ {active_order_id} найден в маршруте", file=sys.stderr)
-            else:
-                print(f"❌ Курьер {courier_id}: активный заказ {active_order_id} НЕ найден в маршруте, добавляем", file=sys.stderr)
-                courier_route["orders"].insert(0, active_order_id)  # Добавляем в начало
+        if courier_route and active_order_id in courier_route["orders"]:
+            print(f"✅ Курьер {courier_id}: активный заказ {active_order_id} найден в маршруте", file=sys.stderr)
         else:
-            print(f"❌ Курьер {courier_id}: маршрут не найден, создаем новый", file=sys.stderr)
-            all_routes.append({
-                "courier_id": courier_id,
-                "orders": [active_order_id]
-            })
-
-# 10. НАЗНАЧЕНИЕ МИНИМУМА ОДНОГО ЗАКАЗА КАЖДОМУ КУРЬЕРУ
-print("=== ПРОВЕРКА МИНИМУМА ЗАКАЗОВ ===", file=sys.stderr)
-
-# Проверяем, что все курьеры получили хотя бы один заказ
-assigned_courier_ids = {route['courier_id'] for route in all_routes}
-
-for courier in couriers:
-    courier_id = courier["id"]
-    if courier_id not in assigned_courier_ids:
-        print(f"⚠️  Курьер {courier_id} не получил ни одного заказа", file=sys.stderr)
-        
-        # Если у курьера нет активного заказа, даем ему первый доступный обычный заказ
-        if not courier.get("order") or courier["order"].get("status") != "onTheWay":
-            if regular_orders:
-                first_order = regular_orders[0]
-                all_routes.append({
-                    "courier_id": courier_id,
-                    "orders": [first_order["id"]]
-                })
-                regular_orders.pop(0)  # Убираем из списка доступных
-                print(f"📦 Курьеру {courier_id} назначен заказ {first_order['id']} для обеспечения минимума", file=sys.stderr)
-            elif urgent_orders:
-                first_urgent = urgent_orders[0]
-                all_routes.append({
-                    "courier_id": courier_id,
-                    "orders": [first_urgent["id"]]
-                })
-                urgent_orders.pop(0)  # Убираем из списка доступных
-                print(f"🚨 Курьеру {courier_id} назначен срочный заказ {first_urgent['id']} для обеспечения минимума", file=sys.stderr)
-
-# 11. БАЛАНСИРОВКА НАГРУЗКИ - ПЕРЕРАСПРЕДЕЛЕНИЕ ИЗБЫТОЧНЫХ ЗАКАЗОВ
-print("=== БАЛАНСИРОВКА НАГРУЗКИ ===", file=sys.stderr)
-
-# Подсчитываем количество заказов у каждого курьера
-courier_order_counts = {}
-for route in all_routes:
-    courier_id = route['courier_id']
-    courier_order_counts[courier_id] = len(route['orders'])
-
-# Находим курьеров с избыточной нагрузкой
-max_recommended_orders = max(1, min(8, len(orders) // len(couriers) + 1))
-print(f"Рекомендуемое максимальное количество заказов на курьера: {max_recommended_orders}", file=sys.stderr)
-
-overloaded_couriers = []
-underloaded_couriers = []
-
-for courier_id, order_count in courier_order_counts.items():
-    if order_count > max_recommended_orders:
-        overloaded_couriers.append((courier_id, order_count))
-        print(f"⚠️  Курьер {courier_id} перегружен: {order_count} заказов", file=sys.stderr)
-    elif order_count < max_recommended_orders and order_count > 0:
-        underloaded_couriers.append((courier_id, order_count))
-        print(f"📊 Курьер {courier_id} недогружен: {order_count} заказов", file=sys.stderr)
-
-# Пытаемся перераспределить заказы от перегруженных к недогруженным
-for overloaded_courier_id, overloaded_count in overloaded_couriers:
-    if not underloaded_couriers:
-        break
-        
-    # Находим маршрут перегруженного курьера
-    overloaded_route = next((r for r in all_routes if r['courier_id'] == overloaded_courier_id), None)
-    if not overloaded_route or len(overloaded_route['orders']) <= 1:
-        continue
-    
-    # Берем последние заказы (не активные) для перераспределения
-    orders_to_redistribute = []
-    for order_id in reversed(overloaded_route['orders']):
-        # Проверяем, что это не активный заказ
-        is_active = False
-        for courier in couriers:
-            if (courier.get("order") and courier["order"].get("status") == "onTheWay" and 
-                courier["order"]["orderId"] == order_id):
-                is_active = True
-                break
-        
-        if not is_active and len(orders_to_redistribute) < (overloaded_count - max_recommended_orders):
-            orders_to_redistribute.append(order_id)
-    
-    # Перераспределяем заказы
-    for order_id in orders_to_redistribute:
-        if not underloaded_couriers:
-            break
-            
-        # Находим наименее загруженного курьера
-        underloaded_courier_id, underloaded_count = min(underloaded_couriers, key=lambda x: x[1])
-        
-        # Удаляем заказ у перегруженного курьера
-        overloaded_route['orders'].remove(order_id)
-        
-        # Добавляем заказ недогруженному курьеру
-        underloaded_route = next((r for r in all_routes if r['courier_id'] == underloaded_courier_id), None)
-        if underloaded_route:
-            underloaded_route['orders'].append(order_id)
-            print(f"🔄 Заказ {order_id} перераспределен от {overloaded_courier_id} к {underloaded_courier_id}", file=sys.stderr)
-        
-        # Обновляем счетчики
-        courier_order_counts[overloaded_courier_id] -= 1
-        courier_order_counts[underloaded_courier_id] += 1
-        
-        # Обновляем списки
-        for i, (courier_id, count) in enumerate(overloaded_couriers):
-            if courier_id == overloaded_courier_id:
-                overloaded_couriers[i] = (courier_id, count - 1)
-                break
-        
-        for i, (courier_id, count) in enumerate(underloaded_couriers):
-            if courier_id == underloaded_courier_id:
-                underloaded_couriers[i] = (courier_id, count + 1)
-                break
+            print(f"❌ Курьер {courier_id}: активный заказ {active_order_id} НЕ найден в маршруте", file=sys.stderr)
 
 # Формируем финальный результат
 final_routes = []
@@ -849,8 +610,7 @@ for route in all_routes:
 
 print(f"\n=== РЕЗУЛЬТАТЫ ТРЕХЭТАПНОГО РАСПРЕДЕЛЕНИЯ ===", file=sys.stderr)
 print(f"Активных заказов назначено: {len(assigned_active)}", file=sys.stderr)
-print(f"Срочных заказов назначено: {len(assigned_urgent)}", file=sys.stderr)
-print(f"Обычных заказов назначено: {len(assigned_regular)}", file=sys.stderr)
+print(f"Остальных заказов назначено: {len(assigned_orders)}", file=sys.stderr)
 print(f"Всего маршрутов: {len(final_routes)}", file=sys.stderr)
 
 # Статистика по загрузке курьеров

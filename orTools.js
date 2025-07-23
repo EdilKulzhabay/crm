@@ -24,7 +24,7 @@ const pythonPath = process.platform === "win32"
 export function runPythonVRP(couriers, orders, courier_restrictions) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
-        const python = spawn(pythonPath, ["./orTools/vrp_solver_optimized.py"]);
+        const python = spawn(pythonPath, ["./orTools/vrp_solver_with_time_windows.py"]);
 
         const input = {
             common_depot: {
@@ -75,7 +75,7 @@ export function runPythonVRP(couriers, orders, courier_restrictions) {
 export function runPythonVisualize(couriers, orders, routes) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
-        const python = spawn(pythonPath, ["./orTools/vizPrev.py"]);
+        const python = spawn(pythonPath, ["./orTools/testViz.py"]);
 
         const input = {
             common_depot: {
@@ -441,15 +441,7 @@ export default async function orTools() {
             orderName: order.client.fullName
         }));
 
-    const courierRestrictions = await CourierRestrictions.find({})
-
-    const courier_restrictions = courierRestrictions.reduce((acc, restriction) => {
-        if (!acc[restriction.orderId]) {
-            acc[restriction.orderId] = [];
-        }
-        acc[restriction.orderId].push(restriction.courierId);
-        return acc;
-    }, {});
+    const courier_restrictions = {}
 
     console.log("Начало распределения в orTools.js");
     
