@@ -24,7 +24,9 @@ const pythonPath = process.platform === "win32"
 export function runPythonVRP(couriers, orders, courier_restrictions) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
-        const python = spawn(pythonPath, ["./orTools/vrp_solver_optimized.py"]);
+        const python = spawn(pythonPath, ["./orTools/test.py"]);
+        // const python = spawn(pythonPath, ["./orTools/vrp_solver_with_time_windows.py"]);
+        // const python = spawn(pythonPath, ["./orTools/vrp_solver_optimized.py"]);
         // const python = spawn(pythonPath, ["./orTools/vrp_solver2.py"]);
 
         const input = {
@@ -77,7 +79,8 @@ export function runPythonVisualize(couriers, orders, routes) {
     return new Promise((resolve, reject) => {
         // Используем Python из виртуального окружения
         // const python = spawn(pythonPath, ["./orTools/visualize_routes2.py"]);
-        const python = spawn(pythonPath, ["./orTools/vizPrev.py"]);
+        // const python = spawn(pythonPath, ["./orTools/visualize_routes_optimized.py"]);
+        const python = spawn(pythonPath, ["./orTools/visualize_routes_optimized_fixed.py"]);
 
         const input = {
             common_depot: {
@@ -455,7 +458,7 @@ export default async function orTools() {
             let courierOrder = null;
             if (courier.order && courier.order.orderId && courier.order.clientPoints) {
                 courierOrder = {
-                    orderId: courier.order.orderId,
+                    id: courier.order.orderId,
                     status: courier.order.status,
                     lat: courier.order.clientPoints.lat,
                     lon: courier.order.clientPoints.lon,
@@ -498,6 +501,46 @@ export default async function orTools() {
     const today = new Date();
     const todayString = getDateAlmaty(today);
 
+    const allOrders = await Order.find({forAggregator: true, "date.d": todayString, status: {$nin: ["delivered", "cancelled"]}}).populate("client")
+
+    const allOrders2 = allOrders
+        .filter(order => {
+            const hasValidCoords = order.address && order.address.point && order.address.point.lat && order.address.point.lon;
+            if (!hasValidCoords) {
+                console.log(`❌ Заказ ${order._id} исключен - нет координат`);
+            }
+            return hasValidCoords;
+        })
+        .map(order => {
+            // Парсим временное окно из поля date.time
+            if (order.date && order.date.time) {
+                return {
+                    id: order._id,
+                    lat: order.address.point.lat,
+                    lon: order.address.point.lon,
+                    bottles_12: order.products.b12,
+                    bottles_19: order.products.b19,
+                    status: order.status,
+                    orderName: order.client.fullName,
+                    "date.time": order.date.time,
+                    priority: order.priority || 3, // Приоритет: 1-высокий, 2-средний, 3-низкий
+                    is_urgent: order.isUrgent || false, // Срочный заказ
+                };
+            }
+
+            return {
+                id: order._id,
+                lat: order.address.point.lat,
+                lon: order.address.point.lon,
+                bottles_12: order.products.b12,
+                bottles_19: order.products.b19,
+                status: order.status,
+                orderName: order.client.fullName,
+                priority: order.priority || 3, // Приоритет: 1-высокий, 2-средний, 3-низкий
+                is_urgent: order.isUrgent || false, // Срочный заказ
+            };
+        });
+
     const activeOrders = await Order.find({"date.d": todayString, forAggregator: true, status: "awaitingOrder"}).populate("client")
     
     console.log(`📊 Найдено заказов для распределения: ${activeOrders.length}`);
@@ -510,15 +553,35 @@ export default async function orTools() {
             }
             return hasValidCoords;
         })
-        .map(order => ({
-            id: order._id,
-            lat: order.address.point.lat,
-            lon: order.address.point.lon,
-            bottles_12: order.products.b12,
-            bottles_19: order.products.b19,
-            status: order.status,
-            orderName: order.client.fullName
-        }));
+        .map(order => {
+            // Парсим временное окно из поля date.time
+            if (order.date && order.date.time) {
+                return {
+                    id: order._id,
+                    lat: order.address.point.lat,
+                    lon: order.address.point.lon,
+                    bottles_12: order.products.b12,
+                    bottles_19: order.products.b19,
+                    status: order.status,
+                    orderName: order.client.fullName,
+                    "date.time": order.date.time,
+                    priority: order.priority || 3, // Приоритет: 1-высокий, 2-средний, 3-низкий
+                    is_urgent: order.isUrgent || false, // Срочный заказ
+                };
+            }
+
+            return {
+                id: order._id,
+                lat: order.address.point.lat,
+                lon: order.address.point.lon,
+                bottles_12: order.products.b12,
+                bottles_19: order.products.b19,
+                status: order.status,
+                orderName: order.client.fullName,
+                priority: order.priority || 3, // Приоритет: 1-высокий, 2-средний, 3-низкий
+                is_urgent: order.isUrgent || false, // Срочный заказ
+            };
+        });
 
     const courierRestrictions = await CourierRestrictions.find({})
 
@@ -648,7 +711,6 @@ export default async function orTools() {
     
     console.log("количество курьеров = ", couriers.length)
     console.log("количество заказов = ", orders.length)
-    console.log("ограничения на заказы = ", courier_restrictions)
     
     // Проверяем, есть ли данные для обработки
     if (couriers.length === 0) {
@@ -697,17 +759,21 @@ export default async function orTools() {
         return;
     }
 
-    // for (const route of result) {
-    //     const courier = couriers.find(c => c.id === route.courier_id)
-        
-    //     // Проверяем, есть ли у курьера активный заказ
-    //     if (!courier.completeFirstOrder && courier.order === null) {
-    //         route.orders.reverse()
-    //     }
-    // }
+    for (const courier of couriers) {
+        const activeOrder = courier.order;
+        if (activeOrder && activeOrder.orderId) {
+            const alreadyIncluded = orders.find(o => o.id === activeOrder.orderId);
+            if (!alreadyIncluded) {
+                const fullOrder = allOrders.find(o => o.id === activeOrder.orderId);
+                if (fullOrder) {
+                    orders.push(fullOrder);
+                }
+            }
+        }
+    }
 
     try {
-        const visualizeResult = await runPythonVisualize(couriers, orders, result);
+        const visualizeResult = await runPythonVisualize(couriers, allOrders2, result);
         console.log("Результат визуализации:", visualizeResult);
     } catch (error) {
         console.error("Ошибка визуализации:", error);
