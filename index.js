@@ -331,14 +331,26 @@ app.post("/updateUserData", AquaMarketController.updateUserData)
 /////////////ORTOOLS
 app.get("/orTools", async (req, res) => {
     try {
-        res.json({ success: true}); 
-        await queueOrTools('api_request');
+        // Сначала отправляем ответ клиенту
+        res.json({ success: true, message: "orTools запущен в фоновом режиме" }); 
+        
+        // Затем запускаем orTools в фоне
+        try {
+            await queueOrTools('api_request');
+        } catch (queueError) {
+            console.error("Ошибка в очереди orTools:", queueError);
+        }
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Error executing Python script",
-            error: error.message
-        });
+        // Если ответ еще не отправлен, отправляем ошибку
+        if (!res.headersSent) {
+            res.status(500).json({
+                success: false,
+                message: "Error executing Python script",
+                error: error.message
+            });
+        } else {
+            console.error("Ошибка в orTools:", error);
+        }
     }
 });
 
