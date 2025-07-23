@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import FancyBboxPatch
 import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
 import os
 import sys
 import json
@@ -168,19 +169,19 @@ for i, route in enumerate(routes):
 
 # Создаем легенду для типов заказов
 legend_elements = [
-    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', 
-               markersize=10, markeredgecolor='darkred', markeredgewidth=2,
-               label='Активные заказы'),
-    plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='lightgreen', 
-               markersize=8, label='Новые заказы'),
-    plt.Line2D([0], [0], marker='x', color='w', markerfacecolor='lightcoral', 
-               markersize=8, label='Необслуженные заказы'),
-    plt.Line2D([0], [0], marker='s', color='w', markerfacecolor='black', 
-               markersize=10, label='Общий депо'),
-    plt.Line2D([0], [0], marker='^', color='w', markerfacecolor='gray', 
-               markersize=8, label='Курьеры без активных заказов'),
-    plt.Line2D([0], [0], marker='D', color='w', markerfacecolor='gray', 
-               markersize=8, label='Курьеры с активными заказами')
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='red', 
+           markersize=10, markeredgecolor='darkred', markeredgewidth=2,
+           label='Активные заказы'),
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='lightgreen', 
+           markersize=8, label='Новые заказы'),
+    Line2D([0], [0], marker='x', color='w', markerfacecolor='lightcoral', 
+           markersize=8, label='Необслуженные заказы'),
+    Line2D([0], [0], marker='s', color='w', markerfacecolor='black', 
+           markersize=10, label='Общий депо'),
+    Line2D([0], [0], marker='^', color='w', markerfacecolor='gray', 
+           markersize=8, label='Курьеры без активных заказов'),
+    Line2D([0], [0], marker='D', color='w', markerfacecolor='gray', 
+           markersize=8, label='Курьеры с активными заказами')
 ]
 
 # Создаем легенду для цветов курьеров
@@ -189,8 +190,8 @@ for i, route in enumerate(routes):
     courier_id = route['courier_id']
     color = colors[i % len(colors)]  # Используем модуль для предотвращения выхода за границы
     courier_color_elements.append(
-        plt.Line2D([0], [0], color=color, linewidth=3, 
-                   label=f'{courier_id} - {color}')
+        Line2D([0], [0], color=color, linewidth=3, 
+               label=f'{courier_id} - {color}')
     )
 
 # Если есть курьеры без маршрутов, добавляем и их
@@ -200,8 +201,8 @@ for courier in couriers:
     if courier['id'] not in used_courier_ids:
         color = colors[unused_courier_index % len(colors)]
         courier_color_elements.append(
-            plt.Line2D([0], [0], color=color, linewidth=3, 
-                       label=f'{courier["id"]} - {color} (без заказов)')
+            Line2D([0], [0], color=color, linewidth=3, 
+                   label=f'{courier["id"]} - {color} (без заказов)')
         )
         unused_courier_index += 1
 
