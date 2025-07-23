@@ -711,7 +711,6 @@ export default async function orTools() {
     
     console.log("количество курьеров = ", couriers.length)
     console.log("количество заказов = ", orders.length)
-    console.log("ограничения на заказы = ", courier_restrictions)
     
     // Проверяем, есть ли данные для обработки
     if (couriers.length === 0) {
@@ -772,10 +771,6 @@ export default async function orTools() {
             }
         }
     }
-
-    console.log("orders = ", orders)
-    console.log("couriers = ", couriers)
-    console.log("result = ", result)
 
     try {
         const visualizeResult = await runPythonVisualize(couriers, allOrders2, result);
