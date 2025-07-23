@@ -12,66 +12,6 @@ couriers_data = input_data["couriers"]
 orders_data = input_data["orders"]
 courier_restrictions = input_data["courier_restrictions"]
 
-# Ваши данные о курьерах и заказах (остаются прежними)
-# couriers_data = [
-#     {
-#         'id': 'courier_1',
-#         'lat': 43.282268, 'lon': 76.921119,
-#         'capacity_12': 0,
-#         'capacity_19': 30,
-#         'order': None,  # Активного заказа нет
-#     },
-#     {
-#         'id': 'courier_2',
-#         'lat': 43.24,
-#         'lon': 76.91,
-#         'capacity_12': 10,
-#         'capacity_19': 30,
-#         'order': None,  # Активного заказа нет
-#     },
-#     {
-#         'id': 'courier_3',
-#         'lat': 43.168277314921774,
-#         'lon': 76.89654142009347,
-#         'capacity_12': 0,
-#         'capacity_19': 40,
-#         'order': {'id': 'active_order_3', 'lat': 43.170000, 'lon': 76.898000, 'bottles_12': 0, 'bottles_19': 5},  # Пример активного заказа
-#     },
-#     {
-#         'id': 'courier_4',
-#         'lat': 43.16,
-#         'lon': 76.87,
-#         'capacity_12': 6,
-#         'capacity_19': 10,
-#         'order': None,  # Активного заказа нет
-#     }
-# ]
-
-# orders_data = [
-#     {'id': 'order_1', 'lat': 43.292268, 'lon': 76.931119, 'bottles_12': 5, 'bottles_19': 0, 'status': "awaitingOrder", 'priority': 1, 'isUrgent': False},
-#     {'id': 'order_2', 'lat': 43.261362, 'lon': 76.929122, 'bottles_12': 3, 'bottles_19': 0, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_3', 'lat': 43.151319, 'lon': 76.901267, 'bottles_12': 0, 'bottles_19': 3, 'status': "awaitingOrder", 'date.time': "11:00 - 13:00", 'priority': 1, 'isUrgent': True},
-#     {'id': 'order_4', 'lat': 43.228644, 'lon': 76.866358, 'bottles_12': 0, 'bottles_19': 3, 'status': "awaitingOrder", 'date.time': "10:30 - 10:40", 'priority': 1, 'isUrgent': True},
-#     {'id': 'order_5', 'lat': 43.187654, 'lon': 76.898765, 'bottles_12': 0, 'bottles_19': 2, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_6', 'lat': 43.254082, 'lon': 76.918261, 'bottles_12': 0, 'bottles_19': 5, 'status': "awaitingOrder", 'date.time': "16:30 - 18:00", 'priority': 1, 'isUrgent': False},
-#     {'id': 'order_7', 'lat': 43.198765, 'lon': 76.923456, 'bottles_12': 0, 'bottles_19': 4, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_8', 'lat': 43.237369, 'lon': 76.938627, 'bottles_12': 0, 'bottles_19': 6, 'status': "awaitingOrder", 'priority': 1, 'isUrgent': True},
-#     {'id': 'order_9', 'lat': 43.252214, 'lon': 76.90054, 'bottles_12': 0, 'bottles_19': 2, 'status': "awaitingOrder", 'priority': 3, 'isUrgent': False},
-#     {'id': 'order_10', 'lat': 43.187654, 'lon': 76.912345, 'bottles_12': 0, 'bottles_19': 2, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_11', 'lat': 43.194514, 'lon': 76.896529, 'bottles_12': 4, 'bottles_19': 0, 'status': "awaitingOrder", 'priority': 3, 'isUrgent': False},
-#     {'id': 'order_12', 'lat': 43.168765, 'lon': 76.873977, 'bottles_12': 0, 'bottles_19': 2, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_13', 'lat': 43.175432, 'lon': 76.923456, 'bottles_12': 0, 'bottles_19': 4, 'status': "awaitingOrder", 'priority': 1, 'isUrgent': False},
-#     {'id': 'order_14', 'lat': 43.234567, 'lon': 76.912345, 'bottles_12': 4, 'bottles_19': 0, 'status': "awaitingOrder", 'priority': 3, 'isUrgent': False},
-#     {'id': 'order_15', 'lat': 43.212045, 'lon': 76.872848, 'bottles_12': 0, 'bottles_19': 15, 'status': "awaitingOrder", 'priority': 3, 'isUrgent': False},
-#     {'id': 'order_16', 'lat': 43.223456, 'lon': 76.934567, 'bottles_12': 0, 'bottles_19': 10, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_17', 'lat': 43.264191, 'lon': 76.932518, 'bottles_12': 0, 'bottles_19': 20, 'status': "awaitingOrder", 'date.time': "16:30 - 17:40", 'priority': 1, 'isUrgent': False},
-#     {'id': 'order_18', 'lat': 43.245678, 'lon': 76.887654, 'bottles_12': 0, 'bottles_19': 3, 'status': "awaitingOrder", 'priority': 3, 'isUrgent': False},
-#     {'id': 'order_19', 'lat': 43.212345, 'lon': 76.945678, 'bottles_12': 0, 'bottles_19': 4, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_20', 'lat': 43.242453, 'lon': 76.9409, 'bottles_12': 0, 'bottles_19': 2, 'status': "awaitingOrder", 'priority': 1, 'isUrgent': False},
-#     {'id': 'order_21', 'lat': 43.234567, 'lon': 76.923456, 'bottles_12': 0, 'bottles_19': 2, 'status': "awaitingOrder", 'priority': 2, 'isUrgent': False},
-#     {'id': 'order_22', 'lat': 43.198765, 'lon': 76.934567, 'bottles_12': 10, 'bottles_19': 0, 'status': "awaitingOrder", 'priority': 1, 'isUrgent': False}
-# ]
-
 def haversine_distance(lat1, lon1, lat2, lon2):
     """
     Вычисляет расстояние между двумя точками по координатам (в метрах).
