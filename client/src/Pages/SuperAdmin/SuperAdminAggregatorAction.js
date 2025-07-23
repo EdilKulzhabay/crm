@@ -36,6 +36,11 @@ export default function SuperAdminAggregatorAction() {
         {!loading && <Div><img src="https://api.tibetskayacrm.kz/static/vrp_routes_visualization.png" alt="Маршруты курьеров" className="w-full" />
             </Div>}
 
+        <div className="h-20"></div>
+        <Div>
+            <img src="https://api.tibetskayacrm.kz/static/vrp_routes_visualizationTest.png" alt="Маршруты курьеров" className="w-full" />
+        </Div>
+
         <Div />
     </Container>
 }
