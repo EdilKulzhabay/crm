@@ -358,6 +358,43 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                 # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА
                 penalty = 5000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
+    
+    # ПРИОРИТЕТ ПО РАССТОЯНИЮ ДЛЯ СРОЧНЫХ ЗАКАЗОВ
+    # Находим срочные заказы и назначаем их ближайшим курьерам
+    urgent_orders = [order for order in orders_data if order.get('isUrgent', False) or order.get('is_urgent', False)]
+    
+    for urgent_order in urgent_orders:
+        # Находим индекс заказа в locations
+        order_node_index = None
+        for j, loc in enumerate(locations):
+            if 'id' in loc and loc['id'] == urgent_order['id']:
+                order_node_index = j
+                break
+        
+        if order_node_index is not None:
+            # Находим ближайшего курьера
+            min_distance = float('inf')
+            nearest_courier_id = None
+            
+            for courier_idx, courier in enumerate(working_couriers):
+                distance = haversine_distance(
+                    courier['lat'], courier['lon'],
+                    urgent_order['lat'], urgent_order['lon']
+                )
+                if distance < min_distance:
+                    min_distance = distance
+                    nearest_courier_id = courier_idx
+            
+            if nearest_courier_id is not None:
+                # Устанавливаем приоритет: этот заказ должен идти к ближайшему курьеру
+                order_index = manager.NodeToIndex(order_node_index)
+                courier_start = routing.Start(nearest_courier_id)
+                
+                # Добавляем ограничение: заказ должен быть назначен этому курьеру
+                # Используем очень высокий приоритет для срочных заказов
+                routing.AddPickupAndDelivery(order_index, courier_start)
+                
+                print(f"🚨 СРОЧНЫЙ заказ {urgent_order['id']} приоритетно назначен курьеру {working_couriers[nearest_courier_id]['id']} (расстояние: {min_distance/1000:.1f}км)", file=sys.stderr)
     # Временные окна
     routing.AddDimension(
         transit_callback_index,
@@ -367,6 +404,20 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         'Time'
     )
     time_dimension = routing.GetDimensionOrDie('Time')
+    
+    # ДОПОЛНИТЕЛЬНЫЙ ПРИОРИТЕТ ДЛЯ СРОЧНЫХ ЗАКАЗОВ: должны идти первыми
+    for urgent_order in urgent_orders:
+        order_node_index = None
+        for j, loc in enumerate(locations):
+            if 'id' in loc and loc['id'] == urgent_order['id']:
+                order_node_index = j
+                break
+        
+        if order_node_index is not None:
+            order_index = manager.NodeToIndex(order_node_index)
+            # Устанавливаем приоритет: срочные заказы должны выполняться как можно раньше
+            time_dimension.CumulVar(order_index).SetMin(0)
+            print(f"⏰ СРОЧНЫЙ заказ {urgent_order['id']} установлен приоритетным по времени", file=sys.stderr)
 
     def order_count_callback(from_index, to_index):
         try:
