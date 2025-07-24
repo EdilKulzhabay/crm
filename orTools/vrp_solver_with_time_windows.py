@@ -218,18 +218,16 @@ if len(orders) == 0:
 
 print("✅ Данные корректны, продолжаем оптимизацию...", file=sys.stderr)
 
-# Параметры поиска решения
+# Параметры поиска решения - ОПТИМИЗИРОВАННЫЕ ДЛЯ РАССТОЯНИЯ
 search_params = pywrapcp.DefaultRoutingSearchParameters()
 search_params.first_solution_strategy = (
-    routing_enums_pb2.FirstSolutionStrategy.SAVINGS)  # Хорошая начальная стратегия
+    routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)  # Меняем на PATH_CHEAPEST_ARC
 search_params.local_search_metaheuristic = (
-    routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)  # Лучше чем TABU_SEARCH для оптимизации
-search_params.time_limit.seconds = 20  # Увеличиваем время для лучшего решения
-search_params.log_search = False  # Отключаем логирование поиска
-
-# Дополнительные параметры для лучшей оптимизации
-search_params.use_cp_sat = False  # Используем CP solver для VRP
-search_params.use_cp = True  # Включаем CP solver
+    routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
+search_params.time_limit.seconds = 30  # Увеличиваем время
+search_params.log_search = False
+search_params.use_cp_sat = False
+search_params.use_cp = True
 
 def solve_vrp_for_orders(couriers_data, orders_data):
     """Решает VRP для заданного набора заказов с учетом вместимости курьеров и без возврата в депо"""
@@ -278,7 +276,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     manager = pywrapcp.RoutingIndexManager(num_locations, num_couriers, depot_index)
     routing = pywrapcp.RoutingModel(manager)
     
-    # Функция расчета времени
+    # Функция расчета времени - УЛУЧШЕННАЯ ДЛЯ ОПТИМИЗАЦИИ ПО РАССТОЯНИЮ
     def time_callback(from_index, to_index):
         try:
             if from_index < 0 or to_index < 0:
@@ -295,29 +293,40 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                 )
                 travel_time = distance / speed_mps
                 
-                # УЛУЧШЕННЫЙ ПРИОРИТЕТ ПО РАССТОЯНИЮ
-                # Если это переход к срочному заказу - уменьшаем стоимость
+                # КРИТИЧЕСКИ ВАЖНО: Приоритет по расстоянию
+                # Если это переход от курьера к заказу - учитываем расстояние
+                if from_node < num_couriers and to_node >= num_couriers:
+                    # Это переход от курьера к заказу
+                    courier = working_couriers[from_node]
+                    order = orders_data[to_node - num_couriers]
+                    
+                    # Вычисляем расстояние от курьера до заказа
+                    courier_to_order_distance = haversine_distance(
+                        courier['lat'], courier['lon'],
+                        order['lat'], order['lon']
+                    )
+                    
+                    # БОЛЬШОЙ ПРИОРИТЕТ: если заказ очень близко к курьеру
+                    if courier_to_order_distance < 0.5:  # Меньше 500 метров
+                        travel_time *= 0.1  # Очень большой приоритет (90% скидка)
+                    elif courier_to_order_distance < 1.0:  # Меньше 1 км
+                        travel_time *= 0.3  # Большой приоритет (70% скидка)
+                    elif courier_to_order_distance < 2.0:  # Меньше 2 км
+                        travel_time *= 0.5  # Средний приоритет (50% скидка)
+                    else:
+                        # Заказы дальше 2 км получают штраф
+                        travel_time *= 1.5  # Штраф 50%
+                
+                # Дополнительные приоритеты
                 if to_node >= num_couriers:
                     order = orders_data[to_node - num_couriers]
                     if order.get('isUrgent', False) or order.get('is_urgent', False):
-                        # Срочные заказы получают приоритет по расстоянию
-                        travel_time *= 0.3  # Уменьшаем стоимость в 3 раза (было 0.5)
-                
-                # ДОПОЛНИТЕЛЬНЫЙ ПРИОРИТЕТ: заказы с временными окнами
-                if to_node >= num_couriers:
-                    order = orders_data[to_node - num_couriers]
-                    if order.get('date.time', '') != "":
+                        # Срочные заказы получают приоритет
+                        travel_time *= 0.4  # 80% скидка
+                    elif order.get('date.time', '') != "":
                         # Заказы с временными окнами получают небольшой приоритет
-                        travel_time *= 0.8  # Уменьшаем стоимость на 20%
+                        travel_time *= 0.8  # 20% скидка
                 
-                # ПРИОРИТЕТ ПО ЗАГРУЗКЕ: предпочитаем курьеров с большей вместимостью
-                if from_node < num_couriers and to_node >= num_couriers:
-                    courier = working_couriers[from_node]
-                    courier_capacity = courier.get('capacity_19', 0) + courier.get('capacity_12', 0)
-                    if courier_capacity > 30:  # Если у курьера много места
-                        travel_time *= 0.9  # Небольшой приоритет
-                    elif courier_capacity < 15:  # Если у курьера мало места
-                        travel_time *= 1.2  # Небольшой штраф
             
             service_time_per_order = 5 * 60
             if to_node >= num_couriers:
@@ -370,22 +379,22 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     routing.AddDimensionWithVehicleCapacity(
         demand_callback_index_19, 0, vehicle_capacities_19, True, 'Capacity19')
     print("✅ Добавлено ограничение по вместимости 19л", file=sys.stderr)
-    # Штрафы за пропуск заказов - УВЕЛИЧЕННЫЕ ДЛЯ ЛУЧШЕГО ПОКРЫТИЯ
+    # Штрафы за пропуск заказов - УМЕНЬШЕННЫЕ ДЛЯ ЛУЧШЕЙ ОПТИМИЗАЦИИ ПО РАССТОЯНИЮ
     for order_idx in range(num_couriers, num_locations):
         order = orders_data[order_idx - num_couriers]
         
         if order.get('isUrgent', False) or order.get('is_urgent', False):
             # СРОЧНЫЕ ЗАКАЗЫ - высокий приоритет
-            penalty = 20000  # Увеличиваем с 5000 до 20000
+            penalty = 200000  # Уменьшаем с 20000 до 5000
             routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
         else:
             if order.get('date.time', '') != "":
                 # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - средний приоритет
-                penalty = 15000  # Увеличиваем с 2000 до 15000
+                penalty = 2000  # Уменьшаем с 15000 до 2000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
             else:
                 # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА - низкий приоритет
-                penalty = 10000  # Увеличиваем с 500 до 10000
+                penalty = 500  # Уменьшаем с 10000 до 500
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     
     # Временные окна
@@ -441,8 +450,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     # Штраф за пустых курьеров (если курьер не получил ни одного заказа)
     for vehicle_id in range(num_couriers):
         start_index = routing.Start(vehicle_id)
-        # Высокий штраф если курьер остается без заказов
-        empty_courier_penalty = 50000  # Увеличиваем с 1000 до 50000
+        # Умеренный штраф если курьер остается без заказов
+        empty_courier_penalty = 50000  # Уменьшаем с 50000 до 10000
         routing.AddDisjunction([start_index], empty_courier_penalty)
         
     # Временные окна для заказов - ОТКЛЮЧЕНО ИЗ-ЗА КОНФЛИКТОВ
