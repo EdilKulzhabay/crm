@@ -1164,24 +1164,26 @@ export const appointmentFranchisee = async (req, res) => {
 //     {
 //         _id: {
 //         $in: [
-//             ObjectId("687a5b6aa2e95a48596647ab")
+//             ObjectId("6881b56b61dd2297ac94d060")
 //         ]
 //         }
 //     },
 //     {
-//         $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null }
+//         $set: { forAggregator: false, status: "awaitingOrder", courierAggregator: null }
 //     }
 // )
 
+// db.courieraggregators.find({fullName: "Тасқын Әбікен"})
+
 // db.orders.updateMany(
 //     {
-//         "date.d": "2025-07-17",
+//         "date.d": "2025-07-24",
 //         forAggregator: true,
-//         status: "awaitingOrder"
+//         status: "onTheWay"
 //     },
 //     {
 //         $set: {
-//             courierAggregator: null
+//             status: "awaitingOrder"
 //         }
 //     }
 // )
@@ -1232,6 +1234,8 @@ export const appointmentFranchisee = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
   
+// db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
+
 // db.orders.find({
 //     "date.d": "2025-07-16",
 //     $or: [
