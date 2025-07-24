@@ -221,11 +221,11 @@ print("✅ Данные корректны, продолжаем оптимиз�
 # Параметры поиска решения
 search_params = pywrapcp.DefaultRoutingSearchParameters()
 search_params.first_solution_strategy = (
-    routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+    routing_enums_pb2.FirstSolutionStrategy.SAVINGS)  # Более быстрая стратегия
 search_params.local_search_metaheuristic = (
-    routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
-search_params.time_limit.seconds = 30  # Увеличиваем время поиска
-search_params.log_search = False  # Включаем логирование поиска
+    routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH)  # Быстрее чем GUIDED_LOCAL_SEARCH
+search_params.time_limit.seconds = 15  # Уменьшаем время поиска до 15 секунд
+search_params.log_search = False  # Отключаем логирование поиска
 
 def solve_vrp_for_orders(couriers_data, orders_data):
     """Решает VRP для заданного набора заказов с учетом вместимости курьеров и без возврата в депо"""
@@ -430,17 +430,29 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     print(f"Ошибка при установке временного окна для заказа {order['id']}: {e}", file=sys.stderr)
                     # Продолжаем работу без временного окна для этого заказа
                     continue
-    # Решаем задачу
+    # Решаем задачу с таймаутом
     try:
+        print(f"🔄 Запуск OR-Tools (таймаут: 15 сек)...", file=sys.stderr)
         solution = routing.SolveWithParameters(search_params)
+        
         if not solution:
-            print("Основная стратегия не нашла решение, пробуем простую стратегию", file=sys.stderr)
+            print("⚠️ Основная стратегия не нашла решение, пробуем быструю стратегию (5 сек)", file=sys.stderr)
+            fast_params = pywrapcp.DefaultRoutingSearchParameters()
+            fast_params.first_solution_strategy = (
+                routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
+            fast_params.time_limit.seconds = 5
+            solution = routing.SolveWithParameters(fast_params)
+            
+        if not solution:
+            print("⚠️ Быстрая стратегия не нашла решение, пробуем самую простую (3 сек)", file=sys.stderr)
             simple_params = pywrapcp.DefaultRoutingSearchParameters()
             simple_params.first_solution_strategy = (
                 routing_enums_pb2.FirstSolutionStrategy.SAVINGS)
-            simple_params.time_limit.seconds = 10
+            simple_params.time_limit.seconds = 3
             solution = routing.SolveWithParameters(simple_params)
+            
         if solution:
+            print(f"✅ OR-Tools нашел решение за {solution.ObjectiveValue()} единиц", file=sys.stderr)
             routes = []
             for vehicle_id in range(num_couriers):
                 index = routing.Start(vehicle_id)
@@ -458,10 +470,10 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     })
             return routes
         else:
-            print("Алгоритм не смог найти решение даже с простой стратегией", file=sys.stderr)
+            print("❌ OR-Tools не смог найти решение даже с простыми стратегиями", file=sys.stderr)
             return []
     except Exception as e:
-        print(f"Ошибка при решении VRP: {e}", file=sys.stderr)
+        print(f"❌ Ошибка при решении VRP: {e}", file=sys.stderr)
         return []
 
 # 2. Копируем курьеров для первого этапа
