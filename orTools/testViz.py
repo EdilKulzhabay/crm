@@ -16,8 +16,8 @@ import json
 input_data = json.load(sys.stdin)
 
 # Удаляем старый файл визуализации, если он существует
-if os.path.exists('vrp_routes_visualizationTest.png'):
-    os.remove('vrp_routes_visualizationTest.png')
+if os.path.exists('vrp_routes_visualization.png'):
+    os.remove('vrp_routes_visualization.png')
     print("Старый файл визуализации удален")
 
 # Общая точка возврата для всех курьеров
@@ -271,10 +271,10 @@ plt.figtext(0.02, 0.02, info_text, fontsize=10,
            bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", alpha=0.8))
 
 plt.tight_layout()
-plt.savefig('vrp_routes_visualizationTest.png', dpi=300, bbox_inches='tight')
+plt.savefig('vrp_routes_visualization.png', dpi=300, bbox_inches='tight')
 # plt.show()  # Убираем показ окна, чтобы программа не блокировалась
 
-print("Визуализация сохранена в файл: vrp_routes_visualizationTest.png")
+print("Визуализация сохранена в файл: vrp_routes_visualization.png")
 
 # Анализ оптимальности с учетом активных заказов
 print("\nАнализ маршрутов с активными заказами:")
