@@ -370,22 +370,22 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     routing.AddDimensionWithVehicleCapacity(
         demand_callback_index_19, 0, vehicle_capacities_19, True, 'Capacity19')
     print("✅ Добавлено ограничение по вместимости 19л", file=sys.stderr)
-    # Штрафы за пропуск заказов - ОПТИМИЗИРОВАННЫЕ
+    # Штрафы за пропуск заказов - УВЕЛИЧЕННЫЕ ДЛЯ ЛУЧШЕГО ПОКРЫТИЯ
     for order_idx in range(num_couriers, num_locations):
         order = orders_data[order_idx - num_couriers]
         
         if order.get('isUrgent', False) or order.get('is_urgent', False):
             # СРОЧНЫЕ ЗАКАЗЫ - высокий приоритет
-            penalty = 5000  # Умеренный штраф
+            penalty = 20000  # Увеличиваем с 5000 до 20000
             routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
         else:
             if order.get('date.time', '') != "":
                 # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - средний приоритет
-                penalty = 2000  # Низкий штраф для гибкости
+                penalty = 15000  # Увеличиваем с 2000 до 15000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
             else:
                 # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА - низкий приоритет
-                penalty = 500  # Очень низкий штраф
+                penalty = 10000  # Увеличиваем с 500 до 10000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     
     # Временные окна
@@ -427,9 +427,9 @@ def solve_vrp_for_orders(couriers_data, orders_data):
             return 0
             
     order_count_callback_index = routing.RegisterTransitCallback(order_count_callback)
-    # ОПТИМИЗИРОВАННОЕ ограничение на количество заказов
-    # Более равномерное распределение
-    max_orders_per_courier = max(1, min(15, num_orders // num_couriers + 2))  # Уменьшаем максимум
+    # УВЕЛИЧЕННОЕ ограничение на количество заказов
+    # Для лучшего покрытия всех заказов
+    max_orders_per_courier = max(1, min(20, num_orders // num_couriers + 3))  # Увеличиваем максимум
     routing.AddDimension(
         order_count_callback_index,
         0,
@@ -441,40 +441,34 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     # Штраф за пустых курьеров (если курьер не получил ни одного заказа)
     for vehicle_id in range(num_couriers):
         start_index = routing.Start(vehicle_id)
-        # Умеренный штраф если курьер остается без заказов
-        empty_courier_penalty = 1000  # Уменьшаем с 1 миллиона до 1000
+        # Высокий штраф если курьер остается без заказов
+        empty_courier_penalty = 50000  # Увеличиваем с 1000 до 50000
         routing.AddDisjunction([start_index], empty_courier_penalty)
         
-    # Временные окна для заказов
-    for order in orders_data:
-        if 'date.time' in order:
-            order_node_index = None
-            for j, loc in enumerate(locations):
-                if 'id' in loc and loc['id'] == order['id']:
-                    order_node_index = j
-                    break
-            if order_node_index is not None:
-                try:
-                    order_index = manager.NodeToIndex(order_node_index)
-                    time_window_str = order['date.time'].split(' - ')
-                    start_time_str = time_window_str[0]
-                    end_time_str = time_window_str[1]
-                    start_h, start_m = map(int, start_time_str.split(':'))
-                    end_h, end_m = map(int, end_time_str.split(':'))
-                    start_time_seconds = start_h * 3600 + start_m * 60
-                    end_time_seconds = end_h * 3600 + end_m * 60
-                    start_time_seconds = max(start_time_seconds, 0)
-                    
-                    # Увеличиваем буфер времени для большей гибкости
-                    buffer_time = 3600  # 1 час вместо 30 минут
-                    time_dimension.CumulVar(order_index).SetRange(
-                        int(start_time_seconds), 
-                        int(end_time_seconds + buffer_time)
-                    )
-                except Exception as e:
-                    print(f"Ошибка при установке временного окна для заказа {order['id']}: {e}", file=sys.stderr)
-                    # Продолжаем работу без временного окна для этого заказа
-                    continue
+    # Временные окна для заказов - ОТКЛЮЧЕНО ИЗ-ЗА КОНФЛИКТОВ
+    # for order in orders_data:
+    #     if 'date.time' in order:
+    #         order_node_index = None
+    #         for j, loc in enumerate(locations):
+    #             if 'id' in loc and loc['id'] == order['id']:
+    #                 order_node_index = j
+    #                 break
+    #         if order_node_index is not None:
+    #             try:
+    #                 time_window = order['date.time']
+    #                 if time_window and time_window.strip():
+    #                     start_time_str, end_time_str = time_window.split(' - ')
+    #                     start_time = datetime.strptime(start_time_str, '%H:%M').time()
+    #                     end_time = datetime.strptime(end_time_str, '%H:%M').time()
+    #                     
+    #                     start_time_seconds = start_time.hour * 3600 + start_time.minute * 60
+    #                     end_time_seconds = end_time.hour * 3600 + end_time.minute * 60
+    #                     
+    #                     order_index = manager.NodeToIndex(order_node_index)
+    #                     time_dimension.CumulVar(order_index).SetRange(start_time_seconds, end_time_seconds)
+    #                     print(f"⏰ Временное окно для заказа {order['id']}: {start_time_str}-{end_time_str}", file=sys.stderr)
+    #             except Exception as e:
+    #                 print(f"Ошибка при установке временного окна для заказа {order['id']}: {e}", file=sys.stderr)
     # Решаем задачу с таймаутом
     try:
         print(f"🔄 Запуск OR-Tools (таймаут: 20 сек)...", file=sys.stderr)
