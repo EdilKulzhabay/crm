@@ -221,11 +221,15 @@ print("✅ Данные корректны, продолжаем оптимиз�
 # Параметры поиска решения
 search_params = pywrapcp.DefaultRoutingSearchParameters()
 search_params.first_solution_strategy = (
-    routing_enums_pb2.FirstSolutionStrategy.SAVINGS)  # Более быстрая стратегия
+    routing_enums_pb2.FirstSolutionStrategy.SAVINGS)  # Хорошая начальная стратегия
 search_params.local_search_metaheuristic = (
-    routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH)  # Быстрее чем GUIDED_LOCAL_SEARCH
-search_params.time_limit.seconds = 15  # Уменьшаем время поиска до 15 секунд
+    routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)  # Лучше чем TABU_SEARCH для оптимизации
+search_params.time_limit.seconds = 20  # Увеличиваем время для лучшего решения
 search_params.log_search = False  # Отключаем логирование поиска
+
+# Дополнительные параметры для лучшей оптимизации
+search_params.use_cp_sat = False  # Используем CP solver для VRP
+search_params.use_cp = True  # Включаем CP solver
 
 def solve_vrp_for_orders(couriers_data, orders_data):
     """Решает VRP для заданного набора заказов с учетом вместимости курьеров и без возврата в депо"""
@@ -285,10 +289,24 @@ def solve_vrp_for_orders(couriers_data, orders_data):
             
             travel_time = 0
             if from_node != to_node:
-                travel_time = haversine_distance(
+                distance = haversine_distance(
                     locations[from_node]['lat'], locations[from_node]['lon'],
                     locations[to_node]['lat'], locations[to_node]['lon']
-                ) / speed_mps
+                )
+                travel_time = distance / speed_mps
+                
+                # ДОПОЛНИТЕЛЬНЫЙ ПРИОРИТЕТ ПО РАССТОЯНИЮ
+                # Если это переход к срочному заказу - уменьшаем стоимость
+                if to_node >= num_couriers:
+                    order = orders_data[to_node - num_couriers]
+                    if order.get('isUrgent', False) or order.get('is_urgent', False):
+                        # Срочные заказы получают приоритет по расстоянию
+                        travel_time *= 0.5  # Уменьшаем стоимость в 2 раза
+                
+                # Если это переход от курьера к заказу - учитываем расстояние
+                if from_node < num_couriers and to_node >= num_couriers:
+                    # Это переход от курьера к заказу - приоритет ближайшим
+                    pass  # Базовая стоимость уже рассчитана выше
             
             service_time_per_order = 5 * 60
             if to_node >= num_couriers:
@@ -346,7 +364,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         order = orders_data[order_idx - num_couriers]
         
         if order.get('isUrgent', False) or order.get('is_urgent', False):
-            penalty = 1000000  # Очень высокий штраф, чтобы алгоритм сделал всё возможное для выполнения
+            # СРОЧНЫЕ ЗАКАЗЫ - высокий приоритет, но не жёсткий штраф
+            penalty = 10000  # Умеренный штраф для приоритета
             routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
         else:
             if order.get('date.time', '') != "":
@@ -358,10 +377,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                 penalty = 5000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     
-    # ПРИОРИТЕТ ПО РАССТОЯНИЮ ДЛЯ СРОЧНЫХ ЗАКАЗОВ
-    # Находим срочные заказы и назначаем их ближайшим курьерам
-    urgent_orders = [order for order in orders_data if order.get('isUrgent', False) or order.get('is_urgent', False)]
- # Временные окна
+    # Временные окна
     routing.AddDimension(
         transit_callback_index,
         3600,  # slack_max (1 час вместо 30 минут)
@@ -371,7 +387,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     )
     time_dimension = routing.GetDimensionOrDie('Time')
     
-    # ДОПОЛНИТЕЛЬНЫЙ ПРИОРИТЕТ ДЛЯ СРОЧНЫХ ЗАКАЗОВ: должны идти первыми
+    # ПРИОРИТЕТ ПО ВРЕМЕНИ ДЛЯ СРОЧНЫХ ЗАКАЗОВ
+    urgent_orders = [order for order in orders_data if order.get('isUrgent', False) or order.get('is_urgent', False)]
     for urgent_order in urgent_orders:
         order_node_index = None
         for j, loc in enumerate(locations):
@@ -381,9 +398,12 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         
         if order_node_index is not None:
             order_index = manager.NodeToIndex(order_node_index)
-            # Устанавливаем приоритет: срочные заказы должны выполняться как можно раньше
-            time_dimension.CumulVar(order_index).SetMin(0)
-            print(f"⏰ СРОЧНЫЙ заказ {urgent_order['id']} установлен приоритетным по времени", file=sys.stderr)
+            try:
+                # Устанавливаем приоритет: срочные заказы должны выполняться как можно раньше
+                time_dimension.CumulVar(order_index).SetMin(0)
+                print(f"⏰ СРОЧНЫЙ заказ {urgent_order['id']} установлен приоритетным по времени", file=sys.stderr)
+            except Exception as e:
+                print(f"Ошибка при установке приоритета для срочного заказа {urgent_order['id']}: {e}", file=sys.stderr)
 
     def order_count_callback(from_index, to_index):
         try:
@@ -444,23 +464,27 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     continue
     # Решаем задачу с таймаутом
     try:
-        print(f"🔄 Запуск OR-Tools (таймаут: 15 сек)...", file=sys.stderr)
+        print(f"🔄 Запуск OR-Tools (таймаут: 20 сек)...", file=sys.stderr)
         solution = routing.SolveWithParameters(search_params)
         
         if not solution:
-            print("⚠️ Основная стратегия не нашла решение, пробуем быструю стратегию (5 сек)", file=sys.stderr)
+            print("⚠️ Основная стратегия не нашла решение, пробуем быструю стратегию (10 сек)", file=sys.stderr)
             fast_params = pywrapcp.DefaultRoutingSearchParameters()
             fast_params.first_solution_strategy = (
                 routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
-            fast_params.time_limit.seconds = 5
+            fast_params.local_search_metaheuristic = (
+                routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH)
+            fast_params.time_limit.seconds = 10
             solution = routing.SolveWithParameters(fast_params)
             
         if not solution:
-            print("⚠️ Быстрая стратегия не нашла решение, пробуем самую простую (3 сек)", file=sys.stderr)
+            print("⚠️ Быстрая стратегия не нашла решение, пробуем самую простую (5 сек)", file=sys.stderr)
             simple_params = pywrapcp.DefaultRoutingSearchParameters()
             simple_params.first_solution_strategy = (
                 routing_enums_pb2.FirstSolutionStrategy.SAVINGS)
-            simple_params.time_limit.seconds = 3
+            simple_params.local_search_metaheuristic = (
+                routing_enums_pb2.LocalSearchMetaheuristic.GREEDY_DESCENT)
+            simple_params.time_limit.seconds = 5
             solution = routing.SolveWithParameters(simple_params)
             
         if solution:
