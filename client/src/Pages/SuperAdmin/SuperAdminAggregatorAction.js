@@ -1,14 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import api from "../../api"
 import Container from "../../Components/Container"
 import Div from "../../Components/Div"
-import Li from "../../Components/Li"
 import useFetchUserData from "../../customHooks/useFetchUserData"
-import LinkButton from "../../Components/LinkButton"
 import MyButton from "../../Components/MyButton"
-import MyInput from "../../Components/MyInput"
-import Info from "../../Components/Info"
-import clsx from "clsx"
 
 export default function SuperAdminAggregatorAction() {
     const userData = useFetchUserData()
@@ -35,11 +30,6 @@ export default function SuperAdminAggregatorAction() {
 
         {!loading && <Div><img src="https://api.tibetskayacrm.kz/static/vrp_routes_visualization.png" alt="Маршруты курьеров" className="w-full" />
             </Div>}
-
-        <div className="h-20"></div>
-        <Div>
-            <img src="https://api.tibetskayacrm.kz/static/vrp_routes_visualizationTest.png" alt="Маршруты курьеров" className="w-full" />
-        </Div>
 
         <Div />
     </Container>

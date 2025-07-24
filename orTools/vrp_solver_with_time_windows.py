@@ -57,8 +57,7 @@ def create_time_matrix(locations, speed_mps=speed_mps):
 print("=== ПРОВЕРКА ВХОДНЫХ ДАННЫХ ===", file=sys.stderr)
 
 # Определяем текущее время в Алматы динамически
-# now = datetime.now()
-now = datetime.strptime("09:45:00", "%H:%M:%S")
+now = datetime.now()
 current_time_in_seconds = now.hour * 3600 + now.minute * 60 + now.second
 print(f"Текущее время: {now.strftime('%H:%M:%S')} ({current_time_in_seconds} секунд)", file=sys.stderr)
 
