@@ -482,7 +482,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     for vehicle_id in range(num_couriers):
         start_index = routing.Start(vehicle_id)
         # Умеренный штраф если курьер остается без заказов
-        empty_courier_penalty = 10000  # Возвращаем разумное значение
+        empty_courier_penalty = 100000  # Возвращаем разумное значение
         routing.AddDisjunction([start_index], empty_courier_penalty)
         
     # Временные окна для заказов - ОТКЛЮЧЕНО ИЗ-ЗА КОНФЛИКТОВ
