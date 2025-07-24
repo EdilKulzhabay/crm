@@ -295,18 +295,29 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                 )
                 travel_time = distance / speed_mps
                 
-                # ДОПОЛНИТЕЛЬНЫЙ ПРИОРИТЕТ ПО РАССТОЯНИЮ
+                # УЛУЧШЕННЫЙ ПРИОРИТЕТ ПО РАССТОЯНИЮ
                 # Если это переход к срочному заказу - уменьшаем стоимость
                 if to_node >= num_couriers:
                     order = orders_data[to_node - num_couriers]
                     if order.get('isUrgent', False) or order.get('is_urgent', False):
                         # Срочные заказы получают приоритет по расстоянию
-                        travel_time *= 0.5  # Уменьшаем стоимость в 2 раза
+                        travel_time *= 0.3  # Уменьшаем стоимость в 3 раза (было 0.5)
                 
-                # Если это переход от курьера к заказу - учитываем расстояние
+                # ДОПОЛНИТЕЛЬНЫЙ ПРИОРИТЕТ: заказы с временными окнами
+                if to_node >= num_couriers:
+                    order = orders_data[to_node - num_couriers]
+                    if order.get('date.time', '') != "":
+                        # Заказы с временными окнами получают небольшой приоритет
+                        travel_time *= 0.8  # Уменьшаем стоимость на 20%
+                
+                # ПРИОРИТЕТ ПО ЗАГРУЗКЕ: предпочитаем курьеров с большей вместимостью
                 if from_node < num_couriers and to_node >= num_couriers:
-                    # Это переход от курьера к заказу - приоритет ближайшим
-                    pass  # Базовая стоимость уже рассчитана выше
+                    courier = working_couriers[from_node]
+                    courier_capacity = courier.get('capacity_19', 0) + courier.get('capacity_12', 0)
+                    if courier_capacity > 30:  # Если у курьера много места
+                        travel_time *= 0.9  # Небольшой приоритет
+                    elif courier_capacity < 15:  # Если у курьера мало места
+                        travel_time *= 1.2  # Небольшой штраф
             
             service_time_per_order = 5 * 60
             if to_node >= num_couriers:
@@ -359,22 +370,22 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     routing.AddDimensionWithVehicleCapacity(
         demand_callback_index_19, 0, vehicle_capacities_19, True, 'Capacity19')
     print("✅ Добавлено ограничение по вместимости 19л", file=sys.stderr)
-    # Штрафы за пропуск заказов
+    # Штрафы за пропуск заказов - ОПТИМИЗИРОВАННЫЕ
     for order_idx in range(num_couriers, num_locations):
         order = orders_data[order_idx - num_couriers]
         
         if order.get('isUrgent', False) or order.get('is_urgent', False):
-            # СРОЧНЫЕ ЗАКАЗЫ - высокий приоритет, но не жёсткий штраф
-            penalty = 10000  # Умеренный штраф для приоритета
+            # СРОЧНЫЕ ЗАКАЗЫ - высокий приоритет
+            penalty = 5000  # Умеренный штраф
             routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
         else:
             if order.get('date.time', '') != "":
-                # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - штраф больше чем без окна
-                penalty = 50000
+                # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - средний приоритет
+                penalty = 2000  # Низкий штраф для гибкости
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
             else:
-                # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА
-                penalty = 5000
+                # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА - низкий приоритет
+                penalty = 500  # Очень низкий штраф
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     
     # Временные окна
@@ -416,7 +427,9 @@ def solve_vrp_for_orders(couriers_data, orders_data):
             return 0
             
     order_count_callback_index = routing.RegisterTransitCallback(order_count_callback)
-    max_orders_per_courier = max(1, min(20, num_orders // num_couriers + 3))
+    # ОПТИМИЗИРОВАННОЕ ограничение на количество заказов
+    # Более равномерное распределение
+    max_orders_per_courier = max(1, min(15, num_orders // num_couriers + 2))  # Уменьшаем максимум
     routing.AddDimension(
         order_count_callback_index,
         0,
@@ -428,8 +441,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     # Штраф за пустых курьеров (если курьер не получил ни одного заказа)
     for vehicle_id in range(num_couriers):
         start_index = routing.Start(vehicle_id)
-        # Очень большой штраф если курьер остается без заказов
-        empty_courier_penalty = 1000000  # 1 миллион - практически невозможно заплатить
+        # Умеренный штраф если курьер остается без заказов
+        empty_courier_penalty = 1000  # Уменьшаем с 1 миллиона до 1000
         routing.AddDisjunction([start_index], empty_courier_penalty)
         
     # Временные окна для заказов
