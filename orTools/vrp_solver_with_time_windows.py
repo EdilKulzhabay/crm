@@ -308,14 +308,16 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     
                     # БОЛЬШОЙ ПРИОРИТЕТ: если заказ очень близко к курьеру
                     if courier_to_order_distance < 0.5:  # Меньше 500 метров
-                        travel_time *= 0.1  # Очень большой приоритет (90% скидка)
+                        travel_time *= 0.05  # Очень большой приоритет (95% скидка) - было 0.1
                     elif courier_to_order_distance < 1.0:  # Меньше 1 км
-                        travel_time *= 0.3  # Большой приоритет (70% скидка)
+                        travel_time *= 0.1  # Большой приоритет (90% скидка) - было 0.3
                     elif courier_to_order_distance < 2.0:  # Меньше 2 км
-                        travel_time *= 0.5  # Средний приоритет (50% скидка)
+                        travel_time *= 0.2  # Средний приоритет (80% скидка) - было 0.5
+                    elif courier_to_order_distance < 3.0:  # Меньше 3 км
+                        travel_time *= 0.5  # Небольшой приоритет (50% скидка)
                     else:
-                        # Заказы дальше 2 км получают штраф
-                        travel_time *= 1.5  # Штраф 50%
+                        # Заказы дальше 3 км получают большой штраф
+                        travel_time *= 3.0  # Штраф 200% - было 1.5
                 
                 # Дополнительные приоритеты
                 if to_node >= num_couriers:
@@ -325,8 +327,16 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                         travel_time *= 0.4  # 80% скидка
                     elif order.get('date.time', '') != "":
                         # Заказы с временными окнами получают небольшой приоритет
-                        travel_time *= 0.8  # 20% скидка
+                        travel_time *= 0.6  # 40% скидка - было 0.8
                 
+                # Приоритет по загрузке: предпочитаем курьеров с большей вместимостью
+                if from_node < num_couriers and to_node >= num_couriers:
+                    courier = working_couriers[from_node]
+                    courier_capacity = courier.get('capacity_19', 0) + courier.get('capacity_12', 0)
+                    if courier_capacity > 30:  # Если у курьера много места
+                        travel_time *= 0.95  # Небольшой приоритет (5% скидка)
+                    elif courier_capacity < 15:  # Если у курьера мало места
+                        travel_time *= 1.05  # Небольшой штраф (5% штраф)
             
             service_time_per_order = 5 * 60
             if to_node >= num_couriers:
@@ -390,11 +400,11 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         else:
             if order.get('date.time', '') != "":
                 # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - средний приоритет
-                penalty = 8000  # Увеличиваем с 2000 до 8000
+                penalty = 3000  # Уменьшаем с 8000 до 3000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
             else:
                 # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА - низкий приоритет
-                penalty = 3000  # Увеличиваем с 500 до 3000
+                penalty = 1000  # Уменьшаем с 3000 до 1000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     
     # Временные окна
