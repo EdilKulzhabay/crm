@@ -346,9 +346,8 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         order = orders_data[order_idx - num_couriers]
         
         if order.get('isUrgent', False) or order.get('is_urgent', False):
-            # СРОЧНЫЕ ЗАКАЗЫ - НЕ ДОБАВЛЯЕМ В DISJUNCTION
-            # OR-Tools ОБЯЗАТЕЛЬНО должен их выполнить
-            pass
+            penalty = 1000000  # Очень высокий штраф, чтобы алгоритм сделал всё возможное для выполнения
+            routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
         else:
             if order.get('date.time', '') != "":
                 # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - штраф больше чем без окна
