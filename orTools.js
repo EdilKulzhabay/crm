@@ -438,7 +438,9 @@ export default async function orTools() {
             bottles_12: order.products.b12,
             bottles_19: order.products.b19,
             status: order.status,
-            orderName: order.client.fullName
+            orderName: order.client.fullName,
+            isUrgent: order.isUrgent,
+            "date.time": order.date.time
         }));
 
     const courier_restrictions = {}
