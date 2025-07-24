@@ -224,7 +224,7 @@ search_params.first_solution_strategy = (
     routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)  # Меняем на PATH_CHEAPEST_ARC
 search_params.local_search_metaheuristic = (
     routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
-search_params.time_limit.seconds = 30  # Увеличиваем время
+search_params.time_limit.seconds = 45  # Увеличиваем время до 45 секунд
 search_params.log_search = False
 search_params.use_cp_sat = False
 search_params.use_cp = True
@@ -385,16 +385,16 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         
         if order.get('isUrgent', False) or order.get('is_urgent', False):
             # СРОЧНЫЕ ЗАКАЗЫ - высокий приоритет
-            penalty = 200000  # Уменьшаем с 20000 до 5000
+            penalty = 10000  # Возвращаем разумное значение
             routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
         else:
             if order.get('date.time', '') != "":
                 # ОБЫЧНЫЙ ЗАКАЗ С ВРЕМЕННЫМ ОКНОМ - средний приоритет
-                penalty = 2000  # Уменьшаем с 15000 до 2000
+                penalty = 8000  # Увеличиваем с 2000 до 8000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
             else:
                 # ОБЫЧНЫЙ ЗАКАЗ БЕЗ ВРЕМЕННОГО ОКНА - низкий приоритет
-                penalty = 500  # Уменьшаем с 10000 до 500
+                penalty = 3000  # Увеличиваем с 500 до 3000
                 routing.AddDisjunction([manager.NodeToIndex(order_idx)], penalty)
     
     # Временные окна
@@ -451,7 +451,7 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     for vehicle_id in range(num_couriers):
         start_index = routing.Start(vehicle_id)
         # Умеренный штраф если курьер остается без заказов
-        empty_courier_penalty = 50000  # Уменьшаем с 50000 до 10000
+        empty_courier_penalty = 10000  # Возвращаем разумное значение
         routing.AddDisjunction([start_index], empty_courier_penalty)
         
     # Временные окна для заказов - ОТКЛЮЧЕНО ИЗ-ЗА КОНФЛИКТОВ
