@@ -81,12 +81,12 @@ for order in orders:
                 
                 # Если временное окно уже закрылось, пропускаем заказ
                 if end_time_seconds < current_time_in_seconds:
-                    print(f"Заказ {order['id']} пропущен - временное окно закрыто", file=sys.stderr)
+                    # print(f"Заказ {order['id']} пропущен - временное окно закрыто", file=sys.stderr)
                     continue
                 
                 # Проверяем, не будет ли заказ ждать слишком долго
                 if start_time_seconds > current_time_in_seconds + max_wait_time_seconds:
-                    print(f"Заказ {order['id']} пропущен - слишком долгое ожидание (окно: {start_time_str}-{end_time_str})", file=sys.stderr)
+                    # print(f"Заказ {order['id']} пропущен - слишком долгое ожидание (окно: {start_time_str}-{end_time_str})", file=sys.stderr)
                     continue
                     
             except Exception as e:
@@ -131,11 +131,11 @@ for order in orders:
     
     # ПРИОРИТЕТ 1: Срочные заказы (isUrgent: true)
     is_urgent = order.get('isUrgent', False) or order.get('is_urgent', False)
-    print(f"Проверка заказа {order['id']}: isUrgent={order.get('isUrgent', 'НЕТ')}, is_urgent={order.get('is_urgent', 'НЕТ')}, итого={is_urgent}", file=sys.stderr)
+    # print(f"Проверка заказа {order['id']}: isUrgent={order.get('isUrgent', 'НЕТ')}, is_urgent={order.get('is_urgent', 'НЕТ')}, итого={is_urgent}", file=sys.stderr)
     
     if is_urgent:
         urgent_orders.append(order)
-        print(f"🚨 СРОЧНЫЙ заказ {order['id']} добавлен в приоритетную очередь", file=sys.stderr)
+        # print(f"🚨 СРОЧНЫЙ заказ {order['id']} добавлен в приоритетную очередь", file=sys.stderr)
     else:
         regular_orders.append(order)
 

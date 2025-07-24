@@ -450,6 +450,9 @@ export default async function orTools() {
     console.log("количество курьеров = ", couriers.length)
     console.log("количество заказов = ", orders.length)
     console.log("ограничения на заказы = ", courier_restrictions)
+
+    console.log("couriers = ", couriers)
+    console.log("orders = ", orders)
     
     // Проверяем, есть ли данные для обработки
     if (couriers.length === 0) {
@@ -630,12 +633,12 @@ export default async function orTools() {
 
     console.log("Отправляем push уведомления");
     
-    const needOrTools = await sendOrderPushNotification();
+    // const needOrTools = await sendOrderPushNotification();
 
-    if (needOrTools) {
-        console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
-        await orTools();
-    }
+    // if (needOrTools) {
+    //     console.log("🔄 Перезапуск orTools после отклонения заказов курьерами");
+    //     await orTools();
+    // }
 
     console.log("✅ Push уведомления отправлены");
 }
