@@ -1239,4 +1239,7 @@ export const appointmentFranchisee = async (req, res) => {
 //       { "products.b19": { $in: [null, ""] } }
 //     ]
 //   })
+
+// db.courieraggregators.find({onTheLine: true}, {fullName: 1, capacity12: 1, capacity19: 1})
+// db.courieraggregators.find({onTheLine: true})
   
