@@ -218,17 +218,17 @@ if len(orders) == 0:
 
 print("✅ Данные корректны, продолжаем оптимизацию...", file=sys.stderr)
 
-# Параметры поиска решения - ОПТИМИЗИРОВАННЫЕ ДЛЯ РАССТОЯНИЯ
+# Параметры поиска решения - УЛУЧШЕННЫЕ ДЛЯ ОПТИМИЗАЦИИ ПОСЛЕДОВАТЕЛЬНОСТИ
 search_params = pywrapcp.DefaultRoutingSearchParameters()
 search_params.first_solution_strategy = (
-    routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)  # Меняем на PATH_CHEAPEST_ARC
+    routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
 search_params.local_search_metaheuristic = (
-    routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
-search_params.time_limit.seconds = 45  # Увеличиваем время до 45 секунд
+    routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH)  # Меняем на TABU_SEARCH для лучшей оптимизации
+search_params.time_limit.seconds = 60  # Увеличиваем время до 60 секунд
 search_params.log_search = False
 search_params.use_cp_sat = False
 search_params.use_cp = True
-
+    
 def solve_vrp_for_orders(couriers_data, orders_data):
     """Решает VRP для заданного набора заказов с учетом вместимости курьеров и без возврата в депо"""
     if not orders_data:
@@ -318,6 +318,27 @@ def solve_vrp_for_orders(couriers_data, orders_data):
                     else:
                         # Заказы дальше 3 км получают большой штраф
                         travel_time *= 3.0  # Штраф 200% - было 1.5
+                
+                # ДОПОЛНИТЕЛЬНЫЙ ПРИОРИТЕТ: оптимизация последовательности
+                # Если это переход между заказами - учитываем направление
+                elif from_node >= num_couriers and to_node >= num_couriers:
+                    # Это переход между заказами
+                    from_order = orders_data[from_node - num_couriers]
+                    to_order = orders_data[to_node - num_couriers]
+                    
+                    # Вычисляем направление движения
+                    from_lon = from_order['lon']
+                    to_lon = to_order['lon']
+                    
+                    # Если движение в одном направлении - приоритет
+                    if abs(from_lon - to_lon) < 0.01:  # Движение в одном направлении
+                        travel_time *= 0.8  # 20% скидка за последовательное движение
+                    elif (from_lon < to_lon and from_lon < 76.85) or (from_lon > to_lon and from_lon > 76.95):
+                        # Движение от краев к центру - приоритет
+                        travel_time *= 0.9  # 10% скидка
+                    else:
+                        # Движение туда-сюда - штраф
+                        travel_time *= 1.2  # 20% штраф
                 
                 # Дополнительные приоритеты
                 if to_node >= num_couriers:
@@ -494,23 +515,23 @@ def solve_vrp_for_orders(couriers_data, orders_data):
         solution = routing.SolveWithParameters(search_params)
         
         if not solution:
-            print("⚠️ Основная стратегия не нашла решение, пробуем быструю стратегию (10 сек)", file=sys.stderr)
+            print("⚠️ Основная стратегия не нашла решение, пробуем быструю стратегию (15 сек)", file=sys.stderr)
             fast_params = pywrapcp.DefaultRoutingSearchParameters()
             fast_params.first_solution_strategy = (
                 routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
             fast_params.local_search_metaheuristic = (
-                routing_enums_pb2.LocalSearchMetaheuristic.TABU_SEARCH)
-            fast_params.time_limit.seconds = 10
+                routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH)
+            fast_params.time_limit.seconds = 15
             solution = routing.SolveWithParameters(fast_params)
             
         if not solution:
-            print("⚠️ Быстрая стратегия не нашла решение, пробуем самую простую (5 сек)", file=sys.stderr)
+            print("⚠️ Быстрая стратегия не нашла решение, пробуем самую простую (10 сек)", file=sys.stderr)
             simple_params = pywrapcp.DefaultRoutingSearchParameters()
             simple_params.first_solution_strategy = (
                 routing_enums_pb2.FirstSolutionStrategy.SAVINGS)
             simple_params.local_search_metaheuristic = (
                 routing_enums_pb2.LocalSearchMetaheuristic.GREEDY_DESCENT)
-            simple_params.time_limit.seconds = 5
+            simple_params.time_limit.seconds = 10
             solution = routing.SolveWithParameters(simple_params)
             
         if solution:
