@@ -332,20 +332,15 @@ def solve_vrp_for_orders(couriers_data, orders_data):
     print(f"DEBUG: Вместимость курьеров 12л: {vehicle_capacities_12}", file=sys.stderr)
     print(f"DEBUG: Вместимость курьеров 19л: {vehicle_capacities_19}", file=sys.stderr)
     
-    # Добавляем ограничения по вместимости только если у курьеров есть бутылки
-    if any(cap > 0 for cap in vehicle_capacities_12):
-        routing.AddDimensionWithVehicleCapacity(
-            demand_callback_index_12, 0, vehicle_capacities_12, True, 'Capacity12')
-        print("✅ Добавлено ограничение по вместимости 12л", file=sys.stderr)
-    else:
-        print("⚠️ Нет ограничений по вместимости 12л (все курьеры пустые)", file=sys.stderr)
-        
-    if any(cap > 0 for cap in vehicle_capacities_19):
-        routing.AddDimensionWithVehicleCapacity(
-            demand_callback_index_19, 0, vehicle_capacities_19, True, 'Capacity19')
-        print("✅ Добавлено ограничение по вместимости 19л", file=sys.stderr)
-    else:
-        print("⚠️ Нет ограничений по вместимости 19л (все курьеры пустые)", file=sys.stderr)
+    # ИСПРАВЛЕННАЯ ЛОГИКА: Добавляем ограничения ВСЕГДА
+    # Если у курьера 0 бутылей - он НЕ МОЖЕТ брать заказы этого типа
+    routing.AddDimensionWithVehicleCapacity(
+        demand_callback_index_12, 0, vehicle_capacities_12, True, 'Capacity12')
+    print("✅ Добавлено ограничение по вместимости 12л", file=sys.stderr)
+    
+    routing.AddDimensionWithVehicleCapacity(
+        demand_callback_index_19, 0, vehicle_capacities_19, True, 'Capacity19')
+    print("✅ Добавлено ограничение по вместимости 19л", file=sys.stderr)
     # Штрафы за пропуск заказов
     for order_idx in range(num_couriers, num_locations):
         order = orders_data[order_idx - num_couriers]
