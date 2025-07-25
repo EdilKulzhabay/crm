@@ -1254,7 +1254,7 @@ export const getAllOrderForToday = async (req, res) => {
 
         const orders = await Order.find({
             "date.d": todayString,
-        }).populate("client")
+        }).populate("client").populate("courierAggregator", "fullName _id")
         
         res.json({ orders })
         
