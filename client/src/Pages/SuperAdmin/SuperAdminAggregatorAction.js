@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../../api"
 import Container from "../../Components/Container"
 import Div from "../../Components/Div"
@@ -47,9 +47,12 @@ const createStarIcon = () => {
 export default function SuperAdminAggregatorAction() {
     const userData = useFetchUserData()
     const [loading, setLoading] = useState(false)
-
     const [orders, setOrders] = useState([])
     const [couriers, setCouriers] = useState([])
+    const [allCouriers, setAllCouriers] = useState([])
+    const [showAssignModal, setShowAssignModal] = useState(false)
+    const [selectedOrder, setSelectedOrder] = useState(null)
+    const [assignLoading, setAssignLoading] = useState(false)
 
     useEffect(() => {
         setLoading(true)
@@ -65,8 +68,50 @@ export default function SuperAdminAggregatorAction() {
         }).catch((err) => {
             console.log(err)
         })
+
+        api.get("/getAllCouriersWithOrderCount").then((res) => {
+            setAllCouriers(res.data.couriers)
+        }).catch((err) => {
+            console.log(err)
+        })
+
         setLoading(false)
     }, [])
+
+    const handleAssignOrder = async (courierId) => {
+        if (!selectedOrder) return;
+        
+        setAssignLoading(true);
+        try {
+            const response = await api.post("/assignOrderToCourier", {
+                orderId: selectedOrder._id,
+                courierId: courierId
+            });
+            
+            if (response.data.success) {
+                // Обновляем данные
+                const ordersRes = await api.get("/getAllOrderForToday");
+                setOrders(ordersRes.data.orders);
+                
+                const couriersRes = await api.get("/getActiveCourierAggregators");
+                setCouriers(couriersRes.data.couriers);
+                
+                const allCouriersRes = await api.get("/getAllCouriersWithOrderCount");
+                setAllCouriers(allCouriersRes.data.couriers);
+                
+                setShowAssignModal(false);
+                setSelectedOrder(null);
+            }
+        } catch (error) {
+            console.log("Ошибка назначения заказа:", error);
+        }
+        setAssignLoading(false);
+    };
+
+    const openAssignModal = (order) => {
+        setSelectedOrder(order);
+        setShowAssignModal(true);
+    };
 
     // Функция для определения цвета заказа по статусу
     const getOrderColor = (status) => {
@@ -83,45 +128,6 @@ export default function SuperAdminAggregatorAction() {
                 return "gray";
         }
     };
-
-    // Функция для вычисления границ карты
-    const calculateMapBounds = () => {
-        if (orders.length === 0 && couriers.length === 0) {
-            return [[43.16856, 76.89645], [43.16856, 76.89645]]; // Центр по умолчанию
-        }
-
-        let minLat = Infinity, maxLat = -Infinity;
-        let minLon = Infinity, maxLon = -Infinity;
-
-        // Добавляем координаты заказов
-        orders.forEach(order => {
-            if (order.address?.point?.lat && order.address?.point?.lon) {
-                minLat = Math.min(minLat, order.address.point.lat);
-                maxLat = Math.max(maxLat, order.address.point.lat);
-                minLon = Math.min(minLon, order.address.point.lon);
-                maxLon = Math.max(maxLon, order.address.point.lon);
-            }
-        });
-
-        // Добавляем координаты курьеров
-        couriers.forEach(courier => {
-            if (courier.point?.lat && courier.point?.lon) {
-                minLat = Math.min(minLat, courier.point.lat);
-                maxLat = Math.max(maxLat, courier.point.lat);
-                minLon = Math.min(minLon, courier.point.lon);
-                maxLon = Math.max(maxLon, courier.point.lon);
-            }
-        });
-
-        // Добавляем запас в 1 км (примерно 0.01 градуса)
-        const padding = 0.01;
-        return [
-            [minLat - padding, minLon - padding],
-            [maxLat + padding, maxLon + padding]
-        ];
-    };
-
-    const bounds = calculateMapBounds();
 
     // Статистика
     const orderStats = {
@@ -168,7 +174,7 @@ export default function SuperAdminAggregatorAction() {
         ) : (
             <div style={{ height: '600px', width: '100%', position: 'relative' }}>
                 <MapContainer 
-                    bounds={bounds}
+                    center={[43.16856, 76.89645]}
                     style={{ height: '100%', width: '100%' }}
                     zoom={12}
                 >
@@ -201,7 +207,7 @@ export default function SuperAdminAggregatorAction() {
                                 <Circle
                                     key={`order-${index}`}
                                     center={[order.address.point.lat, order.address.point.lon]}
-                                    radius={50}
+                                    radius={80}
                                     pathOptions={{
                                         color: color,
                                         fillColor: color,
@@ -209,12 +215,21 @@ export default function SuperAdminAggregatorAction() {
                                     }}
                                 >
                                     <Popup>
-                                        <div>
+                                        <div className="min-w-[300px]">
                                             <strong>Заказ: {order.client?.fullName}</strong><br />
                                             Адрес: {order.address?.actual}<br />
                                             Статус: {order.status}<br />
                                             {bottles12 > 0 && `${bottles12} 12л бутылей, `}
                                             {bottles19 > 0 && `${bottles19} 19л бутылей`}
+                                            <br /><br />
+                                            {order.status === "awaitingOrder" && (
+                                                <button 
+                                                    onClick={() => openAssignModal(order)}
+                                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+                                                >
+                                                    Назначить курьеру
+                                                </button>
+                                            )}
                                         </div>
                                     </Popup>
                                 </Circle>
@@ -274,6 +289,67 @@ export default function SuperAdminAggregatorAction() {
                             <span className="text-yellow-500 mr-2">⭐</span>
                             <span className="text-sm">Центр</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Модальное окно назначения заказа */}
+        {showAssignModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white text-black p-6 rounded-lg max-w-md w-full mx-4">
+                    <h3 className="text-lg font-bold mb-4">
+                        Назначить заказ курьеру
+                    </h3>
+                    
+                    {selectedOrder && (
+                        <div className="mb-4 p-3 bg-gray-100 rounded">
+                            <p><strong>Клиент:</strong> {selectedOrder.client?.fullName}</p>
+                            <p><strong>Адрес:</strong> {selectedOrder.address?.actual}</p>
+                            <p><strong>Бутыли:</strong> 
+                                {selectedOrder.products?.b12 > 0 && ` ${selectedOrder.products.b12} 12л`}
+                                {selectedOrder.products?.b19 > 0 && ` ${selectedOrder.products.b19} 19л`}
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="max-h-60 overflow-y-auto">
+                        {allCouriers.length === 0 ? (
+                            <p className="text-gray-500">Нет доступных курьеров</p>
+                        ) : (
+                            allCouriers.map((courier) => (
+                                <div 
+                                    key={courier._id}
+                                    className="border-b border-gray-200 py-3 cursor-pointer hover:bg-gray-50"
+                                    onClick={() => handleAssignOrder(courier._id)}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold">{courier.fullName}</p>
+                                            <p className="text-sm text-gray-600">
+                                                Заказов: {courier.orderCount} | 
+                                                Вместимость: {courier.capacity12} 12л, {courier.capacity19} 19л
+                                            </p>
+                                        </div>
+                                        {assignLoading && (
+                                            <div className="text-blue-500">Назначается...</div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                        <button 
+                            onClick={() => {
+                                setShowAssignModal(false);
+                                setSelectedOrder(null);
+                            }}
+                            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                        >
+                            Отмена
+                        </button>
                     </div>
                 </div>
             </div>

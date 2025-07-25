@@ -435,7 +435,7 @@ export default async function orTools() {
             return hasValidCoords;
         })
         .map(order => ({
-            id: order._id,
+            orderId: order._id,
             lat: order.address.point.lat,
             lon: order.address.point.lon,
             bottles_12: order.products.b12,
