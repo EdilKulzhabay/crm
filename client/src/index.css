@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Стили для карты Leaflet */
+.leaflet-container {
+    z-index: 1;
+}
+
+.custom-div-icon {
+    background: transparent;
+    border: none;
+}
+
+.custom-div-icon div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

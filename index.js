@@ -239,7 +239,7 @@ app.get("/getCancelledOrdersCount", OrderController.getCancelledOrdersCount)
 app.get("/getResultForToday", OrderController.getResultForToday)
 app.post("/toTomorrow", OrderController.toTomorrow)
 app.post("/addOrderToAggregator", OrderController.addOrderToAggregator)
-
+app.get("/getAllOrderForToday", OrderController.getAllOrderForToday)
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
 app.get("/getFirstQueue", DepartmentController.getFirstQueue)
@@ -324,7 +324,7 @@ app.post("/getCourierAggregators", CourierAggregatorController.getCourierAggrega
 app.post("/getOrdersWithCourierAggregator", CourierAggregatorController.getOrdersWithCourierAggregator)
 app.post("/getCompletedOrCancelledOrdersFromCourierAggregator", CourierAggregatorController.getCompletedOrCancelledOrdersFromCourierAggregator)
 app.post("/clearCourierAggregatorOrders", CourierAggregatorController.clearCourierAggregatorOrders)
-
+app.get("/getActiveCourierAggregators", CourierAggregatorController.getActiveCourierAggregators)
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
 app.post("/updateUserData", AquaMarketController.updateUserData)
