@@ -1132,6 +1132,181 @@ export const appointmentFranchisee = async (req, res) => {
     }
 }
 
+export const getAllCouriersWithOrderCount = async (req, res) => {
+    try {
+        const couriers = await CourierAggregator.find({ onTheLine: true })
+            .select('fullName _id orders order capacity12 capacity19');
+
+        const couriersWithCount = couriers.map(courier => ({
+            _id: courier._id,
+            fullName: courier.fullName,
+            orderCount: courier.orders ? courier.orders.length : 0,
+            hasActiveOrder: courier.order !== null,
+            capacity12: courier.capacity12,
+            capacity19: courier.capacity19
+        }));
+
+        res.json({
+            success: true,
+            couriers: couriersWithCount
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
+
+export const assignOrderToCourier = async (req, res) => {
+    try {
+        const { orderId, courierId } = req.body;
+
+        console.log("assignOrderToCourier req.body = ", req.body);
+
+        // Находим заказ
+        const order = await Order.findById(orderId)
+            .populate("client", "fullName price12 price19");
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Заказ не найден"
+            });
+        }
+
+        // Находим курьера
+        const courier = await CourierAggregator.findById(courierId);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден"
+            });
+        }
+
+        // Проверяем, что курьер активен
+        if (!courier.onTheLine) {
+            return res.status(400).json({
+                success: false,
+                message: "Курьер неактивен"
+            });
+        }
+
+        // Проверяем вместимость курьера
+        if (courier.capacity12 < order.products.b12 || courier.capacity19 < order.products.b19) {
+            return res.status(400).json({
+                success: false,
+                message: "Недостаточно места у курьера"
+            });
+        }
+
+        // Формируем объект заказа в нужном формате
+        const orderObject = {
+            orderId: order._id,
+            status: "onTheWay",
+            products: order.products,
+            sum: (order.products.b12 * order.client.price12) + (order.products.b19 * order.client.price19),
+            opForm: order.opForm || 'fakt',
+            comment: order.comment || '',
+            clientReview: order.clientReview || '',
+            date: order.date,
+            clientTitle: order.client.fullName,
+            clientPhone: order.client.phone,
+            clientPoints: order.address.point,
+            clientAddress: order.address.actual,
+            clientAddressLink: order.address.link,
+            aquaMarketPoints: { lat: 43.168573, lon: 76.896437 },
+            aquaMarketAddress: 'Баязитовой 12 1',
+            aquaMarketAddressLink: 'https://go.2gis.com/ZJw6E',
+            step: 'toClient',
+            income: (order.products.b12 * order.client.price12) + (order.products.b19 * order.client.price19)
+        };
+
+        // Обновляем заказ
+        await Order.updateOne(
+            { _id: orderId },
+            { 
+                $set: {
+                    status: "onTheWay",
+                    courierAggregator: courierId
+                } 
+            }
+        );
+
+        // Проверяем, есть ли у курьера активный заказ
+        if (courier.order === null) {
+            // Если нет активного заказа, устанавливаем его как текущий
+            await CourierAggregator.updateOne(
+                { _id: courierId },
+                {
+                    $set: {
+                        order: orderObject,
+                        orders: [orderObject]
+                    },
+                    $inc: {
+                        capacity12: -order.products.b12,
+                        capacity19: -order.products.b19
+                    }
+                }
+            );
+
+            // Отправляем уведомление курьеру
+            try {
+                const messageBody = `Новый заказ: ${order.client.fullName}`;
+                
+                // Импортируем функцию pushNotification
+                const { pushNotification } = await import("../pushNotification.js");
+                
+                await pushNotification(
+                    "newOrder",
+                    messageBody,
+                    [courier.notificationPushToken],
+                    "newOrder",
+                    {
+                        id: order._id,
+                        lat: order.address.point.lat,
+                        lon: order.address.point.lon,
+                        bottles_12: order.products.b12,
+                        bottles_19: order.products.b19,
+                        status: order.status,
+                        orderName: order.client.fullName,
+                        isUrgent: order.isUrgent,
+                        "date.time": order.date.time
+                    }
+                );
+            } catch (notificationError) {
+                console.log("Ошибка отправки уведомления:", notificationError);
+            }
+        } else {
+            // Если есть активный заказ, добавляем в список
+            await CourierAggregator.updateOne(
+                { _id: courierId },
+                {
+                    $push: { orders: orderObject },
+                    $inc: {
+                        capacity12: -order.products.b12,
+                        capacity19: -order.products.b19
+                    }
+                }
+            );
+        }
+
+        res.json({
+            success: true,
+            message: "Заказ успешно назначен курьеру"
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
+
 // db.orders.updateMany(
 //     {
 //       _id: {
