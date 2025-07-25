@@ -1592,6 +1592,9 @@ export const resendNotificationToCourier = async (req, res) => {
 //     }
 // )
 
+
+/// git suka
+
 // db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[] }}) 
 
 // db.orders.countDocuments({
