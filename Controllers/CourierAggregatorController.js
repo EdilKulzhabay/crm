@@ -667,7 +667,25 @@ export const completeOrderCourierAggregator = async (req, res) => {
             income: sum
         })
 
-        await queueOrTools();
+        // Проверяем наличие следующего заказа в массиве orders
+        const updatedCourier = await CourierAggregator.findById(courierId);
+        if (updatedCourier.orders && updatedCourier.orders.length > 0) {
+            try {
+                const nextOrder = updatedCourier.orders[0];
+                const messageBody = `Следующий заказ: ${nextOrder.clientTitle}`;
+                
+                const { pushNotification } = await import("../pushNotification.js");
+                await pushNotification(
+                    "nextOrder",
+                    messageBody,
+                    [updatedCourier.notificationPushToken],
+                    "nextOrder",
+                    nextOrder
+                );
+            } catch (notificationError) {
+                console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
+            }
+        }
 
     } catch (error) {
         console.log(error);
@@ -772,7 +790,29 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             message: "Заказ отменен"
         })
 
-        await queueOrTools();
+        // Проверяем, есть ли еще заказы в массиве orders
+        const courier = await CourierAggregator.findById(id);
+        if (courier.orders && courier.orders.length > 0) {
+            // Берем следующий заказ из массива
+            const nextOrder = courier.orders[0];
+            
+            // Обновляем текущий заказ курьера
+            await CourierAggregator.updateOne(
+                { _id: id },
+                { $set: { order: nextOrder } }
+            );
+
+            // Обновляем статус заказа
+            await Order.updateOne(
+                { _id: nextOrder.orderId },
+                { $set: { 
+                    status: "onTheWay",
+                    courierAggregator: id
+                }}
+            );
+
+            console.log(`✅ Следующий заказ ${nextOrder.orderId} назначен курьеру ${id}`);
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -1270,10 +1310,6 @@ export const assignOrderToCourier = async (req, res) => {
                     $set: {
                         order: orderObject,
                         orders: [orderObject]
-                    },
-                    $inc: {
-                        capacity12: -order.products.b12,
-                        capacity19: -order.products.b19
                     }
                 }
             );
@@ -1302,11 +1338,7 @@ export const assignOrderToCourier = async (req, res) => {
             const courierUpdateResult = await CourierAggregator.updateOne(
                 { _id: courierId },
                 {
-                    $push: { orders: orderObject },
-                    $inc: {
-                        capacity12: -order.products.b12,
-                        capacity19: -order.products.b19
-                    }
+                    $push: { orders: orderObject }
                 }
             );
             
