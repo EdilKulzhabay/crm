@@ -54,6 +54,7 @@ export default function SuperAdminAggregatorAction() {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [assignLoading, setAssignLoading] = useState(false)
     const [removeLoading, setRemoveLoading] = useState(false)
+    const [resendNotificationLoading, setResendNotificationLoading] = useState(false)
 
     useEffect(() => {
         setLoading(true)
@@ -147,6 +148,26 @@ export default function SuperAdminAggregatorAction() {
         setRemoveLoading(false);
     };
 
+    const handleResendNotification = async (courierId) => {
+        setResendNotificationLoading(true);
+        try {
+            const response = await api.post("/resendNotificationToCourier", {
+                courierId: courierId
+            });
+            
+            if (response.data.success) {
+                // Показываем уведомление об успехе
+                alert("Уведомление успешно отправлено курьеру!");
+            }
+        } catch (error) {
+            console.log("Ошибка отправки уведомления:", error);
+            // Показываем ошибку пользователю
+            const errorMessage = error.response?.data?.message || "Ошибка при отправке уведомления";
+            alert(`Ошибка: ${errorMessage}`);
+        }
+        setResendNotificationLoading(false);
+    };
+
     const openAssignModal = (order) => {
         setSelectedOrder(order);
         setShowAssignModal(true);
@@ -170,6 +191,11 @@ export default function SuperAdminAggregatorAction() {
     // Функция для определения цвета заказа по статусу
     const getOrderColor = (status, isAssigned) => {
         // Если заказ назначен курьеру, показываем желтым
+
+        if (isAssigned && status === "onTheWay") {
+            return "blue";
+        }
+
         if (isAssigned && status === "awaitingOrder") {
             return "yellow";
         }
@@ -322,6 +348,16 @@ export default function SuperAdminAggregatorAction() {
                     {/* Курьеры */}
                     {couriers.map((courier, index) => {
                         if (courier.point?.lat && courier.point?.lon) {
+                            // Отладочная информация
+                            console.log(`Курьер ${courier.fullName}:`, {
+                                order: courier.order,
+                                hasOrder: !!courier.order,
+                                orderId: courier.order?.orderId,
+                                clientTitle: courier.order?.clientTitle,
+                                populatedOrder: courier.order?.orderId,
+                                clientName: courier.order?.orderId?.client?.fullName
+                            });
+                            
                             return (
                                 <Marker
                                     key={`courier-${index}`}
@@ -329,10 +365,27 @@ export default function SuperAdminAggregatorAction() {
                                     icon={createTriangleIcon("purple")}
                                 >
                                     <Popup>
-                                        <div>
+                                        <div className="min-w-[250px]">
                                             <strong>Курьер: {courier.fullName}</strong><br />
                                             Телефон: {courier.phone}<br />
                                             Статус: {courier.onTheLine ? "Активен" : "Неактивен"}
+                                            <br />Заказов: {courier.orders?.length || 0}
+                                            {(courier.order && courier.order.orderId) && (
+                                                <>
+                                                    <br /><strong>Активный заказ: {courier.order.clientTitle || courier.order.orderId?.client?.fullName || 'Заказ'}</strong>
+                                                    <br /><br />
+                                                    <button 
+                                                        onClick={() => handleResendNotification(courier._id)}
+                                                        disabled={resendNotificationLoading}
+                                                        className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded w-full"
+                                                    >
+                                                        {resendNotificationLoading ? "Отправляется..." : "Отправить уведомление"}
+                                                    </button>
+                                                </>
+                                            )}
+                                            {(!courier.order || !courier.order.orderId) && (
+                                                <><br /><span className="text-gray-500">Нет активного заказа</span></>
+                                            )}
                                         </div>
                                     </Popup>
                                 </Marker>
@@ -343,17 +396,58 @@ export default function SuperAdminAggregatorAction() {
 
                     {/* Линии от курьеров к назначенным заказам */}
                     {couriers.map((courier, courierIndex) => {
-                        if (courier.point?.lat && courier.point?.lon) {
-                            const courierOrders = getCourierOrders(courier._id);
+                        if (courier.point?.lat && courier.point?.lon && courier.orders && courier.orders.length > 0) {
+                            const lines = [];
                             
-                            return courierOrders.map((order, orderIndex) => {
-                                if (order.address?.point?.lat && order.address?.point?.lon) {
-                                    return (
+                            // Используем порядок заказов из массива orders курьера
+                            const courierOrderIds = courier.orders.map(order => order.orderId);
+                            
+                            console.log(`Курьер ${courier.fullName}: порядок заказов:`, courierOrderIds);
+                            
+                            // Получаем заказы в правильном порядке
+                            const orderedCourierOrders = [];
+                            courierOrderIds.forEach(orderId => {
+                                const order = orders.find(o => o._id === orderId);
+                                if (order) {
+                                    orderedCourierOrders.push(order);
+                                }
+                            });
+                            
+                            console.log(`Курьер ${courier.fullName}: заказы в правильном порядке:`, orderedCourierOrders.map(o => o.client?.fullName));
+                            
+                            // Линия от курьера к первому заказу
+                            const firstOrder = orderedCourierOrders[0];
+                            if (firstOrder && firstOrder.address?.point?.lat && firstOrder.address?.point?.lon) {
+                                lines.push(
+                                    <Polyline
+                                        key={`line-courier-${courierIndex}`}
+                                        positions={[
+                                            [courier.point.lat, courier.point.lon],
+                                            [firstOrder.address.point.lat, firstOrder.address.point.lon]
+                                        ]}
+                                        pathOptions={{
+                                            color: "purple",
+                                            weight: 3,
+                                            opacity: 0.7,
+                                            dashArray: "10, 5"
+                                        }}
+                                    />
+                                );
+                            }
+                            
+                            // Линии между заказами (от первого ко второму, от второго к третьему и т.д.)
+                            for (let i = 0; i < orderedCourierOrders.length - 1; i++) {
+                                const currentOrder = orderedCourierOrders[i];
+                                const nextOrder = orderedCourierOrders[i + 1];
+                                
+                                if (currentOrder.address?.point?.lat && currentOrder.address?.point?.lon &&
+                                    nextOrder.address?.point?.lat && nextOrder.address?.point?.lon) {
+                                    lines.push(
                                         <Polyline
-                                            key={`line-${courierIndex}-${orderIndex}`}
+                                            key={`line-order-${courierIndex}-${i}`}
                                             positions={[
-                                                [courier.point.lat, courier.point.lon],
-                                                [order.address.point.lat, order.address.point.lon]
+                                                [currentOrder.address.point.lat, currentOrder.address.point.lon],
+                                                [nextOrder.address.point.lat, nextOrder.address.point.lon]
                                             ]}
                                             pathOptions={{
                                                 color: "purple",
@@ -364,8 +458,9 @@ export default function SuperAdminAggregatorAction() {
                                         />
                                     );
                                 }
-                                return null;
-                            });
+                            }
+                            
+                            return lines;
                         }
                         return null;
                     })}
@@ -405,7 +500,7 @@ export default function SuperAdminAggregatorAction() {
                         </div>
                         <div className="flex items-center">
                             <div className="w-8 h-0.5 bg-purple-500 mr-2" style={{borderTop: '2px dashed purple'}}></div>
-                            <span className="text-sm">Назначенные заказы</span>
+                            <span className="text-sm">Маршрут курьера</span>
                         </div>
                     </div>
                 </div>
