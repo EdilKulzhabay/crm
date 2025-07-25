@@ -1534,24 +1534,12 @@ export const resendNotificationToCourier = async (req, res) => {
         try {
             const messageBody = `Напоминание: заказ ${order.client.fullName}`;
             
-            const { pushNotification } = await import("../pushNotification.js");
-            
             await pushNotification(
                 "newOrder",
                 messageBody,
                 [courier.notificationPushToken],
                 "newOrder",
-                {
-                    id: order._id,
-                    lat: order.address.point.lat,
-                    lon: order.address.point.lon,
-                    bottles_12: order.products.b12,
-                    bottles_19: order.products.b19,
-                    status: order.status,
-                    orderName: order.client.fullName,
-                    isUrgent: order.isUrgent,
-                    "date.time": order.date.time
-                }
+                firstOrderData
             );
 
             console.log("Повторное уведомление успешно отправлено курьеру");
