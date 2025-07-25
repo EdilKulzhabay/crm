@@ -1500,16 +1500,20 @@ export const resendNotificationToCourier = async (req, res) => {
             });
         }
 
-        // Проверяем, есть ли у курьера активный заказ
-        if (!courier.order || !courier.order.orderId) {
+        // Проверяем, есть ли у курьера заказы в массиве orders
+        if (!courier.orders || courier.orders.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "У курьера нет активного заказа"
+                message: "У курьера нет заказов"
             });
         }
 
+        // Берем первый заказ из массива orders
+        const firstOrderData = courier.orders[0];
+        const orderId = firstOrderData.orderId;
+
         // Находим заказ
-        const order = await Order.findById(courier.order.orderId)
+        const order = await Order.findById(orderId)
             .populate("client", "fullName price12 price19");
 
         if (!order) {
@@ -1522,7 +1526,8 @@ export const resendNotificationToCourier = async (req, res) => {
         console.log("Отправляем повторное уведомление курьеру:", {
             courierName: courier.fullName,
             orderId: order._id,
-            clientName: order.client?.fullName
+            clientName: order.client?.fullName,
+            orderIndex: 0
         });
 
         // Отправляем уведомление курьеру
