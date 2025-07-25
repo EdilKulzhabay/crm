@@ -1534,6 +1534,8 @@ export const resendNotificationToCourier = async (req, res) => {
         try {
             const messageBody = `Напоминание: заказ ${order.client.fullName}`;
             
+            const { pushNotification } = await import("../pushNotification.js");
+            
             await pushNotification(
                 "newOrder",
                 messageBody,
