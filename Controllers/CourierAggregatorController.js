@@ -6,7 +6,6 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { getDateAlmaty } from "../utils/dateUtils.js";
 import queueOrTools from "../orToolsQueue.js";
-const { pushNotification } = await import("../pushNotification.js");
 
 // Функция для сброса ограничений уведомлений (будет импортирована из orTools.js)
 let resetNotificationLimits = null;
@@ -1177,6 +1176,13 @@ export const assignOrderToCourier = async (req, res) => {
             });
         }
 
+        console.log("Назначаемый заказ:", {
+            orderId: order._id,
+            clientName: order.client?.fullName,
+            products: order.products,
+            status: order.status
+        });
+
         // Находим курьера
         const courier = await CourierAggregator.findById(courierId);
 
@@ -1196,6 +1202,10 @@ export const assignOrderToCourier = async (req, res) => {
         }
 
         // Проверяем вместимость курьера
+        console.log("Проверка вместимости:");
+        console.log("Заказ требует:", order.products.b12, "12л и", order.products.b19, "19л");
+        console.log("У курьера есть:", courier.capacity12, "12л и", courier.capacity19, "19л");
+        
         if (courier.capacity12 < order.products.b12 || courier.capacity19 < order.products.b19) {
             return res.status(400).json({
                 success: false,
@@ -1237,10 +1247,12 @@ export const assignOrderToCourier = async (req, res) => {
         );
 
         console.log("данные курьера", courier);
+        console.log("courier.order =", courier.order);
+        console.log("courier.order === null =", courier.order === null);
+        console.log("!courier.order =", !courier.order);
         
-
         // Проверяем, есть ли у курьера активный заказ
-        if (courier.order === null) {
+        if (!courier.order || courier.order === null) {
             console.log("У курьера нет активного заказа, добавляем его");
 
             // Если нет активного заказа, устанавливаем его как текущий
@@ -1260,11 +1272,11 @@ export const assignOrderToCourier = async (req, res) => {
 
             console.log("Добавили заказ и теперь отправляем уведомление");
             
-
             // Отправляем уведомление курьеру
             try {
                 const messageBody = `Новый заказ: ${order.client.fullName}`;
                 
+                const { pushNotification } = await import("../pushNotification.js");
                 await pushNotification(
                     "newOrder",
                     messageBody,
