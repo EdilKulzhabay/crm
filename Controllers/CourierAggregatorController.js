@@ -666,6 +666,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
             // income: b12 * process.env.Reward12 + b19 * process.env.Reward19
             income: sum
         })
+        // Добавляем задержку в 20 секунд
+        await new Promise(resolve => setTimeout(resolve, 15000));
 
         // Проверяем наличие следующего заказа в массиве orders
         const updatedCourier = await CourierAggregator.findById(courierId);
@@ -790,29 +792,50 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             message: "Заказ отменен"
         })
 
-        // Проверяем, есть ли еще заказы в массиве orders
+        // Проверяем, есть ли заказы в массиве orders
         const courier = await CourierAggregator.findById(id);
         if (courier.orders && courier.orders.length > 0) {
-            // Берем следующий заказ из массива
-            const nextOrder = courier.orders[0];
+            // Получаем ID всех заказов из массива orders
+            const orderIds = courier.orders.map(order => order.orderId);
             
-            // Обновляем текущий заказ курьера
+            // Обновляем все заказы, убирая привязку к курьеру
+            await Order.updateMany(
+                { _id: { $in: orderIds } },
+                { $set: { courierAggregator: null } }
+            );
+
+            // Очищаем массив orders у курьера
             await CourierAggregator.updateOne(
                 { _id: id },
-                { $set: { order: nextOrder } }
+                { $set: { orders: [] } }
             );
 
-            // Обновляем статус заказа
-            await Order.updateOne(
-                { _id: nextOrder.orderId },
-                { $set: { 
-                    status: "onTheWay",
-                    courierAggregator: id
-                }}
-            );
-
-            console.log(`✅ Следующий заказ ${nextOrder.orderId} назначен курьеру ${id}`);
+            console.log(`✅ Очищены все заказы у курьера ${id}`);
         }
+
+        // // Проверяем, есть ли еще заказы в массиве orders
+        // const courier = await CourierAggregator.findById(id);
+        // if (courier.orders && courier.orders.length > 0) {
+        //     // Берем следующий заказ из массива
+        //     const nextOrder = courier.orders[0];
+            
+        //     // Обновляем текущий заказ курьера
+        //     await CourierAggregator.updateOne(
+        //         { _id: id },
+        //         { $set: { order: nextOrder } }
+        //     );
+
+        //     // Обновляем статус заказа
+        //     await Order.updateOne(
+        //         { _id: nextOrder.orderId },
+        //         { $set: { 
+        //             status: "onTheWay",
+        //             courierAggregator: id
+        //         }}
+        //     );
+
+        //     console.log(`✅ Следующий заказ ${nextOrder.orderId} назначен курьеру ${id}`);
+        // }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -995,6 +1018,15 @@ export const clearCourierAggregatorOrders = async (req, res) => {
 export const getActiveCourierAggregators = async (req, res) => {
     try {
         const couriers = await CourierAggregator.find({ onTheLine: true })
+            .populate({
+                path: 'order.orderId',
+                model: 'Order',
+                populate: {
+                    path: 'client',
+                    model: 'Client',
+                    select: 'fullName'
+                }
+            });
         res.json({ couriers })
     } catch (error) {
         console.error(error);
@@ -1452,6 +1484,95 @@ export const removeOrderFromCourier = async (req, res) => {
     }
 };
 
+export const resendNotificationToCourier = async (req, res) => {
+    try {
+        const { courierId } = req.body;
+
+        console.log("resendNotificationToCourier req.body = ", req.body);
+
+        // Находим курьера
+        const courier = await CourierAggregator.findById(courierId);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден"
+            });
+        }
+
+        // Проверяем, есть ли у курьера активный заказ
+        if (!courier.order || !courier.order.orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "У курьера нет активного заказа"
+            });
+        }
+
+        // Находим заказ
+        const order = await Order.findById(courier.order.orderId)
+            .populate("client", "fullName price12 price19");
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Заказ не найден"
+            });
+        }
+
+        console.log("Отправляем повторное уведомление курьеру:", {
+            courierName: courier.fullName,
+            orderId: order._id,
+            clientName: order.client?.fullName
+        });
+
+        // Отправляем уведомление курьеру
+        try {
+            const messageBody = `Напоминание: заказ ${order.client.fullName}`;
+            
+            const { pushNotification } = await import("../pushNotification.js");
+            
+            await pushNotification(
+                "newOrder",
+                messageBody,
+                [courier.notificationPushToken],
+                "newOrder",
+                {
+                    id: order._id,
+                    lat: order.address.point.lat,
+                    lon: order.address.point.lon,
+                    bottles_12: order.products.b12,
+                    bottles_19: order.products.b19,
+                    status: order.status,
+                    orderName: order.client.fullName,
+                    isUrgent: order.isUrgent,
+                    "date.time": order.date.time
+                }
+            );
+
+            console.log("Повторное уведомление успешно отправлено курьеру");
+
+            res.json({
+                success: true,
+                message: "Уведомление успешно отправлено курьеру"
+            });
+
+        } catch (notificationError) {
+            console.log("Ошибка отправки повторного уведомления:", notificationError);
+            res.status(500).json({
+                success: false,
+                message: "Ошибка при отправке уведомления"
+            });
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
+
 // db.orders.updateMany(
 //     {
 //       _id: {
@@ -1469,17 +1590,14 @@ export const removeOrderFromCourier = async (req, res) => {
 
 // db.orders.updateMany(
 //     {
-//         _id: {
-//             $in: [
-//                 ObjectId("68809cb915526d48c4d92e46")
-                
-//             ]
-//         }
+//         "date.d": "2025-07-26"
 //     },
 //     {
-//         $set: { status: "delivered" }
+//         $set: { status: "awaitingOrder", courierAggregator: null }
 //     }
 // )
+
+// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[] }}) 
 
 // db.orders.countDocuments({
 //     "date.d": "2025-07-16",
