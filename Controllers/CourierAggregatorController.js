@@ -1236,7 +1236,7 @@ export const assignOrderToCourier = async (req, res) => {
         };
 
         // Обновляем заказ
-        await Order.updateOne(
+        const orderUpdateResult = await Order.updateOne(
             { _id: orderId },
             { 
                 $set: {
@@ -1245,18 +1245,27 @@ export const assignOrderToCourier = async (req, res) => {
                 } 
             }
         );
+        
+        console.log("Результат обновления заказа:", orderUpdateResult);
 
         console.log("данные курьера", courier);
         console.log("courier.order =", courier.order);
         console.log("courier.order === null =", courier.order === null);
         console.log("!courier.order =", !courier.order);
+        console.log("courier.order == null =", courier.order == null);
+        console.log("courier.order === undefined =", courier.order === undefined);
+        console.log("courier.order.orderId =", courier.order?.orderId);
+        console.log("courier.order.status =", courier.order?.status);
         
         // Проверяем, есть ли у курьера активный заказ
-        if (!courier.order || courier.order === null) {
+        const hasActiveOrder = courier.order && courier.order.orderId && courier.order.status;
+        console.log("hasActiveOrder =", hasActiveOrder);
+        
+        if (!hasActiveOrder) {
             console.log("У курьера нет активного заказа, добавляем его");
 
             // Если нет активного заказа, устанавливаем его как текущий
-            await CourierAggregator.updateOne(
+            const courierUpdateResult = await CourierAggregator.updateOne(
                 { _id: courierId },
                 {
                     $set: {
@@ -1269,9 +1278,9 @@ export const assignOrderToCourier = async (req, res) => {
                     }
                 }
             );
-
-            console.log("Добавили заказ и теперь отправляем уведомление");
             
+            console.log("Результат обновления курьера (установка активного заказа):", courierUpdateResult);
+
             // Отправляем уведомление курьеру
             try {
                 const messageBody = `Новый заказ: ${order.client.fullName}`;
@@ -1291,7 +1300,7 @@ export const assignOrderToCourier = async (req, res) => {
             console.log("У курьера есть активный заказ, добавляем в список");
 
             // Если есть активный заказ, добавляем в список
-            await CourierAggregator.updateOne(
+            const courierUpdateResult = await CourierAggregator.updateOne(
                 { _id: courierId },
                 {
                     $push: { orders: orderObject },
@@ -1301,6 +1310,9 @@ export const assignOrderToCourier = async (req, res) => {
                     }
                 }
             );
+            
+            console.log("Результат обновления курьера (добавление в список):", courierUpdateResult);
+            console.log("Заказ добавлен в список заказов курьера");
         }
 
         res.json({
