@@ -1240,7 +1240,6 @@ export const assignOrderToCourier = async (req, res) => {
             { _id: orderId },
             { 
                 $set: {
-                    status: "onTheWay",
                     courierAggregator: courierId
                 } 
             }
@@ -1318,6 +1317,98 @@ export const assignOrderToCourier = async (req, res) => {
         res.json({
             success: true,
             message: "Заказ успешно назначен курьеру"
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
+
+export const removeOrderFromCourier = async (req, res) => {
+    try {
+        const { orderId, courierId } = req.body;
+
+        console.log("removeOrderFromCourier req.body = ", req.body);
+
+        // Находим заказ
+        const order = await Order.findById(orderId)
+            .populate("client", "fullName price12 price19");
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Заказ не найден"
+            });
+        }
+
+        // Находим курьера
+        const courier = await CourierAggregator.findById(courierId);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден"
+            });
+        }
+
+        console.log("Удаляем заказ у курьера:", {
+            orderId: order._id,
+            clientName: order.client?.fullName,
+            courierName: courier.fullName
+        });
+
+        // Обновляем заказ - убираем курьера и возвращаем статус "awaitingOrder"
+        const orderUpdateResult = await Order.updateOne(
+            { _id: orderId },
+            { 
+                $set: {
+                    status: "awaitingOrder",
+                    courierAggregator: null
+                } 
+            }
+        );
+        
+        console.log("Результат обновления заказа:", orderUpdateResult);
+
+        // Проверяем, является ли этот заказ активным у курьера
+        const isActiveOrder = courier.order && courier.order.orderId && courier.order.orderId.toString() === orderId;
+        
+        if (isActiveOrder) {
+            // Если это активный заказ, убираем его из активного заказа
+            await CourierAggregator.updateOne(
+                { _id: courierId },
+                {
+                    $set: { order: null },
+                    $inc: {
+                        capacity12: order.products.b12,
+                        capacity19: order.products.b19
+                    }
+                }
+            );
+            console.log("Убран активный заказ у курьера");
+        }
+
+        // Убираем заказ из списка заказов курьера
+        const courierUpdateResult = await CourierAggregator.updateOne(
+            { _id: courierId },
+            {
+                $pull: { orders: { orderId: orderId } },
+                $inc: {
+                    capacity12: order.products.b12,
+                    capacity19: order.products.b19
+                }
+            }
+        );
+        
+        console.log("Результат обновления курьера (удаление заказа):", courierUpdateResult);
+
+        res.json({
+            success: true,
+            message: "Заказ успешно убран у курьера"
         });
 
     } catch (error) {
