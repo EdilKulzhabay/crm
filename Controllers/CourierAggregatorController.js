@@ -1236,6 +1236,9 @@ export const assignOrderToCourier = async (req, res) => {
             }
         );
 
+        console.log("данные курьера", courier);
+        
+
         // Проверяем, есть ли у курьера активный заказ
         if (courier.order === null) {
             console.log("У курьера нет активного заказа, добавляем его");
@@ -1344,7 +1347,7 @@ export const assignOrderToCourier = async (req, res) => {
 //     {
 //         _id: {
 //         $in: [
-//             ObjectId("6883e692bbc47e9e50b109c0")
+//             ObjectId("688393d9bbc47e9e50b0f6b5")
 //         ]
 //         }
 //     },
