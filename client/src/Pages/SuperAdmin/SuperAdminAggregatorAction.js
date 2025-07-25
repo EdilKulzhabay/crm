@@ -4,7 +4,7 @@ import Container from "../../Components/Container"
 import Div from "../../Components/Div"
 import useFetchUserData from "../../customHooks/useFetchUserData"
 import MyButton from "../../Components/MyButton"
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -53,6 +53,7 @@ export default function SuperAdminAggregatorAction() {
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [assignLoading, setAssignLoading] = useState(false)
+    const [removeLoading, setRemoveLoading] = useState(false)
 
     useEffect(() => {
         setLoading(true)
@@ -114,9 +115,48 @@ export default function SuperAdminAggregatorAction() {
         setAssignLoading(false);
     };
 
+    const handleRemoveOrder = async (orderId, courierId) => {
+        setRemoveLoading(true);
+        try {
+            const response = await api.post("/removeOrderFromCourier", {
+                orderId: orderId,
+                courierId: courierId
+            });
+            
+            if (response.data.success) {
+                // Обновляем данные
+                const ordersRes = await api.get("/getAllOrderForToday");
+                setOrders(ordersRes.data.orders);
+                
+                const couriersRes = await api.get("/getActiveCourierAggregators");
+                setCouriers(couriersRes.data.couriers);
+                
+                const allCouriersRes = await api.get("/getAllCouriersWithOrderCount");
+                setAllCouriers(allCouriersRes.data.couriers);
+                
+                // Показываем уведомление об успехе
+                alert("Заказ успешно убран у курьера!");
+            }
+        } catch (error) {
+            console.log("Ошибка удаления заказа:", error);
+            // Показываем ошибку пользователю
+            const errorMessage = error.response?.data?.message || "Ошибка при удалении заказа";
+            alert(`Ошибка: ${errorMessage}`);
+        }
+        setRemoveLoading(false);
+    };
+
     const openAssignModal = (order) => {
         setSelectedOrder(order);
         setShowAssignModal(true);
+    };
+
+    // Функция для получения назначенных заказов курьера
+    const getCourierOrders = (courierId) => {
+        return orders.filter(order => 
+            order.courierAggregator && 
+            (order.courierAggregator._id === courierId || order.courierAggregator === courierId)
+        );
     };
 
     // Функция для определения цвета заказа по статусу
@@ -208,6 +248,7 @@ export default function SuperAdminAggregatorAction() {
                             const color = getOrderColor(order.status);
                             const bottles12 = order.products?.b12 || 0;
                             const bottles19 = order.products?.b19 || 0;
+                            const isAssigned = order.courierAggregator && order.courierAggregator._id;
                             
                             return (
                                 <Circle
@@ -227,13 +268,25 @@ export default function SuperAdminAggregatorAction() {
                                             Статус: {order.status}<br />
                                             {bottles12 > 0 && `${bottles12} 12л бутылей, `}
                                             {bottles19 > 0 && `${bottles19} 19л бутылей`}
+                                            {isAssigned && (
+                                                <><br /><strong>Курьер: {order.courierAggregator.fullName}</strong></>
+                                            )}
                                             <br /><br />
-                                            {order.status === "awaitingOrder" && (
+                                            {order.status === "awaitingOrder" && !isAssigned && (
                                                 <button 
                                                     onClick={() => openAssignModal(order)}
-                                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+                                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
                                                 >
                                                     Назначить курьеру
+                                                </button>
+                                            )}
+                                            {isAssigned && (
+                                                <button 
+                                                    onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id)}
+                                                    disabled={removeLoading}
+                                                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-full"
+                                                >
+                                                    {removeLoading ? "Убирается..." : "Убрать у курьера"}
                                                 </button>
                                             )}
                                         </div>
@@ -262,6 +315,35 @@ export default function SuperAdminAggregatorAction() {
                                     </Popup>
                                 </Marker>
                             );
+                        }
+                        return null;
+                    })}
+
+                    {/* Линии от курьеров к назначенным заказам */}
+                    {couriers.map((courier, courierIndex) => {
+                        if (courier.point?.lat && courier.point?.lon) {
+                            const courierOrders = getCourierOrders(courier._id);
+                            
+                            return courierOrders.map((order, orderIndex) => {
+                                if (order.address?.point?.lat && order.address?.point?.lon) {
+                                    return (
+                                        <Polyline
+                                            key={`line-${courierIndex}-${orderIndex}`}
+                                            positions={[
+                                                [courier.point.lat, courier.point.lon],
+                                                [order.address.point.lat, order.address.point.lon]
+                                            ]}
+                                            pathOptions={{
+                                                color: "purple",
+                                                weight: 3,
+                                                opacity: 0.7,
+                                                dashArray: "10, 5"
+                                            }}
+                                        />
+                                    );
+                                }
+                                return null;
+                            });
                         }
                         return null;
                     })}
@@ -294,6 +376,10 @@ export default function SuperAdminAggregatorAction() {
                         <div className="flex items-center">
                             <span className="text-yellow-500 mr-2">⭐</span>
                             <span className="text-sm">Центр</span>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-8 h-0.5 bg-purple-500 mr-2" style={{borderTop: '2px dashed purple'}}></div>
+                            <span className="text-sm">Назначенные заказы</span>
                         </div>
                     </div>
                 </div>
