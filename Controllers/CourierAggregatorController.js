@@ -1340,18 +1340,18 @@ export const assignOrderToCourier = async (req, res) => {
 
 // db.orders.updateMany({"date.d": "2025-07-17"}, {$set: {forAggregator: false, status: "awaitingOrder", courierAggregator: null}})
 
-db.orders.updateMany(
-    {
-        _id: {
-        $in: [
-            ObjectId("6883e692bbc47e9e50b109c0")
-        ]
-        }
-    },
-    {
-        $set: { status: "awaitingOrder", courierAggregator: null }
-    }
-)
+// db.orders.updateMany(
+//     {
+//         _id: {
+//         $in: [
+//             ObjectId("6883e692bbc47e9e50b109c0")
+//         ]
+//         }
+//     },
+//     {
+//         $set: { status: "awaitingOrder", courierAggregator: null }
+//     }
+// )
 
 // db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[] }})
 
