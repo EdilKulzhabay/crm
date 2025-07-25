@@ -101,9 +101,15 @@ export default function SuperAdminAggregatorAction() {
                 
                 setShowAssignModal(false);
                 setSelectedOrder(null);
+                
+                // Показываем уведомление об успехе
+                alert("Заказ успешно назначен курьеру!");
             }
         } catch (error) {
             console.log("Ошибка назначения заказа:", error);
+            // Показываем ошибку пользователю
+            const errorMessage = error.response?.data?.message || "Ошибка при назначении заказа";
+            alert(`Ошибка: ${errorMessage}`);
         }
         setAssignLoading(false);
     };
