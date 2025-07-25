@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { getDateAlmaty } from "../utils/dateUtils.js";
 import queueOrTools from "../orToolsQueue.js";
+const { pushNotification } = await import("../pushNotification.js");
 
 // Функция для сброса ограничений уведомлений (будет импортирована из orTools.js)
 let resetNotificationLimits = null;
@@ -1237,6 +1238,8 @@ export const assignOrderToCourier = async (req, res) => {
 
         // Проверяем, есть ли у курьера активный заказ
         if (courier.order === null) {
+            console.log("У курьера нет активного заказа, добавляем его");
+
             // Если нет активного заказа, устанавливаем его как текущий
             await CourierAggregator.updateOne(
                 { _id: courierId },
@@ -1252,34 +1255,26 @@ export const assignOrderToCourier = async (req, res) => {
                 }
             );
 
+            console.log("Добавили заказ и теперь отправляем уведомление");
+            
+
             // Отправляем уведомление курьеру
             try {
                 const messageBody = `Новый заказ: ${order.client.fullName}`;
-                
-                // Импортируем функцию pushNotification
-                const { pushNotification } = await import("../pushNotification.js");
                 
                 await pushNotification(
                     "newOrder",
                     messageBody,
                     [courier.notificationPushToken],
                     "newOrder",
-                    {
-                        id: order._id,
-                        lat: order.address.point.lat,
-                        lon: order.address.point.lon,
-                        bottles_12: order.products.b12,
-                        bottles_19: order.products.b19,
-                        status: order.status,
-                        orderName: order.client.fullName,
-                        isUrgent: order.isUrgent,
-                        "date.time": order.date.time
-                    }
+                    orderObject
                 );
             } catch (notificationError) {
                 console.log("Ошибка отправки уведомления:", notificationError);
             }
         } else {
+            console.log("У курьера есть активный заказ, добавляем в список");
+
             // Если есть активный заказ, добавляем в список
             await CourierAggregator.updateOne(
                 { _id: courierId },
@@ -1345,20 +1340,20 @@ export const assignOrderToCourier = async (req, res) => {
 
 // db.orders.updateMany({"date.d": "2025-07-17"}, {$set: {forAggregator: false, status: "awaitingOrder", courierAggregator: null}})
 
-// db.orders.updateMany(
-//     {
-//         _id: {
-//         $in: [
-//             ObjectId("6881b56b61dd2297ac94d060")
-//         ]
-//         }
-//     },
-//     {
-//         $set: { forAggregator: false, status: "awaitingOrder", courierAggregator: null }
-//     }
-// )
+db.orders.updateMany(
+    {
+        _id: {
+        $in: [
+            ObjectId("6883e692bbc47e9e50b109c0")
+        ]
+        }
+    },
+    {
+        $set: { status: "awaitingOrder", courierAggregator: null }
+    }
+)
 
-// db.courieraggregators.find({fullName: "Тасқын Әбікен"})
+// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[] }})
 
 // db.orders.updateMany(
 //     {
