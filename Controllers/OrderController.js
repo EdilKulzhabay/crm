@@ -1246,3 +1246,22 @@ export const addOrderToAggregator = async (req, res) => {
         });
     }
 }
+
+export const getAllOrderForToday = async (req, res) => {
+    try {
+        const today = new Date();
+        const todayString = getDateAlmaty(today);
+
+        const orders = await Order.find({
+            "date.d": todayString,
+        }).populate("client")
+        
+        res.json({ orders })
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

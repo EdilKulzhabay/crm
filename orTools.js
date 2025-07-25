@@ -352,6 +352,9 @@ const cleanupDuplicateOrders = async () => {
 };
 
 export default async function orTools() {
+
+    return
+
     await ensureMongoConnection();
 
     // ОЧИСТКА ДУБЛИКАТОВ ПЕРЕД НАЧАЛОМ РАБОТЫ

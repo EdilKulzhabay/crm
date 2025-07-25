@@ -952,6 +952,16 @@ export const clearCourierAggregatorOrders = async (req, res) => {
     }
 }
 
+export const getActiveCourierAggregators = async (req, res) => {
+    try {
+        const couriers = await CourierAggregator.find({ onTheLine: true })
+        res.json({ couriers })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера", success: false });
+    }
+}
+
 export const appointmentFranchisee = async (req, res) => {
     try {
         const today = new Date();
