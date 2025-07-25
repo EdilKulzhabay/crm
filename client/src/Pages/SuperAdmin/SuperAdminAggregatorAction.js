@@ -351,11 +351,11 @@ export default function SuperAdminAggregatorAction() {
                             // Отладочная информация
                             console.log(`Курьер ${courier.fullName}:`, {
                                 order: courier.order,
-                                hasOrder: !!courier.order,
-                                orderId: courier.order?.orderId,
-                                clientTitle: courier.order?.clientTitle,
-                                populatedOrder: courier.order?.orderId,
-                                clientName: courier.order?.orderId?.client?.fullName
+                                orders: courier.orders,
+                                ordersLength: courier.orders?.length,
+                                hasOrders: !!(courier.orders && courier.orders.length > 0),
+                                firstOrder: courier.orders?.[0],
+                                firstOrderClientTitle: courier.orders?.[0]?.clientTitle
                             });
                             
                             return (
@@ -370,9 +370,9 @@ export default function SuperAdminAggregatorAction() {
                                             Телефон: {courier.phone}<br />
                                             Статус: {courier.onTheLine ? "Активен" : "Неактивен"}
                                             <br />Заказов: {courier.orders?.length || 0}
-                                            {(courier.order && courier.order.orderId) && (
+                                            {(courier.orders && courier.orders.length > 0) && (
                                                 <>
-                                                    <br /><strong>Активный заказ: {courier.order.clientTitle || courier.order.orderId?.client?.fullName || 'Заказ'}</strong>
+                                                    <br /><strong>Первый заказ: {courier.orders[0]?.clientTitle || 'Заказ'}</strong>
                                                     <br /><br />
                                                     <button 
                                                         onClick={() => handleResendNotification(courier._id)}
@@ -383,8 +383,8 @@ export default function SuperAdminAggregatorAction() {
                                                     </button>
                                                 </>
                                             )}
-                                            {(!courier.order || !courier.order.orderId) && (
-                                                <><br /><span className="text-gray-500">Нет активного заказа</span></>
+                                            {(!courier.orders || courier.orders.length === 0) && (
+                                                <><br /><span className="text-gray-500">Нет заказов</span></>
                                             )}
                                         </div>
                                     </Popup>
