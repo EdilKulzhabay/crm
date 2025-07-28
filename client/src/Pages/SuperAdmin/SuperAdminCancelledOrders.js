@@ -175,7 +175,7 @@ export default function SuperAdminCancelledOrders() {
                                 >
                                     Просмотр
                                 </LinkButton>
-                                <MyButton click={() => {addOrderToAggregator(item?._id)}}>Добавить в агрегатор</MyButton>
+                                <MyButton click={() => {addOrderToAggregator(item?._id)}}>Добавить заново</MyButton>
                                 <MyButton click={() => {toTomorrow(item?._id)}}>На завтра</MyButton>
                                 <div>Причина: <span className="text-red">{item?.reason}</span></div>
                                 {/* {userData?.role === "superAdmin" && <>
