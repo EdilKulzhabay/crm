@@ -1285,6 +1285,7 @@ export const fixOrdersSum = async (req, res) => {
             }
             if (sum !== order.sum) {
                 await Order.findByIdAndUpdate(order._id, { $set: { sum: sum } })
+                console.log(order.address.actual, order.client.fullName, sum, order.sum)
             }
         }
 
