@@ -1240,7 +1240,7 @@ export const assignOrderToCourier = async (req, res) => {
 
         // Находим заказ
         const order = await Order.findById(orderId)
-            .populate("client", "fullName price12 price19");
+            .populate("client", "fullName price12 price19 phone");
 
         if (!order) {
             return res.status(404).json({
