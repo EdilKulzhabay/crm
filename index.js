@@ -240,6 +240,7 @@ app.get("/getResultForToday", OrderController.getResultForToday)
 app.post("/toTomorrow", OrderController.toTomorrow)
 app.post("/addOrderToAggregator", OrderController.addOrderToAggregator)
 app.get("/getAllOrderForToday", OrderController.getAllOrderForToday)
+app.get("/fixOrdersSum", OrderController.fixOrdersSum)
 //////DEPARTMENT
 app.get("/getDepartments", DepartmentController.getDepartments)
 app.get("/getFirstQueue", DepartmentController.getFirstQueue)

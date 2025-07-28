@@ -1267,3 +1267,32 @@ export const getAllOrderForToday = async (req, res) => {
         });
     }
 }
+
+export const fixOrdersSum = async (req, res) => {
+    try {
+        const orders = await Order.find({
+            "date.d": { $gte: "2025-07-01", $lte: "2025-07-30" },
+            status: "delivered"
+        }).populate("client")
+
+        for (const order of orders) {
+            let sum = 0
+            if (order.products.b12 && order.client.price12) {
+                sum += Number(order.products.b12 * order.client.price12);
+            }
+            if (order.products.b19 && order.client.price19) {
+                sum += Number(order.products.b19 * order.client.price19);
+            }
+            if (sum !== order.sum) {
+                await Order.findByIdAndUpdate(order._id, { $set: { sum: sum } })
+            }
+        }
+
+        res.json({ success: true })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}

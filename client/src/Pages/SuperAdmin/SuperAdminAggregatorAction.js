@@ -257,7 +257,7 @@ export default function SuperAdminAggregatorAction() {
         {loading ? (
             <Div>Загрузка данных...</Div>
         ) : (
-            <div style={{ height: '600px', width: '100%', position: 'relative' }}>
+            <div style={{ height: '70vh', width: '100%', position: 'relative' }}>
                 <MapContainer 
                     center={[43.16856, 76.89645]}
                     style={{ height: '100%', width: '100%' }}
