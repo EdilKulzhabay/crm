@@ -330,6 +330,21 @@ export const updateCourierAggregatorData = async (req, res) => {
             });
         }
 
+        if (id === "68412ff4b70d315d3b2b72f9" && changeField === "point") {
+            await CourierAggregator.updateOne({_id: id}, { $set: {
+                point: {
+                    lat: 43.41377,
+                    lon: 76.97149,
+                    timestamp: new Date().toISOString()
+                }
+            } })
+
+            return res.json({
+                success: true,
+                message: "Успешно изменен"
+            })
+        }
+
         if (changeField === "capacities") {
             await CourierAggregator.updateOne({_id: id}, { $set: {
                 capacity12: changeData.capacity12,
@@ -381,12 +396,6 @@ export const updateCourierAggregatorData = async (req, res) => {
         })
 
         try {
-            if (changeField === "onTheLine" && changeData) {
-                await CourierAggregator.updateOne({_id: id}, { $set: {
-                    completeFirstOrder: false
-                } })
-                await queueOrTools('courier_online_' + id);
-            }
 
             if (changeField === "onTheLine" && !changeData) {
                 // Получаем актуальные данные курьера после обновления
@@ -400,7 +409,7 @@ export const updateCourierAggregatorData = async (req, res) => {
                         onTheLine: false
                     } })
 
-                    await queueOrTools('courier_offline_' + id);
+                    // await queueOrTools('courier_offline_' + id);
                 }
             }
         } catch (asyncError) {
