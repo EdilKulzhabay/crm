@@ -752,6 +752,8 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const order = await Order.findById(orderId)
 
+        const courier = await CourierAggregator.findById(id)
+
         // ИСПРАВЛЕНИЕ: Объединяем $set и $inc в один объект
         await CourierAggregator.updateOne(
             { _id: id },
@@ -773,16 +775,16 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             }}
         )
 
-        // СБРАСЫВАЕМ ОГРАНИЧЕНИЯ УВЕДОМЛЕНИЙ для этого курьера
-        try {
-            await loadResetFunction();
-            if (resetNotificationLimits) {
-                resetNotificationLimits(id.toString());
-                console.log(`🔄 Сброшены ограничения уведомлений для курьера ${id}`);
-            }
-        } catch (error) {
-            console.log("⚠️ Не удалось сбросить ограничения уведомлений:", error.message);
-        }
+        // // СБРАСЫВАЕМ ОГРАНИЧЕНИЯ УВЕДОМЛЕНИЙ для этого курьера
+        // try {
+        //     await loadResetFunction();
+        //     if (resetNotificationLimits) {
+        //         resetNotificationLimits(id.toString());
+        //         console.log(`🔄 Сброшены ограничения уведомлений для курьера ${id}`);
+        //     }
+        // } catch (error) {
+        //     console.log("⚠️ Не удалось сбросить ограничения уведомлений:", error.message);
+        // }
 
         console.log(`✅ Заказ ${orderId} отменен курьером ${id}`);
         console.log(`   Возвращено бутылок: 12л=${order.products.b12}, 19л=${order.products.b19}`);
@@ -793,7 +795,6 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         })
 
         // Проверяем, есть ли заказы в массиве orders
-        const courier = await CourierAggregator.findById(id);
         if (courier.orders && courier.orders.length > 0) {
             // Получаем ID всех заказов из массива orders
             const orderIds = courier.orders.map(order => order.orderId);
@@ -1567,6 +1568,8 @@ export const resendNotificationToCourier = async (req, res) => {
         });
     }
 };
+
+// db.orders.find({_id: ObjectId("6884769dcc17337ee0fb2ee1")})
 
 // db.orders.updateMany(
 //     {
