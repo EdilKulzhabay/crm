@@ -1574,7 +1574,7 @@ export const resendNotificationToCourier = async (req, res) => {
     }
 };
 
-// db.orders.find({_id: ObjectId("688702b9fa26cdcebdd67832")})
+// db.clients.find({_id: ObjectId("66fc027eb54e6db41c3956ac")})
 
 // db.orders.updateMany(
 //     {
