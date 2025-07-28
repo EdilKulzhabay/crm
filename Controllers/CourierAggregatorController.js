@@ -1470,11 +1470,7 @@ export const removeOrderFromCourier = async (req, res) => {
         const courierUpdateResult = await CourierAggregator.updateOne(
             { _id: courierId },
             {
-                $pull: { orders: { orderId: orderId } },
-                $inc: {
-                    capacity12: order.products.b12,
-                    capacity19: order.products.b19
-                }
+                $pull: { orders: { orderId: orderId } }
             }
         );
         
@@ -1578,7 +1574,7 @@ export const resendNotificationToCourier = async (req, res) => {
     }
 };
 
-// db.orders.find({_id: ObjectId("6884769dcc17337ee0fb2ee1")})
+// db.orders.find({_id: ObjectId("688702b9fa26cdcebdd67832")})
 
 // db.orders.updateMany(
 //     {
@@ -1691,7 +1687,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Тасқын Әбікен'}, { $set: {order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-  
+// db.courieraggregators.find({fullName: 'Бекет Сапарбаев'})
 // db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
 
 // db.orders.find({
