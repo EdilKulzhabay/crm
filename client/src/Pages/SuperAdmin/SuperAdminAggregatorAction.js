@@ -189,14 +189,14 @@ export default function SuperAdminAggregatorAction() {
     };
 
     // Функция для определения цвета заказа по статусу
-    const getOrderColor = (status, isAssigned) => {
-        // Если заказ назначен курьеру, показываем желтым
-
-        if (isAssigned && status === "onTheWay") {
-            return "blue";
+    const getOrderColor = (status, isAssigned, hasDeliveryTime) => {
+        // Если у заказа есть время доставки, показываем оранжевым
+        if (hasDeliveryTime) {
+            return "orange";
         }
-
-        if (isAssigned && status === "awaitingOrder") {
+        
+        // Если заказ назначен курьеру, показываем желтым
+        if (isAssigned) {
             return "yellow";
         }
         
@@ -284,7 +284,7 @@ export default function SuperAdminAggregatorAction() {
                     {/* Заказы */}
                     {orders.map((order, index) => {
                         if (order.address?.point?.lat && order.address?.point?.lon) {
-                            const color = getOrderColor(order.status, order.courierAggregator);
+                            const color = getOrderColor(order.status, order.courierAggregator, order.date?.time && order.date.time !== "");
                             const bottles12 = order.products?.b12 || 0;
                             const bottles19 = order.products?.b19 || 0;
                             const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
@@ -293,6 +293,16 @@ export default function SuperAdminAggregatorAction() {
                             if (order.courierAggregator) {
                                 console.log(`Заказ ${order._id}: courierAggregator =`, order.courierAggregator);
                                 console.log(`Заказ ${order._id}: isAssigned =`, isAssigned);
+                            }
+                            
+                            // Отладочная информация
+                            if (order.date?.time && order.date.time !== "") {
+                                console.log(`Заказ ${order._id} с временем доставки:`, {
+                                    clientName: order.client?.fullName,
+                                    deliveryTime: order.date.time,
+                                    status: order.status,
+                                    isAssigned: !!order.courierAggregator
+                                });
                             }
                             
                             return (
@@ -311,6 +321,9 @@ export default function SuperAdminAggregatorAction() {
                                             <strong>Заказ: {order.client?.fullName}</strong><br />
                                             Адрес: {order.address?.actual}<br />
                                             Статус: {order.status}<br />
+                                            {order.date?.time && order.date.time !== "" && (
+                                                <><strong>Время доставки: {order.date.time}</strong><br /></>
+                                            )}
                                             {bottles12 > 0 && `${bottles12} 12л бутылей, `}
                                             {bottles19 > 0 && `${bottles19} 19л бутылей`}
                                             {isAssigned && (
@@ -329,7 +342,7 @@ export default function SuperAdminAggregatorAction() {
                                                 <button 
                                                     onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
                                                     disabled={removeLoading}
-                                                    className="bg-red hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-full"
+                                                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-full"
                                                 >
                                                     {removeLoading ? "Убирается..." : "Убрать у курьера"}
                                                 </button>
@@ -473,6 +486,10 @@ export default function SuperAdminAggregatorAction() {
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
                             <span className="text-sm">Ожидают заказа</span>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-orange-500 rounded-full mr-2"></div>
+                            <span className="text-sm">С временем доставки</span>
                         </div>
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
