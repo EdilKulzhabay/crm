@@ -1212,12 +1212,14 @@ export const toTomorrow = async (req, res) => {
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
+        if (tomorrow.getDay() === 0) {
+            tomorrow.setDate(tomorrow.getDate() + 1);
+        }
         const tomorrowString = getDateAlmaty(tomorrow);
         
         await Order.findByIdAndUpdate(orderId, { 
             $set: { 
                 "date.d": tomorrowString,
-                forAggregator: true,
                 status: "awaitingOrder",
                 courierAggregator: null
             } 
@@ -1236,7 +1238,7 @@ export const addOrderToAggregator = async (req, res) => {
     try {
         const { orderId } = req.body;
 
-        await Order.findByIdAndUpdate(orderId, { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } })
+        await Order.findByIdAndUpdate(orderId, { $set: { status: "awaitingOrder", courierAggregator: null } })
 
         res.json({ success: true })
     } catch (error) {
