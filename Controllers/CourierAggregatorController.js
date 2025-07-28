@@ -678,10 +678,10 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 
                 const { pushNotification } = await import("../pushNotification.js");
                 await pushNotification(
-                    "nextOrder",
+                    "newOrder",
                     messageBody,
                     [updatedCourier.notificationPushToken],
-                    "nextOrder",
+                    "newOrder",
                     nextOrder
                 );
             } catch (notificationError) {
@@ -1585,7 +1585,7 @@ export const resendNotificationToCourier = async (req, res) => {
 
 // db.orders.updateMany(
 //     {
-//         "date.d": "2025-07-26"
+//         "date.d": "2025-07-28"
 //     },
 //     {
 //         $set: { status: "awaitingOrder", courierAggregator: null }
@@ -1595,7 +1595,7 @@ export const resendNotificationToCourier = async (req, res) => {
 
 /// git suka
 
-// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[] }}) 
+// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[], capacity12: 0, capacity19: 100, point: { lat: 43.41377, lon: 76.97149 } }}) 
 
 // db.orders.countDocuments({
 //     "date.d": "2025-07-16",
