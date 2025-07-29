@@ -342,7 +342,7 @@ export default function SuperAdminAggregatorAction() {
                                                 <button 
                                                     onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
                                                     disabled={removeLoading}
-                                                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-full"
+                                                    className="bg-red text-white font-bold py-2 px-4 rounded w-full"
                                                 >
                                                     {removeLoading ? "Убирается..." : "Убрать у курьера"}
                                                 </button>
