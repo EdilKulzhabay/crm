@@ -191,13 +191,17 @@ export default function SuperAdminAggregatorAction() {
     // Функция для определения цвета заказа по статусу
     const getOrderColor = (status, isAssigned, hasDeliveryTime) => {
         // Если у заказа есть время доставки, показываем оранжевым
-        if (hasDeliveryTime) {
-            return "orange";
+
+        if (isAssigned && status === "onTheWay") {
+            return "blue";
         }
-        
-        // Если заказ назначен курьеру, показываем желтым
-        if (isAssigned) {
+
+        if (isAssigned && status === "awaitingOrder") {
             return "yellow";
+        }
+
+        if (hasDeliveryTime && status === "awaitingOrder") {
+            return "orange";
         }
         
         switch (status) {
