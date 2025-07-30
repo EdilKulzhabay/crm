@@ -132,7 +132,7 @@ export default function SuperAdminAggregatorAction() {
                 
                 const couriersRes = await api.get("/getActiveCourierAggregators");
                 setCouriers(couriersRes.data.couriers);
-                
+
                 const allCouriersRes = await api.get("/getAllCouriersWithOrderCount");
                 setAllCouriers(allCouriersRes.data.couriers);
                 
@@ -323,7 +323,7 @@ export default function SuperAdminAggregatorAction() {
         <div className="mb-4 p-4 bg-gray-800 rounded-lg">
             <h3 className="text-lg font-bold mb-2">Активные курьеры:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {couriers.map((courier) => (
+                {allCouriers.map((courier) => (
                     <div key={courier._id} className="bg-gray-700 p-4 rounded-lg">
                         <div className="font-bold text-lg mb-2">{courier.fullName}</div>
                         <div className="grid grid-cols-2 gap-2">
@@ -339,29 +339,26 @@ export default function SuperAdminAggregatorAction() {
                             <div>
                                 <div className="text-sm text-gray-400">Доставлено сегодня:</div>
                                 <div className="text-yellow-400">
-                                    Заказов: {orders.filter(o => o.courierAggregator === courier._id && o.status === 'delivered').length || 0}
+                                    Заказов: {orders.filter(o => {
+                                        return o.courierAggregator?.fullName === courier.fullName && o.status === 'delivered'}).length || 0}
                                 </div>
                                 <div className="text-orange-400">
-                                    19л бутылей: {orders.filter(o => o.courierAggregator === courier._id && o.status === 'delivered').reduce((acc, order) => {
+                                    19л бутылей: {orders.filter(o => o.courierAggregator?.fullName === courier.fullName && o.status === 'delivered').reduce((acc, order) => {
                                         if (order.status === 'delivered') {
-                                            if (!acc.b19) acc.b19 = 0;
-                                            acc.b19 += order.products?.b19 || 0;
-                                            return acc;
+                                            return acc + (order.products?.b19 || 0);
                                         }
                                         return acc;
-                                    }, 0) || 0}
+                                    }, 0)}
 
                                     
                                 </div>
                                 <div className="text-orange-400">
-                                    12л бутылей: {orders.filter(o => o.courierAggregator === courier._id && o.status === 'delivered').reduce((acc, order) => {
+                                    12л бутылей: {orders.filter(o => o.courierAggregator?.fullName === courier.fullName && o.status === 'delivered').reduce((acc, order) => {
                                         if (order.status === 'delivered') {
-                                            if (!acc.b12) acc.b12 = 0;
-                                            acc.b12 += order.products?.b12 || 0;
-                                            return acc;
+                                            return acc + (order.products?.b12 || 0);
                                         }
                                         return acc;
-                                    }, 0) || 0}
+                                    }, 0)}
                                 </div>
 
                             </div>
