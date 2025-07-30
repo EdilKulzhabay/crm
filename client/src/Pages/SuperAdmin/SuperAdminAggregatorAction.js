@@ -351,6 +351,9 @@ export default function SuperAdminAggregatorAction() {
                                         return acc;
                                     }, 0) || 0}
 
+                                    
+                                </div>
+                                <div className="text-orange-400">
                                     12л бутылей: {orders.filter(o => o.courierAggregator === courier._id && o.status === 'delivered').reduce((acc, order) => {
                                         if (order.status === 'delivered') {
                                             if (!acc.b12) acc.b12 = 0;
@@ -360,6 +363,7 @@ export default function SuperAdminAggregatorAction() {
                                         return acc;
                                     }, 0) || 0}
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -370,7 +374,7 @@ export default function SuperAdminAggregatorAction() {
         {loading ? (
             <Div>Загрузка данных...</Div>
         ) : (
-            <div style={{ height: '70vh', width: '100%', position: 'relative' }}>
+            <div style={{ height: '80vh', width: '100%', position: 'relative' }}>
                 <MapContainer 
                     center={[43.16856, 76.89645]}
                     style={{ height: '100%', width: '100%' }}
