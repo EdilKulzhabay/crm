@@ -1041,7 +1041,7 @@ export const getActiveCourierAggregators = async (req, res) => {
                 populate: {
                     path: 'client',
                     model: 'Client',
-                    select: 'fullName'
+                    select: 'fullName _id'
                 }
             });
         res.json({ couriers })
@@ -1694,7 +1694,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Тасқын Әбікен'}, { $set: {order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-// db.courieraggregators.find({fullName: 'Бекет Сапарбаев'})
+// db.courieraggregators.find({fullName: 'Тасқын Әбікен'})
 // db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
 
 // db.orders.find({
