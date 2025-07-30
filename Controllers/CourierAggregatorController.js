@@ -498,10 +498,6 @@ export const acceptOrderCourierAggregator = async (req, res) => {
                 $set: {
                     order: order
                 },
-                $inc: {
-                    capacity12: -order.products.b12,
-                    capacity19: -order.products.b19
-                },
                 $push: {
                     orders: order
                 }
@@ -512,10 +508,6 @@ export const acceptOrderCourierAggregator = async (req, res) => {
             await CourierAggregator.updateOne({_id: id}, {
                 $set: {
                     order: order
-                },
-                $inc: {
-                    capacity12: -order.products.b12,
-                    capacity19: -order.products.b19
                 }
             })
             console.log('Заказ уже существует в массиве orders курьера');
@@ -625,14 +617,14 @@ export const completeOrderCourierAggregator = async (req, res) => {
             );
         }
         
-        if (order.products.b12 !== courier1.order.products.b12 || order.products.b19 !== courier1.order.products.b19) {
-            await CourierAggregator.updateOne({_id: courierId}, {
-                $set: {
-                    capacity12: courier1.capacity12 + (courier1.order.products.b12 - order.products.b12),
-                    capacity19: courier1.capacity19 + (courier1.order.products.b19 - order.products.b19)
-                }
-            })
-        }
+        // if (order.products.b12 !== courier1.order.products.b12 || order.products.b19 !== courier1.order.products.b19) {
+        //     await CourierAggregator.updateOne({_id: courierId}, {
+        //         $set: {
+        //             capacity12: courier1.capacity12 + (courier1.order.products.b12 - order.products.b12),
+        //             capacity19: courier1.capacity19 + (courier1.order.products.b19 - order.products.b19)
+        //         }
+        //     })
+        // }
 
         await Order.updateOne({_id: orderId}, { 
             $set: {
@@ -665,7 +657,9 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 completeFirstOrder: true
             },
             $inc: {
-                income: sum // прибавит значение order.sum
+                income: sum, // прибавит значение order.sum
+                capacity12: -courier1.order.products.b12,
+                capacity19: -courier1.order.products.b19
             }
         })
 
@@ -1574,7 +1568,7 @@ export const resendNotificationToCourier = async (req, res) => {
     }
 };
 
-// db.clients.find({_id: ObjectId("66fc027eb54e6db41c3956ac")})
+// db.clients.find({_id: ObjectId("67b0607cb1fa33f7b065631f")})
 
 // db.orders.updateMany(
 //     {

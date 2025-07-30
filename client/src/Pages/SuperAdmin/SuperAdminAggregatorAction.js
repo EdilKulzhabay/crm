@@ -227,6 +227,67 @@ export default function SuperAdminAggregatorAction() {
         total: orders.length
     };
 
+    // Функция для группировки заказов по координатам и добавления смещения
+    const processOrdersWithOffset = (orders) => {
+        const coordinateGroups = new Map();
+        
+        // Группируем заказы по координатам (с учетом небольшой погрешности)
+        orders.forEach((order, index) => {
+            if (order.address?.point?.lat && order.address?.point?.lon) {
+                const lat = parseFloat(order.address.point.lat);
+                const lon = parseFloat(order.address.point.lon);
+                
+                // Создаем ключ для группировки (округляем до 6 знаков после запятой)
+                const key = `${lat.toFixed(6)}_${lon.toFixed(6)}`;
+                
+                if (!coordinateGroups.has(key)) {
+                    coordinateGroups.set(key, []);
+                }
+                
+                coordinateGroups.get(key).push({ order, originalIndex: index });
+            }
+        });
+        
+        const processedOrders = [];
+        
+        coordinateGroups.forEach((group, key) => {
+            if (group.length === 1) {
+                // Если заказ один в этой точке, не смещаем
+                processedOrders.push({
+                    ...group[0].order,
+                    originalIndex: group[0].originalIndex,
+                    offsetLat: parseFloat(group[0].order.address.point.lat),
+                    offsetLon: parseFloat(group[0].order.address.point.lon)
+                });
+            } else {
+                // Если заказов несколько, добавляем смещение
+                group.forEach((item, groupIndex) => {
+                    const baseLat = parseFloat(item.order.address.point.lat);
+                    const baseLon = parseFloat(item.order.address.point.lon);
+                    
+                    // Создаем смещение в виде круга вокруг исходной точки
+                    const offsetRadius = 0.0008; // Примерно 80-100 метров
+                    const angle = (groupIndex * 2 * Math.PI) / group.length;
+                    
+                    const offsetLat = baseLat + offsetRadius * Math.cos(angle);
+                    const offsetLon = baseLon + offsetRadius * Math.sin(angle);
+                    
+                    processedOrders.push({
+                        ...item.order,
+                        originalIndex: item.originalIndex,
+                        offsetLat,
+                        offsetLon
+                    });
+                });
+            }
+        });
+        
+        return processedOrders;
+    };
+
+    // Получаем обработанные заказы со смещением
+    const processedOrders = processOrdersWithOffset(orders);
+
     return <Container role={userData?.role}>
         <Div>Агрегатор курьеров</Div>
         <Div />
@@ -257,6 +318,8 @@ export default function SuperAdminAggregatorAction() {
                 </div>
             </div>
         </div>
+
+        
         
         {loading ? (
             <Div>Загрузка данных...</Div>
@@ -286,80 +349,77 @@ export default function SuperAdminAggregatorAction() {
                     </Marker>
 
                     {/* Заказы */}
-                    {orders.map((order, index) => {
-                        if (order.address?.point?.lat && order.address?.point?.lon) {
-                            const color = getOrderColor(order.status, order.courierAggregator, order.date?.time && order.date.time !== "");
-                            const bottles12 = order.products?.b12 || 0;
-                            const bottles19 = order.products?.b19 || 0;
-                            const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
-                            
-                            // Отладочная информация
-                            if (order.courierAggregator) {
-                                console.log(`Заказ ${order._id}: courierAggregator =`, order.courierAggregator);
-                                console.log(`Заказ ${order._id}: isAssigned =`, isAssigned);
-                            }
-                            
-                            // Отладочная информация
-                            if (order.date?.time && order.date.time !== "") {
-                                console.log(`Заказ ${order._id} с временем доставки:`, {
-                                    clientName: order.client?.fullName,
-                                    deliveryTime: order.date.time,
-                                    status: order.status,
-                                    isAssigned: !!order.courierAggregator
-                                });
-                            }
-                            
-                            return (
-                                <Circle
-                                    key={`order-${index}`}
-                                    center={[order.address.point.lat, order.address.point.lon]}
-                                    radius={80}
-                                    pathOptions={{
-                                        color: color,
-                                        fillColor: color,
-                                        fillOpacity: 0.7
-                                    }}
-                                >
-                                    <Popup>
-                                        <div className="min-w-[300px]">
-                                            <strong>Заказ: {order.client?.fullName}</strong><br />
-                                            Адрес: {order.address?.actual}<br />
-                                            Статус: {order.status}<br />
-                                            {order.date?.time && order.date.time !== "" && (
-                                                <><strong>Время доставки: {order.date.time}</strong><br /></>
-                                            )}
-                                            {bottles12 > 0 && `${bottles12} 12л бутылей, `}
-                                            {bottles19 > 0 && `${bottles19} 19л бутылей`}
-                                            {isAssigned && (
-                                                <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
-                                            )}
-                                            <br /><br />
-                                            {order.status === "awaitingOrder" && !isAssigned && (
-                                                <button 
-                                                    onClick={() => openAssignModal(order)}
-                                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
-                                                >
-                                                    Назначить курьеру
-                                                </button>
-                                            )}
-                                            {isAssigned && (
-                                                <button 
-                                                    onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
-                                                    disabled={removeLoading}
-                                                    className="bg-red text-white font-bold py-2 px-4 rounded w-full"
-                                                >
-                                                    {removeLoading ? "Убирается..." : "Убрать у курьера"}
-                                                </button>
-                                            )}
-                                            {!isAssigned && order.status !== "awaitingOrder" && (
-                                                <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
-                                            )}
-                                        </div>
-                                    </Popup>
-                                </Circle>
-                            );
+                    {processedOrders.map((order, index) => {
+                        const color = getOrderColor(order.status, order.courierAggregator, order.date?.time && order.date.time !== "");
+                        const bottles12 = order.products?.b12 || 0;
+                        const bottles19 = order.products?.b19 || 0;
+                        const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
+                        
+                        // Отладочная информация
+                        if (order.courierAggregator) {
+                            console.log(`Заказ ${order._id}: courierAggregator =`, order.courierAggregator);
+                            console.log(`Заказ ${order._id}: isAssigned =`, isAssigned);
                         }
-                        return null;
+                        
+                        // Отладочная информация
+                        if (order.date?.time && order.date.time !== "") {
+                            console.log(`Заказ ${order._id} с временем доставки:`, {
+                                clientName: order.client?.fullName,
+                                deliveryTime: order.date.time,
+                                status: order.status,
+                                isAssigned: !!order.courierAggregator
+                            });
+                        }
+                        
+                        return (
+                            <Circle
+                                key={`order-${order.originalIndex}`}
+                                center={[order.offsetLat, order.offsetLon]}
+                                radius={80}
+                                pathOptions={{
+                                    color: color,
+                                    fillColor: color,
+                                    fillOpacity: 0.7
+                                }}
+                            >
+                                <Popup>
+                                    <div className="min-w-[300px]">
+                                        <strong>Заказ: {order.client?.fullName}</strong><br />
+                                        Адрес: {order.address?.actual}<br />
+                                        Статус: {order.status}<br />
+                                        {order.date?.time && order.date.time !== "" && (
+                                            <><strong>Время доставки: {order.date.time}</strong><br /></>
+                                        )}
+                                        {bottles12 > 0 && `${bottles12} 12л бутылей, `}
+                                        {bottles19 > 0 && `${bottles19} 19л бутылей`}
+                                        {isAssigned && (
+                                            <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
+                                        )}
+                                        <br /><br />
+                                        {order.status === "awaitingOrder" && !isAssigned && (
+                                            <button 
+                                                onClick={() => openAssignModal(order)}
+                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
+                                            >
+                                                Назначить курьеру
+                                            </button>
+                                        )}
+                                        {isAssigned && (
+                                            <button 
+                                                onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
+                                                disabled={removeLoading}
+                                                className="bg-red text-white font-bold py-2 px-4 rounded w-full"
+                                            >
+                                                {removeLoading ? "Убирается..." : "Убрать у курьера"}
+                                            </button>
+                                        )}
+                                        {!isAssigned && order.status !== "awaitingOrder" && (
+                                            <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
+                                        )}
+                                    </div>
+                                </Popup>
+                            </Circle>
+                        );
                     })}
 
                     {/* Курьеры */}
