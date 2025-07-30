@@ -4,7 +4,7 @@ import User from "../Models/User.js";
 import Client from "../Models/Client.js";
 import Courier from "../Models/Courier.js";
 import mongoose from "mongoose";
-import { SendEmailOrder } from "./SendEmailOrder.js";
+import { SendEmailOrder, sendEmailAboutAggregator } from "./SendEmailOrder.js";
 import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
@@ -65,6 +65,36 @@ export const addOrder = async (req, res) => {
         });
 
         await order.save();
+
+        if (id === "66fc0cc6953c2dbbc86c2132") {
+            const mail = "outofreach5569@gmail.com"
+            const sendText = `Бекет добавил заказ по адресу ${address.actual}`
+            sendEmailAboutAggregator(mail, "add", sendText)
+        }
+
+        if (id === "66fc0d01953c2dbbc86c2135") {
+            const mail = "outofreach5569@gmail.com"
+            const sendText = `Василий добавил заказ по адресу ${address.actual}`
+            sendEmailAboutAggregator(mail, "add", sendText)
+        }
+
+        if (id === "66fc0d3e953c2dbbc86c2138") {
+            const mail = "outofreach5569@gmail.com"
+            const sendText = `Ринат добавил заказ по адресу ${address.actual}`
+            sendEmailAboutAggregator(mail, "add", sendText)
+        }
+
+        if (id === "67010493e6648af4cb0213b7") {
+            const mail = "outofreach5569@gmail.com"
+            const sendText = `Айдынбек добавил заказ по адресу ${address.actual}`
+            sendEmailAboutAggregator(mail, "add", sendText)
+        }
+
+        if (id === "66f15c557a27c92d447a16a0") {
+            const mail = "outofreach5569@gmail.com"
+            const sendText = `Admin добавил заказ по адресу ${address.actual}`
+            sendEmailAboutAggregator(mail, "add", sendText)
+        }
 
         if (franchisee !== null) {
             const mail = franchisee.mail
@@ -338,7 +368,7 @@ export const getClientOrders = async (req, res) => {
             .populate("franchisee")
             .populate("courier")
             .populate("client")
-            .sort({ createdAt: 1 })
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 

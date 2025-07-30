@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { getDateAlmaty } from "../utils/dateUtils.js";
 import queueOrTools from "../orToolsQueue.js";
+import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
 
 // Функция для сброса ограничений уведомлений (будет импортирована из orTools.js)
 let resetNotificationLimits = null;
@@ -388,6 +389,18 @@ export const updateCourierAggregatorData = async (req, res) => {
             await CourierAggregator.updateOne({_id: id}, { $set: {
                 [changeField]: changeData
             } })
+        }
+
+        if (changeField === "onTheLine" && changeData) {
+            const mail = "outofreach5569@gmail.com"
+            const sendText = `Курьер ${courier.fullName} появился в сети`
+            sendEmailAboutAggregator(mail, "online", sendText)
+        }
+
+        if (changeField === "onTheLine" && !changeData) {
+            const mail = "outofreach5569@gmail.com"
+            const sendText = `Курьер ${courier.fullName} вышел из сети`
+            sendEmailAboutAggregator(mail, "offline", sendText)
         }
 
         res.json({

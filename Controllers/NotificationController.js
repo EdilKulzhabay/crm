@@ -19,7 +19,7 @@ export const getNotifications = async (req, res) => {
             ];
         }
 
-        const notifications = await Notification.find(filter).sort({ createdAt: 1 })
+        const notifications = await Notification.find(filter).sort({ createdAt: -1 })
         .populate("first")
         .populate("second")
         .populate("firstObject")

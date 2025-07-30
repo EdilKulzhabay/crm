@@ -27,3 +27,20 @@ export const SendEmailOrder = (mail, subject, text) => {
         }
     });
 }
+
+export const sendEmailAboutAggregator = (mail, subject, text) => {
+    const mailOptions = {
+        from: "info@tibetskaya.kz",
+        to: mail,
+        subject: subject === "add" ? "Добавлен новый заказ" : subject === "online" ? "Курьер появился в сети" : "Курьер вышел из сети",
+        text: text,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log("Email sent: " + info.response);
+        }
+    });
+}
