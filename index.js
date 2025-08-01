@@ -330,6 +330,7 @@ app.get("/getAllCouriersWithOrderCount", CourierAggregatorController.getAllCouri
 app.post("/assignOrderToCourier", CourierAggregatorController.assignOrderToCourier)
 app.post("/removeOrderFromCourier", CourierAggregatorController.removeOrderFromCourier)
 app.post("/resendNotificationToCourier", CourierAggregatorController.resendNotificationToCourier)
+app.post("/resetCourierOrders", CourierAggregatorController.resetCourierOrders)
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
 app.post("/updateUserData", AquaMarketController.updateUserData)

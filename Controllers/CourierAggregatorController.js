@@ -1497,6 +1497,46 @@ export const removeOrderFromCourier = async (req, res) => {
     }
 };
 
+export const resetCourierOrders = async (req, res) => {
+    try {
+        const { courierId } = req.body;
+
+        console.log("resetCourierOrders req.body = ", req.body);
+
+        const courier = await CourierAggregator.findById(courierId);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден"
+            });
+        }
+
+        const orderIds = courier.orders.map(order => order.orderId);
+
+        console.log("orderIds = ", orderIds);
+
+        for (const orderId of orderIds) {
+            await Order.updateOne({ _id: orderId }, { $set: { status: "awaitingOrder", courierAggregator: null } });
+        }
+
+        await CourierAggregator.updateOne({ _id: courierId }, { $set: { orders: [], order: null } });
+
+        res.json({
+            success: true,
+            message: "Заказы курьера успешно сброшены"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
+
+
+
 export const resendNotificationToCourier = async (req, res) => {
     try {
         const { courierId } = req.body;
