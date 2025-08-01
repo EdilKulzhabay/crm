@@ -770,23 +770,12 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const courier = await CourierAggregator.findById(id)
 
-        if (courier.orders && courier.orders.length > 0) {
-            const orderIds = courier.orders.map(order => {
-                if (order.orderId !== orderId) {
-                    return order.orderId
-                }
-            });
-
-            await Order.updateMany(
-                { _id: { $in: orderIds } },
-                { $set: { courierAggregator: null } }
-            );
-        }
-
+        // СТАЛО: Убирается только конкретный отменяемый заказ
         await CourierAggregator.updateOne(
             { _id: id },
             { 
-                $set: { order: null, orders: [] },
+                $set: { order: null },
+                $pull: { orders: { orderId: orderId } }  // Удаляет только конкретный заказ
             }
         );
 
@@ -804,7 +793,40 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         res.json({
             success: true,
             message: "Заказ отменен"
-        })
+        });
+
+        // Асинхронная отправка следующего заказа
+        setTimeout(async () => {
+            try {
+                // Получаем актуальные данные курьера после изменений
+                const updatedCourier = await CourierAggregator.findById(id);
+                
+                if (updatedCourier && updatedCourier.orders && updatedCourier.orders.length > 0) {
+                    const nextOrderData = updatedCourier.orders[0];
+                    
+                    // Получаем данные следующего заказа
+                    const nextOrder = await Order.findById(nextOrderData.orderId)
+                        .populate("client", "fullName");
+                    
+                    if (nextOrder) {
+                        const messageBody = `Новый заказ: ${nextOrder.client.fullName}`;
+
+                        const { pushNotification } = await import("../pushNotification.js");
+                        await pushNotification(
+                            "newOrder",
+                            messageBody,
+                            [updatedCourier.notificationPushToken],
+                            "newOrder",
+                            nextOrderData
+                        );
+                        
+                        console.log(`✅ Отправлено уведомление о следующем заказе курьеру ${updatedCourier.fullName}`);
+                    }
+                }
+            } catch (notificationError) {
+                console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
+            }
+        }, 15000);
         
         sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
