@@ -550,8 +550,19 @@ export const updateOrder = async (req, res) => {
             Number(changeData.b19) * Number(client.price19);
             order.sum = sum
             await order.save()
-        }
 
+            if (order.status === "delivered") {
+                const courierId = order.courierAggregator
+                if (courierId) {
+                    await CourierAggregator.updateOne({_id: courierId}, { 
+                        $inc: {
+                            capacity12: Number((changeData.b12 || 0) - (order.products.b12 || 0)),
+                            capacity19: Number((changeData.b19 || 0) - (order.products.b19 || 0))
+                        } 
+                    })
+                }
+            }
+        }
         if (change === "date") {
             order.date = changeData
             const clientId = order.client
@@ -822,7 +833,7 @@ export const getAdditionalOrders = async (req, res) => {
 export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa} = req.body
+        const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa, courierAggregator} = req.body
         
         const user = await User.findById(id)
         const limit = 5;
@@ -846,9 +857,26 @@ export const getCompletedOrders = async (req, res) => {
                 message: "User not found"
             })
         }
+
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
             "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
+        }
+
+        if (courierAggregator !== "") {
+            const courier = await CourierAggregator.find({
+                fullName: { $regex: courierAggregator, $options: "i" }
+            })
+
+            if (courier.length === 0) {
+                return res.json({
+                    orders: [],
+                    result: { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0 }
+                })
+            }
+
+            const courierIds = courier.map(c => c._id);
+            filter.courierAggregator = { $in: courierIds };
         }
 
         if (opForm !== "all") {
@@ -942,6 +970,7 @@ export const getCompletedOrders = async (req, res) => {
         const orders = await Order.find(filter)
             .populate("client")
             .populate("franchisee")
+            .populate("courierAggregator")
             .limit(limit)
             .skip(skip)
 

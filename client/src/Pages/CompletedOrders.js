@@ -34,6 +34,7 @@ export default function CompletedOrders() {
     const [sa, setSa] = useState(false)
     const [search, setSearch] = useState("");
     const [searchF, setSearchF] = useState("");
+    const [courierAggregator, setCourierAggregator] = useState("");
     const [searchStatus, setSearchStatus] = useState(false);
     const [dates, setDates] = useState({
         startDate: "",
@@ -75,7 +76,7 @@ export default function CompletedOrders() {
             setHasMore(true);
             setLoading(false)
             setSearchStatus(false)
-            loadMoreCompletedOrders(1, dates, "", false, searchF, opForm, sa)
+            loadMoreCompletedOrders(1, dates, "", false, searchF, opForm, sa, courierAggregator)
         }
     };
 
@@ -86,7 +87,18 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            loadMoreCompletedOrders(1, dates, search, searchStatus, "", opForm, sa)
+            loadMoreCompletedOrders(1, dates, search, searchStatus, "", opForm, sa, courierAggregator)
+        }
+    };
+
+    const handleSearchCourierAggregator = (e) => {
+        setCourierAggregator(e.target.value);
+        if (e.target.value === "") {
+            setCompletedOrders([]);
+            setPage(1);
+            setHasMore(true);
+            setLoading(false)
+            loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa, "")
         }
     };
 
@@ -102,10 +114,10 @@ export default function CompletedOrders() {
         setPage(1)
         setLoading(false)
         setHasMore(true)
-        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa)
+        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa, courierAggregator)
     }
 
-    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF, opForm, sa) => {
+    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator) => {
         if (loading || !hasMore) return;
 
         setLoading(true);
@@ -113,7 +125,7 @@ export default function CompletedOrders() {
         api.post(
             "/getCompletedOrders",
             {
-                page, ...dates, search, searchStatus, searchF, opForm, sa
+                page, ...dates, search, searchStatus, searchF, opForm, sa, courierAggregator
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -145,7 +157,7 @@ export default function CompletedOrders() {
 
     useEffect(() => {
         if (hasMore) {
-            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa);
+            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator);
         }
     }, [hasMore]);
 
@@ -157,7 +169,7 @@ export default function CompletedOrders() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa);
+                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator);
                 }
             });
             if (node) observer.current.observe(node);
@@ -258,7 +270,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa)
+                    loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator)
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -280,7 +292,7 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa)
+                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator)
                     }}>Найти</MyButton>
                     <MyButton click={() => {
                         const saStatus = !sa
@@ -288,9 +300,33 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, saStatus)
+                        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, saStatus, courierAggregator)
                         setSa(saStatus)
                     }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
+                </div>
+            </Div>
+        </>
+        }
+
+        {userData?.role === "superAdmin" && <>
+            <Div />
+            <Div>
+                Фильтрация по курьерам агрегатора:
+            </Div>
+            <Div>
+                <div className="flex items-center flex-wrap gap-x-4">
+                    <MyInput
+                        value={courierAggregator}
+                        change={handleSearchCourierAggregator}
+                        color="white"
+                    />
+                    <MyButton click={() => {
+                        setCompletedOrders([]);
+                        setPage(1);
+                        setHasMore(true);
+                        setLoading(false)
+                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator)
+                    }}>Найти</MyButton>
                 </div>
             </Div>
         </>
@@ -355,7 +391,7 @@ export default function CompletedOrders() {
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm, sa)
+                                loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm, sa, courierAggregator)
                             }}
                             className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
                                 "text-green-400": opForm !== item,
@@ -406,7 +442,7 @@ export default function CompletedOrders() {
                                     {userData?.role === "superAdmin" && <>
                                         {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
-                                    
+                                    {item?.courierAggregator?.fullName && <div className="text-green-400">Курьер: {item?.courierAggregator?.fullName}</div>}
                                 </div>
                             </Li>
                         </div>
@@ -434,7 +470,7 @@ export default function CompletedOrders() {
                                     {userData?.role === "superAdmin" && <>
                                         {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
-                                    
+                                    {item?.courierAggregator?.fullName && <div className="text-green-400">Курьер: {item?.courierAggregator?.fullName}</div>}
                                 </div>
                             </Li>
                         </div>
