@@ -770,6 +770,27 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const courier = await CourierAggregator.findById(id)
 
+        if (courier.orders && courier.orders.length > 0) {
+            const orderIds = courier.orders.map(order => {
+                if (order.orderId !== orderId) {
+                    return order.orderId
+                }
+            });
+
+            await Order.updateMany(
+                { _id: { $in: orderIds } },
+                { $set: { courierAggregator: null } }
+            );
+
+            // Очищаем массив orders у курьера
+            await CourierAggregator.updateOne(
+                { _id: id },
+                { $set: { orders: [] } }
+            );
+
+            console.log(`✅ Очищены все заказы у курьера ${id}`);
+        }
+
         // ИСПРАВЛЕНИЕ: Объединяем $set и $inc в один объект
         await CourierAggregator.updateOne(
             { _id: id },
@@ -791,17 +812,6 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             }}
         )
 
-        // // СБРАСЫВАЕМ ОГРАНИЧЕНИЯ УВЕДОМЛЕНИЙ для этого курьера
-        // try {
-        //     await loadResetFunction();
-        //     if (resetNotificationLimits) {
-        //         resetNotificationLimits(id.toString());
-        //         console.log(`🔄 Сброшены ограничения уведомлений для курьера ${id}`);
-        //     }
-        // } catch (error) {
-        //     console.log("⚠️ Не удалось сбросить ограничения уведомлений:", error.message);
-        // }
-
         console.log(`✅ Заказ ${orderId} отменен курьером ${id}`);
         console.log(`   Возвращено бутылок: 12л=${order.products.b12}, 19л=${order.products.b19}`);
 
@@ -809,50 +819,8 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             success: true,
             message: "Заказ отменен"
         })
-
-        // Проверяем, есть ли заказы в массиве orders
-        if (courier.orders && courier.orders.length > 0) {
-            // Получаем ID всех заказов из массива orders
-            const orderIds = courier.orders.map(order => order.orderId);
-            
-            // Обновляем все заказы, убирая привязку к курьеру
-            await Order.updateMany(
-                { _id: { $in: orderIds } },
-                { $set: { courierAggregator: null } }
-            );
-
-            // Очищаем массив orders у курьера
-            await CourierAggregator.updateOne(
-                { _id: id },
-                { $set: { orders: [] } }
-            );
-
-            console.log(`✅ Очищены все заказы у курьера ${id}`);
-        }
-
-        // // Проверяем, есть ли еще заказы в массиве orders
-        // const courier = await CourierAggregator.findById(id);
-        // if (courier.orders && courier.orders.length > 0) {
-        //     // Берем следующий заказ из массива
-        //     const nextOrder = courier.orders[0];
-            
-        //     // Обновляем текущий заказ курьера
-        //     await CourierAggregator.updateOne(
-        //         { _id: id },
-        //         { $set: { order: nextOrder } }
-        //     );
-
-        //     // Обновляем статус заказа
-        //     await Order.updateOne(
-        //         { _id: nextOrder.orderId },
-        //         { $set: { 
-        //             status: "onTheWay",
-        //             courierAggregator: id
-        //         }}
-        //     );
-
-        //     console.log(`✅ Следующий заказ ${nextOrder.orderId} назначен курьеру ${id}`);
-        // }
+        
+        sendEmailAboutAggregator("e@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
         console.log(error);
         res.status(500).json({
