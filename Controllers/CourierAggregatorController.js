@@ -348,8 +348,8 @@ export const updateCourierAggregatorData = async (req, res) => {
 
         if (changeField === "capacities") {
             await CourierAggregator.updateOne({_id: id}, { $set: {
-                capacity12: changeData.capacity12,
-                capacity19: changeData.capacity19
+                capacity12: changeData.capacity12 || 0,
+                capacity19: changeData.capacity19 || 0
             } })
         } else if (changeField === "order.products") {
             if (!courier.order || !courier.order.orderId) {
@@ -392,13 +392,13 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && changeData) {
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} появился в сети`
             sendEmailAboutAggregator(mail, "online", sendText)
         }
 
         if (changeField === "onTheLine" && !changeData) {
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} вышел из сети`
             sendEmailAboutAggregator(mail, "offline", sendText)
         }
@@ -671,8 +671,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
             },
             $inc: {
                 income: sum, // прибавит значение order.sum
-                capacity12: -courier1.order.products.b12,
-                capacity19: -courier1.order.products.b19
+                capacity12: -(courier1.order?.products?.b12 || 0),
+                capacity19: -(courier1.order?.products?.b19 || 0)
             }
         })
 
@@ -781,25 +781,12 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                 { _id: { $in: orderIds } },
                 { $set: { courierAggregator: null } }
             );
-
-            // Очищаем массив orders у курьера
-            await CourierAggregator.updateOne(
-                { _id: id },
-                { $set: { orders: [] } }
-            );
-
-            console.log(`✅ Очищены все заказы у курьера ${id}`);
         }
 
-        // ИСПРАВЛЕНИЕ: Объединяем $set и $inc в один объект
         await CourierAggregator.updateOne(
             { _id: id },
             { 
                 $set: { order: null, orders: [] },
-                $inc: {
-                    capacity12: order.products.b12,
-                    capacity19: order.products.b19
-                } 
             }
         );
 
@@ -813,14 +800,13 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         )
 
         console.log(`✅ Заказ ${orderId} отменен курьером ${id}`);
-        console.log(`   Возвращено бутылок: 12л=${order.products.b12}, 19л=${order.products.b19}`);
 
         res.json({
             success: true,
             message: "Заказ отменен"
         })
         
-        sendEmailAboutAggregator("edil.kulzhabay01@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+        sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -1260,10 +1246,10 @@ export const assignOrderToCourier = async (req, res) => {
 
         // Проверяем вместимость курьера
         console.log("Проверка вместимости:");
-        console.log("Заказ требует:", order.products.b12, "12л и", order.products.b19, "19л");
+        console.log("Заказ требует:", order.products?.b12 || 0, "12л и", order.products?.b19 || 0, "19л");
         console.log("У курьера есть:", courier.capacity12, "12л и", courier.capacity19, "19л");
         
-        if (courier.capacity12 < order.products.b12 || courier.capacity19 < order.products.b19) {
+        if (courier.capacity12 < (order.products?.b12 || 0) || courier.capacity19 < (order.products?.b19 || 0)) {
             return res.status(400).json({
                 success: false,
                 message: "Недостаточно места у курьера"
@@ -1433,8 +1419,8 @@ export const removeOrderFromCourier = async (req, res) => {
                 {
                     $set: { order: null },
                     $inc: {
-                        capacity12: order.products.b12,
-                        capacity19: order.products.b19
+                        capacity12: order.products?.b12 || 0,
+                        capacity19: order.products?.b19 || 0
                     }
                 }
             );
@@ -1471,6 +1457,7 @@ export const resetCourierOrders = async (req, res) => {
 
         console.log("resetCourierOrders req.body = ", req.body);
 
+        // Находим курьера
         const courier = await CourierAggregator.findById(courierId);
 
         if (!courier) {
@@ -1703,7 +1690,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //  db.courieraggregators.updateOne({fullName: 'Edil Kulzhabay'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-// db.courieraggregators.find({fullName: 'Edil Kulzhabay'})
+// db.courieraggregators.find({fullName: 'Тасқын Әбікен'})
 // db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
 
 // db.orders.find({
