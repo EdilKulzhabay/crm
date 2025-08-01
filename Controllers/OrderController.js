@@ -834,6 +834,8 @@ export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
         const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa, courierAggregator} = req.body
+
+        console.log(req.body)
         
         const user = await User.findById(id)
         const limit = 5;
@@ -863,7 +865,7 @@ export const getCompletedOrders = async (req, res) => {
             "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
         }
 
-        if (courierAggregator !== "") {
+        if (courierAggregator !== "" && typeof courierAggregator === 'string') {
             const courier = await CourierAggregator.find({
                 fullName: { $regex: courierAggregator, $options: "i" }
             })
@@ -894,7 +896,7 @@ export const getCompletedOrders = async (req, res) => {
             filter.franchisee = new mongoose.Types.ObjectId(id)
         }
 
-        if (user.role === "superAdmin" && searchF !== "") {
+        if (user.role === "superAdmin" && searchF !== "" && typeof searchF === 'string') {
             const franchisee = await User.find({fullName: { $regex: searchF, $options: "i" }})
             if (franchisee.length === 0) {
                 return res.json({
@@ -911,7 +913,7 @@ export const getCompletedOrders = async (req, res) => {
             ]
         }
 
-        if (searchStatus && search) {
+        if (searchStatus && search && typeof search === 'string') {
             // Find clients that match the search criteria
             const clients = await Client.find({
                 $or: [
