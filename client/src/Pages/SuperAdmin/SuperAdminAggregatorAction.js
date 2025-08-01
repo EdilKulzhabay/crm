@@ -55,7 +55,7 @@ export default function SuperAdminAggregatorAction() {
     const [assignLoading, setAssignLoading] = useState(false)
     const [removeLoading, setRemoveLoading] = useState(false)
     const [resendNotificationLoading, setResendNotificationLoading] = useState(false)
-
+    const [resetOrdersLoading, setResetOrdersLoading] = useState(false)
     useEffect(() => {
         setLoading(true)
 
@@ -166,6 +166,22 @@ export default function SuperAdminAggregatorAction() {
             alert(`Ошибка: ${errorMessage}`);
         }
         setResendNotificationLoading(false);
+    };
+
+    const handleResetOrders = async (courierId) => {
+        setResetOrdersLoading(true);
+        try {
+            const response = await api.post("/resetCourierOrders", {
+                courierId: courierId
+            });
+            
+            if (response.data.success) {
+                alert("Заказы курьера успешно сброшены!");
+            }
+        } catch (error) {
+            console.log("Ошибка сброса заказов:", error);
+        }
+        setResetOrdersLoading(false);
     };
 
     const openAssignModal = (order) => {
@@ -504,6 +520,13 @@ export default function SuperAdminAggregatorAction() {
                                                         className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded w-full"
                                                     >
                                                         {resendNotificationLoading ? "Отправляется..." : "Отправить уведомление"}
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleResetOrders(courier._id)}
+                                                        disabled={resetOrdersLoading}
+                                                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+                                                    >
+                                                        {resetOrdersLoading ? "Сбрасывается..." : "Сбросить заказы"}
                                                     </button>
                                                 </>
                                             )}
