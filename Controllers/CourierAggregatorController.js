@@ -820,7 +820,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             message: "Заказ отменен"
         })
         
-        sendEmailAboutAggregator("e@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+        sendEmailAboutAggregator("edil.kulzhabay01@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
         console.log(error);
         res.status(500).json({
