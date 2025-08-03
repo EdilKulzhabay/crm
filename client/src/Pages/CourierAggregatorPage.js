@@ -54,10 +54,12 @@ export default function CourierAggregatorPage() {
         }
     }
 
-    const updateCourierAggregatorData = (id, changeField, changeData) => {
-        api.post("/updateCourierAggregatorData", {id, changeField, changeData}, {
+    const updateCourierAggregatorData = async (id, changeField, changeData) => {
+        await api.post("/updateCourierAggregatorData", {id, changeField, changeData}, {
             headers: { "Content-Type": "application/json" },
-        }).then()
+        }).then(async () => {
+            await loadCourierData()
+        })
     }
     
 
