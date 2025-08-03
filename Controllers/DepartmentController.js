@@ -3,7 +3,17 @@ import Department from "../Models/Department.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
 import Queue from "../Models/Queue.js";
 import User from "../Models/User.js";
+import CourierAggregator from "../Models/CourierAggregator.js";
 import bcrypt from "bcrypt";
+
+// Маппинг между франчайзи и курьерами по fullName
+const franchiseeCourierMapping = {
+    'Сапарбаев Бекет': 'Бекет Сапарбаев',
+    'Яковлев Василий': 'Василий Яковлев',
+    'Таскын Абикен': 'Тасқын Әбікен',
+    'Сандыбаев Айдынбек': 'Айдынбек Сандыбаев',
+    'Кудайберди Кулжабай': 'Edil Kulzhabay'
+};
 
 export const addDepartment = async (req, res) => {
     try {
@@ -122,9 +132,7 @@ export const deleteDepartment = async (req, res) => {
 
 export const departmentAction = async (req, res) => {
     try {
-        const {id, franchisee, type, data, receivingFinish} = req.body
-
-        const department = await Department.findById(id)
+        const {id, franchisee, type, data} = req.body
 
         const history = new DepartmentHistory({
             department: id,
@@ -132,9 +140,9 @@ export const departmentAction = async (req, res) => {
             type,
             data
         })
-        
+
         await history.save()
-        
+
         const fran = await User.findById(franchisee)
         if (type) {
             fran.b121kol = fran.b121kol + data.b121kol
@@ -147,6 +155,22 @@ export const departmentAction = async (req, res) => {
         }
 
         await fran.save()
+
+        // Обновляем данные связанного курьера
+        const courierFullName = franchiseeCourierMapping[fran.fullName];
+        if (courierFullName && !type) {
+            const courier = await CourierAggregator.findOne({ fullName: courierFullName });
+            if (courier) {
+                courier.capacity12 = (courier.capacity12 || 0) + data.b121kol;
+                courier.capacity19 = (courier.capacity19 || 0) + data.b191kol + data.b197kol;
+                await courier.save();
+                console.log(`Обновлены данные курьера ${courierFullName}: capacity12=${courier.capacity12}, capacity19=${courier.capacity19}`);
+            } else {
+                console.log(`Курьер с именем ${courierFullName} не найден`);
+            }
+        } else {
+            console.log(`Маппинг для франчайзи ${fran.fullName} не найден`);
+        }
 
         res.json({
             success: true
@@ -262,7 +286,7 @@ export const getDepartmentInfo = async (req, res) => {
 
         const stats = await DepartmentHistory.aggregate([
             { $match: filter },
-            { 
+            {
                 $group: {
                     _id: null,
                     totalB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
@@ -306,7 +330,7 @@ export const getDepartmentInfoFranchisee = async (req, res) => {
 
         const stats = await DepartmentHistory.aggregate([
             { $match: filter },
-            { 
+            {
                 $group: {
                     _id: null,
                     totalB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
@@ -344,7 +368,7 @@ export const deleteDepartmentHistory = async (req, res) => {
         const departmentHistory = await DepartmentHistory.findById(id)
 
         const franchisee = departmentHistory.franchisee
-        
+
         const fran = await User.findById(franchisee)
         if (departmentHistory.type) {
             fran.b121kol = fran.b121kol - departmentHistory.data.b121kol
@@ -403,3 +427,68 @@ export const getReceivHistory = async (req, res) => {
         });
     }
 }
+
+// Функция для синхронизации данных между франчайзи и курьерами
+export const syncFranchiseeCourierData = async (req, res) => {
+    try {
+        let syncResults = [];
+        
+        for (const [franchiseeName, courierName] of Object.entries(franchiseeCourierMapping)) {
+            // Находим франчайзи
+            const franchisee = await User.findOne({ fullName: franchiseeName });
+            if (!franchisee) {
+                syncResults.push({
+                    franchisee: franchiseeName,
+                    courier: courierName,
+                    status: 'error',
+                    message: 'Франчайзи не найден'
+                });
+                continue;
+            }
+            
+            // Находим курьера
+            const courier = await CourierAggregator.findOne({ fullName: courierName });
+            if (!courier) {
+                syncResults.push({
+                    franchisee: franchiseeName,
+                    courier: courierName,
+                    status: 'error',
+                    message: 'Курьер не найден'
+                });
+                continue;
+            }
+            
+            // Синхронизируем данные
+            const oldCapacity12 = courier.capacity12 || 0;
+            const oldCapacity19 = courier.capacity19 || 0;
+            
+            courier.capacity12 = franchisee.b121kol || 0;
+            courier.capacity19 = (franchisee.b191kol || 0) + (franchisee.b197kol || 0);
+            
+            await courier.save();
+            
+            syncResults.push({
+                franchisee: franchiseeName,
+                courier: courierName,
+                status: 'success',
+                changes: {
+                    capacity12: { old: oldCapacity12, new: courier.capacity12 },
+                    capacity19: { old: oldCapacity19, new: courier.capacity19 }
+                }
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Синхронизация завершена',
+            results: syncResults
+        });
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Ошибка при синхронизации данных",
+            error: error.message
+        });
+    }
+};
