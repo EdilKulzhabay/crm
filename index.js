@@ -255,6 +255,7 @@ app.post("/getDepartmentInfo", DepartmentController.getDepartmentInfo)
 app.post("/getDepartmentInfoFranchisee", DepartmentController.getDepartmentInfoFranchisee)
 app.post("/deleteDepartmentHistory", DepartmentController.deleteDepartmentHistory)
 app.post("/getReceivHistory", DepartmentController.getReceivHistory)
+app.post("/syncFranchiseeCourierData", DepartmentController.syncFranchiseeCourierData)
 
 ////////NOTIFICATION
 app.post("/getNotifications", NotificationController.getNotifications);

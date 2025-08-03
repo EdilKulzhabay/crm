@@ -18,6 +18,8 @@ export default function CourierAggregatorPage() {
     const [completedOrders, setCompletedOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [capacity, setCapacity] = useState(0);
+    const [capacity12, setCapacity12] = useState(0);
+    const [capacity19, setCapacity19] = useState(0);
 
     const loadCourierData = async () => {
         try {
@@ -30,6 +32,8 @@ export default function CourierAggregatorPage() {
             );
             setCourier(data.userData);
             setCapacity(data.userData.capacity);
+            setCapacity12(data.userData.capacity12);
+            setCapacity19(data.userData.capacity19);
         } catch (error) {
             console.error("Ошибка при загрузке данных курьера:", error);
         }
@@ -83,6 +87,14 @@ export default function CourierAggregatorPage() {
         setCapacity(e.target.value)
     }
 
+    const handleCapacity12 = (e) => {
+        setCapacity12(e.target.value)
+    }
+
+    const handleCapacity19 = (e) => {
+        setCapacity19(e.target.value)
+    }
+
     return (
         <Container role={userData?.role}>
             <Div className="text-2xl font-bold">Информация о курьере</Div>
@@ -124,6 +136,50 @@ export default function CourierAggregatorPage() {
                     </MyButton>
                 </div>
             </Li>
+
+            <Div/>
+
+            <Div>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <div>
+                        <div>
+                            Количество 12л:
+                        </div>
+                        <MyInput
+                            value={capacity12}
+                            change={handleCapacity12}
+                            color="white"
+                        />
+                    </div>
+                </div>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                <div>
+                        <div>
+                            Количество 19л:
+                        </div>
+                        <MyInput
+                            value={capacity19}
+                            change={handleCapacity19}
+                            color="white"
+                        />
+                    </div>
+                </div>
+
+                {Number(capacity12) !== courier.capacity12 || Number(capacity19) !== courier.capacity19 && (
+                    <Div>
+                        <MyButton
+                            onClick={() => {
+                                updateCourierAggregatorData(id, "capacities", {
+                                    capacity12: capacity12,
+                                    capacity19: capacity19
+                                })
+                            }}
+                        >
+                            Обновить
+                        </MyButton>
+                    </Div>
+                )}
+            </Div>
 
             <Div />
             <Div className="text-xl font-bold">Активный заказ</Div>
