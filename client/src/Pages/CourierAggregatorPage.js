@@ -167,7 +167,7 @@ export default function CourierAggregatorPage() {
                     </div>
                 </div>
 
-                {Number(capacity12) !== courier.capacity12 || Number(capacity19) !== courier.capacity19 && (
+                {(Number(capacity12) !== courier.capacity12 || Number(capacity19) !== courier.capacity19) && (
                     <Div>
                         <MyButton
                             click={() => {
