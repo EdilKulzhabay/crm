@@ -168,7 +168,7 @@ export default function CourierAggregatorPage() {
                 {Number(capacity12) !== courier.capacity12 || Number(capacity19) !== courier.capacity19 && (
                     <Div>
                         <MyButton
-                            onClick={() => {
+                            click={() => {
                                 updateCourierAggregatorData(id, "capacities", {
                                     capacity12: capacity12,
                                     capacity19: capacity19
