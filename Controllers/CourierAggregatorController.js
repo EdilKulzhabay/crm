@@ -1624,16 +1624,17 @@ export const resendNotificationToCourier = async (req, res) => {
 
 // db.orders.updateMany({"date.d": "2025-07-17"}, {$set: {forAggregator: false, status: "awaitingOrder", courierAggregator: null}})
 
-// db.orders.updateMany(
+// db.couriers.updateMany(
 //     {
 //         _id: {
-//         $in: [
-//             ObjectId("688393d9bbc47e9e50b0f6b5")
-//         ]
+//             $in: [
+//                 ObjectId('67975d27ebbff03a59653233'),
+//                     ObjectId('67206df26a3502b572c7ffaf')
+//             ]
 //         }
 //     },
 //     {
-//         $set: { status: "awaitingOrder", courierAggregator: null }
+//         $set: { status: "inActive" } 
 //     }
 // )
 
