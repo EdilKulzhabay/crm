@@ -630,14 +630,6 @@ export const completeOrderCourierAggregator = async (req, res) => {
             );
         }
         
-        // if (order.products.b12 !== courier1.order.products.b12 || order.products.b19 !== courier1.order.products.b19) {
-        //     await CourierAggregator.updateOne({_id: courierId}, {
-        //         $set: {
-        //             capacity12: courier1.capacity12 + (courier1.order.products.b12 - order.products.b12),
-        //             capacity19: courier1.capacity19 + (courier1.order.products.b19 - order.products.b19)
-        //         }
-        //     })
-        // }
 
         await Order.updateOne({_id: orderId}, { 
             $set: {
@@ -1439,11 +1431,7 @@ export const removeOrderFromCourier = async (req, res) => {
             await CourierAggregator.updateOne(
                 { _id: courierId },
                 {
-                    $set: { order: null },
-                    $inc: {
-                        capacity12: order.products?.b12 || 0,
-                        capacity19: order.products?.b19 || 0
-                    }
+                    $set: { order: null }
                 }
             );
             console.log("Убран активный заказ у курьера");
@@ -1598,20 +1586,18 @@ export const resendNotificationToCourier = async (req, res) => {
     }
 };
 
-// db.clients.find({_id: ObjectId("67b0607cb1fa33f7b065631f")})
+// db.clients.find({_id: ObjectId("68903e215ebf39f0a25775fd")})
 
 // db.orders.updateMany(
 //     {
 //       _id: {
 //         $in: [
-//           ObjectId("6874959dc7cc88c13008eda2"),
-//           ObjectId("687495d4c7cc88c13008edc4"),
-//           ObjectId("6874960ac7cc88c13008f22e")
+//           ObjectId("6891837a5ebf39f0a258f0f9")
 //         ]
 //       }
 //     },
 //     {
-//       $set: { forAggregator: true }
+//       $set: {  }
 //     }
 //   )
 
@@ -1712,7 +1698,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //  db.courieraggregators.updateOne({fullName: 'Edil Kulzhabay'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-// db.courieraggregators.find({fullName: 'Тасқын Әбікен'})
+// db.courieraggregators.find({fullName: 'Бекет Сапарбаев'})
 // db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
 
 // db.orders.find({

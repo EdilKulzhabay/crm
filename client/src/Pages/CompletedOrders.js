@@ -442,7 +442,7 @@ export default function CompletedOrders() {
                                     {userData?.role === "superAdmin" && <>
                                         {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
-                                    {item?.courierAggregator?.fullName && <div className="text-green-400">Курьер: {item?.courierAggregator?.fullName}</div>}
+                                    {item?.courierAggregator?.fullName && <div className="text-orange-400">Курьер: {item?.courierAggregator?.fullName}</div>}
                                 </div>
                             </Li>
                         </div>
@@ -470,7 +470,7 @@ export default function CompletedOrders() {
                                     {userData?.role === "superAdmin" && <>
                                         {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
-                                    {item?.courierAggregator?.fullName && <div className="text-green-400">Курьер: {item?.courierAggregator?.fullName}</div>}
+                                    {item?.courierAggregator?.fullName && <div className="text-orange-400">Курьер: {item?.courierAggregator?.fullName}</div>}
                                 </div>
                             </Li>
                         </div>
