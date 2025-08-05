@@ -231,7 +231,7 @@ export default function CourierList() {
                                             >
                                                 Просмотр
                                             </LinkButton>
-                                            <MyButton click={() => {}}>
+                                            <MyButton click={() => {updateCouriserStatus(item?._id, item?.status)}}>
                                                 {item?.status === "active"
                                                     ? "Блокировать"
                                                     : "Разблокировать"}
