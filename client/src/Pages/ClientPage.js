@@ -82,7 +82,11 @@ export default function ClientPage() {
         link: "",
         house: "",
         exactLink: "",
-        phone: ""
+        phone: "",
+        point: {
+            lat: "",
+            lon: ""
+        }
     });
 
     const handleDateChange = (e) => {
@@ -139,7 +143,21 @@ export default function ClientPage() {
     };
 
     const changeHandler = (event) => {
-        setSelectAddress({ ...selectAddress, [event.target.name]: event.target.value });
+        const { name, value } = event.target;
+        
+        // Обрабатываем вложенные поля point.lat и point.lon
+        if (name.startsWith('point.')) {
+            const pointField = name.split('.')[1]; // получаем 'lat' или 'lon'
+            setSelectAddress({ 
+                ...selectAddress, 
+                point: {
+                    ...selectAddress.point,
+                    [pointField]: value
+                }
+            });
+        } else {
+            setSelectAddress({ ...selectAddress, [name]: value });
+        }
     };
 
     const getClientData = () => {
@@ -236,7 +254,11 @@ export default function ClientPage() {
                 street: value.street,
                 house: value.house,
                 link: value.exactLink,
-                phone: value.phone
+                phone: value.phone,
+                point: {
+                    lat: value.point.lat,
+                    lon: value.point.lon
+                }
             }
 
             value = [...client.addresses, sendAddress]
@@ -637,6 +659,23 @@ export default function ClientPage() {
                                     </div>
                                 </Li2>
                                 <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Координаты:</div>
+                                        <MyInput
+                                            name={"point.lat"}
+                                            value={selectAddress?.point?.lat || ""}
+                                            change={changeHandler}
+                                            color="white"
+                                        />
+                                        <MyInput
+                                            name={"point.lon"}
+                                            value={selectAddress?.point?.lon || ""}
+                                            change={changeHandler}
+                                            color="white"
+                                        />
+                                    </div>
+                                </Li2>
+                                <Li2>
                                     <div className="text-green-400">
                                         [
                                     </div>
@@ -728,6 +767,37 @@ export default function ClientPage() {
                             </Li>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
+                                    <div>Координаты:</div>
+                                    <MyInput
+                                        value={newAdress.point.lat}
+                                        change={(event) =>
+                                            setNewAdress({ 
+                                                ...newAdress, 
+                                                point: {
+                                                    ...newAdress.point,
+                                                    lat: event.target.value
+                                                }
+                                            })
+                                        }
+                                        color="white"
+                                    />
+                                    <MyInput
+                                        value={newAdress.point.lon}
+                                        change={(event) =>
+                                            setNewAdress({ 
+                                                ...newAdress, 
+                                                point: {
+                                                    ...newAdress.point,
+                                                    lon: event.target.value
+                                                }
+                                            })
+                                        }
+                                        color="white"
+                                    />
+                                </div>
+                            </Li>
+                            <Li>
+                                <div className="flex items-center gap-x-3 flex-wrap">
                                     <MyButton
                                         click={() => {
                                             updateClientData("addresses", newAdress);
@@ -735,7 +805,11 @@ export default function ClientPage() {
                                                 street: "",
                                                 house: "",
                                                 exactLink: "",
-                                                phone: ""
+                                                phone: "",
+                                                point: {
+                                                    lat: "",
+                                                    lon: ""
+                                                }
                                             })
                                         }}
                                     >
@@ -750,7 +824,11 @@ export default function ClientPage() {
                                                 street: "",
                                                 house: "",
                                                 exactLink: "",
-                                                phone: ""
+                                                phone: "",
+                                                point: {
+                                                    lat: "",
+                                                    lon: ""
+                                                }
                                             })
                                         }}
                                     >
