@@ -47,6 +47,8 @@ export const addOrder = async (req, res) => {
             });
         }
 
+        const clientPhone = address.phone !== "" ? address.phone : client.phone
+
         const order = new Order({
             franchisee: client.franchisee,
             client,
@@ -62,7 +64,7 @@ export const addOrder = async (req, res) => {
             transferredFranchise,
             // income: Number(products.b12 || 0) * Number(process.env.Reward12) + Number(products.b19 || 0) * Number(process.env.Reward19)
             income: sum,
-            clientPhone: address.phone
+            clientPhone: clientPhone
         });
 
         await order.save();
