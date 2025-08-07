@@ -109,6 +109,10 @@ const OrderSchema = new mongoose.Schema(
         isUrgent: {
             type: Boolean,
             default: false
+        },
+        clientPhone: {
+            type: String,
+            default: ""
         }
     },
     {
