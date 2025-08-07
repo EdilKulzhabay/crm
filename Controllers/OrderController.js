@@ -61,7 +61,8 @@ export const addOrder = async (req, res) => {
             transferred,
             transferredFranchise,
             // income: Number(products.b12 || 0) * Number(process.env.Reward12) + Number(products.b19 || 0) * Number(process.env.Reward19)
-            income: sum
+            income: sum,
+            clientPhone: address.phone
         });
 
         await order.save();
