@@ -489,7 +489,13 @@ export const getFranchiseeAnalytics = async (req, res) => {
             },
             { $unwind: "$clientData" }, 
             { 
-                $addFields: { fakt: { $and: [ { $eq: ["$opForm", "fakt"] }, { $eq: ["$transferred", true] } ] } }
+                $addFields: { fakt: { $and: [ 
+                    { $eq: ["$opForm", "fakt"] },  
+                    { $and: [
+                        { $eq: ["$transferred", true] },
+                        { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }
+                    ] }
+                ] } }
             },
             {
                 $group: {
