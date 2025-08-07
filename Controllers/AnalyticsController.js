@@ -360,7 +360,13 @@ export const getAdditionalRevenue = async (req, res) => {
             },
             { $unwind: "$clientData" }, 
             { 
-                $addFields: { fakt: { $and: [ { $eq: ["$opForm", "fakt"] }, { $eq: ["$transferred", true] } ] } }
+                $addFields: { fakt: { $and: [ 
+                    { $eq: ["$opForm", "fakt"] },  
+                    { $and: [
+                        { $eq: ["$transferred", true] },
+                        { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }
+                    ] }
+                ] } }
             },
             {
                 $group: {
@@ -388,7 +394,8 @@ export const getAdditionalRevenue = async (req, res) => {
                     haveTo: { 
                         $sum: { 
                             $cond: [
-                                "$transferred", 
+                                { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                                // "$transferred", 
                                 { $ifNull: ["$sum", 0] },
                                 0
                             ] 
@@ -406,7 +413,8 @@ export const getAdditionalRevenue = async (req, res) => {
                     owe: { 
                         $sum: { 
                             $cond: [
-                                "$transferred", 
+                                { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
+                                // "$transferred", 
                                 { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 270 ] } ] },
                                 0
                             ] 
