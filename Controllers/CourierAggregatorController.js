@@ -1281,7 +1281,7 @@ export const assignOrderToCourier = async (req, res) => {
             clientReview: order.clientReview || '',
             date: order.date,
             clientTitle: order.client.fullName,
-            clientPhone: order.client.phone,
+            clientPhone: order.clientPhone,
             clientPoints: order.address.point,
             clientAddress: order.address.actual,
             clientAddressLink: order.address.link,
