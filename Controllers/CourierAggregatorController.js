@@ -1224,7 +1224,7 @@ export const assignOrderToCourier = async (req, res) => {
 
         // Находим заказ
         const order = await Order.findById(orderId)
-            .populate("client", "fullName price12 price19 phone clientPhone");
+            .populate("client", "fullName price12 price19 phone");
 
         if (!order) {
             return res.status(404).json({
@@ -1270,6 +1270,12 @@ export const assignOrderToCourier = async (req, res) => {
             });
         }
 
+        const clientPhone = order.clientPhone !== "" ? order.clientPhone : order.client.phone
+
+
+        console.log("order = ", order);
+        console.log("clientPhone = ", clientPhone);
+
         // Формируем объект заказа в нужном формате
         const orderObject = {
             orderId: order._id,
@@ -1281,7 +1287,7 @@ export const assignOrderToCourier = async (req, res) => {
             clientReview: order.clientReview || '',
             date: order.date,
             clientTitle: order.client.fullName,
-            clientPhone: order.clientPhone,
+            clientPhone: clientPhone,
             clientPoints: order.address.point,
             clientAddress: order.address.actual,
             clientAddressLink: order.address.link,
@@ -1603,7 +1609,11 @@ export const resendNotificationToCourier = async (req, res) => {
 
 // db.orders.updateMany(
 //     {
-//         "date.d": "2025-07-28"
+//         _id: {
+//             $in: [
+//                 ObjectId("6894b3e22a90897cf200d8da")
+//             ]
+//         }
 //     },
 //     {
 //         $set: { status: "awaitingOrder", courierAggregator: null }
