@@ -945,7 +945,6 @@ export const getCourierAggregatorIncome = async (req, res) => {
         const orders = await Order.find({
             "date.d": today,
             status: "delivered",
-            forAggregator: true,
             courierAggregator: courier._id
         }).populate("client")
 
