@@ -541,7 +541,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                     haveTo: { 
                         $sum: { 
                             $cond: [
-                                "$transferred",
+                                { $and: ["$transferred", { $eq: ["$franchisee", '66f15c557a27c92d447a16a0'] }] }, 
                                 { $ifNull: ["$sum", 0] },
                                 0
                             ] 
@@ -559,7 +559,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                     owe: { 
                         $sum: { 
                             $cond: [
-                                "$transferred", 
+                                { $and: ["$transferred", { $eq: ["$franchisee", '66f15c557a27c92d447a16a0'] }] }, 
                                 { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 270 ] } ] },
                                 0
                             ] 
