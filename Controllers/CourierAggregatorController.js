@@ -392,13 +392,13 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && changeData) {
-            const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Курьер ${courier.fullName} появился в сети`
             sendEmailAboutAggregator(mail, "online", sendText)
         }
 
         if (changeField === "onTheLine" && !changeData) {
-            const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Курьер ${courier.fullName} вышел из сети`
             sendEmailAboutAggregator(mail, "offline", sendText)
         }
@@ -820,7 +820,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             }
         }, 15000);
         
-        sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+        sendEmailAboutAggregator("edil.kulzhabay01@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -1708,7 +1708,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //  db.courieraggregators.updateOne({fullName: 'Edil Kulzhabay'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-// db.courieraggregators.find({fullName: 'Бекет Сапарбаев'})
+// db.courieraggregators.find({fullName: 'Edil Kulzhabay'})
 // db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
 
 // db.orders.find({
