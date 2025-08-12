@@ -32,7 +32,7 @@ export const sendEmailAboutAggregator = (mail, subject, text) => {
     const mailOptions = {
         from: "info@tibetskaya.kz",
         to: mail,
-        subject: subject === "add" ? "Добавлен новый заказ" : subject === "cancelled" ? "Курьер отменил заказ" : subject === "online" ? "Курьер появился в сети" : "Курьер вышел из сети",
+        subject: subject === "add" ? "Добавлен новый заказ" : subject === "cancelled" ? "Курьер отменил заказ" : subject === "online" ? "Курьер появился в сети" : subject === "bottles" ? "Курьеру отпустили бутыли" : "Курьер вышел из сети",
         text: text,
     };
 
