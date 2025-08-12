@@ -5,6 +5,7 @@ import Queue from "../Models/Queue.js";
 import User from "../Models/User.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import bcrypt from "bcrypt";
+import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
 
 // Маппинг между франчайзи и курьерами по fullName
 const franchiseeCourierMapping = {
@@ -165,6 +166,9 @@ export const departmentAction = async (req, res) => {
                 courier.capacity19 = (courier.capacity19 || 0) + data.b191kol + data.b197kol;
                 await courier.save();
                 console.log(`Обновлены данные курьера ${courierFullName}: capacity12=${courier.capacity12}, capacity19=${courier.capacity19}`);
+                const mail = "edil.kulzhabay01@gmail.com"
+                const sendText = `${courierFullName} отпустили бутыли`
+                sendEmailAboutAggregator(mail, "bottles", sendText)
             } else {
                 console.log(`Курьер с именем ${courierFullName} не найден`);
             }
