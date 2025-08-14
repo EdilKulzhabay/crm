@@ -392,13 +392,13 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && changeData) {
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} появился в сети`
             sendEmailAboutAggregator(mail, "online", sendText)
         }
 
         if (changeField === "onTheLine" && !changeData) {
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} вышел из сети`
             sendEmailAboutAggregator(mail, "offline", sendText)
         }
@@ -820,7 +820,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             }
         }, 15000);
         
-        sendEmailAboutAggregator("edil.kulzhabay01@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+        sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -1610,12 +1610,16 @@ export const resendNotificationToCourier = async (req, res) => {
 //     {
 //         _id: {
 //             $in: [
-//                 ObjectId("6899d26dc58bb0f718418521")
+//                 ObjectId("689da2201c1fa78eb4e61949"),
+//                 ObjectId("689da1f31c1fa78eb4e6191a"),
+//                 ObjectId("689c98da1c1fa78eb4e5a3a6"),
+//                 ObjectId("689c98d21c1fa78eb4e5a38e"),
+//                 ObjectId("689da20d1c1fa78eb4e61932")
 //             ]
 //         }
 //     },
 //     {
-//         $set: { status: "delivered", courierAggregator: ObjectId("683ef856ad027297329cba19") }
+//         $set: { status: "delivered", courierAggregator: ObjectId("683ef856ad027297329cba19"), transfer: true, transferredFranchise: "Таскын Абикен" }
 //     }
 // )
 
@@ -1708,7 +1712,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //  db.courieraggregators.updateOne({fullName: 'Edil Kulzhabay'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-// db.courieraggregators.find({fullName: 'Тасқын Әбікен'})
+// db.courieraggregators.find({fullName: 'Бекет Сапарбаев'})
 // db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
 
 // db.orders.find({
