@@ -302,28 +302,30 @@ export default function AddOrder() {
                         </div>
                     </Li>
                 }
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        <div>Выберите курьера:</div>
-                        <MyButton
-                            click={() => {
-                                setCouriersModal(true);
-                            }}
-                        >
-                            <span className={clsx("", {
-                                "text-green-400": courier === null,
-                                "text-red": courier !== null
-                            })}>
-                                Выбрать
-                            </span>
-                        </MyButton>
-                        {courier && (
-                            <div className="flex items-center gap-x-3 flex-wrap">
-                                <div>|</div> <div>{courier.fullName}</div>{" "}
-                            </div>
-                        )}
-                    </div>
-                </Li>
+                {userData?.userName !== "Vasiliy" && 
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Выберите курьера:</div>
+                            <MyButton
+                                click={() => {
+                                    setCouriersModal(true);
+                                }}
+                            >
+                                <span className={clsx("", {
+                                    "text-green-400": courier === null,
+                                    "text-red": courier !== null
+                                })}>
+                                    Выбрать
+                                </span>
+                            </MyButton>
+                            {courier && (
+                                <div className="flex items-center gap-x-3 flex-wrap">
+                                    <div>|</div> <div>{courier.fullName}</div>{" "}
+                                </div>
+                            )}
+                        </div>
+                    </Li>
+                }
                 <Li>
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>Выберите адрес:</div>
