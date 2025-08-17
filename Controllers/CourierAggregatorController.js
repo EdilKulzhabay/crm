@@ -1610,11 +1610,8 @@ export const resendNotificationToCourier = async (req, res) => {
 //     {
 //         _id: {
 //             $in: [
-//                 ObjectId("689da2201c1fa78eb4e61949"),
-//                 ObjectId("689da1f31c1fa78eb4e6191a"),
-//                 ObjectId("689c98da1c1fa78eb4e5a3a6"),
-//                 ObjectId("689c98d21c1fa78eb4e5a38e"),
-//                 ObjectId("689da20d1c1fa78eb4e61932")
+//                 ObjectId("689df5041c1fa78eb4e6c55c"),
+//                 ObjectId("689dfb6d1c1fa78eb4e6d3fd")
 //             ]
 //         }
 //     },
@@ -1712,7 +1709,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
 //  db.courieraggregators.updateOne({fullName: 'Edil Kulzhabay'}, { $set: {  order: null, orders:[] }})
 //   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-// db.courieraggregators.find({fullName: 'Бекет Сапарбаев'})
+// db.courieraggregators.find({fullName: 'Василий Яковлев'})
 // db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
 
 // db.orders.find({
