@@ -592,40 +592,42 @@ export default function OrderPage() {
                         <div>{order?.courier?.fullName}</div>
                     </div>
                 </Div>
-                <Li>
-                    <div className="flex items-center gap-x-3 flex-wrap">
-                        {order?.courier?._id && <LinkButton href={`/CourierPage/${order?.courier?._id}`}>
-                            Просмотр
-                        </LinkButton>
-                        }
-                        
-                        <MyButton
-                            click={() => {
-                                setCouriersModal(true);
-                            }}
-                        >
-                            {order?.courier?._id ? "Изменить " : "Назначить " }курьера
-                        </MyButton>
-
-                        {orderCourier &&
-                                <MyButton
-                                    click={() => {
-                                        updateOrder("courier", orderCourier);
-                                    }}
-                                >
-                                    <span className="text-green-400">
-                                    Применить
-                                    </span>
-                                </MyButton>
+                {userData?.userName !== "Vasiliy" && 
+                    <Li>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            {order?.courier?._id && <LinkButton href={`/CourierPage/${order?.courier?._id}`}>
+                                Просмотр
+                            </LinkButton>
                             }
-                        {orderCourier &&
-                            orderCourier?._id !== order?.courier?._id && (
-                                <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>|</div> <div>{orderCourier.fullName}</div>{" "}
-                                </div>
-                            )}
-                    </div>
-                </Li>
+                            
+                            <MyButton
+                                click={() => {
+                                    setCouriersModal(true);
+                                }}
+                            >
+                                {order?.courier?._id ? "Изменить " : "Назначить " }курьера
+                            </MyButton>
+
+                            {orderCourier &&
+                                    <MyButton
+                                        click={() => {
+                                            updateOrder("courier", orderCourier);
+                                        }}
+                                    >
+                                        <span className="text-green-400">
+                                        Применить
+                                        </span>
+                                    </MyButton>
+                                }
+                            {orderCourier &&
+                                orderCourier?._id !== order?.courier?._id && (
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>|</div> <div>{orderCourier.fullName}</div>{" "}
+                                    </div>
+                                )}
+                        </div>
+                    </Li>
+                }
 
                 <Div />
                 <Div>Комментарии к заказу:</Div>
