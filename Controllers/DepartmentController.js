@@ -166,7 +166,8 @@ export const departmentAction = async (req, res) => {
                 courier.capacity19 = (courier.capacity19 || 0) + data.b191kol + data.b197kol;
                 await courier.save();
                 console.log(`Обновлены данные курьера ${courierFullName}: capacity12=${courier.capacity12}, capacity19=${courier.capacity19}`);
-                const mail = "outofreach5569@gmail.com"
+                // const mail = "outofreach5569@gmail.com"
+                const mail = "edil.kulzhabay01@gmail.com"
                 const sendText = `${courierFullName} отпустили бутыли`
                 sendEmailAboutAggregator(mail, "bottles", sendText)
             } else {
