@@ -70,31 +70,36 @@ export const addOrder = async (req, res) => {
         await order.save();
 
         if (id === "66fc0cc6953c2dbbc86c2132") {
-            const mail = "outofreach5569@gmail.com"
+            // const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Бекет добавил заказ по адресу ${address.actual}`
             sendEmailAboutAggregator(mail, "add", sendText)
         }
 
         if (id === "66fc0d01953c2dbbc86c2135") {
-            const mail = "outofreach5569@gmail.com"
+            // const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Василий добавил заказ по адресу ${address.actual}`
             sendEmailAboutAggregator(mail, "add", sendText)
         }
 
         if (id === "66fc0d3e953c2dbbc86c2138") {
-            const mail = "outofreach5569@gmail.com"
+            // const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Ринат добавил заказ по адресу ${address.actual}`
             sendEmailAboutAggregator(mail, "add", sendText)
         }
 
         if (id === "67010493e6648af4cb0213b7") {
-            const mail = "outofreach5569@gmail.com"
+            // const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Айдынбек добавил заказ по адресу ${address.actual}`
             sendEmailAboutAggregator(mail, "add", sendText)
         }
 
         if (id === "66f15c557a27c92d447a16a0") {
-            const mail = "outofreach5569@gmail.com"
+            // const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Admin добавил заказ по адресу ${address.actual}`
             sendEmailAboutAggregator(mail, "add", sendText)
         }
