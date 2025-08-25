@@ -392,15 +392,13 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && changeData) {
-            // const mail = "outofreach5569@gmail.com"
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} появился в сети`
             sendEmailAboutAggregator(mail, "online", sendText)
         }
 
         if (changeField === "onTheLine" && !changeData) {
-            // const mail = "outofreach5569@gmail.com"
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} вышел из сети`
             sendEmailAboutAggregator(mail, "offline", sendText)
         }
@@ -1612,13 +1610,14 @@ export const resendNotificationToCourier = async (req, res) => {
 //     {
 //         _id: {
 //             $in: [
-//                 ObjectId("689df5041c1fa78eb4e6c55c"),
-//                 ObjectId("689dfb6d1c1fa78eb4e6d3fd")
+//                 ObjectId("68abf63d4b56ede356d8288a"),
+//                 ObjectId("68abfabe4b56ede356d84acb"),
+//                 ObjectId("68a96da94b56ede356d75c05")
 //             ]
 //         }
 //     },
 //     {
-//         $set: { status: "delivered", courierAggregator: ObjectId("683ef856ad027297329cba19"), transfer: true, transferredFranchise: "Таскын Абикен" }
+//         $set: { status: "awaitingOrder", courierAggregator: null }
 //     }
 // )
 
