@@ -583,7 +583,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         }
 
         // Таскын Абикен
-        if (courierName.includes("тасқын") && !franchiseeName.includes("таскын")) {
+        if ((courierName.includes("тасқын") || courierName.includes("идрис")) && !franchiseeName.includes("таскын")) {
             await Order.updateOne(
                 { _id: order._id },
                 {
@@ -1050,7 +1050,7 @@ export const appointmentFranchisee = async (req, res) => {
             }
 
             // Таскын Абикен
-            if (courierName.includes("тасқын") && !franchiseeName.includes("таскын")) {
+            if ((courierName.includes("тасқын") || courierName.includes("идрис")) && !franchiseeName.includes("таскын")) {
                 await Order.updateOne(
                     { _id: order._id },
                     {
