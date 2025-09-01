@@ -112,7 +112,23 @@ const ClientSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        expoPushToken: []
+        expoPushToken: [],
+        clientType: {
+            type: Boolean,
+            default: true
+        },
+        clientBottleType: {
+            type: Number,
+            default: 1,
+        },
+        clientBottleCount: {
+            type: Number,
+            default: 0,
+        },
+        clientBottleCredit: {
+            type: Numer,
+            default: false
+        }
     },
     {
         timestamps: true,
