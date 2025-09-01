@@ -53,6 +53,8 @@ export default function ClientPage() {
     const [password, setPassword] = useState("")
     const [addPassword, setAddPassword] = useState(false)
     const [selectAddress, setSelectAddress] = useState(null)
+    const [clientBottleCount, setClientBottleCount] = useState(0)
+    const [clientBottleCredit, setClientBottleCredit] = useState(0)
 
     const [needVerification, setNeedVerification] = useState(false)
 
@@ -527,6 +529,48 @@ export default function ClientPage() {
                             }}>{client?.password ? "Изменить" : "Добавить"}</MyButton>
                         </>}
                         
+                    </Li>
+                    <Li>
+                        <div>Тип клиента: {client?.clientType ? "Физ лицо" : "Юр лицо"}</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-green-400">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("clientType", true)}}>Физ лицо</button>
+                                <div>/</div>
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("clientType", false)}}>Юр лицо</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Тип бутылки: {client?.clientBottleType}</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-green-400">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("clientBottleType", 1)}}>1</button>
+                                <div>/</div>
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("clientBottleType", 7)}}>7</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Кол-во бутылок: {client?.clientBottleCount}</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-green-400">
+                            <MyInput
+                                value={clientBottleCount}
+                                change={(e) => {setClientBottleCount(e.target.value)}}
+                                color="white"
+                            />
+                            <MyButton click={() => {updateClientData("clientBottleCount", clientBottleCount)}}>Сохранить</MyButton>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Долг по бутылям: {client?.clientBottleCredit}</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-green-400">
+                            <MyInput
+                                value={clientBottleCredit}
+                                change={(e) => {setClientBottleCredit(e.target.value)}}
+                                color="white"
+                            />
+                            <MyButton click={() => {updateClientData("clientBottleCredit", clientBottleCredit)}}>Сохранить</MyButton>
+                        </div>
                     </Li>
                 </>
 

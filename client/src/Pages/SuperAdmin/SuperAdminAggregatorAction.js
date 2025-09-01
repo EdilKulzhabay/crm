@@ -44,6 +44,15 @@ const createStarIcon = () => {
     });
 };
 
+const createSquareIcon = (color) => {
+    return L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: ${color}; width: 16px; height: 16px; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+    });
+};
+
 export default function SuperAdminAggregatorAction() {
     const userData = useFetchUserData()
     const [loading, setLoading] = useState(false)
@@ -434,7 +443,11 @@ export default function SuperAdminAggregatorAction() {
                             });
                         }
                         
-                        return (
+                        // Определяем тип клиента для выбора формы маркера
+                        const clientType = order.client?.clientType;
+                        const isCircle = clientType === true;
+                        
+                        return isCircle ? (
                             <Circle
                                 key={`order-${order.originalIndex}`}
                                 center={[order.offsetLat, order.offsetLon]}
@@ -450,6 +463,7 @@ export default function SuperAdminAggregatorAction() {
                                         <strong>Заказ: {order.client?.fullName}</strong><br />
                                         Адрес: {order.address?.actual}<br />
                                         Статус: {order.status}<br />
+                                        Тип клиента: {clientType ? 'Круглый' : 'Квадратный'}<br />
                                         {order.date?.time && order.date.time !== "" && (
                                             <><strong>Время доставки: {order.date.time}</strong><br /></>
                                         )}
@@ -482,6 +496,50 @@ export default function SuperAdminAggregatorAction() {
                                     </div>
                                 </Popup>
                             </Circle>
+                        ) : (
+                            <Marker
+                                key={`order-${order.originalIndex}`}
+                                position={[order.offsetLat, order.offsetLon]}
+                                icon={createSquareIcon(color)}
+                            >
+                                <Popup>
+                                    <div className="min-w-[300px]">
+                                        <strong>Заказ: {order.client?.fullName}</strong><br />
+                                        Адрес: {order.address?.actual}<br />
+                                        Статус: {order.status}<br />
+                                        Тип клиента: {clientType ? 'Круглый' : 'Квадратный'}<br />
+                                        {order.date?.time && order.date.time !== "" && (
+                                            <><strong>Время доставки: {order.date.time}</strong><br /></>
+                                        )}
+                                        {bottles12 > 0 && `${bottles12} 12л бутылей, `}
+                                        {bottles19 > 0 && `${bottles19} 19л бутылей`}
+                                        {isAssigned && (
+                                            <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
+                                        )}
+                                        <br /><br />
+                                        {order.status === "awaitingOrder" && !isAssigned && (
+                                            <button 
+                                                onClick={() => openAssignModal(order)}
+                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
+                                            >
+                                                Назначить курьеру
+                                            </button>
+                                        )}
+                                        {isAssigned && (
+                                            <button 
+                                                onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
+                                                disabled={removeLoading}
+                                                className="bg-red text-white font-bold py-2 px-4 rounded w-full"
+                                            >
+                                                {removeLoading ? "Убирается..." : "Убрать у курьера"}
+                                            </button>
+                                        )}
+                                        {!isAssigned && order.status !== "awaitingOrder" && (
+                                            <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
+                                        )}
+                                    </div>
+                                </Popup>
+                            </Marker>
                         );
                     })}
 
@@ -617,6 +675,7 @@ export default function SuperAdminAggregatorAction() {
                 <div className="absolute top-4 right-4 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg z-10 text-black">
                     <h4 className="font-bold mb-2">Легенда:</h4>
                     <div className="space-y-2">
+                        <div className="text-xs font-semibold text-gray-600 mt-2 mb-1">Статусы заказов:</div>
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
                             <span className="text-sm">Ожидают заказа</span>
@@ -641,6 +700,18 @@ export default function SuperAdminAggregatorAction() {
                             <div className="w-4 h-4 bg-black rounded-full mr-2"></div>
                             <span className="text-sm">Отменены</span>
                         </div>
+                        
+                        <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Типы клиентов:</div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-gray-400 rounded-full mr-2"></div>
+                            <span className="text-sm">Круглые клиенты</span>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-gray-400 mr-2"></div>
+                            <span className="text-sm">Квадратные клиенты</span>
+                        </div>
+                        
+                        <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Другие элементы:</div>
                         <div className="flex items-center">
                             <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-purple-500 mr-2"></div>
                             <span className="text-sm">Курьеры</span>
