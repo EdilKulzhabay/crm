@@ -4,7 +4,7 @@ import Container from "../../Components/Container"
 import Div from "../../Components/Div"
 import useFetchUserData from "../../customHooks/useFetchUserData"
 import MyButton from "../../Components/MyButton"
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, Polyline } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, Rectangle, Polygon, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -44,14 +44,7 @@ const createStarIcon = () => {
     });
 };
 
-const createSquareIcon = (color) => {
-    return L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div style="background-color: ${color}; width: 16px; height: 16px; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-    });
-};
+
 
 export default function SuperAdminAggregatorAction() {
     const userData = useFetchUserData()
@@ -497,10 +490,18 @@ export default function SuperAdminAggregatorAction() {
                                 </Popup>
                             </Circle>
                         ) : (
-                            <Marker
+                            <Rectangle
                                 key={`order-${order.originalIndex}`}
-                                position={[order.offsetLat, order.offsetLon]}
-                                icon={createSquareIcon(color)}
+                                bounds={[
+                                    [order.offsetLat - 0.0007, order.offsetLon - 0.0007],
+                                    [order.offsetLat + 0.0007, order.offsetLon + 0.0007]
+                                ]}
+                                pathOptions={{
+                                    color: color,
+                                    fillColor: color,
+                                    fillOpacity: 0.7,
+                                    weight: 2
+                                }}
                             >
                                 <Popup>
                                     <div className="min-w-[300px]">
@@ -539,7 +540,7 @@ export default function SuperAdminAggregatorAction() {
                                         )}
                                     </div>
                                 </Popup>
-                            </Marker>
+                            </Rectangle>
                         );
                     })}
 
