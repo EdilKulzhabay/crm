@@ -126,7 +126,7 @@ const ClientSchema = new mongoose.Schema(
             default: 0,
         },
         clientBottleCredit: {
-            type: Numer,
+            type: Number,
             default: false
         }
     },
