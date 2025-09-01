@@ -540,6 +540,7 @@ export default function ClientPage() {
                             ]
                         </div>
                     </Li>
+                    {userData?.role === "superAdmin" && <>
                     <Li>
                         <div>Тип бутылки: {client?.clientBottleType}</div>
                         <div className="flex items-center gap-x-2 flex-wrap text-green-400">
@@ -572,6 +573,7 @@ export default function ClientPage() {
                             <MyButton click={() => {updateClientData("clientBottleCredit", clientBottleCredit)}}>Сохранить</MyButton>
                         </div>
                     </Li>
+                    </>}
                 </>
 
                 <Div />
