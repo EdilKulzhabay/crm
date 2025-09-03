@@ -713,7 +713,7 @@ export const getOrdersForExcel = async (req, res) => {
             })
         }
         const filter = {
-            status: { $in: ["delivered", "cancelled"] },
+            status: "delivered",
             "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
         }
 
@@ -864,7 +864,7 @@ export const getCompletedOrders = async (req, res) => {
         }
 
         const filter = {
-            status: { $in: ["delivered", "cancelled"] },
+            status: "delivered",
             "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
         }
 
