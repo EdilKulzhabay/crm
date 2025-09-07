@@ -58,6 +58,12 @@ export default function DepartamentGivingSingle() {
     };
 
     const give = (receivingFinish) => {
+        if ((data.b121kol === 0 || data.b121kol === "") && (data.b191kol === 0 || data.b191kol === "") && (data.b197kol === 0 || data.b197kol === "")) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Необходимо ввести количество бутылей");
+            return;
+        }
         const sendData = {
             b121kol: Number(data.b121kol),
             b191kol: Number(data.b191kol),
