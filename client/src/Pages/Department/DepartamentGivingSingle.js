@@ -58,7 +58,17 @@ export default function DepartamentGivingSingle() {
     };
 
     const give = (receivingFinish) => {
-        if ((data.b121kol === 0 || data.b121kol === "") && (data.b191kol === 0 || data.b191kol === "") && (data.b197kol === 0 || data.b197kol === "")) {
+        let isNotEmpty = false;
+        if (data.b121kol !== "") {
+            isNotEmpty = true;
+        }
+        if (data.b191kol !== "") {
+            isNotEmpty = true;
+        }
+        if (data.b197kol !== "") {
+            isNotEmpty = true;
+        }
+        if (!isNotEmpty) {
             setOpen(true);
             setStatus("error");
             setMessage("Необходимо ввести количество бутылей");
