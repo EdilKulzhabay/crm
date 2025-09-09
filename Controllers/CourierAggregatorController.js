@@ -598,6 +598,22 @@ export const completeOrderCourierAggregator = async (req, res) => {
             );
         }
 
+        // Кудайберди Кулжабай
+        if (courierName.includes("Кұдайберді") && !franchiseeName.includes("Кудайберди")) {
+            await Order.updateOne(
+                { _id: order._id },
+                {
+                    $set: {
+                        status: "delivered",
+                        courierAggregator: courierId,
+                        products: courier1.order.products,
+                        transferred: true,
+                        transferredFranchise: "Кудайберди Кулжабай"
+                    }
+                }
+            );
+        }
+
         // Сандыбаев Айдынбек
         if (courierName.includes("айдынбек") && !franchiseeName.includes("айдынбек")) {
             await Order.updateOne(
@@ -1057,6 +1073,22 @@ export const appointmentFranchisee = async (req, res) => {
                         $set: {
                             transferred: true,
                             transferredFranchise: "Таскын Абикен"
+                        }
+                    }
+                );
+            }
+
+            // Кудайберди Кулжабай
+            if (courierName.includes("Кұдайберді") && !franchiseeName.includes("Кудайберди")) {
+                await Order.updateOne(
+                    { _id: order._id },
+                    {
+                        $set: {
+                            status: "delivered",
+                            courierAggregator: courierId,
+                            products: courier1.order.products,
+                            transferred: true,
+                            transferredFranchise: "Кудайберди Кулжабай"
                         }
                     }
                 );
