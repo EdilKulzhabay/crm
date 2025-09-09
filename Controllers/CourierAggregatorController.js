@@ -816,6 +816,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             try {
                 // Получаем актуальные данные курьера после изменений
                 const updatedCourier = await CourierAggregator.findById(id);
+                const courierName = updatedCourier?.fullName?.toLowerCase() || '';
                 
                 if (updatedCourier && updatedCourier.orders && updatedCourier.orders.length > 0) {
                     const nextOrderData = updatedCourier.orders[0];
@@ -1298,6 +1299,7 @@ export const assignOrderToCourier = async (req, res) => {
 
         // Находим курьера
         const courier = await CourierAggregator.findById(courierId);
+        const courierName = courier?.fullName?.toLowerCase() || '';
 
         if (!courier) {
             return res.status(404).json({
