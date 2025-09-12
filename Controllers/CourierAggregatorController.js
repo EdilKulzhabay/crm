@@ -700,7 +700,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 const nextOrder = updatedCourier.orders[0];
                 const messageBody = `Следующий заказ: ${nextOrder.clientTitle}`;
 
-                if (courierName.includes("кұдайберді") || courierName.includes("құдайберді") || courierName.includes("тасқын") || courierName.includes("бекет")) {
+                if (courierName.includes("тасқын") || courierName.includes("бекет")) {
                     await CourierAggregator.updateOne({_id: courierId}, {
                         $set: {
                             order: nextOrder
@@ -828,7 +828,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                     if (nextOrder) {
                         const messageBody = `Новый заказ: ${nextOrder.client.fullName}`;
 
-                        if (courierName.includes("кұдайберді") || courierName.includes("құдайберді") || courierName.includes("тасқын") || courierName.includes("бекет")) {
+                        if (courierName.includes("тасқын") || courierName.includes("бекет")) {
                             await CourierAggregator.updateOne({_id: courierId}, {
                                 $set: {
                                     order: nextOrderData
@@ -1401,7 +1401,7 @@ export const assignOrderToCourier = async (req, res) => {
             try {
                 const messageBody = `Новый заказ: ${order.client.fullName}`;
 
-                if (courierName.includes("кұдайберді") || courierName.includes("құдайберді") || courierName.includes("тасқын") || courierName.includes("бекет")) {
+                if (courierName.includes("тасқын") || courierName.includes("бекет")) {
                     await CourierAggregator.updateOne({_id: courierId}, {
                         $set: {
                             order: orderObject
@@ -1633,7 +1633,7 @@ export const resendNotificationToCourier = async (req, res) => {
         try {
             const messageBody = `Напоминание: заказ ${order.client.fullName}`;
 
-            if (courierName.includes("кұдайберді") || courierName.includes("құдайберді") || courierName.includes("тасқын") || courierName.includes("бекет")) {
+            if (courierName.includes("тасқын") || courierName.includes("бекет")) {
                 console.log("Отправляем повторное уведомление курьеру через CourierAggregator.updateOne");
             } else {
                 const { pushNotification } = await import("../pushNotification.js");
