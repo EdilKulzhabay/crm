@@ -392,13 +392,13 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && changeData) {
-            const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Курьер ${courier.fullName} появился в сети`
             sendEmailAboutAggregator(mail, "online", sendText)
         }
 
         if (changeField === "onTheLine" && !changeData) {
-            const mail = "outofreach5569@gmail.com"
+            const mail = "edil.kulzhabay01@gmail.com"
             const sendText = `Курьер ${courier.fullName} вышел из сети`
             sendEmailAboutAggregator(mail, "offline", sendText)
         }
@@ -862,7 +862,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             }
         }, 15000);
         
-        sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+        sendEmailAboutAggregator("edil.kulzhabay01@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -1678,7 +1678,11 @@ export const resendNotificationToCourier = async (req, res) => {
 //     {
 //       _id: {
 //         $in: [
-//           ObjectId("6891837a5ebf39f0a258f0f9")
+//           ObjectId("68becbf811d3408eb6b9bddf"),
+//           ObjectId("68bef08c11d3408eb6b9fd70"),
+//           ObjectId("68becbf811d3408eb6b9bddf"),
+//           ObjectId("68becbf811d3408eb6b9bddf"),
+//           ObjectId("68becbf811d3408eb6b9bddf"),
 //         ]
 //       }
 //     },
@@ -1691,14 +1695,12 @@ export const resendNotificationToCourier = async (req, res) => {
 //     {
 //         _id: {
 //             $in: [
-//                 ObjectId("68abf63d4b56ede356d8288a"),
-//                 ObjectId("68abfabe4b56ede356d84acb"),
-//                 ObjectId("68a96da94b56ede356d75c05")
+//                 ObjectId("68c02ee18f8a35991db9d515"),
 //             ]
 //         }
 //     },
 //     {
-//         $set: { status: "awaitingOrder", courierAggregator: null }
+//         $set: { status: "delivered", courierAggregator: ObjectId("6827757c3014c4da8e8f8813"), transferred: true, transferredFranchise: "Кудайберди Кулжабай" }
 //     }
 // )
 
@@ -1730,7 +1732,7 @@ export const resendNotificationToCourier = async (req, res) => {
 //     }
 // )
 
-// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[] }})
+// db.courieraggregators.updateOne({fullName: "Канат Ахметов"}, { $set: { onTheLine: false }})
 
 // db.orders.updateMany(
 //     {
