@@ -700,22 +700,14 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 const nextOrder = updatedCourier.orders[0];
                 const messageBody = `Следующий заказ: ${nextOrder.clientTitle}`;
 
-                if (courierName.includes("тасқын") || courierName.includes("бекет")) {
-                    await CourierAggregator.updateOne({_id: courierId}, {
-                        $set: {
-                            order: nextOrder
-                        }
-                    })
-                } else {
-                    const { pushNotification } = await import("../pushNotification.js");
-                    await pushNotification(
-                        "newOrder",
-                        messageBody,
-                        [updatedCourier.notificationPushToken],
-                        "newOrder",
-                        nextOrder
-                    );
-                }
+                const { pushNotification } = await import("../pushNotification.js");
+                await pushNotification(
+                    "newOrder",
+                    messageBody,
+                    [updatedCourier.notificationPushToken],
+                    "newOrder",
+                    nextOrder
+                );
             } catch (notificationError) {
                 console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
             }
@@ -828,31 +820,14 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                     if (nextOrder) {
                         const messageBody = `Новый заказ: ${nextOrder.client.fullName}`;
 
-                        if (courierName.includes("тасқын") || courierName.includes("бекет")) {
-                            await CourierAggregator.updateOne({_id: courierId}, {
-                                $set: {
-                                    order: nextOrderData
-                                }
-                            })
-                        } else {
-                            const { pushNotification } = await import("../pushNotification.js");
-                            await pushNotification(
-                                "newOrder",
-                                messageBody,
-                                [updatedCourier.notificationPushToken],
-                                "newOrder",
-                                nextOrderData
-                            );
-                        }
-
-                        // const { pushNotification } = await import("../pushNotification.js");
-                        // await pushNotification(
-                        //     "newOrder",
-                        //     messageBody,
-                        //     [updatedCourier.notificationPushToken],
-                        //     "newOrder",
-                        //     nextOrderData
-                        // );
+                        const { pushNotification } = await import("../pushNotification.js");
+                        await pushNotification(
+                            "newOrder",
+                            messageBody,
+                            [updatedCourier.notificationPushToken],
+                            "newOrder",
+                            nextOrderData
+                        );
                         
                         console.log(`✅ Отправлено уведомление о следующем заказе курьеру ${updatedCourier.fullName}`);
                     }
@@ -1400,23 +1375,6 @@ export const assignOrderToCourier = async (req, res) => {
             // Отправляем уведомление курьеру
             try {
                 const messageBody = `Новый заказ: ${order.client.fullName}`;
-
-                if (courierName.includes("тасқын") || courierName.includes("бекет")) {
-                    await CourierAggregator.updateOne({_id: courierId}, {
-                        $set: {
-                            order: orderObject
-                        }
-                    })
-                } else {
-                    const { pushNotification } = await import("../pushNotification.js");
-                    await pushNotification(
-                        "newOrder",
-                        messageBody,
-                        [courier.notificationPushToken],
-                        "newOrder",
-                        orderObject
-                    );
-                }
                 
                 const { pushNotification } = await import("../pushNotification.js");
                 await pushNotification(
@@ -1633,19 +1591,15 @@ export const resendNotificationToCourier = async (req, res) => {
         try {
             const messageBody = `Напоминание: заказ ${order.client.fullName}`;
 
-            if (courierName.includes("тасқын") || courierName.includes("бекет")) {
-                console.log("Отправляем повторное уведомление курьеру через CourierAggregator.updateOne");
-            } else {
-                const { pushNotification } = await import("../pushNotification.js");
-                
-                await pushNotification(
-                    "newOrder",
-                    messageBody,
-                    [courier.notificationPushToken],
-                    "newOrder",
-                    firstOrderData
-                );
-            }
+            const { pushNotification } = await import("../pushNotification.js");
+            
+            await pushNotification(
+                "newOrder",
+                messageBody,
+                [courier.notificationPushToken],
+                "newOrder",
+                firstOrderData
+            );
 
             console.log("Повторное уведомление успешно отправлено курьеру");
 
