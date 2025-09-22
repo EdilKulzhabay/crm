@@ -144,6 +144,10 @@ const ClientSchema = new mongoose.Schema(
         notificationPushToken: {
             type: String,
             default: "",
+        },
+        isStartedHydration: {
+            type: Boolean,
+            default: false
         }
     },
     {
