@@ -1632,16 +1632,12 @@ export const resendNotificationToCourier = async (req, res) => {
 //     {
 //       _id: {
 //         $in: [
-//           ObjectId("68becbf811d3408eb6b9bddf"),
-//           ObjectId("68bef08c11d3408eb6b9fd70"),
-//           ObjectId("68becbf811d3408eb6b9bddf"),
-//           ObjectId("68becbf811d3408eb6b9bddf"),
-//           ObjectId("68becbf811d3408eb6b9bddf"),
+//           ObjectId("68c826bb52d3c0402026e021")
 //         ]
 //       }
 //     },
 //     {
-//       $set: {  }
+//       $set: { sum: 7400, income: 7400 }
 //     }
 //   )
 

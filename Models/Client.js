@@ -22,10 +22,22 @@ const ClientSchema = new mongoose.Schema(
         },
         addresses: [
             {
+                _id: {
+                    type: String,  // Позволяем строковые ID
+                },
                 name: {
                     type: String,
                 },
+                city: {
+                    type: String,
+                },
                 street: {
+                    type: String,
+                },
+                floor: {
+                    type: String,
+                },
+                apartment: {
                     type: String,
                 },
                 link: {
@@ -128,6 +140,10 @@ const ClientSchema = new mongoose.Schema(
         clientBottleCredit: {
             type: Number,
             default: false
+        },
+        notificationPushToken: {
+            type: String,
+            default: "",
         }
     },
     {
