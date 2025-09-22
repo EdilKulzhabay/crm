@@ -26,7 +26,7 @@ const generateCode = () => {
     const characters = "0123456789";
     let randomPart = "";
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
         randomPart += characters.charAt(
             Math.floor(Math.random() * characters.length)
         );
@@ -40,13 +40,14 @@ const codes = {};
 export const sendMail = async (req, res) => {
     const { mail } = req.body;
 
+
     const candidate = await Client.findOne({ mail: mail?.toLowerCase() });
 
-    if (candidate) {
-        return res.status(409).json({
-            message: "Пользователь с такой почтой уже существует",
-        });
-    }
+    // if (candidate) {
+    //     return res.status(409).json({
+    //         message: "Пользователь с такой почтой уже существует",
+    //     });
+    // }
 
     const confirmCode = generateCode();
 
@@ -62,10 +63,16 @@ export const sendMail = async (req, res) => {
     transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
             console.log(error);
-            res.status(500).send("Ошибка при отправке письма");
+            res.status(500).json({
+                success: false,
+                message: "Ошибка при отправке письма"
+            });
         } else {
             console.log("Email sent: " + info.response);
-            res.status(200).send("Письмо успешно отправлено");
+            res.status(200).json({
+                success: true,
+                message: "Письмо успешно отправлено"
+            });
         }
     });
 };
@@ -100,10 +107,16 @@ export const sendMailRecovery = async (req, res) => {
     transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
             console.log(error);
-            res.status(500).send("Ошибка при отправке письма");
+            res.status(500).json({
+                success: false,
+                message: "Ошибка при отправке письма"
+            });
         } else {
             console.log("Email sent: " + info.response);
-            res.status(200).send("Письмо успешно отправлено");
+            res.status(200).json({
+                success: true,
+                message: "Письмо успешно отправлено"
+            });
         }
     });
 };
@@ -111,11 +124,20 @@ export const sendMailRecovery = async (req, res) => {
 export const codeConfirm = async (req, res) => {
     try {
         const { mail, code } = req.body;
+        console.log("codeConfirm req.body: ", req.body);
         if (codes[mail] === code) {
+            console.log("codeConfirm code is correct");
             delete codes[mail]; // Удаляем код после успешного подтверждения
-            res.status(200).send("Код успешно подтвержден");
+            res.status(200).json({
+                success: true,
+                message: "Код успешно подтвержден"
+            });
         } else {
-            res.status(400).send("Неверный код");
+            console.log("codeConfirm code is incorrect");
+            res.status(400).json({
+                success: false,
+                message: "Неверный код"
+            });
         }
     } catch (error) {
         console.log(error);
@@ -127,14 +149,13 @@ export const codeConfirm = async (req, res) => {
 
 export const clientRegister = async (req, res) => {
     try {
-        const { phone, mail, type } = req.body;
-
-        const user = await User.findOne({role: "superAdmin"})
-        const superAdminId = user._id
+        const { fullName, phone, mail } = req.body;
+        const superAdminId = "66fc01a4803e3f68963c14f3"
         const candidate = await Client.findOne({ phone });
 
         if (candidate) {
             return res.status(409).json({
+                success: false,
                 message: "Пользователь с таким номером уже существует",
             });
         }
@@ -143,6 +164,7 @@ export const clientRegister = async (req, res) => {
         const hash = await bcrypt.hash(req.body.password, salt);
 
         const doc = new Client({
+            fullName,
             password: hash,
             phone,
             mail: mail?.toLowerCase(),
@@ -155,13 +177,13 @@ export const clientRegister = async (req, res) => {
             price19: 1300,
             dailyWater: 2,
             opForm: "fakt",
-            type
+            type: true
         });
 
         const client = await doc.save();
 
         const accessToken = jwt.sign(
-            { client: client },
+            { client: client._id },
             process.env.SecretKey,
             {
                 expiresIn: "30d", // Время жизни access токена (например, 15 минут)
@@ -169,7 +191,7 @@ export const clientRegister = async (req, res) => {
         );
 
         const refreshToken = jwt.sign(
-            { client: client },
+            { client: client._id },
             process.env.SecretKeyRefresh,
             {
                 expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
@@ -180,7 +202,29 @@ export const clientRegister = async (req, res) => {
             refreshToken: refreshToken,
         });
 
-        res.json({ accessToken, refreshToken: refreshToken });
+        const clientData = {
+            fullName: client._doc.fullName,
+            phone: client._doc.phone,
+            mail: client._doc.mail,
+            password: client._doc.password,
+            franchisee: client._doc.franchisee,
+            addresses: client._doc.addresses,
+            status: client._doc.status,
+            cart: client._doc.cart,
+            bonus: client._doc.bonus,
+            subscription: client._doc.subscription,
+            chooseTime: client._doc.chooseTime,
+            clientType: client._doc.clientType,
+            clientBottleType: client._doc.clientBottleType,
+            clientBottleCount: client._doc.clientBottleCount,
+            clientBottleCredit: client._doc.clientBottleCredit,
+            verify: client._doc.verify,
+            haveCompletedOrder: client._doc.haveCompletedOrder,
+            createdAt: client._doc.createdAt,
+            updatedAt: client._doc.updatedAt,
+        }
+
+        res.json({ success: true, accessToken, refreshToken: refreshToken, clientData });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -193,10 +237,14 @@ export const clientLogin = async (req, res) => {
     try {
         const { mail } = req.body;
 
+        console.log("clientLogin req.body: ", req.body);
+
         const candidate = await Client.findOne({ mail: mail?.toLowerCase() });
 
         if (!candidate) {
+            console.log("clientLogin candidate is not found");
             return res.status(404).json({
+                success: false,
                 message: "Неверный логин или пароль",
             });
         }
@@ -207,28 +255,47 @@ export const clientLogin = async (req, res) => {
         );
 
         if (!isValidPass) {
+            console.log("clientLogin isValidPass is false");
             return res.status(404).json({
+                success: false,
                 message: "Неверный логин или пароль",
             });
         }
 
         if (candidate.status !== "active") {
+            console.log("clientLogin candidate.status is not active");
             return res.status(404).json({
+                success: false,
                 message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
             });
         }
 
-        const {
-            password,
-            franchisee,
-            addresses,
-            status,
-            refreshToken,
-            ...clientData
-        } = candidate._doc;
+
+        const clientData = {
+            fullName: candidate._doc.fullName,
+            phone: candidate._doc.phone,
+            mail: candidate._doc.mail,
+            password: candidate._doc.password,
+            franchisee: candidate._doc.franchisee,
+            addresses: candidate._doc.addresses,
+            status: candidate._doc.status,
+            cart: candidate._doc.cart,
+            bonus: candidate._doc.bonus,
+            subscription: candidate._doc.subscription,
+            chooseTime: candidate._doc.chooseTime,
+            expoPushToken: candidate._doc.expoPushToken,
+            clientType: candidate._doc.clientType,
+            clientBottleType: candidate._doc.clientBottleType,
+            clientBottleCount: candidate._doc.clientBottleCount,
+            clientBottleCredit: candidate._doc.clientBottleCredit,
+            verify: candidate._doc.verify,
+            haveCompletedOrder: candidate._doc.haveCompletedOrder,
+            createdAt: candidate._doc.createdAt,
+            updatedAt: candidate._doc.updatedAt,
+        };
 
         const accessToken = jwt.sign(
-            { client: clientData },
+            { client: candidate._id },
             process.env.SecretKey,
             {
                 expiresIn: "30d", // Время жизни access токена (например, 15 минут)
@@ -236,7 +303,7 @@ export const clientLogin = async (req, res) => {
         );
 
         const refreshToken2 = jwt.sign(
-            { client: clientData },
+            { client: candidate._id },
             process.env.SecretKeyRefresh,
             {
                 expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
@@ -247,11 +314,52 @@ export const clientLogin = async (req, res) => {
             refreshToken: refreshToken2,
         });
 
-        res.json({ accessToken, refreshToken: refreshToken2 });
+        res.json({ success: true, accessToken, refreshToken: refreshToken2, clientData });
     } catch (error) {
         console.log(error);
         res.status(500).json({
             message: "Не удалось авторизоваться",
+        });
+    }
+};
+
+export const updateClientDataMobile = async (req, res) => {
+    try {
+        const { mail, field, value } = req.body;
+        console.log("updateClientDataMobile req.body: ", req.body);
+
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        if (!client) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Client not found" });
+        }
+
+        const updatedClient = await Client.findByIdAndUpdate(client._id, {
+            [field]: value
+        }, { new: true });
+
+        const clientData = {
+            _id: updatedClient._doc._id,
+            fullName: updatedClient._doc.fullName,
+            mail: updatedClient._doc.mail,
+            avatar: updatedClient._doc.avatar,
+            phone: updatedClient._doc.phone,
+            notificationPushToken: updatedClient._doc.notificationPushToken,
+            balance: updatedClient._doc.balance,
+            price12: updatedClient._doc.price12,
+            price19: updatedClient._doc.price19,
+            status: updatedClient._doc.status,
+            cart: updatedClient._doc.cart,
+            addresses: updatedClient._doc.addresses,
+            createdAt: updatedClient._doc.createdAt,
+        }
+
+        res.json({ success: true, message: "Данные успешно изменены", clientData });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
         });
     }
 };
@@ -582,48 +690,6 @@ export const getClientDataMobile = async (req, res) => {
             success: true,
             clientData,
         });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-};
-
-export const updateClientDataMobile = async (req, res) => {
-    try {
-        const { mail, field, value } = req.body;
-
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
-        if (!client) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Client not found" });
-        }
-
-        if (field === "expoPushToken") {
-            // Добавить элемент в массив, если его еще нет
-            if (!client.expoPushToken.includes(value)) {
-                client.expoPushToken.push(value);
-            }
-        } else if (field === "expoPushTokenDel") {
-            console.log("expoPushTokenDel value = ", value);
-            console.log(client.expoPushToken);
-            
-            
-            client.expoPushToken = client.expoPushToken.filter(
-                (token) => token !== value
-            );
-
-            console.log(client.expoPushToken);
-        } else {
-            // Обновить любое другое поле
-            client[field] = value;
-        }
-
-        await client.save();
-
-        res.json({ success: true, message: "Данные успешно изменены" });
     } catch (error) {
         console.log(error);
         res.status(500).json({

@@ -6,11 +6,12 @@ import Department from "../Models/Department.js";
 
 export default async (req, res, next) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+    console.log("token: ", token);
     
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.SecretKey);
-            
+            console.log("decoded: ", decoded);
             let userId, userType;
 
             if (decoded.client) {
