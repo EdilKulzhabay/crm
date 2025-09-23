@@ -22,9 +22,9 @@ const ClientSchema = new mongoose.Schema(
         },
         addresses: [
             {
-                _id: {
-                    type: String,  // Позволяем строковые ID
-                },
+                // _id: {
+                //     type: String,  // Позволяем строковые ID
+                // },
                 name: {
                     type: String,
                 },
