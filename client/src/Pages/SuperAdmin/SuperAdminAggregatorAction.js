@@ -385,7 +385,7 @@ export default function SuperAdminAggregatorAction() {
                 ))}
             </div>
 
-            <div className="lg:hidden bg-white bg-opacity-90 p-4 rounded-lg shadow-lg z-10 text-black">
+            <div className="lg:hidden mt-5 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg z-10 text-black">
                 <h4 className="font-bold mb-2">Легенда:</h4>
                 <div className="space-y-2">
                     <div className="text-xs font-semibold text-gray-600 mt-2 mb-1">Статусы заказов:</div>
