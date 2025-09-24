@@ -417,11 +417,11 @@ export default function SuperAdminAggregatorAction() {
                     <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Типы клиентов:</div>
                     <div className="flex items-center">
                         <div className="w-4 h-4 bg-gray-400 rounded-full mr-2"></div>
-                        <span className="text-sm">Круглые клиенты</span>
+                        <span className="text-sm">Физ клиенты</span>
                     </div>
                     <div className="flex items-center">
                         <div className="w-4 h-4 bg-gray-400 mr-2"></div>
-                        <span className="text-sm">Квадратные клиенты</span>
+                        <span className="text-sm">Юр клиенты</span>
                     </div>
                     
                     <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Другие элементы:</div>
@@ -760,11 +760,11 @@ export default function SuperAdminAggregatorAction() {
                         <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Типы клиентов:</div>
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-gray-400 rounded-full mr-2"></div>
-                            <span className="text-sm">Круглые клиенты</span>
+                            <span className="text-sm">Физ клиенты</span>
                         </div>
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-gray-400 mr-2"></div>
-                            <span className="text-sm">Квадратные клиенты</span>
+                            <span className="text-sm">Юр клиенты</span>
                         </div>
                         
                         <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Другие элементы:</div>
