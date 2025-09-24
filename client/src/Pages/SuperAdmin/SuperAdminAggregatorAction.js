@@ -384,6 +384,61 @@ export default function SuperAdminAggregatorAction() {
                     </div>
                 ))}
             </div>
+
+            <div className="lg:hidden bg-white bg-opacity-90 p-4 rounded-lg shadow-lg z-10 text-black">
+                <h4 className="font-bold mb-2">Легенда:</h4>
+                <div className="space-y-2">
+                    <div className="text-xs font-semibold text-gray-600 mt-2 mb-1">Статусы заказов:</div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                        <span className="text-sm">Ожидают заказа</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-orange-500 rounded-full mr-2"></div>
+                        <span className="text-sm">С временем доставки</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                        <span className="text-sm">Назначены курьеру</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
+                        <span className="text-sm">В пути</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-red rounded-full mr-2"></div>
+                        <span className="text-sm">Доставлены</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-black rounded-full mr-2"></div>
+                        <span className="text-sm">Отменены</span>
+                    </div>
+                    
+                    <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Типы клиентов:</div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-gray-400 rounded-full mr-2"></div>
+                        <span className="text-sm">Круглые клиенты</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-gray-400 mr-2"></div>
+                        <span className="text-sm">Квадратные клиенты</span>
+                    </div>
+                    
+                    <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Другие элементы:</div>
+                    <div className="flex items-center">
+                        <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-purple-500 mr-2"></div>
+                        <span className="text-sm">Курьеры</span>
+                    </div>
+                    <div className="flex items-center">
+                        <span className="text-yellow-500 mr-2">⭐</span>
+                        <span className="text-sm">Центр</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-8 h-0.5 bg-purple-500 mr-2" style={{borderTop: '2px dashed purple'}}></div>
+                        <span className="text-sm">Маршрут курьера</span>
+                    </div>
+                </div>
+            </div>
         </div>
         
         {loading ? (
@@ -673,7 +728,7 @@ export default function SuperAdminAggregatorAction() {
                 </MapContainer>
 
                 {/* Легенда карты */}
-                <div className="absolute top-4 right-4 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg z-10 text-black">
+                <div className="hidden lg:block absolute top-4 right-4 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg z-10 text-black">
                     <h4 className="font-bold mb-2">Легенда:</h4>
                     <div className="space-y-2">
                         <div className="text-xs font-semibold text-gray-600 mt-2 mb-1">Статусы заказов:</div>
