@@ -173,6 +173,7 @@ export default function ClientPage() {
                 
                 // Проверяем координаты всех адресов
                 const hasInvalidCoordinates = data.addresses?.some(address => 
+                    address == null ||
                     !address.point?.lat || 
                     !address.point?.lon || 
                     address.point.lat === null || 
@@ -253,17 +254,17 @@ export default function ClientPage() {
         let field2 = field
         if (field === "addresses") {
             const sendAddress = {
-                street: value.street,
-                house: value.house,
-                link: value.exactLink,
-                phone: value.phone,
+                street: value?.street || "",
+                house: value?.house || "",
+                link: value?.exactLink || "",
+                phone: value?.phone || "",
                 point: {
-                    lat: value.point.lat,
-                    lon: value.point.lon
+                    lat: value?.point?.lat || "",
+                    lon: value?.point?.lon || ""
                 }
             }
 
-            value = [...client.addresses, sendAddress]
+            value = [...(client.addresses || []), sendAddress]
         }
         if (field === "addresses2") {
             field2 = "addresses"
@@ -616,7 +617,7 @@ export default function ClientPage() {
                 <Div>Адреса:</Div>
                 {client.addresses &&
                     client.addresses.length > 0 &&
-                    client.addresses.map((adress, index) => {
+                    client.addresses.filter(adress => adress != null).map((adress, index) => {
                         return (
                             <>
                                 <Li key={adress?._id}>
@@ -629,14 +630,14 @@ export default function ClientPage() {
                                             :
                                         </div>
                                         <div>
-                                            {adress?.street} {adress?.house}
+                                            {adress?.street || ""} {adress?.house || ""}
                                         </div>
                                         <a
                                             href={adress?.link}
                                             target="_blank" rel="noreferrer"
                                             className="text-blue-500 hover:text-blue-500"
                                         >
-                                            {adress?.link?.includes("/search") ? <>link%%{adress?.street}</> : <>{adress?.link}</>}
+                                            {adress?.link?.includes("/search") ? <>link%%{adress?.street || ""}</> : <>{adress?.link}</>}
                                         </a>
                                         {selectAddress?._id !== adress?._id && <>
                                             <MyButton
@@ -665,7 +666,7 @@ export default function ClientPage() {
                                         <div>Улица, дом, под:</div>
                                         <MyInput
                                             name="street"
-                                            value={selectAddress.street}
+                                            value={selectAddress?.street || ""}
                                             change={changeHandler}
                                             color="white"
                                         />
@@ -728,7 +729,7 @@ export default function ClientPage() {
                                     <button 
                                         className="text-green-400 hover:text-blue-500" 
                                         onClick={() => {
-                                            const updatedAddresses = client.addresses.map((address) =>
+                                            const updatedAddresses = (client.addresses || []).map((address) =>
                                                 address?._id === selectAddress?._id ? { ...selectAddress } : address
                                             );
                                             updateClientData("addresses2", updatedAddresses);
