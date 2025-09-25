@@ -648,6 +648,30 @@ export const addOrderClientMobile = async (req, res) => {
     }
 }
 
+export const getActiveOrdersMobile = async (req, res) => {
+    try {
+        const {mail} = req.body;
+
+        const client = await Client.findOne({mail});
+
+        const order = await Order.findOne({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } }).sort({ createdAt: -1 });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Не удалось получить заказ или её просто нет("
+            })
+        }
+
+        res.json({order})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const updateAllClientAddresses = async (req, res) => {
     try {
         // Получить всех клиентов из базы данных
@@ -807,28 +831,6 @@ export const addBonus = async (req, res) => {
         userNotifications[userId] = job;
 
         res.json({ success: true, message: "Бонусы были добавлены" });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-}
-
-export const getLastOrderMobile = async (req, res) => {
-    try {
-        const {clientId} = req.body;
-
-        const order = await Order.findOne({ client: clientId }).sort({ createdAt: -1 });
-
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: "Не удалось получить заказ или её просто нет("
-            })
-        }
-
-        res.json({order})
     } catch (error) {
         console.log(error);
         res.status(500).json({
