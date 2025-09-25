@@ -291,7 +291,7 @@ app.post("/logOutClient", MobileController.logOutClient);
 app.post("/addBonus", MobileController.addBonus);
 app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
 app.post("/getActiveOrdersMobile", MobileController.getActiveOrdersMobile);
-app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
+app.post("/getClientOrdersMobile", MobileController.getClientOrdersMobile);
 app.post("/expoTokenCheck", MobileController.expoTokenCheck)
 app.post("/getUnreviewedOrder", MobileController.getUnreviewedOrder)
 app.post("/addReview", MobileController.addReview)
