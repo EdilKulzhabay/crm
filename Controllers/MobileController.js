@@ -595,12 +595,14 @@ export const addOrderClientMobile = async (req, res) => {
             Number(products.b12) * Number(client.price12) +
             Number(products.b19) * Number(client.price19);
 
+        const today = new Date().toISOString().split('T')[0];
+
         const order = new Order({
             franchisee: franchiseeId,
             client: client._id,
             address,
             products,
-            date: date || {d: "", time: ""},
+            date: date || {d: today, time: ""},
             sum,
             clientNotes: clientNotes || [],
             opForm
