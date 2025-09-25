@@ -654,16 +654,51 @@ export const getActiveOrdersMobile = async (req, res) => {
 
         const client = await Client.findOne({mail});
 
-        const order = await Order.findOne({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } }).sort({ createdAt: -1 });
+        const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } }).sort({ createdAt: -1 });
 
-        if (!order) {
+        if (!orders) {
             return res.status(404).json({
                 success: false,
-                message: "Не удалось получить заказ или её просто нет("
+                message: "Не удалось получить заказы или её просто нет("
             })
         }
 
-        res.json({order})
+        res.json({orders})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getClientOrdersMobile = async (req, res) => {
+    try {
+        // const {clientId, page} = req.body
+
+        // const limit = 5;
+        // const skip = (page - 1) * limit
+
+        // const orders = await Order.find({client: clientId})
+        //     .sort({ createdAt: -1 })
+        //     .skip(skip)
+        //     .limit(limit);
+
+        // if (!orders) {
+        //     return res.status(404).json({
+        //         success: false,
+        //         message: "Хз че не так, но заказов нет("
+        //     })
+        // }
+
+        const {mail} = req.body
+
+        const client = await Client.findOne({mail})
+
+        const orders = await Order.find({client: client._id})
+            .sort({ createdAt: -1 })
+
+        res.json({ orders });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -831,34 +866,6 @@ export const addBonus = async (req, res) => {
         userNotifications[userId] = job;
 
         res.json({ success: true, message: "Бонусы были добавлены" });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-}
-
-export const getClientHistoryMobile = async (req, res) => {
-    try {
-        const {clientId, page} = req.body
-
-        const limit = 5;
-        const skip = (page - 1) * limit
-
-        const orders = await Order.find({client: clientId})
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        if (!orders) {
-            return res.status(404).json({
-                success: false,
-                message: "Хз че не так, но заказов нет("
-            })
-        }
-
-        res.json({ orders });
     } catch (error) {
         console.log(error);
         res.status(500).json({
