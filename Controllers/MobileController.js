@@ -557,6 +557,91 @@ export const updateClientAddress = async (req, res) => {
     }
 };
 
+export const getClientAddresses = async (req, res) => {
+    try {
+        const { mail } = req.body;
+
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+
+        const addresses = client.addresses;
+
+        res.json({ addresses });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const addOrderClientMobile = async (req, res) => {
+    try {
+        const {mail, address, products, clientNotes, date, opForm} = req.body
+
+        const client = await Client.findOne({mail})
+
+        if (!client) {
+            return res.json(404).json({
+                success: false,
+                message: "Не удалось найти клиента"
+            })
+        }
+
+        const franchisee = User.findOne({role: "superAdmin"})
+
+        const franchiseeId = client.franchisee || franchisee._id; 
+
+        const sum =
+            Number(products.b12) * Number(client.price12) +
+            Number(products.b19) * Number(client.price19);
+
+        const order = new Order({
+            franchisee: franchiseeId,
+            client: client._id,
+            address,
+            products,
+            date: date || {d: "", time: ""},
+            sum,
+            clientNotes: clientNotes || [],
+            opForm
+        });
+
+        await order.save();
+
+        // const text = `Адрес: ${address?.actual}\nТелефон: ${client?.phone}\nКол. 12,5л: ${products?.b12}\nКол. 18,9л: ${products?.b19}`
+        // const mailOptions = {
+        //     from: "info@tibetskaya.kz",
+        //     to: "araiuwa_89@mail.ru",
+        //     subject: "Клиент добавил заказ через приложение",
+        //     text,
+        // };
+    
+        // transporter.sendMail(mailOptions, function (error, info) {
+        //     if (error) {
+        //         console.log(error);
+        //         res.status(500).send("Ошибка при отправке письма");
+        //     } else {
+        //         console.log("Email sent: " + info.response);
+        //         res.status(200).send("Письмо успешно отправлено");
+        //     }
+        // });
+
+        client.bonus = client.bonus + 50
+        await client.save()
+
+        res.json({
+            success: true,
+            message: "Заказ успешно создан"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const updateAllClientAddresses = async (req, res) => {
     try {
         // Получить всех клиентов из базы данных
@@ -581,23 +666,6 @@ export const updateAllClientAddresses = async (req, res) => {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: "Что-то пошло не так",
-        });
-    }
-};
-
-export const getClientAddresses = async (req, res) => {
-    try {
-        const { mail } = req.body;
-
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
-
-        const addresses = client.addresses;
-
-        res.json({ addresses });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
             message: "Что-то пошло не так",
         });
     }
@@ -733,97 +801,6 @@ export const addBonus = async (req, res) => {
         userNotifications[userId] = job;
 
         res.json({ success: true, message: "Бонусы были добавлены" });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-}
-
-export const addOrderClientMobile = async (req, res) => {
-    try {
-        const {clientId, address, products, clientNotes, date, opForm} = req.body
-
-        const client = await Client.findById(clientId)
-
-        if (!client) {
-            return res.json(404).json({
-                success: false,
-                message: "Не удалось найти клиента"
-            })
-        }
-
-        const franchiseeId = client.franchisee || ""; 
-
-        const sum =
-            Number(products.b12) * Number(client.price12) +
-            Number(products.b19) * Number(client.price19);
-
-        let order
-
-        if (franchiseeId !== "") {
-            order = new Order({
-                franchisee: franchiseeId,
-                client: clientId,
-                address,
-                products,
-                date: date || {d: "", time: ""},
-                sum,
-                clientNotes: clientNotes || [],
-                opForm
-            });
-    
-            await order.save();
-        } else {
-            order = new Order({
-                client: clientId,
-                address,
-                products,
-                date: date || {d: "", time: ""},
-                sum,
-                clientNotes: clientNotes || [],
-                opForm
-            });
-    
-            await order.save();
-        }
-
-        // const text = `Адрес: ${address?.actual}\nТелефон: ${client?.phone}\nКол. 12,5л: ${products?.b12}\nКол. 18,9л: ${products?.b19}`
-        // const mailOptions = {
-        //     from: "info@tibetskaya.kz",
-        //     to: "araiuwa_89@mail.ru",
-        //     subject: "Клиент добавил заказ через приложение",
-        //     text,
-        // };
-    
-        // transporter.sendMail(mailOptions, function (error, info) {
-        //     if (error) {
-        //         console.log(error);
-        //         res.status(500).send("Ошибка при отправке письма");
-        //     } else {
-        //         console.log("Email sent: " + info.response);
-        //         res.status(200).send("Письмо успешно отправлено");
-        //     }
-        // });
-
-        client.bonus = client.bonus + 50
-        await client.save()
-
-        res.json({
-            success: true,
-            message: "Заказ успешно создан"
-        })
-
-        setImmediate(async () => {
-            const orderId = order?._id
-            try {
-            //   await getLocationsLogicQueue(orderId);
-              console.log("Обновленные локации после заказа:");
-            } catch (error) {
-              console.error("Ошибка при получении локаций:", error);
-            }
-        });
     } catch (error) {
         console.log(error);
         res.status(500).json({
