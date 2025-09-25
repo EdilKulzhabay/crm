@@ -290,7 +290,7 @@ app.post("/refreshToken", MobileController.refreshToken);
 app.post("/logOutClient", MobileController.logOutClient);
 app.post("/addBonus", MobileController.addBonus);
 app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
-app.post("/getLastOrderMobile", MobileController.getLastOrderMobile);
+app.post("/getActiveOrdersMobile", MobileController.getActiveOrdersMobile);
 app.post("/getClientHistoryMobile", MobileController.getClientHistoryMobile);
 app.post("/expoTokenCheck", MobileController.expoTokenCheck)
 app.post("/getUnreviewedOrder", MobileController.getUnreviewedOrder)
