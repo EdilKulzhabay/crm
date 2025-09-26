@@ -589,8 +589,6 @@ export const addOrderClientMobile = async (req, res) => {
 
         const franchisee = User.findOne({role: "superAdmin"})
 
-        const franchiseeId = client.franchisee || franchisee._id; 
-
         const sum =
             Number(products.b12) * Number(client.price12) +
             Number(products.b19) * Number(client.price19);
@@ -602,7 +600,7 @@ export const addOrderClientMobile = async (req, res) => {
         const todayStr = `${yyyy}-${mm}-${dd}`; 
 
         const order = new Order({
-            franchisee: franchiseeId,
+            franchisee,
             client: client._id,
             address,
             products,
