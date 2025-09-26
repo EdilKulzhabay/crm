@@ -600,7 +600,7 @@ export const addOrderClientMobile = async (req, res) => {
         const todayStr = `${yyyy}-${mm}-${dd}`; 
 
         const order = new Order({
-            franchisee,
+            franchisee: franchisee._id,
             client: client._id,
             address,
             products,
