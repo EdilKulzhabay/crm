@@ -296,6 +296,7 @@ app.post("/expoTokenCheck", MobileController.expoTokenCheck)
 app.post("/getUnreviewedOrder", MobileController.getUnreviewedOrder)
 app.post("/addReview", MobileController.addReview)
 app.post("/addPassword", MobileController.addPassword)
+app.post("/getCourierLocation", MobileController.getCourierLocation)
 
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)

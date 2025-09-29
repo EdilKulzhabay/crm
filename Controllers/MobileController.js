@@ -9,6 +9,7 @@ import "dotenv/config";
 import { pushNotification } from "../pushNotification.js";
 import User from "../Models/User.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
+import CourierAggregator from "../Models/CourierAggregator.js";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -652,7 +653,9 @@ export const getActiveOrdersMobile = async (req, res) => {
 
         const client = await Client.findOne({mail});
 
-        const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } }).sort({ createdAt: -1 });
+        const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } })
+            .sort({ createdAt: -1 })
+            .populate("courierAggregator", "fullName _id point phone")
 
         if (!orders) {
             return res.status(404).json({
@@ -695,8 +698,22 @@ export const getClientOrdersMobile = async (req, res) => {
 
         const orders = await Order.find({client: client._id})
             .sort({ createdAt: -1 })
+            .populate("courierAggregator", "fullName _id point phone")
 
         res.json({ orders });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getCourierLocation = async (req, res) => {
+    try {
+        const { courierId } = req.body;
+        const courierAggregator = await CourierAggregator.findById(courierId);
+        res.json({ point: courierAggregator.point });
     } catch (error) {
         console.log(error);
         res.status(500).json({
