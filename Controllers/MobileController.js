@@ -700,6 +700,8 @@ export const getClientOrdersMobile = async (req, res) => {
             .sort({ createdAt: -1 })
             .populate("courierAggregator", "fullName _id point phone")
 
+        console.log("orders: ", orders);
+
         res.json({ orders });
     } catch (error) {
         console.log(error);
