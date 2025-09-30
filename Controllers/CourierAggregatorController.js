@@ -1655,9 +1655,9 @@ export const resendNotificationToCourier = async (req, res) => {
 // )
 
 
-/// git suka
+/// git suka 43.241065, 76.898668
 
-// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { order: null, orders:[], capacity12: 0, capacity19: 100, point: { lat: 43.41377, lon: 76.97149 } }}) 
+// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { point: { lat: 43.241065, lon: 76.898668 } }}) 
 
 // db.orders.countDocuments({
 //     "date.d": "2025-07-16",

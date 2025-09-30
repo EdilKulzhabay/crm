@@ -37,98 +37,218 @@ const generateCode = () => {
 };
 
 const codes = {};
+const lastSentTime = {}; // Отслеживание времени последней отправки
+const sendingInProgress = new Set(); // Отслеживание отправок в процессе
 
 export const sendMail = async (req, res) => {
     const { mail } = req.body;
 
+    // Валидация email
+    if (!mail || !mail.includes('@')) {
+        return res.status(400).json({
+            success: false,
+            message: "Некорректный email адрес"
+        });
+    }
 
-    const candidate = await Client.findOne({ mail: mail?.toLowerCase() });
+    const normalizedMail = mail.toLowerCase();
 
-    // if (candidate) {
-    //     return res.status(409).json({
-    //         message: "Пользователь с такой почтой уже существует",
-    //     });
-    // }
+    // Проверка на повторную отправку (защита от спама)
+    const now = Date.now();
+    const lastSent = lastSentTime[normalizedMail];
+    const COOLDOWN_PERIOD = 60000; // 1 минута
 
-    const confirmCode = generateCode();
+    if (lastSent && (now - lastSent) < COOLDOWN_PERIOD) {
+        const remainingTime = Math.ceil((COOLDOWN_PERIOD - (now - lastSent)) / 1000);
+        return res.status(429).json({
+            success: false,
+            message: `Повторная отправка возможна через ${remainingTime} секунд`
+        });
+    }
 
-    codes[mail] = confirmCode;
+    // Проверка на отправку в процессе
+    if (sendingInProgress.has(normalizedMail)) {
+        return res.status(429).json({
+            success: false,
+            message: "Отправка уже в процессе, пожалуйста подождите"
+        });
+    }
 
-    const mailOptions = {
-        from: "info@tibetskaya.kz",
-        to: mail,
-        subject: "Подтвердждение электронной почты",
-        text: confirmCode,
-    };
+    // Добавляем в процесс отправки
+    sendingInProgress.add(normalizedMail);
 
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({
-                success: false,
-                message: "Ошибка при отправке письма"
-            });
-        } else {
-            console.log("Email sent: " + info.response);
-            res.status(200).json({
-                success: true,
-                message: "Письмо успешно отправлено"
-            });
-        }
-    });
+    try {
+        const candidate = await Client.findOne({ mail: normalizedMail });
+
+        // if (candidate) {
+        //     sendingInProgress.delete(normalizedMail);
+        //     return res.status(409).json({
+        //         message: "Пользователь с такой почтой уже существует",
+        //     });
+        // }
+
+        const confirmCode = generateCode();
+
+        codes[normalizedMail] = confirmCode;
+        lastSentTime[normalizedMail] = now;
+
+        const mailOptions = {
+            from: "info@tibetskaya.kz",
+            to: normalizedMail,
+            subject: "Подтверждение электронной почты",
+            text: `Ваш код подтверждения: ${confirmCode}`,
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+            // Убираем из процесса отправки
+            sendingInProgress.delete(normalizedMail);
+            
+            if (error) {
+                console.log("Ошибка отправки email:", error);
+                // Удаляем сохраненный код при ошибке
+                delete codes[normalizedMail];
+                delete lastSentTime[normalizedMail];
+                
+                res.status(500).json({
+                    success: false,
+                    message: "Ошибка при отправке письма"
+                });
+            } else {
+                console.log("Email sent successfully:", info.response);
+                res.status(200).json({
+                    success: true,
+                    message: "Письмо успешно отправлено"
+                });
+            }
+        });
+
+    } catch (error) {
+        // Убираем из процесса отправки при ошибке
+        sendingInProgress.delete(normalizedMail);
+        console.log("Ошибка в sendMail:", error);
+        res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка сервера"
+        });
+    }
 };
 
 export const sendMailRecovery = async (req, res) => {
     const { mail } = req.body;
 
-    // Проверка наличия кандидата
-    const candidate = await Client.findOne({ mail: mail?.toLowerCase() });
-
-    if (!candidate) {
-        // Возвращаем ответ, если кандидат не найден
-        return res.status(404).json({
-            message: "Пользователь с такой почтой не существует",
+    // Валидация email
+    if (!mail || !mail.includes('@')) {
+        return res.status(400).json({
+            success: false,
+            message: "Некорректный email адрес"
         });
     }
 
-    // Генерация кода подтверждения
-    const confirmCode = generateCode();
+    const normalizedMail = mail.toLowerCase();
 
-    // Сохранение кода подтверждения
-    codes[mail] = confirmCode;
+    // Проверка на повторную отправку (защита от спама)
+    const now = Date.now();
+    const lastSent = lastSentTime[normalizedMail];
+    const COOLDOWN_PERIOD = 60000; // 1 минута
 
-    const mailOptions = {
-        from: "info@tibetskaya.kz",
-        to: mail,
-        subject: "Подтвердждение электронной почты",
-        text: confirmCode,
-    };
+    if (lastSent && (now - lastSent) < COOLDOWN_PERIOD) {
+        const remainingTime = Math.ceil((COOLDOWN_PERIOD - (now - lastSent)) / 1000);
+        return res.status(429).json({
+            success: false,
+            message: `Повторная отправка возможна через ${remainingTime} секунд`
+        });
+    }
 
-    // Отправка письма
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({
+    // Проверка на отправку в процессе
+    if (sendingInProgress.has(normalizedMail)) {
+        return res.status(429).json({
+            success: false,
+            message: "Отправка уже в процессе, пожалуйста подождите"
+        });
+    }
+
+    // Добавляем в процесс отправки
+    sendingInProgress.add(normalizedMail);
+
+    try {
+        // Проверка наличия кандидата
+        const candidate = await Client.findOne({ mail: normalizedMail });
+
+        if (!candidate) {
+            sendingInProgress.delete(normalizedMail);
+            return res.status(404).json({
                 success: false,
-                message: "Ошибка при отправке письма"
-            });
-        } else {
-            console.log("Email sent: " + info.response);
-            res.status(200).json({
-                success: true,
-                message: "Письмо успешно отправлено"
+                message: "Пользователь с такой почтой не существует",
             });
         }
-    });
+
+        // Генерация кода подтверждения
+        const confirmCode = generateCode();
+
+        // Сохранение кода подтверждения
+        codes[normalizedMail] = confirmCode;
+        lastSentTime[normalizedMail] = now;
+
+        const mailOptions = {
+            from: "info@tibetskaya.kz",
+            to: normalizedMail,
+            subject: "Восстановление пароля",
+            text: `Ваш код для восстановления пароля: ${confirmCode}`,
+        };
+
+        // Отправка письма
+        transporter.sendMail(mailOptions, function (error, info) {
+            // Убираем из процесса отправки
+            sendingInProgress.delete(normalizedMail);
+            
+            if (error) {
+                console.log("Ошибка отправки email восстановления:", error);
+                // Удаляем сохраненный код при ошибке
+                delete codes[normalizedMail];
+                delete lastSentTime[normalizedMail];
+                
+                res.status(500).json({
+                    success: false,
+                    message: "Ошибка при отправке письма"
+                });
+            } else {
+                console.log("Recovery email sent successfully:", info.response);
+                res.status(200).json({
+                    success: true,
+                    message: "Письмо успешно отправлено"
+                });
+            }
+        });
+
+    } catch (error) {
+        // Убираем из процесса отправки при ошибке
+        sendingInProgress.delete(normalizedMail);
+        console.log("Ошибка в sendMailRecovery:", error);
+        res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка сервера"
+        });
+    }
 };
 
 export const codeConfirm = async (req, res) => {
     try {
         const { mail, code } = req.body;
         console.log("codeConfirm req.body: ", req.body);
-        if (codes[mail] === code) {
+        
+        const normalizedMail = mail?.toLowerCase();
+        
+        if (!normalizedMail || !code) {
+            return res.status(400).json({
+                success: false,
+                message: "Необходимо указать email и код"
+            });
+        }
+        
+        if (codes[normalizedMail] === code) {
             console.log("codeConfirm code is correct");
-            delete codes[mail]; // Удаляем код после успешного подтверждения
+            delete codes[normalizedMail]; // Удаляем код после успешного подтверждения
+            delete lastSentTime[normalizedMail]; // Удаляем время последней отправки
             res.status(200).json({
                 success: true,
                 message: "Код успешно подтвержден"
@@ -141,7 +261,7 @@ export const codeConfirm = async (req, res) => {
             });
         }
     } catch (error) {
-        console.log(error);
+        console.log("Ошибка в codeConfirm:", error);
         res.status(500).json({
             message: "Что-то пошло не так",
         });
@@ -724,6 +844,19 @@ export const getCourierLocation = async (req, res) => {
     }
 }
 
+export const getClientDataMobile = async (req, res) => {
+    try {
+        const { mail } = req.body;
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        res.json({ client });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const updateAllClientAddresses = async (req, res) => {
     try {
         // Получить всех клиентов из базы данных
@@ -820,25 +953,6 @@ export const getCart = async (req, res) => {
         res.json({
             success: true,
             cart,
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-};
-
-export const getClientDataMobile = async (req, res) => {
-    try {
-        const { mail } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
-
-        const { refreshToken, ...clientData } = client;
-
-        res.json({
-            success: true,
-            clientData,
         });
     } catch (error) {
         console.log(error);
