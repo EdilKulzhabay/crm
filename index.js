@@ -279,7 +279,6 @@ app.post("/cleanCart", checkAuth, MobileController.cleanCart);
 app.post("/getCart", checkAuth, MobileController.getCart);
 app.post(
     "/getClientDataMobile",
-    checkAuth,
     MobileController.getClientDataMobile
 );
 app.post(
