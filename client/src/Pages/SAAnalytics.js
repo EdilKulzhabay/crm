@@ -144,10 +144,10 @@ export default function SAAnalytics() {
         let sum = 0
         let owe = stat.owe
         if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
-            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 220
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 270
         }
         if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
-            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 300
+            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 400
         }
         sum += stat.haveTo - owe - stat.fakt
         if (sum < 0) {
@@ -161,10 +161,10 @@ export default function SAAnalytics() {
         let sum = 0
         let owe = stat.owe
         if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
-            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 220
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 270
         }
         if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
-            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 300
+            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 400
         }
         sum += stat.haveTo - owe - stat.fakt
         return sum
@@ -173,10 +173,10 @@ export default function SAAnalytics() {
     const oweEqual = (stat) => {
         let owe = stat.owe
         if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
-            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 220
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 270
         }
         if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
-            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 300
+            owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 400
         }
         return formatCurrency(owe)
     }
@@ -323,14 +323,14 @@ export default function SAAnalytics() {
                                 <Div>
                                     <div>18,9 л: </div>
                                     <Info ml="ml-1">{item.totalRegularB19Bottles} б.</Info> * 
-                                    <Info ml="ml-1">300 ₸</Info> = 
-                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB19Bottles * 300)}</Info>
+                                    <Info ml="ml-1">400 ₸</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB19Bottles * 400)}</Info>
                                 </Div>
                                 <Div>
                                     <div>12,5 л: </div>
                                     <Info ml="ml-1">{item.totalRegularB12Bottles} б.</Info> * 
-                                    <Info ml="ml-1">220 ₸</Info> = 
-                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB12Bottles * 220)}</Info>
+                                    <Info ml="ml-1">270 ₸</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB12Bottles * 270)}</Info>
                                 </Div>
                                 <Div />
                                 <Li>
