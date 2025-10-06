@@ -6,9 +6,12 @@ import fs from 'fs';
 const serviceAccount = JSON.parse(fs.readFileSync('./FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json', 'utf8'));
 // import serviceAccount from "./FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json" assert { type: "json" };
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
+// Инициализируем Firebase для курьерского приложения с уникальным именем
+if (!admin.apps.find(app => app.name === 'courier-app')) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    }, 'courier-app');
+}
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -126,7 +129,7 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
                         },
                     };
 
-                    const response = await admin.messaging().send(message);
+                    const response = await admin.app('courier-app').messaging().send(message);
                     console.log("Firebase message sent successfully:", response);
                     successCount++;
                 }
