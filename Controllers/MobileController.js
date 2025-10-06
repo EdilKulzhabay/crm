@@ -626,6 +626,30 @@ export const addClientAddress = async (req, res) => {
     }
 };
 
+export const saveFcmToken = async (req, res) => {
+    try {
+        const { mail, fcmToken } = req.body;
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        if (!client) {
+            return res.status(404).json({
+                message: "Клиент не найден",
+            });
+        }
+        await Client.findByIdAndUpdate(client._id, {
+            notificationPushToken: fcmToken,
+        });
+        res.json({
+            success: true,
+            message: "FCM токен успешно сохранен",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const updateClientAddress = async (req, res) => {
     try {
         const { mail, _id, name, street, house, link, phone } = req.body;

@@ -7,6 +7,7 @@ import nodemailer from "nodemailer";
 import { getDateAlmaty } from "../utils/dateUtils.js";
 import queueOrTools from "../orToolsQueue.js";
 import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
+import Client from "../Models/Client.js";
 
 // Функция для сброса ограничений уведомлений (будет импортирована из orTools.js)
 let resetNotificationLimits = null;
@@ -539,6 +540,17 @@ export const acceptOrderCourierAggregator = async (req, res) => {
             }
         );
 
+        const sendOrder = await Order.findById(order.orderId)
+        const client = await Client.findById(sendOrder.client)
+        const { pushNotificationClient } = await import("../pushNotificationClient.js");
+        await pushNotificationClient(
+            "Order status changed",
+            "Статус заказа изменен на В пути",
+            [client.notificationPushToken],
+            "orderStatusChanged",
+            sendOrder
+        );
+
         res.json({
             success: true,
             message: "Заказ принят"
@@ -558,7 +570,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         const {orderId, courierId} = req.body
 
         const order = await Order.findById(orderId)
-            .populate("client", "price19 price12")
+            .populate("client", "price19 price12 _id")
             .populate("franchisee", "fullName")
 
         const courier1 = await CourierAggregator.findById(courierId)
@@ -690,6 +702,17 @@ export const completeOrderCourierAggregator = async (req, res) => {
             // income: b12 * process.env.Reward12 + b19 * process.env.Reward19
             income: sum
         })
+
+        const client = await Client.findById(order.client._id)
+        const sendOrder = await Order.findById(orderId)
+        const { pushNotificationClient } = await import("../pushNotificationClient.js");
+        await pushNotificationClient(
+            "Order status changed",
+            "Статус заказа изменен на Доставлено",
+            [client.notificationPushToken],
+            "orderStatusChanged",
+            sendOrder
+        );
         // Добавляем задержку в 20 секунд
         await new Promise(resolve => setTimeout(resolve, 15000));
 
