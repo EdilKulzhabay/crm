@@ -540,21 +540,23 @@ export const acceptOrderCourierAggregator = async (req, res) => {
             }
         );
 
-        const sendOrder = await Order.findById(order.orderId)
-        const client = await Client.findById(sendOrder.client)
-        const { pushNotificationClient } = await import("../pushNotificationClient.js");
-        await pushNotificationClient(
-            "Order status changed",
-            "Статус заказа изменен на В пути",
-            [client.notificationPushToken],
-            "orderStatusChanged",
-            sendOrder
-        );
-
         res.json({
             success: true,
             message: "Заказ принят"
         })
+
+        const sendOrder = await Order.findById(order.orderId)
+        const client = await Client.findById(sendOrder.client)
+        if (client.notificationPushToken) {
+            const { pushNotificationClient } = await import("../pushNotificationClient.js");
+            await pushNotificationClient(
+                "Order status changed",
+                "Статус заказа изменен на В пути",
+                [client.notificationPushToken],
+                "orderStatusChanged",
+                sendOrder
+            );
+        }
         
     } catch (error) {
         console.log(error);
@@ -704,15 +706,17 @@ export const completeOrderCourierAggregator = async (req, res) => {
         })
 
         const client = await Client.findById(order.client._id)
-        const sendOrder = await Order.findById(orderId)
-        const { pushNotificationClient } = await import("../pushNotificationClient.js");
-        await pushNotificationClient(
-            "Order status changed",
-            "Статус заказа изменен на Доставлено",
-            [client.notificationPushToken],
-            "orderStatusChanged",
-            sendOrder
-        );
+        if (client.notificationPushToken) {
+            const sendOrder = await Order.findById(orderId)
+            const { pushNotificationClient } = await import("../pushNotificationClient.js");
+            await pushNotificationClient(
+                "Order status changed",
+                "Статус заказа изменен на Доставлено",
+                [client.notificationPushToken],
+                "orderStatusChanged",
+                sendOrder
+            );
+        }
         // Добавляем задержку в 20 секунд
         await new Promise(resolve => setTimeout(resolve, 15000));
 
