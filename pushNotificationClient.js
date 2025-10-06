@@ -5,9 +5,12 @@ import fs from 'fs';
 const serviceAccount = JSON.parse(fs.readFileSync('./FireBase/tibetskayaclientapp-88b45-firebase-adminsdk-fbsvc-b11b56d42a.json', 'utf8'));
 // import serviceAccount from "./FireBase/tibetskaya-1bb8d-firebase-adminsdk-wjdpl-9f5b35bda3.json" assert { type: "json" };
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
+// Инициализируем Firebase для клиентского приложения с уникальным именем
+if (!admin.apps.find(app => app.name === 'client-app')) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    }, 'client-app');
+}
 
 // Система отслеживания отправленных уведомлений для предотвращения дублирования
 const sentNotifications = new Map();
@@ -104,7 +107,7 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
                     },
                 };
 
-                const response = await admin.messaging().send(message);
+                const response = await admin.app('client-app').messaging().send(message);
                 console.log("Firebase message sent successfully:", response);
                 successCount++;
             } catch (tokenError) {
