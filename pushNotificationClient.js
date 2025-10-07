@@ -78,19 +78,31 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
 
         for (const token of validTokens) {
             try {
+                // Подготавливаем данные с гарантией строкового типа
+                const messageData = {
+                    newStatus: newStatus.toString(),
+                    order: order ? JSON.stringify(order) : '{}',
+                    orderId: (order?._id || order?.orderId || 'unknown').toString(),
+                    orderStatus: (order?.status || newStatus || 'unknown').toString(),
+                };
+
+                // Проверяем, что все значения являются строками
+                for (const [key, value] of Object.entries(messageData)) {
+                    if (typeof value !== 'string') {
+                        console.error(`Поле ${key} не является строкой:`, typeof value, value);
+                        messageData[key] = String(value);
+                    }
+                }
+
+                console.log("Отправляемые данные:", messageData);
+
                 const message = {
                     token,
                     notification: {
                         title: messageTitle,
                         body: messageBody,
                     },
-                    data: {
-                        newStatus: newStatus.toString(),
-                        // ВСЕГДА отправляем данные заказа, если они есть
-                        order: order ? JSON.stringify(order) : '{}',
-                        orderId: order?._id || order?.orderId || 'unknown',
-                        orderStatus: order?.status || newStatus || 'unknown',
-                    },
+                    data: messageData,
                     android: {
                         priority: "high",
                     },
