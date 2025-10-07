@@ -87,9 +87,9 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
                     data: {
                         newStatus: newStatus.toString(),
                         // ВСЕГДА отправляем данные заказа, если они есть
-                        order: order ? JSON.stringify(order) : undefined,
+                        order: order ? JSON.stringify(order) : '{}',
                         orderId: order?._id || order?.orderId || 'unknown',
-                        orderStatus: order?.status || newStatus,
+                        orderStatus: order?.status || newStatus || 'unknown',
                     },
                     android: {
                         priority: "high",
