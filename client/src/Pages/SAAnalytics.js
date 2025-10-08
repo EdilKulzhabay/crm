@@ -144,7 +144,7 @@ export default function SAAnalytics() {
         let sum = 0
         let owe = stat.owe
         if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
-            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 270
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 300
         }
         if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
             owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 400
@@ -161,7 +161,7 @@ export default function SAAnalytics() {
         let sum = 0
         let owe = stat.owe
         if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
-            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 270
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 300
         }
         if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
             owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 400
@@ -173,7 +173,7 @@ export default function SAAnalytics() {
     const oweEqual = (stat) => {
         let owe = stat.owe
         if (stat.tookAwayB12 > stat.totalAddtitionalB12Bottles) {
-            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 270
+            owe += (stat.tookAwayB12 - stat.totalAddtitionalB12Bottles) * 300
         }
         if (stat.tookAwayB19 > stat.totalAddtitionalB19Bottles) {
             owe += (stat.tookAwayB19 - stat.totalAddtitionalB19Bottles) * 400
@@ -315,8 +315,8 @@ export default function SAAnalytics() {
                                 <Div>
                                     <div>12,5 л: </div>
                                     <Info ml="ml-1">{item.totalAddtitionalB12Bottles} б.</Info> * 
-                                    <Info ml="ml-1">270 ₸</Info> = 
-                                    <Info ml="ml-1">{formatCurrencyTG(item.totalAddtitionalB12Bottles * 270)}</Info>
+                                    <Info ml="ml-1">300 ₸</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalAddtitionalB12Bottles * 300)}</Info>
                                 </Div>
                                 <Div />
                                 <Div>Доп. заказы</Div>
@@ -329,8 +329,8 @@ export default function SAAnalytics() {
                                 <Div>
                                     <div>12,5 л: </div>
                                     <Info ml="ml-1">{item.totalRegularB12Bottles} б.</Info> * 
-                                    <Info ml="ml-1">270 ₸</Info> = 
-                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB12Bottles * 270)}</Info>
+                                    <Info ml="ml-1">300 ₸</Info> = 
+                                    <Info ml="ml-1">{formatCurrencyTG(item.totalRegularB12Bottles * 300)}</Info>
                                 </Div>
                                 <Div />
                                 <Li>
