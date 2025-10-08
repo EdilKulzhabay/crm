@@ -57,8 +57,8 @@ export const getAnalyticsData = async (req, res) => {
                     _id: null,
                     totalRegularOrders: { $sum: { $cond: ["$isRegular", 1, 0] } },
                     totalRegularB12Bottles: { $sum: { $cond: ["$isRegular", "$products.b12", 0] } },
-                    regularB12Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 270] }] }, 0] } },
-                    regularB12Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", 270] }, 0] } },
+                    regularB12Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 300] }] }, 0] } },
+                    regularB12Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", 300] }, 0] } },
                     regularB12Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
                     totalRegularB19Bottles: { $sum: { $cond: ["$isRegular", "$products.b19", 0] } },
                     regularB19Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] }, 0] } },
@@ -67,8 +67,8 @@ export const getAnalyticsData = async (req, res) => {
 
                     totalAdditionalOrders: { $sum: { $cond: ["$isAdditional", 1, 0] } },
                     totalAdditionalB12Bottles: { $sum: { $cond: ["$isAdditional", "$products.b12", 0] } },
-                    additionalB12Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 270] }] }, 0] } },
-                    additionalB12Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", 270] }, 0] } },
+                    additionalB12Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 300] }] }, 0] } },
+                    additionalB12Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", 300] }, 0] } },
                     additionalB12Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
                     totalAdditionalB19Bottles: { $sum: { $cond: ["$isAdditional", "$products.b19", 0] } },
                     additionalB19Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] }, 0] } },
@@ -415,7 +415,7 @@ export const getAdditionalRevenue = async (req, res) => {
                             $cond: [
                                 { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
                                 // "$transferred", 
-                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 270 ] } ] },
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 300 ] } ] },
                                 0
                             ] 
                         } 
@@ -576,7 +576,7 @@ export const getFranchiseeAnalytics = async (req, res) => {
                             $cond: [
                                 { $and: ["$transferred", { $eq: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }] },
                                 // "$transferred",
-                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 270 ] } ] },
+                                { $add: [ {$multiply: [ { $ifNull: ["$products.b19", 0] }, 400 ] }, {$multiply: [ { $ifNull: ["$products.b12", 0] }, 300 ] } ] },
                                 0
                             ] 
                         } 
