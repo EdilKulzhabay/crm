@@ -650,6 +650,36 @@ export const saveFcmToken = async (req, res) => {
     }
 }
 
+export const testNotification = async (req, res) => {
+    try {
+        const { mail } = req.body;
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+
+        const order = await Order.findOne({ client: client._id });
+
+        const notificationTokens = client.notificationPushToken;
+        const messageTitle = "Тестовое уведомление"
+        const messageBody = "Это тестовое уведомление"
+        const newStatus = "newOrder"
+        const sendOrder = order
+        
+        const { pushNotificationClient } = await import("../pushNotificationClient.js");
+        await pushNotificationClient(messageTitle, messageBody, [notificationTokens], newStatus, order);
+
+        console.log("Тестовое уведомление успешно отправлено");
+
+        res.json({
+            success: true,
+            message: "Тестовое уведомление успешно отправлено",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const updateClientAddress = async (req, res) => {
     try {
         const { mail, _id, name, street, house, link, phone } = req.body;

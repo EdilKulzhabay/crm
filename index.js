@@ -297,6 +297,7 @@ app.post("/addReview", MobileController.addReview)
 app.post("/addPassword", MobileController.addPassword)
 app.post("/getCourierLocation", MobileController.getCourierLocation)
 app.post("/saveFcmToken", MobileController.saveFcmToken)
+app.post("/testNotification", MobileController.testNotification)
 
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
