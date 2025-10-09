@@ -657,7 +657,7 @@ export const testNotification = async (req, res) => {
 
         const order = await Order.findOne({ client: client._id });
 
-        const notificationTokens = [fcmToken];
+        const notificationTokens = fcmToken;
         const messageTitle = "Тестовое уведомление"
         const messageBody = "Это тестовое уведомление"
         const newStatus = "newOrder"
