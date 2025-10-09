@@ -652,12 +652,12 @@ export const saveFcmToken = async (req, res) => {
 
 export const testNotification = async (req, res) => {
     try {
-        const { mail } = req.body;
+        const { mail, fcmToken } = req.body;
         const client = await Client.findOne({ mail: mail?.toLowerCase() });
 
         const order = await Order.findOne({ client: client._id });
 
-        const notificationTokens = client.notificationPushToken;
+        const notificationTokens = [fcmToken];
         const messageTitle = "Тестовое уведомление"
         const messageBody = "Это тестовое уведомление"
         const newStatus = "newOrder"
