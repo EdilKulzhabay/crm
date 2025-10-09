@@ -372,12 +372,22 @@ export const getAdditionalRevenue = async (req, res) => {
                 $group: {
                     _id: null, // Группируем заказы по клиентам
                     totalRegularB12Bottles: { $sum: { $cond: [
-                        { $and: ["$transferred", { $ne: ["$franchisee", user._id] }] },
+                        { $and: ["$transferred", { 
+                            $and: [
+                                { $eq: ["$transferredFranchise", user.fullName] },
+                                { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }
+                            ]
+                         }] },
                         { $ifNull: ["$products.b12", 0] },
                         { $cond: ["$transferred", 0, { $ifNull: ["$products.b12", 0] }] }
                     ] } },
                     totalRegularB19Bottles: { $sum: { $cond: [
-                        { $and: ["$transferred", { $ne: ["$franchisee", user._id] }] },
+                        { $and: ["$transferred", { 
+                            $and: [
+                                { $eq: ["$transferredFranchise", user.fullName] },
+                                { $ne: ["$franchisee", new mongoose.Types.ObjectId('66f15c557a27c92d447a16a0')] }
+                            ]
+                         }] },
                         { $ifNull: ["$products.b19", 0] },
                         { $cond: ["$transferred", 0, { $ifNull: ["$products.b19", 0] }] }
                     ] } },
