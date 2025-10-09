@@ -235,7 +235,7 @@ export default function Charts() {
         let sum = 0
         let owe = saldoData?.owe
         if (saldoData?.tookAwayB12 > saldoData?.totalAddtitionalB12Bottles) {
-            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 400
+            owe += (saldoData?.tookAwayB12 - saldoData?.totalAddtitionalB12Bottles) * 300
         }
         if (saldoData?.tookAwayB19 > saldoData?.totalAddtitionalB19Bottles) {
             owe += (saldoData?.tookAwayB19 - saldoData?.totalAddtitionalB19Bottles) * 400
