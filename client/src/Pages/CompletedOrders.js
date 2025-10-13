@@ -205,7 +205,7 @@ export default function CompletedOrders() {
                         Кол12: item?.products?.b12 || "",
                         Сумма: item?.sum,
                         "Форма оплаты": item?.opForm,
-                        Курьер: item?.courier?.fullName,
+                        Курьер: item?.courierAggregator?.fullName,
                         Франчайзи: item?.franchisee?.fullName,
                         Статус:
                             item?.status === "awaitingOrder"
