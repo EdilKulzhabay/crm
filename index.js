@@ -388,7 +388,7 @@ app.get("/orTools", async (req, res) => {
     }
 });
 
-app.post("testTelegram", async (req, res) => {
+app.post("/testTelegram", async (req, res) => {
     try {
         console.log("testTelegram req.body: ", req.body);
 
