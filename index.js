@@ -388,6 +388,21 @@ app.get("/orTools", async (req, res) => {
     }
 });
 
+app.post("testTelegram", async (req, res) => {
+    try {
+        console.log("testTelegram req.body: ", req.body);
+
+        res.json({ success: true, message: "Message sent to Telegram" });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error sending message to Telegram",
+            error: error.message
+        });
+    }
+});
+
 app.get("/orTools/status", async (req, res) => {
     try {
         const status = getQueueStatus();
