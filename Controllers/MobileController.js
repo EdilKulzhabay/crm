@@ -439,6 +439,7 @@ export const clientLogin = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
+            success: false,
             message: "Не удалось авторизоваться",
         });
     }
@@ -453,7 +454,7 @@ export const updateClientDataMobile = async (req, res) => {
         if (!client) {
             return res
                 .status(404)
-                .json({ success: false, message: "Client not found" });
+                .json({ success: false, message: "Клиент не найден" });
         }
 
         const updatedClient = await Client.findByIdAndUpdate(client._id, {
@@ -489,7 +490,7 @@ export const refreshToken = async (req, res) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-        return res.status(403).json({ message: "Требуется refresh токен" });
+        return res.status(403).json({ success: false, message: "Требуется refresh токен" });
     }
 
     try {
@@ -499,7 +500,7 @@ export const refreshToken = async (req, res) => {
         const candidate = await Client.findById(decoded.client._id);
 
         if (!candidate || candidate.refreshToken !== refreshToken) {
-            return res.status(403).json({ message: "Неверный refresh токен" });
+            return res.status(403).json({ success: false, message: "Неверный refresh токен" });
         }
 
         // Генерация нового access токена
@@ -528,7 +529,7 @@ export const refreshToken = async (req, res) => {
             refreshToken: newRefreshToken,
         });
     } catch (error) {
-        return res.status(403).json({ message: "Неверный refresh токен" });
+        return res.status(403).json({ success: false, message: "Неверный refresh токен" });
     }
 };
 
@@ -538,9 +539,9 @@ export const logOutClient = async (req, res) => {
     try {
         await Client.findOneAndDelete({ refreshToken }, { refreshToken: null });
 
-        res.status(200).json({ message: "Вы вышли из системы" });
+        res.status(200).json({ success: true, message: "Вы вышли из системы" });
     } catch (error) {
-        return res.status(403).json({ message: "Неверный refresh токен" });
+        return res.status(403).json({ success: false, message: "Неверный refresh токен" });
     }
 };
 
@@ -590,6 +591,7 @@ export const updateForgottenPassword = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
+            success: false,
             message: "Что-то пошло не так",
         });
     }
@@ -906,6 +908,23 @@ export const getClientDataMobile = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const deleteClientMobile = async (req, res) => {
+    try {
+        const { mail } = req.body;
+        await Client.findOneAndDelete({ mail: mail?.toLowerCase() });
+        res.json({
+            success: true,
+            message: "Клиент успешно удален",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
             message: "Что-то пошло не так",
         });
     }
