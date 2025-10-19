@@ -271,7 +271,7 @@ export const codeConfirm = async (req, res) => {
 export const createTestAccount = async (req, res) => {
     try {
         const { fullName, phone, mail } = req.body;
-        const superAdminId = "66fc01a4803e3f68963c14f3"
+        const superAdmin = await User.findOne({ role: "superAdmin" });
         const candidate = await Client.findOne({ phone });
 
         if (candidate) {
@@ -293,7 +293,7 @@ export const createTestAccount = async (req, res) => {
                 b12: 0,
                 b19: 0,
             },
-            franchisee: superAdminId,
+            franchisee: superAdmin._id,
             price12: 900,
             price19: 1300,
             dailyWater: 2,
@@ -357,7 +357,7 @@ export const createTestAccount = async (req, res) => {
 export const clientRegister = async (req, res) => {
     try {
         const { fullName, phone, mail } = req.body;
-        const superAdminId = "66fc01a4803e3f68963c14f3"
+        const superAdmin = await User.findOne({ role: "superAdmin" });
         const candidate = await Client.findOne({ phone });
 
         if (candidate) {
@@ -379,7 +379,7 @@ export const clientRegister = async (req, res) => {
                 b12: 0,
                 b19: 0,
             },
-            franchisee: superAdminId,
+            franchisee: superAdmin._id,
             price12: 900,
             price19: 1300,
             dailyWater: 2,
