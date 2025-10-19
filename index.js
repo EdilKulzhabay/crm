@@ -286,6 +286,7 @@ app.post(
     MobileController.updateClientDataMobile
 );
 app.post("/deleteClientMobile", MobileController.deleteClientMobile);
+app.post("/createTestAccount", MobileController.createTestAccount);
 app.post("/refreshToken", MobileController.refreshToken);
 app.post("/logOutClient", MobileController.logOutClient);
 app.post("/addBonus", MobileController.addBonus);
