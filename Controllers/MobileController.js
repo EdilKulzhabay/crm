@@ -268,6 +268,92 @@ export const codeConfirm = async (req, res) => {
     }
 };
 
+export const createTestAccount = async (req, res) => {
+    try {
+        const { fullName, phone, mail } = req.body;
+        const superAdminId = "66fc01a4803e3f68963c14f3"
+        const candidate = await Client.findOne({ phone });
+
+        if (candidate) {
+            return res.status(409).json({
+                success: false,
+                message: "Пользователь с таким номером уже существует",
+            });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(req.body.password, salt);
+
+        const doc = new Client({
+            fullName,
+            password: hash,
+            phone,
+            mail: mail?.toLowerCase(),
+            cart: {
+                b12: 0,
+                b19: 0,
+            },
+            franchisee: superAdminId,
+            price12: 900,
+            price19: 1300,
+            dailyWater: 2,
+            opForm: "fakt",
+            type: true
+        });
+
+        const client = await doc.save();
+
+        const accessToken = jwt.sign(
+            { client: client._id },
+            process.env.SecretKey,
+            {
+                expiresIn: "30d", // Время жизни access токена (например, 15 минут)
+            }
+        );
+
+        const refreshToken = jwt.sign(
+            { client: client._id },
+            process.env.SecretKeyRefresh,
+            {
+                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
+            }
+        );
+
+        await Client.findByIdAndUpdate(client._id, {
+            refreshToken: refreshToken,
+        });
+
+        const clientData = {
+            fullName: client._doc.fullName,
+            phone: client._doc.phone,
+            mail: client._doc.mail,
+            password: client._doc.password,
+            franchisee: client._doc.franchisee,
+            addresses: client._doc.addresses,
+            status: client._doc.status,
+            cart: client._doc.cart,
+            bonus: client._doc.bonus,
+            subscription: client._doc.subscription,
+            chooseTime: client._doc.chooseTime,
+            clientType: client._doc.clientType,
+            clientBottleType: client._doc.clientBottleType,
+            clientBottleCount: client._doc.clientBottleCount,
+            clientBottleCredit: client._doc.clientBottleCredit,
+            verify: client._doc.verify,
+            haveCompletedOrder: client._doc.haveCompletedOrder,
+            createdAt: client._doc.createdAt,
+            updatedAt: client._doc.updatedAt,
+        }
+
+        res.json({ success: true, accessToken, refreshToken: refreshToken, clientData });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const clientRegister = async (req, res) => {
     try {
         const { fullName, phone, mail } = req.body;
