@@ -2,6 +2,8 @@ node_modules
 FireBase
 tibetskaya-courier
 .env
+./.env
+./client/.env
 tibetskaya-courier
 ./vrp_routes_visualization.png
-vrp_routes_visualization.png.env
+vrp_routes_visualization.png
