@@ -152,7 +152,21 @@ const ClientSchema = new mongoose.Schema(
         isStartedHydration: {
             type: Boolean,
             default: false
-        }
+        },
+        supportMessages: [{
+            text: {
+                type: String
+            },
+            isUser: {
+                type: Boolean
+            },
+            timestamp: {
+                type: String
+            },
+            isRead: {
+                type: Boolean
+            }
+        }]
     },
     {
         timestamps: true,

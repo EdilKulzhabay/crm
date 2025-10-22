@@ -4,11 +4,8 @@ import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import {Expo} from "expo-server-sdk";
-import { scheduleJob } from "node-schedule";
 import "dotenv/config";
-import { pushNotification } from "../pushNotification.js";
 import User from "../Models/User.js";
-import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 
 let expo = new Expo({ useFcmV1: true });
@@ -1016,246 +1013,91 @@ export const deleteClientMobile = async (req, res) => {
     }
 }
 
-export const updateAllClientAddresses = async (req, res) => {
+export const sendSupportMessage = async (req, res) => {
     try {
-        // Получить всех клиентов из базы данных
-        const clients = await Client.find();
-
-        // Перебрать каждого клиента
-        for (const client of clients) {
-            // Перебрать адреса клиента и обновить их имена
-            client.addresses.forEach((address, index) => {
-                address.name = `Адрес ${index + 1}`; // Установить имя как "Адрес 1", "Адрес 2" и т.д.
-            });
-
-            // Сохранить обновления для текущего клиента
-            await client.save();
-        }
-
-        res.json({
-            success: true,
-            message: "Имена адресов успешно обновлены для всех клиентов",
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Что-то пошло не так",
-        });
-    }
-};
-
-export const updateCart = async (req, res) => {
-    try {
-        const { mail, product, method } = req.body;
-
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
-
-        if (product === "b12") {
-            if (method === "add") {
-                client.cart.b12 = client.cart.b12 + 1;
-            } else {
-                client.cart.b12 =
-                    client.cart.b12 - 1 >= 0 ? client.cart.b12 - 1 : 0;
-            }
-        } else {
-            if (method === "add") {
-                client.cart.b19 = client.cart.b19 + 1;
-            } else {
-                client.cart.b19 =
-                    client.cart.b19 - 1 >= 0 ? client.cart.b19 - 1 : 0;
-            }
-        }
-
-        await client.save();
-
-        res.json({
-            success: true,
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-};
-
-export const cleanCart = async (req, res) => {
-    try {
-        const { mail } = req.body;
-
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
-
-        client.cart.b12 = 0;
-        client.cart.b19 = 0;
-
-        await client.save();
-
-        res.json({
-            success: true,
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-};
-
-export const getCart = async (req, res) => {
-    try {
-        const { mail } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
-
-        const cart = client.cart;
-
-        res.json({
-            success: true,
-            cart,
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-};
-
-const userNotifications = {};
-
-export const addBonus = async (req, res) => {
-    try {
-        const { mail, count, expoPushToken } = req.body;
-
+        const { mail, message } = req.body;
         const client = await Client.findOne({ mail: mail?.toLowerCase() });
         if (!client) {
-            return res
-                .status(404)
-                .json({ success: false, message: "Client not found" });
-        }
-
-        client.bonus = client.bonus + count;
-        await client.save();
-        const userId = client?._id
-        const expoTokens = [expoPushToken]
-
-        const job = scheduleJob(new Date(Date.now() + 60 * 60 * 1000), async () => {
-            try {
-                const messageTitle = "Пора пить воду"
-                const messageBody = "Не забудьте выпить стакан воды!"
-                const newStatus = "bonus"
-                if (expoTokens.length > 0) {
-                    pushNotification(messageTitle, messageBody, expoTokens, newStatus)
-                }
-                delete userNotifications[userId];
-            } catch (error) {
-                console.error("Ошибка при отправке уведомления:", error);
-            }
-        });        
-
-        userNotifications[userId] = job;
-
-        res.json({ success: true, message: "Бонусы были добавлены" });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-}
-
-export const expoTokenCheck = async (req, res) => {
-    console.log("expoTokenCheck proverks na log");
-    
-    try {
-      console.log("req.body: ", req.body);
-  
-      // Возвращаем успех после успешной отправки уведомления
-      res.json({
-        success: true,
-      });
-    } catch (error) {
-      console.error("Error sending push notification:", error);
-      res.status(500).json({
-        success: false,
-        message: "Что-то пошло не так",
-        error: error.message,
-      });
-    }
-};
-
-export const getUnreviewedOrder = async (req, res) => {
-    try {
-        const {mail} = req.body
-
-        const client = await Client.findOne({ mail: mail?.toLowerCase})
-        const clientId = client._id
-        const order = await Order.findOne({client: clientId, clientReview: 0, status: "delivered"})
-
-        if (!order) {
             return res.status(404).json({
                 success: false,
-                message: "Хз че не так, но заказов нет("
-            })
+                message: "Клиент не найден",
+            });
         }
+        
+        const { _id, ...newMessage } = message;
 
-        res.json({ success: true, order });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-}
+        client.supportMessages.push(newMessage);
+        await client.save();
 
-export const addReview = async (req, res) => {
-    try {
-        const {orderId, rating, notes} = req.body
+        const updatedClient = await Client.findOne({ mail: mail?.toLowerCase() });
 
-        const order = await Order.findById(orderId)
-
-        order.clientReview = rating
-        order.clientNotes = notes
-
-        await order.save()
-
-        res.json({success: true})
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Что-то пошло не так",
-        });
-    }
-}
-
-export const addPassword = async (req, res) => {
-    try {
-        const {phone, password} = req.body
-        const client = await Client.findOne({phone})
-        if (!client) {
-            console.log("client not found");
-            res.status(403).json({
-                success: false,
-                message: "client not found",
-                error: error.message,
-            })
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(req.body.password, salt);
-
-        client.password = hash
-
-        await client.save()
+        const messages = updatedClient.supportMessages;
 
         res.json({
-            success: true
-        })
-      } catch (error) {
-        res.status(500).json({
-          success: false,
-          message: "Что-то пошло не так",
-          error: error.message,
+            success: true,
+            message: "Сообщение успешно отправлено",
+            messages,
         });
-      }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getSupportMessages = async (req, res) => {
+    try {
+        const { mail } = req.body;
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: "Клиент не найден",
+            });
+        }
+        res.json({
+            success: true,
+            messages: client.supportMessages,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const replyToSupportMessage = async (req, res) => {
+    try {
+        const { mail, message } = req.body;
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: "Клиент не найден",
+            });
+        }
+        client.supportMessages.push(message);
+        await client.save();
+        res.json({
+            success: true,
+            message: "Сообщение успешно отправлено",
+        });
+
+        const notificationTokens = client.notificationPushToken;
+        const messageTitle = "Ответ на ваше сообщение"
+        const messageBody = message.text
+        const newStatus = "newSupportMessage"
+        const sendMessage = message
+        
+        const { pushNotificationClientSupport } = await import("../pushNotificationClient.js");
+        await pushNotificationClientSupport(messageTitle, messageBody, [notificationTokens], newStatus, sendMessage);
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
 }
