@@ -272,34 +272,21 @@ app.post("/clientLogin", MobileController.clientLogin);
 app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
 app.post("/addClientAddress", checkAuth, MobileController.addClientAddress);
 app.post("/updateClientAddress", checkAuth, MobileController.updateClientAddress);
-app.get("/updateAllClientAddresses", MobileController.updateAllClientAddresses);
 app.post("/getClientAddresses", checkAuth, MobileController.getClientAddresses);
-app.post("/updateCart", checkAuth, MobileController.updateCart);
-app.post("/cleanCart", checkAuth, MobileController.cleanCart);
-app.post("/getCart", checkAuth, MobileController.getCart);
-app.post(
-    "/getClientDataMobile",
-    MobileController.getClientDataMobile
-);
-app.post(
-    "/updateClientDataMobile",
-    MobileController.updateClientDataMobile
-);
+app.post("/getClientDataMobile", MobileController.getClientDataMobile);
+app.post("/updateClientDataMobile", MobileController.updateClientDataMobile);
+app.post("/sendSupportMessage", MobileController.sendSupportMessage);
+app.post("/getSupportMessages", MobileController.getSupportMessages);
+app.post("/replyToSupportMessage", MobileController.replyToSupportMessage);
 app.post("/deleteClientMobile", MobileController.deleteClientMobile);
 app.post("/createTestAccount", MobileController.createTestAccount);
 app.post("/refreshToken", MobileController.refreshToken);
 app.post("/logOutClient", MobileController.logOutClient);
-app.post("/addBonus", MobileController.addBonus);
 app.post("/addOrderClientMobile", MobileController.addOrderClientMobile);
 app.post("/getActiveOrdersMobile", MobileController.getActiveOrdersMobile);
 app.post("/getClientOrdersMobile", MobileController.getClientOrdersMobile);
-app.post("/expoTokenCheck", MobileController.expoTokenCheck)
-app.post("/getUnreviewedOrder", MobileController.getUnreviewedOrder)
-app.post("/addReview", MobileController.addReview)
-app.post("/addPassword", MobileController.addPassword)
 app.post("/getCourierLocation", MobileController.getCourierLocation)
 app.post("/saveFcmToken", MobileController.saveFcmToken)
-app.post("/testNotification", MobileController.testNotification)
 
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)

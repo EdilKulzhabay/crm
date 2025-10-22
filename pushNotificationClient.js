@@ -150,3 +150,112 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
         throw error;
     }
 }
+
+export const pushNotificationClientSupport = async (messageTitle, messageBody, notificationTokens, newStatus, message) => {
+    try {
+        // Валидация входных данных
+        // validateNotificationData(messageTitle, messageBody, notificationTokens, newStatus, order);
+
+        console.log("notificationTokens = ", notificationTokens);
+        console.log("messageTitle = ", messageTitle);
+        console.log("messageBody = ", messageBody);
+        console.log("newStatus = ", newStatus);
+        console.log("message = ", message);
+
+        // Фильтрация невалидных токенов
+        const validTokens = notificationTokens.filter(token => token && typeof token === 'string');
+        if (validTokens.length === 0) {
+            throw new Error('Нет валидных токенов для отправки');
+        }
+
+        // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
+        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, message);
+        const now = Date.now();
+        
+        // Проверяем, не было ли уже отправлено такое же уведомление недавно
+        const lastSent = sentNotifications.get(notificationKey);
+        if (lastSent && (now - lastSent) < NOTIFICATION_DEDUP_WINDOW) {
+            const remainingTime = Math.ceil((NOTIFICATION_DEDUP_WINDOW - (now - lastSent)) / 1000);
+            console.log(`⚠️  ДУБЛИКАТ: пропускаем (${remainingTime} сек назад)`);
+            return;
+        }
+
+        console.log(`Отправка уведомления "${messageTitle}" на ${validTokens.length} устройств`);
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const token of validTokens) {
+            try {
+                // Подготавливаем данные с гарантией строкового типа
+                const messageData = {
+                    newStatus: newStatus.toString(),
+                    message: message ? JSON.stringify(message) : '{}',
+                    messageId: (message?._id || message?.id || 'unknown').toString(),
+                    messageStatus: (message?.status || newStatus || 'unknown').toString(),
+                };
+
+                // Проверяем, что все значения являются строками
+                for (const [key, value] of Object.entries(messageData)) {
+                    if (typeof value !== 'string') {
+                        console.error(`Поле ${key} не является строкой:`, typeof value, value);
+                        messageData[key] = String(value);
+                    }
+                }
+
+                console.log("Отправляемые данные:", messageData);
+
+                const message = {
+                    token,
+                    notification: {
+                        title: messageTitle,
+                        body: messageBody,
+                    },
+                    data: messageData,
+                    android: {
+                        priority: "high",
+                    },
+                    apns: {
+                        headers: {
+                            "apns-priority": "10",
+                        },
+                        payload: {
+                            aps: {
+                                sound: "default",
+                                contentAvailable: true,
+                            },
+                        },
+                    },
+                };
+
+                const response = await admin.app('client-app').messaging().send(message);
+                console.log("Firebase message sent successfully:", response);
+                successCount++;
+            } catch (tokenError) {
+                console.error(`Ошибка при отправке уведомления на токен ${token}:`, tokenError);
+                errorCount++;
+                // Продолжаем отправку на другие токены
+            }
+        }
+
+        // Отмечаем уведомление как отправленное только если была хотя бы одна успешная отправка
+        if (successCount > 0) {
+            sentNotifications.set(notificationKey, now);
+            console.log(`✅ Уведомление успешно отправлено: ${successCount} успешно, ${errorCount} ошибок`);
+            
+            // Очищаем старые записи (старше 5 минут)
+            const cleanupTime = now - (5 * 60 * 1000);
+            for (const [key, timestamp] of sentNotifications.entries()) {
+                if (timestamp < cleanupTime) {
+                    sentNotifications.delete(key);
+                }
+            }
+        } else {
+            console.log(`❌ Не удалось отправить уведомление ни на одно устройство`);
+        }
+
+    } catch (error) {
+        console.error("Критическая ошибка при отправке уведомлений:", error);
+        throw error;
+    }
+}
