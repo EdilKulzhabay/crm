@@ -151,7 +151,7 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
     }
 }
 
-export const pushNotificationClientSupport = async (messageTitle, messageBody, notificationTokens, newStatus, message) => {
+export const pushNotificationClientSupport = async (messageTitle, messageBody, notificationTokens, newStatus, newMessage) => {
     try {
         // Валидация входных данных
         // validateNotificationData(messageTitle, messageBody, notificationTokens, newStatus, order);
@@ -160,7 +160,7 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
         console.log("messageTitle = ", messageTitle);
         console.log("messageBody = ", messageBody);
         console.log("newStatus = ", newStatus);
-        console.log("message = ", message);
+        console.log("message = ", newMessage);
 
         // Фильтрация невалидных токенов
         const validTokens = notificationTokens.filter(token => token && typeof token === 'string');
@@ -169,7 +169,7 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
         }
 
         // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
-        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, message);
+        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, newMessage);
         const now = Date.now();
         
         // Проверяем, не было ли уже отправлено такое же уведомление недавно
@@ -190,7 +190,7 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
                 // Подготавливаем данные с гарантией строкового типа
                 const messageData = {
                     newStatus: newStatus.toString(),
-                    message: message ? JSON.stringify(message) : '{}',
+                    message: newMessage ? JSON.stringify(newMessage) : '{}',
                     messageId: (message?._id || message?.id || 'unknown').toString(),
                     messageStatus: (message?.status || newStatus || 'unknown').toString(),
                 };
