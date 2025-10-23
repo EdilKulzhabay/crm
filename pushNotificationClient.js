@@ -191,8 +191,8 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
                 const messageData = {
                     newStatus: newStatus.toString(),
                     message: newMessage ? JSON.stringify(newMessage) : '{}',
-                    messageId: (message?._id || message?.id || 'unknown').toString(),
-                    messageStatus: (message?.status || newStatus || 'unknown').toString(),
+                    messageId: (newMessage?._id || newMessage?.id || 'unknown').toString(),
+                    messageStatus: (newMessage?.status || newStatus || 'unknown').toString(),
                 };
 
                 // Проверяем, что все значения являются строками
