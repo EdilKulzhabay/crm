@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import MyInput from "../Components/MyInput";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
+import Li from "../Components/Li";
 
 export default function SupportChat() {
     const userData = useFetchUserData();
@@ -71,18 +72,19 @@ export default function SupportChat() {
                 <div className="flex flex-col gap-y-3 max-h-[500px] overflow-y-auto">
                     {messages.map((message) => (
                         <div key={message._id}>
-                            <div>{message.isUser ? "Вы:" : "Клиент:"}</div>
-                            <div>{message.text}</div>
-                            <div>{message.timestamp.split("T")[0]} {message.timestamp.split("T")[1].split(".")[0]}</div>
+                            <Li>{message.isUser ? "Клиент:" : "Вы:"}</Li>
+                            <Li>{message.text}</Li>
+                            <Li>{message.timestamp.split("T")[0]} {message.timestamp.split("T")[1].split(".")[0]}</Li>
+                            <Div />
                         </div>
                     ))}
                 </div>
                 <Div />
                 <Div>
-                    <div>
-                        <MyInput value={answerMessage} onChange={(e) => setAnswerMessage(e.target.value)} />
-                        <MyButton onClick={sendMessage}>Отправить</MyButton>
-                    </div>
+                    <textarea size={13} style={{ fontSize: '16px' }} value={answerMessage} onChange={(e) => {setAnswerMessage(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                </Div>
+                <Div>
+                    <MyButton click={sendMessage}>Отправить</MyButton>
                 </Div>
             </Container>
             <MySnackBar
