@@ -140,6 +140,9 @@ app.post("/deleteUser", checkAuth, OtherController.deleteUser);
 app.post("/addPickup", OtherController.addPickup);
 app.post("/getPickupInfo", OtherController.getPickupInfo)
 app.post("/sendNotificationToClients", OtherController.sendNotificationToClients)
+app.get("/getSupportContacts", OtherController.getSupportContacts)
+app.post("/deleteSupportContact", OtherController.deleteSupportContact)
+app.post("/getSupportMessages", OtherController.getSupportMessages)
 
 /////USER
 app.get("/getMe", checkAuth, UserController.getMe);
@@ -374,21 +377,6 @@ app.get("/orTools", async (req, res) => {
         } else {
             console.error("Ошибка в orTools:", error);
         }
-    }
-});
-
-app.post("/testTelegram", async (req, res) => {
-    try {
-        console.log("testTelegram req.body: ", req.body);
-
-        res.json({ success: true, message: "Message sent to Telegram" });
-    }
-    catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Error sending message to Telegram",
-            error: error.message
-        });
     }
 });
 

@@ -239,10 +239,40 @@ export default function SuperAdminAggregatorAction() {
     // Статистика
     const orderStats = {
         awaitingOrder: orders.filter(o => o.status === "awaitingOrder").length,
+        awaitingOrdersBottles12: orders.filter(o => o.status === "awaitingOrder").reduce((acc, order) => {
+            return acc + (order.products?.b12 || 0);
+        }, 0),
+        awaitingOrdersBottles19: orders.filter(o => o.status === "awaitingOrder").reduce((acc, order) => {
+            return acc + (order.products?.b19 || 0);
+        }, 0),
         onTheWay: orders.filter(o => o.status === "onTheWay").length,
+        onTheWayBottles12: orders.filter(o => o.status === "onTheWay").reduce((acc, order) => {
+            return acc + (order.products?.b12 || 0);
+        }, 0),
+        onTheWayBottles19: orders.filter(o => o.status === "onTheWay").reduce((acc, order) => {
+            return acc + (order.products?.b19 || 0);
+        }, 0),
         delivered: orders.filter(o => o.status === "delivered").length,
+        deliveredBottles12: orders.filter(o => o.status === "delivered").reduce((acc, order) => {
+            return acc + (order.products?.b12 || 0);
+        }, 0),
+        deliveredBottles19: orders.filter(o => o.status === "delivered").reduce((acc, order) => {
+            return acc + (order.products?.b19 || 0);
+        }, 0),
         cancelled: orders.filter(o => o.status === "cancelled").length,
-        total: orders.length
+        cancelledBottles12: orders.filter(o => o.status === "cancelled").reduce((acc, order) => {
+            return acc + (order.products?.b12 || 0);
+        }, 0),
+        cancelledBottles19: orders.filter(o => o.status === "cancelled").reduce((acc, order) => {
+            return acc + (order.products?.b19 || 0);
+        }, 0),
+        total: orders.length,
+        totalBottles12: orders.reduce((acc, order) => {
+            return acc + (order.products?.b12 || 0);
+        }, 0),
+        totalBottles19: orders.reduce((acc, order) => {
+            return acc + (order.products?.b19 || 0);
+        }, 0),
     };
 
     // Функция для группировки заказов по координатам и добавления смещения
@@ -315,23 +345,28 @@ export default function SuperAdminAggregatorAction() {
             <h3 className="text-lg font-bold mb-2">Статистика заказов:</h3>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="text-center">
-                    <div className="text-green-400 font-bold">{orderStats.awaitingOrder}</div>
+                    <div className="text-green-400 font-bold">{orderStats.awaitingOrder} 
+                        ({orderStats.awaitingOrdersBottles19};{orderStats.awaitingOrdersBottles12})</div>
                     <div className="text-sm">Ожидают</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-blue-400 font-bold">{orderStats.onTheWay}</div>
+                    <div className="text-blue-400 font-bold">{orderStats.onTheWay} 
+                        ({orderStats.onTheWayBottles19};{orderStats.onTheWayBottles12})</div>
                     <div className="text-sm">В пути</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-red-400 font-bold">{orderStats.delivered}</div>
+                    <div className="text-red-400 font-bold">{orderStats.delivered} 
+                        ({orderStats.deliveredBottles19};{orderStats.deliveredBottles12})</div>
                     <div className="text-sm">Доставлены</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-gray-400 font-bold">{orderStats.cancelled}</div>
+                    <div className="text-gray-400 font-bold">{orderStats.cancelled} 
+                        ({orderStats.cancelledBottles19};{orderStats.cancelledBottles12})</div>
                     <div className="text-sm">Отменены</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-white font-bold">{orderStats.total}</div>
+                    <div className="text-white font-bold">{orderStats.total} 
+                        ({orderStats.totalBottles19};{orderStats.totalBottles12})</div>
                     <div className="text-sm">Всего</div>
                 </div>
             </div>

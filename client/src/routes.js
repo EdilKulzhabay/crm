@@ -59,6 +59,8 @@ import SuperAdminAggregator from "./Pages/SuperAdmin/SuperAdminAggregator";
 import CourierAggregatorPage from "./Pages/CourierAggregatorPage";
 import SuperAdminAggregatorAction from "./Pages/SuperAdmin/SuperAdminAggregatorAction";
 import SuperAdminCancelledOrders from "./Pages/SuperAdmin/SuperAdminCancelledOrders";
+import SupportChat from "./Pages/SupportChat";
+import Support from "./Pages/Support";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -87,6 +89,8 @@ export const router = createBrowserRouter([
     { path: "/clientsByOpForm/:opForm/:startDate/:endDate", element: <ClientsByOpForm /> },
     { path: "/sendNotificationToClients", element: <SendNotificationToClients /> },
     { path: "/transferOrders/:clientId", element: <TransferOrders /> },
+    { path: "/supportChat/:id", element: <SupportChat /> },
+    { path: "/support", element: <Support /> },
 
     ////SUPERADMINLINKS
     { path: "/superAdmin", element: <SuperAdmin /> },

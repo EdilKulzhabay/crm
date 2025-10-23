@@ -5,6 +5,7 @@ import Order from "../Models/Order.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
 import Pickup from "../Models/Pickup.js";
 import { pushNotification } from "../pushNotification.js";
+import SupportContacts from "../Models/SupportContacts.js";
 
 export const addPickup = async (req, res) => {
     try {
@@ -524,3 +525,59 @@ export const sendNotificationToClients = async (req, res) => {
     }
 };
 
+export const getSupportContacts = async (req, res) => {
+    try {
+        const supportContacts = await SupportContacts.find().populate("client").sort({ createdAt: -1 });
+        res.json({
+            success: true,
+            supportContacts
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const deleteSupportContact = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+        await SupportContacts.findOneAndDelete({ client: clientId });
+        res.json({
+            success: true,
+            message: "Контакт успешно удален",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false, 
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getSupportMessages = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+        const client = await Client.findById(clientId);
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: "Клиент не найден",
+            });
+        }
+        res.json({
+            success: true,
+            message: "Сообщения успешно получены",
+            client
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+}

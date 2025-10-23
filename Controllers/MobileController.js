@@ -7,6 +7,7 @@ import {Expo} from "expo-server-sdk";
 import "dotenv/config";
 import User from "../Models/User.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
+import SupportContacts from "../Models/SupportContacts.js";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -1038,6 +1039,13 @@ export const sendSupportMessage = async (req, res) => {
             message: "Сообщение успешно отправлено",
             messages,
         });
+
+        const supportContact = await SupportContacts.findOne({ client: client._id });
+        if (!supportContact) {
+            await SupportContacts.create({ client: client._id, lastMessage: message.text, lastMessageTime: new Date().toISOString() });
+        } else {
+            await SupportContacts.findByIdAndUpdate(supportContact._id, { lastMessage: message.text, lastMessageTime: new Date().toISOString() });
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
