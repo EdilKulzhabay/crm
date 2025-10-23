@@ -3,8 +3,7 @@ import Div from "../Components/Div";
 import useFetchUserData from "../customHooks/useFetchUserData";
 import api from "../api";
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import MyInput from "../Components/MyInput";
+import { useEffect, useState, useRef } from "react";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
 import Li from "../Components/Li";
@@ -18,6 +17,7 @@ export default function SupportChat() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+    const messagesEndRef = useRef(null);
 
     useEffect(() => {
         if (id) {  
@@ -25,12 +25,20 @@ export default function SupportChat() {
         }
     }, [id]);
 
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
     const getMessages = () => {
         api.post(`/getSupportMessages`, { clientId: id }, {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             setClient(data.client);
-            setMessages(data.client.supportMessages.reverse());
+            setMessages(data.client.supportMessages);
         });
     };
 
@@ -45,6 +53,7 @@ export default function SupportChat() {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             if (data.success) {
+                setAnswerMessage("");
                 getMessages();
             } else {
                 setMessage(data.message);
@@ -74,10 +83,11 @@ export default function SupportChat() {
                         <div key={message._id}>
                             <Li>{message.isUser ? "Клиент:" : "Вы:"}</Li>
                             <Li>{message.text}</Li>
-                            <Li>{message.timestamp.split("T")[0]} {message.timestamp.split("T")[1].split(".")[0]}</Li>
+                            <Li>{message.timestamp.slice(0, 10)} {message.timestamp.slice(11, 16)}</Li>
                             <Div />
                         </div>
                     ))}
+                    <div ref={messagesEndRef} />
                 </div>
                 <Div />
                 <Div>
