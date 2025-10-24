@@ -91,18 +91,18 @@ export default function Support() {
                 <div>Клиенты с последним сообщением:</div>
             </Div>
             <Div />
-            { supportContacts.length > 0 && supportContacts.map((contact) => (
-                <Li key={contact._id}>
-                    <div>{contact.client.fullName || contact.client.userName}</div>
+            { supportContacts?.length > 0 && supportContacts?.map((contact) => (
+                <Li key={contact?._id}>
+                    <div>{contact?.client?.fullName || contact?.client?.userName}</div>
                     <div>|</div>
-                    <div>{contact.lastMessage}</div>
+                    <div>{contact?.lastMessage}</div>
                     <div>|</div>
-                    <div>{contact.lastMessageTime}</div>
+                    <div>{contact?.lastMessageTime}</div>
                     <div>|</div>
-                    <LinkButton href={`/SupportChat/${contact.client._id}`}>Перейти</LinkButton>
+                    <LinkButton href={`/SupportChat/${contact?.client?._id}`}>Перейти</LinkButton>
                     <div>|</div>
                     <MyButton click={() => {
-                        deleteSupportContact(contact.client._id);
+                        deleteSupportContact(contact?.client?._id);
                     }}>Удалить</MyButton>
                 </Li>
             ))}

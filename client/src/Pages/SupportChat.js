@@ -79,11 +79,11 @@ export default function SupportChat() {
                 </Div>
                 <Div />
                 <div className="flex flex-col gap-y-3 max-h-[500px] overflow-y-auto">
-                    {messages.map((message) => (
-                        <div key={message._id}>
-                            <Li>{message.isUser ? "Клиент:" : "Вы:"}</Li>
-                            <Li>{message.text}</Li>
-                            <Li>{message.timestamp.slice(0, 10)} {message.timestamp.slice(11, 16)}</Li>
+                    {messages?.length > 0 && messages?.map((message) => (
+                        <div key={message?._id}>
+                            <Li>{message?.isUser ? "Клиент:" : "Вы:"}</Li>
+                            <Li>{message?.text}</Li>
+                            <Li>{message?.timestamp?.slice(0, 10)} {message?.timestamp?.slice(11, 16)}</Li>
                             <Div />
                         </div>
                     ))}
