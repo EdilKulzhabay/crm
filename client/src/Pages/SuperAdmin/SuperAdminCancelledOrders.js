@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import api from "../../api";
 import Div from "../../Components/Div";
 import Li from "../../Components/Li";
@@ -8,9 +8,8 @@ import Container from "../../Components/Container";
 import clsx from "clsx";
 import OrderInfo from "../../Components/OrderInfo";
 import useFetchUserData from "../../customHooks/useFetchUserData";
-import ChooseFranchiseeModal from "../../Components/ChooseFranchiseeModal";
-
-import useScrollPosition from "../../customHooks/useScrollPosition";
+import DataInput from "../../Components/DataInput";
+import MySnackBar from "../../Components/MySnackBar";
 
 const getCurrentDate = () => {
     const today = new Date();
@@ -22,104 +21,21 @@ const getCurrentDate = () => {
 
 
 export default function SuperAdminCancelledOrders() {
-    const scrollPosition = useScrollPosition();
     const userData = useFetchUserData();
     const [orders, setOrders] = useState([]);
-    const [additionalOrders, setAdditionalOrders] = useState([])
-    const [search, setSearch] = useState("");
-    const [searchF, setSearchF] = useState("");
-    const [sa, setSa] = useState(false)
-    const [searchStatus, setSearchStatus] = useState(false);
-    const [dates, setDates] = useState({
-        startDate: getCurrentDate(),
-        endDate: getCurrentDate(),
-    });
-    const [franchiseesModal, setFranchiseesModal] = useState(false);
-    const [franchisee, setFranchisee] = useState(null);
-    const [order, setOrder] = useState(null)
-    const [totalOrders, setTotalOrders] = useState(0)
-
-    const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-
+    const [date, setDate] = useState(getCurrentDate());
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
 
-    const closeSnack = () => {
-        setOpen(false);
-    };
-
-    const closeFranchiseeModal = () => {
-        setFranchiseesModal(false);
-    };
-
-    const chooseFranchisee = (chFranchisee) => {
-        setFranchisee(chFranchisee);
-        setFranchiseesModal(false);
-    };
-
-    const getAdditionalOrders = () => {
-        api.post("/getAdditionalOrders", {...dates}, {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            setAdditionalOrders(data.orders)
-        }).catch((e) => {
-            console.log(e);
-        })
-    }
-
-    useEffect(() => {
-        getAdditionalOrders()
-    }, []);
-
-    const updateOrderTransfer = () => {
-        api.post("/updateOrderTransfer", {orderId: order, change: "transferredFranchise", changeData: franchisee?.fullName}, {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            if (data.success) {
-                setOpen(true)
-                setMessage(data.message)
-                setStatus("success")
-                const temporaryOrders = [...orders]
-                temporaryOrders.forEach((item) => {
-                    if (item._id === order) {
-                        item.transferred = true
-                        item.transferredFranchise = franchisee?.fullName
-                    }
-                })
-                setOrders(temporaryOrders)
-            }
-        }).catch((e) => {})
-    }
-
-    const addOrderToAggregator = (id) => {
-        api.post("/addOrderToAggregator", {orderId: id}, {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            console.log(data);
-            getCancelledOrders();
-        })
-    }
-
-    const toTomorrow = (id) => {
-        api.post("/toTomorrow", {orderId: id}, {
-            headers: { "Content-Type": "application/json" },
-        }).then(({data}) => {
-            console.log(data);
-            getCancelledOrders();
-        })
-    }
-
-    useEffect(() => {
-        if (order && franchisee) {
-            updateOrderTransfer()
-        }
-    }, [franchisee])
-
     const getCancelledOrders = () => {
-        api.get("/getCancelledOrders", {
+        if (date === "" || date.length !== 10) {
+            setOpen(true)
+            setStatus("error")
+            setMessage("Введите дату в формате ГГГГ-ММ-ДД")
+            return;
+        }
+        api.post("/getCancelledOrders", {date}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setOrders(data.orders)
@@ -132,15 +48,12 @@ export default function SuperAdminCancelledOrders() {
         getCancelledOrders()
     }, []);
 
+    const closeSnack = () => {
+        setOpen(false);
+    };
+
     return (
         <div className="relative">
-            {franchiseesModal && (
-                    <ChooseFranchiseeModal
-                        closeFranchiseeModal={closeFranchiseeModal}
-                        chooseFranchisee={chooseFranchisee}
-                        scrollPosition={scrollPosition}
-                    />
-                )}
             <Container role={userData?.role}>
                 
                 <Div>Список заказов</Div>
@@ -148,6 +61,24 @@ export default function SuperAdminCancelledOrders() {
                 <Div>
                     <div>Отмененные заказы:</div>
                 </Div>
+                <Div />
+                <Div>
+                    <div>Дата:</div>
+                </Div>
+                <Li>
+                    <div className="text-red">
+                        [
+                        <DataInput
+                            color="red"
+                            value={date}
+                            name="date"
+                            change={(e) => setDate(e.target.value)}
+                        />
+                        ]
+                    </div>
+                    <MyButton click={() => {getCancelledOrders()}}>Применить</MyButton>
+                </Li>
+                <Div />
 
                 {orders && orders.length > 0 && orders.map((item) => (
                     <div key={item._id}>
@@ -178,24 +109,17 @@ export default function SuperAdminCancelledOrders() {
                                 <MyButton click={() => {addOrderToAggregator(item?._id)}}>Добавить заново</MyButton>
                                 <MyButton click={() => {toTomorrow(item?._id)}}>На завтра</MyButton>
                                 <div>Причина: <span className="text-red">{item?.reason}</span></div>
-                                {/* {userData?.role === "superAdmin" && <>
-                                    {item?.transferred && 
-                                    <div className={clsx("", {
-                                        "text-white bg-red": new Date(item?.date?.d).toISOString().split('T')[0] < new Date().toISOString().split('T')[0],
-                                    })}>
-                                        {item?.transferredFranchise}
-                                    </div>}
-                                    {!item?.transferred && <MyButton click={() => {setOrder(item?._id); setFranchiseesModal(true)}}>Перенести</MyButton>}
-                                    {item?.transferred &&  <MyButton click={() => {closeOrderTransfer(item?._id)}}>
-                                        <span className="text-green-400">
-                                            Отменить
-                                        </span></MyButton>}
-                                    </>} */}
                                 <div>{item?.courier?.fullName}</div>
                             </div>
                         </Li>
                     </div>
                 ))}
+                <MySnackBar
+                    open={open}
+                    text={message}
+                    status={status}
+                    close={closeSnack}
+                />
             </Container>
         </div>
     );

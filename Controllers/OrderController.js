@@ -436,7 +436,8 @@ export const getOrderDataForId = async (req, res) => {
         const order = await Order.findById(id)
             .populate("franchisee")
             .populate("courier")
-            .populate("client");
+            .populate("client")
+            .populate("courierAggregator");
 
         res.json({
             order,
@@ -1191,12 +1192,11 @@ export const fixRinat = async (req, res) => {
 
 export const getCancelledOrders = async (req, res) => {
     try {
-        const today = new Date();
-        const todayString = getDateAlmaty(today);
+        const { date } = req.body;
 
         const orders = await Order.find({
             status: "cancelled",
-            "date.d": todayString,
+            "date.d": date,
         }).populate("client")
 
         res.json({ orders, success: true })
@@ -1316,11 +1316,10 @@ export const addOrderToAggregator = async (req, res) => {
 
 export const getAllOrderForToday = async (req, res) => {
     try {
-        const today = new Date();
-        const todayString = getDateAlmaty(today);
+        const { date } = req.body;
 
         const orders = await Order.find({
-            "date.d": todayString,
+            "date.d": date,
         }).populate("client").populate("courierAggregator", "fullName _id")
         
         res.json({ orders })

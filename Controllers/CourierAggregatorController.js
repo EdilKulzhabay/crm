@@ -1045,6 +1045,8 @@ export const clearCourierAggregatorOrders = async (req, res) => {
 
 export const getActiveCourierAggregators = async (req, res) => {
     try {
+        const { date } = req.body;
+
         const couriers = await CourierAggregator.find({ onTheLine: true })
             .populate({
                 path: 'order.orderId',
@@ -1250,6 +1252,8 @@ export const appointmentFranchisee = async (req, res) => {
 
 export const getAllCouriersWithOrderCount = async (req, res) => {
     try {
+        const { date } = req.body;
+
         const couriers = await CourierAggregator.find({ onTheLine: true })
             .select('fullName _id orders order capacity12 capacity19');
 
