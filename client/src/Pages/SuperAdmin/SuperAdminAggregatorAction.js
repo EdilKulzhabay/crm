@@ -8,7 +8,6 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, Rectangle, Polygon, Pol
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import Li from "../../Components/Li";
-import MyButton from "../../Components/MyButton";
 import DataInput from "../../Components/DataInput";
 import MySnackBar from "../../Components/MySnackBar";
 // Исправляем проблему с иконками Leaflet
