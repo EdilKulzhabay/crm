@@ -44,6 +44,24 @@ export default function SuperAdminCancelledOrders() {
         })
     }
 
+    const addOrderToAggregator = (id) => {
+        api.post("/addOrderToAggregator", {orderId: id}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            console.log(data);
+            getCancelledOrders();
+        })
+    }
+
+    const toTomorrow = (id) => {
+        api.post("/toTomorrow", {orderId: id}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            console.log(data);
+            getCancelledOrders();
+        })
+    }
+
     useEffect(() => {
         getCancelledOrders()
     }, []);
