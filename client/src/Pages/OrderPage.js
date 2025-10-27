@@ -589,7 +589,7 @@ export default function OrderPage() {
                 <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>Курьер:</div>
-                        <div>{order?.courierAggregator?.fullName}</div>
+                        <div>{order?.courierAggregator?.fullName || order?.courier?.fullName}</div>
                     </div>
                 </Div>
                 {userData?.userName !== "Vasiliy" && 
@@ -599,14 +599,11 @@ export default function OrderPage() {
                                 Просмотр
                             </LinkButton>
                             }
-                            
-                            <MyButton
-                                click={() => {
-                                    setCouriersModal(true);
-                                }}
-                            >
-                                {order?.courier?._id ? "Изменить " : "Назначить " }курьера
-                            </MyButton>
+
+                            {order?.courierAggregator?._id && <LinkButton href={`/CourierAggregatorPage/${order?.courierAggregator?._id}`}>
+                                Просмотр
+                            </LinkButton>
+                            }
 
                             {orderCourier &&
                                     <MyButton
