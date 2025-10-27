@@ -125,6 +125,48 @@ export const courierAggregatorCodeConfirm = async (req, res) => {
     }
 };
 
+export const createCourierAggregator = async(req, res) => {
+    try {
+        const { email, password, firstName, lastName, phone, languages, birthDate, country, city, transport, isExternal } = req.body;
+        const candidate = await CourierAggregator.findOne({ email });
+        if (candidate) {
+            return res.status(409).json({
+                success: false,
+                message: "Пользователь с такой почтой уже существует"
+            });
+        }
+        
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+        const courier = new CourierAggregator({
+            fullName: `${firstName} ${lastName}`,
+            firstName,
+            lastName,
+            password: hash,
+            email,
+            phone,
+            status: "active",
+            carType: transport || "A", // Если транспорт не указан, устанавливаем тип A по умолчанию
+            income: 0,
+            birthDate,
+            country,
+            city,
+            languages,
+            isExternal
+        });
+        await courier.save();
+        res.status(200).json({
+            success: true,
+            message: "Курьер успешно создан"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Ошибка на стороне сервера"
+        })
+    }
+}
+
 export const getCourierAggregatorData = async(req, res) => {
     try {
         const id = req.userId

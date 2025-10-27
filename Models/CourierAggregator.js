@@ -307,6 +307,10 @@ const CourierAggregatorSchema = new mongoose.Schema(
         completeFirstOrder: {
             type: Boolean,
             default: false,
+        },
+        isExternal: {
+            type: Boolean,
+            default: false,
         }
     },
     {

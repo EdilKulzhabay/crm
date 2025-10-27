@@ -1191,12 +1191,11 @@ export const fixRinat = async (req, res) => {
 
 export const getCancelledOrders = async (req, res) => {
     try {
-        const today = new Date();
-        const todayString = getDateAlmaty(today);
+        const { date } = req.body;
 
         const orders = await Order.find({
             status: "cancelled",
-            "date.d": todayString,
+            "date.d": date,
         }).populate("client")
 
         res.json({ orders, success: true })
