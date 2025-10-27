@@ -589,7 +589,7 @@ export default function OrderPage() {
                 <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>Курьер:</div>
-                        <div>{order?.courier?.fullName || order?.courierAggregator?.fullName}</div>
+                        <div>{order?.courierAggregator?.fullName}</div>
                     </div>
                 </Div>
                 {userData?.userName !== "Vasiliy" && 
