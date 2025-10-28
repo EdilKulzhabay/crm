@@ -217,6 +217,7 @@ export const searchClient = async (req, res) => {
                         $or: [
                             { street: { $regex: regex } },
                             { house: { $regex: regex } },
+                            { phone: { $regex: regex } },
                         ] 
                     } 
                 } 

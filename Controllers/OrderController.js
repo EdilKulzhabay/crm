@@ -436,7 +436,8 @@ export const getOrderDataForId = async (req, res) => {
         const order = await Order.findById(id)
             .populate("franchisee")
             .populate("courier")
-            .populate("client");
+            .populate("client")
+            .populate("courierAggregator")
 
         res.json({
             order,
@@ -794,6 +795,7 @@ export const getClientOrdersForExcel = async (req, res) => {
         const orders = await Order.find(filter)
             .populate("courier", "fullName")
             .populate("client", "fullName userName")
+            .populate("courierAggregator", "fullName")
             .sort({createdAt: 1});
 
         res.json({ orders });

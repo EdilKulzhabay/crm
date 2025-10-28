@@ -396,7 +396,8 @@ export default function ClientPage() {
                         "Кол12,5": item?.products?.b12 && item?.products?.b12 !== 0 ? item?.products?.b12 : "",
                         "Форма оплаты": item?.opForm,
                         Сумма: item?.sum,
-                        Курьер: item?.courier?.fullName,
+                        Курьер: item?.courier?.fullName || "",
+                        "Курьер Агрегатор": item?.courierAggregator?.fullName || "",
                         Статус: "Доставлен",
                         "Дата доставки": item.date.d,
                     };
