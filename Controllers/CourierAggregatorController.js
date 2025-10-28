@@ -611,7 +611,12 @@ export const acceptOrderCourierAggregator = async (req, res) => {
 
 export const completeOrderCourierAggregator = async (req, res) => {
     try {
-        const {orderId, courierId} = req.body
+        const {orderId, courierId, b12, b19} = req.body
+
+        const products = {
+            b12: b12 || 0,
+            b19: b19 || 0
+        }
 
         const order = await Order.findById(orderId)
             .populate("client", "price19 price12 _id")
@@ -630,7 +635,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                     $set: {
                         status: "delivered",
                         courierAggregator: courierId,
-                        products: courier1.order.products,
+                        products: products,
                         transferred: true,
                         transferredFranchise: "Яковлев Василий"
                     }
@@ -646,7 +651,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                     $set: {
                         status: "delivered",
                         courierAggregator: courierId,
-                        products: courier1.order.products,
+                        products: products,
                         transferred: true,
                         transferredFranchise: "Таскын Абикен"
                     }
@@ -662,7 +667,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                     $set: {
                         status: "delivered",
                         courierAggregator: courierId,
-                        products: courier1.order.products,
+                        products: products,
                         transferred: true,
                         transferredFranchise: "Кудайберди Кулжабай"
                     }
@@ -678,7 +683,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                     $set: {
                         status: "delivered",
                         courierAggregator: courierId,
-                        products: courier1.order.products,
+                        products: products,
                         transferred: true,
                         transferredFranchise: "Сандыбаев Айдынбек"
                     }
@@ -694,7 +699,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                     $set: {
                         status: "delivered",
                         courierAggregator: courierId,
-                        products: courier1.order.products,
+                        products: products,
                         transferred: true,
                         transferredFranchise: "Сапарбаев Бекет"
                     }
@@ -707,7 +712,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
             $set: {
                 status: "delivered",
                 courierAggregator: courierId,
-                products: courier1.order.products
+                products: products
             } 
         })
 
@@ -717,8 +722,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
         
         // Проверяем, что order и products существуют
         if (courier1.order && courier1.order.products) {
-            sum += courier1.order.products.b12 > 0 ? courier1.order.products.b12 * order.client.price12 : 0;
-            sum += courier1.order.products.b19 > 0 ? courier1.order.products.b19 * order.client.price19 : 0;
+            sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
+            sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
         }
 
         await CourierAggregator.updateOne({_id: courierId}, {
@@ -735,8 +740,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
             },
             $inc: {
                 income: sum, // прибавит значение order.sum
-                capacity12: -(courier1.order?.products?.b12 || 0),
-                capacity19: -(courier1.order?.products?.b19 || 0)
+                capacity12: -(products.b12 || 0),
+                capacity19: -(products.b19 || 0)
             }
         })
 
