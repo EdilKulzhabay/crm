@@ -707,15 +707,6 @@ export const completeOrderCourierAggregator = async (req, res) => {
             );
         }
         
-
-        await Order.updateOne({_id: orderId}, { 
-            $set: {
-                status: "delivered",
-                courierAggregator: courierId,
-                products: products
-            } 
-        })
-
         await CourierRestrictions.deleteMany({orderId: orderId})
         
         let sum = 0;
@@ -725,6 +716,16 @@ export const completeOrderCourierAggregator = async (req, res) => {
             sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
             sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
         }
+
+        await Order.updateOne({_id: orderId}, { 
+            $set: {
+                status: "delivered",
+                courierAggregator: courierId,
+                products: products,
+                sum: sum,
+                income: sum
+            } 
+        })
 
         await CourierAggregator.updateOne({_id: courierId}, {
             $pull: {
