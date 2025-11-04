@@ -206,6 +206,25 @@ export default function SuperAdminAggregatorAction() {
         });
     };
 
+    const getOpForm = (opForm) => {
+        if (opForm === "fakt") {
+            return "Нал_Карта_QR";
+        }
+        if (opForm === "postpay") {
+            return "Постоплата";
+        }
+        if (opForm === "credit") {
+            return "В долг";
+        }
+        if (opForm === "coupon") {
+            return "Талоны";
+        }
+        if (opForm === "mixed") {
+            return "Смешанно";
+        }
+        return "Неизвестно";
+    };
+
     // Функция для определения цвета заказа по статусу
     const getOrderColor = (status, isAssigned, hasDeliveryTime, hasCourier) => {
         // Проверяем наличие order.courier
@@ -526,6 +545,7 @@ export default function SuperAdminAggregatorAction() {
                         const bottles12 = order.products?.b12 || 0;
                         const bottles19 = order.products?.b19 || 0;
                         const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
+                        const opForm = getOpForm(order.opForm);
                         
                         // Отладочная информация
                         if (order.courierAggregator) {
@@ -563,6 +583,7 @@ export default function SuperAdminAggregatorAction() {
                                         <strong>Заказ: {order.client?.fullName}</strong><br />
                                         Адрес: {order.address?.actual}<br />
                                         Статус: {order.status}<br />
+                                        Форма оплаты: {opForm}<br />
                                         Тип клиента: {clientType ? 'Круглый' : 'Квадратный'}<br />
                                         {order.date?.time && order.date.time !== "" && (
                                             <><strong>Время доставки: {order.date.time}</strong><br /></>
@@ -615,6 +636,7 @@ export default function SuperAdminAggregatorAction() {
                                         <strong>Заказ: {order.client?.fullName}</strong><br />
                                         Адрес: {order.address?.actual}<br />
                                         Статус: {order.status}<br />
+                                        Форма оплаты: {opForm}<br />
                                         Тип клиента: {clientType ? 'Круглый' : 'Квадратный'}<br />
                                         {order.date?.time && order.date.time !== "" && (
                                             <><strong>Время доставки: {order.date.time}</strong><br /></>
