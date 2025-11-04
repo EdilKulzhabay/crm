@@ -413,7 +413,16 @@ export const updateCourierAggregatorData = async (req, res) => {
 
             order.products = changeData;
             
-            let sum = changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0
+
+            let sum = 0;
+            if (courier.isExternal) {
+                sum += changeData.b12 > 0 ? changeData.b12 * 300 : 0;
+                sum += changeData.b19 > 0 ? changeData.b19 * 400 : 0;
+            } else {
+                sum += changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0;
+                sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0;
+            }
+            sum = changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0
             sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0
 
             courier.order.income = sum;
@@ -713,8 +722,13 @@ export const completeOrderCourierAggregator = async (req, res) => {
         
         // Проверяем, что order и products существуют
         if (courier1.order && courier1.order.products) {
-            sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
-            sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
+            if (courier1.isExternal) {
+                sum += products.b12 > 0 ? products.b12 * 300 : 0;
+                sum += products.b19 > 0 ? products.b19 * 400 : 0;
+            } else {    
+                sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
+                sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
+            }
         }
 
         await Order.updateOne({_id: orderId}, { 
@@ -1043,10 +1057,18 @@ export const getCourierAggregatorIncome = async (req, res) => {
         const income = orders.reduce((acc, order) => {
             let sum = 0
             if (order.products.b12 > 0) {
-                sum += order.products.b12 * order.client.price12
+                if (courier.isExternal) {
+                    sum += order.products.b12 * 300;
+                } else {
+                    sum += order.products.b12 * order.client.price12;
+                }
             }
             if (order.products.b19 > 0) {
-                sum += order.products.b19 * order.client.price19
+                if (courier.isExternal) {
+                    sum += order.products.b19 * 400;
+                } else {
+                    sum += order.products.b19 * order.client.price19;
+                }
             }
             return acc + sum
         }, 0)
