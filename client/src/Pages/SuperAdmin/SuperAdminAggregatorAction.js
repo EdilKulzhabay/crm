@@ -207,9 +207,17 @@ export default function SuperAdminAggregatorAction() {
     };
 
     // Функция для определения цвета заказа по статусу
-    const getOrderColor = (status, isAssigned, hasDeliveryTime) => {
-        // Если у заказа есть время доставки, показываем оранжевым
+    const getOrderColor = (status, isAssigned, hasDeliveryTime, hasCourier) => {
+        // Проверяем наличие order.courier
+        if (hasCourier && status === "awaitingOrder") {
+            return "purple";
+        }
 
+        if (hasCourier && status === "onTheWay") {
+            return "pink";
+        }
+
+        // Если у заказа есть время доставки, показываем оранжевым
         if (isAssigned && status === "onTheWay") {
             return "blue";
         }
@@ -434,11 +442,19 @@ export default function SuperAdminAggregatorAction() {
                     </div>
                     <div className="flex items-center">
                         <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-                        <span className="text-sm">Назначены курьеру</span>
+                        <span className="text-sm">Назначены курьеру-агрегатору</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-purple-500 rounded-full mr-2"></div>
+                        <span className="text-sm">С курьером (ожидают)</span>
                     </div>
                     <div className="flex items-center">
                         <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
                         <span className="text-sm">В пути</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-4 h-4 bg-pink-500 rounded-full mr-2"></div>
+                        <span className="text-sm">С курьером (в пути)</span>
                     </div>
                     <div className="flex items-center">
                         <div className="w-4 h-4 bg-red rounded-full mr-2"></div>
@@ -505,7 +521,8 @@ export default function SuperAdminAggregatorAction() {
 
                     {/* Заказы */}
                     {processedOrders.map((order, index) => {
-                        const color = getOrderColor(order.status, order.courierAggregator, order.date?.time && order.date.time !== "");
+                        const hasCourier = order?.courier && order?.courier !== null;
+                        const color = getOrderColor(order.status, order.courierAggregator, order.date?.time && order.date.time !== "", hasCourier);
                         const bottles12 = order.products?.b12 || 0;
                         const bottles19 = order.products?.b19 || 0;
                         const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
@@ -777,11 +794,19 @@ export default function SuperAdminAggregatorAction() {
                         </div>
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-                            <span className="text-sm">Назначены курьеру</span>
+                            <span className="text-sm">Назначены курьеру-агрегатору</span>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-purple-500 rounded-full mr-2"></div>
+                            <span className="text-sm">С курьером (ожидают)</span>
                         </div>
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
                             <span className="text-sm">В пути</span>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-4 h-4 bg-pink-500 rounded-full mr-2"></div>
+                            <span className="text-sm">С курьером (в пути)</span>
                         </div>
                         <div className="flex items-center">
                             <div className="w-4 h-4 bg-red rounded-full mr-2"></div>
