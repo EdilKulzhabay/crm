@@ -304,6 +304,7 @@ app.post("/courierAggregatorTestLog", CourierAggregatorController.courierAggrega
 app.get("/getCourierAggregatorData", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorData)
 app.get("/appointmentFranchisee", CourierAggregatorController.appointmentFranchisee)
 app.get("/getCourierAggregatorIncome", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorIncome)
+app.post("/createCourierAggregator", CourierAggregatorController.createCourierAggregator)
 app.post("/courierAggregatorSendCode", CourierAggregatorController.courierAggregatorSendCode)
 app.post("/getCourierAggregatorDataForAdmin", CourierAggregatorController.getCourierAggregatorDataForAdmin)
 app.post("/courierAggregatorCodeConfirm", CourierAggregatorController.courierAggregatorCodeConfirm)

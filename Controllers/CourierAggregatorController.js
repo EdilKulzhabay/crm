@@ -422,8 +422,6 @@ export const updateCourierAggregatorData = async (req, res) => {
                 sum += changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0;
                 sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0;
             }
-            sum = changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0
-            sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0
 
             courier.order.income = sum;
             courier.order.products = changeData;
