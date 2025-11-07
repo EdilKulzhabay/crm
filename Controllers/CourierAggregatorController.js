@@ -1781,7 +1781,7 @@ export const needToGiveTheOrderToCourier = async (req, res) => {
 
         const mailOptions = {
             from: "info@tibetskaya.kz",
-            to: "edil.kulzhabay01@gmail.com",
+            to: "outofreach5569@gmail.com",
             subject: `Нужно дать заказ курьеру ${fullName}`,
             text: `Нужно дать заказ курьеру ${fullName}`,
         };
