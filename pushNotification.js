@@ -161,3 +161,106 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
         throw error;
     }
 }
+
+export const pushNotificationText = async (messageTitle, messageBody, expoTokens) => {
+    try {
+        // Валидация входных данных
+        // validateNotificationData(messageTitle, messageBody, expoTokens, newStatus, order);
+
+        // Фильтрация невалидных токенов
+        const validTokens = expoTokens.filter(token => token && typeof token === 'string');
+        if (validTokens.length === 0) {
+            throw new Error('Нет валидных токенов для отправки');
+        }
+
+        // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
+        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens);
+        const now = Date.now();
+        
+        // Проверяем, не было ли уже отправлено такое же уведомление недавно
+        const lastSent = sentNotifications.get(notificationKey);
+        if (lastSent && (now - lastSent) < NOTIFICATION_DEDUP_WINDOW) {
+            const remainingTime = Math.ceil((NOTIFICATION_DEDUP_WINDOW - (now - lastSent)) / 1000);
+            console.log(`⚠️  ДУБЛИКАТ: Аналогичное уведомление было отправлено ${remainingTime} секунд назад, пропускаем`);
+            console.log(`   Ключ: ${notificationKey}`);
+            return;
+        }
+
+        console.log(`Отправка уведомления "${messageTitle}" на ${validTokens.length} устройств`);
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const token of validTokens) {
+            try {
+                if (Expo.isExpoPushToken(token)) {
+                    // Отправка через Expo
+                    const message = {
+                        to: token,
+                        sound: "default",
+                        title: messageTitle,
+                        body: messageBody,
+                        priority: "high",
+                        _displayInForeground: true,
+                        contentAvailable: true,
+                    };
+
+                    const ticket = await expo.sendPushNotificationsAsync([message]);
+                    console.log("Expo push notification ticket:", ticket);
+                    successCount++;
+                } else {
+                    // Отправка через Firebase
+                    const message = {
+                        token,
+                        notification: {
+                            title: messageTitle,
+                            body: messageBody,
+                        },
+                        android: {
+                            priority: "high",
+                        },
+                        apns: {
+                            headers: {
+                                "apns-priority": "10",
+                            },
+                            payload: {
+                                aps: {
+                                    sound: "default",
+                                    contentAvailable: true,
+                                },
+                            },
+                        },
+                    };
+
+                    const response = await admin.app('courier-app').messaging().send(message);
+                    console.log("Firebase message sent successfully:", response);
+                    successCount++;
+                }
+            } catch (tokenError) {
+                console.error(`Ошибка при отправке уведомления на токен ${token}:`, tokenError);
+                errorCount++;
+                // Продолжаем отправку на другие токены
+            }
+        }
+
+        // Отмечаем уведомление как отправленное только если была хотя бы одна успешная отправка
+        if (successCount > 0) {
+            sentNotifications.set(notificationKey, now);
+            console.log(`✅ Уведомление успешно отправлено: ${successCount} успешно, ${errorCount} ошибок`);
+            
+            // Очищаем старые записи (старше 5 минут)
+            const cleanupTime = now - (5 * 60 * 1000);
+            for (const [key, timestamp] of sentNotifications.entries()) {
+                if (timestamp < cleanupTime) {
+                    sentNotifications.delete(key);
+                }
+            }
+        } else {
+            console.log(`❌ Не удалось отправить уведомление ни на одно устройство`);
+        }
+
+    } catch (error) {
+        console.error("Критическая ошибка при отправке уведомлений:", error);
+        throw error;
+    }
+}

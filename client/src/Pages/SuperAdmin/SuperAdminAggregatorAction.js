@@ -3,6 +3,7 @@ import api from "../../api"
 import Container from "../../Components/Container"
 import Div from "../../Components/Div"
 import useFetchUserData from "../../customHooks/useFetchUserData"
+import clsx from "clsx"
 import MyButton from "../../Components/MyButton"
 import { MapContainer, TileLayer, Marker, Popup, Circle, Rectangle, Polygon, Polyline } from 'react-leaflet'
 import L from 'leaflet'
@@ -58,6 +59,12 @@ export default function SuperAdminAggregatorAction() {
     const [removeLoading, setRemoveLoading] = useState(false)
     const [resendNotificationLoading, setResendNotificationLoading] = useState(false)
     const [resetOrdersLoading, setResetOrdersLoading] = useState(false)
+    const [secret, setSecret] = useState(false)
+    const [showReorderModal, setShowReorderModal] = useState(false)
+    const [selectedCourierForReorder, setSelectedCourierForReorder] = useState(null)
+    const [reorderedCourierOrders, setReorderedCourierOrders] = useState([])
+    const [reorderLoading, setReorderLoading] = useState(false)
+    const [draggedOrderIndex, setDraggedOrderIndex] = useState(null)
     useEffect(() => {
         setLoading(true)
 
@@ -189,6 +196,121 @@ export default function SuperAdminAggregatorAction() {
     const openAssignModal = (order) => {
         setSelectedOrder(order);
         setShowAssignModal(true);
+    };
+
+    const openReorderModal = (courier) => {
+        if (!courier.orders || courier.orders.length === 0) {
+            alert("У курьера нет заказов для изменения очередности.");
+            return;
+        }
+
+        const enrichedOrders = courier.orders.map((orderItem) => {
+            const orderId = orderItem.orderId || orderItem._id;
+            const matchedOrder = orders.find(o => o._id === orderId);
+
+            return {
+                ...orderItem,
+                orderId,
+                clientName: matchedOrder?.client?.fullName || orderItem.clientTitle || "Неизвестный клиент",
+                address: matchedOrder?.address?.actual || orderItem.clientAddress || "Адрес не указан",
+                deliveryTime: matchedOrder?.date?.time || orderItem.date?.time || "",
+                status: matchedOrder?.status || orderItem.status || ""
+            };
+        });
+
+        setSelectedCourierForReorder(courier);
+        setReorderedCourierOrders(enrichedOrders);
+        setShowReorderModal(true);
+    };
+
+    const closeReorderModal = () => {
+        setShowReorderModal(false);
+        setSelectedCourierForReorder(null);
+        setReorderedCourierOrders([]);
+        setDraggedOrderIndex(null);
+        setReorderLoading(false);
+    };
+
+    const handleDragStart = (event, index) => {
+        if (index === 0) {
+            event.preventDefault();
+            return;
+        }
+        setDraggedOrderIndex(index);
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", index.toString());
+    };
+
+    const handleDragOver = (event, index) => {
+        if (index === 0) return;
+        event.preventDefault();
+    };
+
+    const handleDragEnter = (event, index) => {
+        event.preventDefault();
+        if (draggedOrderIndex === null || draggedOrderIndex === index || index === 0 || draggedOrderIndex === 0) {
+            return;
+        }
+
+        setReorderedCourierOrders(prev => {
+            const updated = [...prev];
+            const [removed] = updated.splice(draggedOrderIndex, 1);
+            updated.splice(index, 0, removed);
+            return updated;
+        });
+        setDraggedOrderIndex(index);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedOrderIndex(null);
+    };
+
+    const handleSaveReorderedOrders = async () => {
+        if (!selectedCourierForReorder) return;
+
+        const orderIds = reorderedCourierOrders
+            .map(order => {
+                if (order.orderId) {
+                    return order.orderId.toString();
+                }
+                if (order._id) {
+                    return order._id.toString();
+                }
+                return null;
+            })
+            .filter(Boolean);
+
+        if (orderIds.length === 0) {
+            alert("Список заказов пуст. Нечего сохранять.");
+            return;
+        }
+
+        setReorderLoading(true);
+        try {
+            const response = await api.post("/updateCourierOrdersSequence", {
+                courierId: selectedCourierForReorder._id,
+                orderIds
+            });
+
+            if (response.data.success) {
+                const ordersRes = await api.get("/getAllOrderForToday");
+                setOrders(ordersRes.data.orders);
+
+                const couriersRes = await api.get("/getActiveCourierAggregators");
+                setCouriers(couriersRes.data.couriers);
+
+                const allCouriersRes = await api.get("/getAllCouriersWithOrderCount");
+                setAllCouriers(allCouriersRes.data.couriers);
+
+                alert("Очередность заказов успешно обновлена!");
+                closeReorderModal();
+            }
+        } catch (error) {
+            console.log("Ошибка сохранения очередности заказов:", error);
+            const errorMessage = error.response?.data?.message || "Не удалось сохранить очередность заказов.";
+            alert(`Ошибка: ${errorMessage}`);
+            setReorderLoading(false);
+        }
     };
 
     // Функция для получения назначенных заказов курьера
@@ -392,9 +514,18 @@ export default function SuperAdminAggregatorAction() {
                     <div className="text-sm">Отменены</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-white font-bold">{orderStats.total} 
-                        ({orderStats.totalBottles19};{orderStats.totalBottles12})</div>
-                    <div className="text-sm">Всего</div>
+                    <div className="text-white font-bold">
+                        {orderStats.total} ({orderStats.totalBottles19};{orderStats.totalBottles12})
+                    </div>
+                    <button
+                        onClick={() => setSecret((prev) => !prev)} 
+                        className={clsx("-mt-5 cursor-pointer text-sm ", {
+                            "text-white": secret,
+                            "text-gray-400": !secret
+                        })}
+                    >
+                        Всего
+                    </button>
                 </div>
             </div>
         </div>
@@ -594,7 +725,7 @@ export default function SuperAdminAggregatorAction() {
                                             <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
                                         )}
                                         <br /><br />
-                                        {order.status === "awaitingOrder" && !isAssigned && (
+                                        {order.status === "awaitingOrder" && !secret && !isAssigned && (
                                             <button 
                                                 onClick={() => openAssignModal(order)}
                                                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
@@ -602,7 +733,7 @@ export default function SuperAdminAggregatorAction() {
                                                 Назначить курьеру
                                             </button>
                                         )}
-                                        {isAssigned && (
+                                        {isAssigned && !secret && (
                                             <button 
                                                 onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
                                                 disabled={removeLoading}
@@ -647,7 +778,7 @@ export default function SuperAdminAggregatorAction() {
                                             <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
                                         )}
                                         <br /><br />
-                                        {order.status === "awaitingOrder" && !isAssigned && (
+                                        {order.status === "awaitingOrder" && !secret && !isAssigned && (
                                             <button 
                                                 onClick={() => openAssignModal(order)}
                                                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
@@ -655,7 +786,7 @@ export default function SuperAdminAggregatorAction() {
                                                 Назначить курьеру
                                             </button>
                                         )}
-                                        {isAssigned && (
+                                        {isAssigned && !secret && (
                                             <button 
                                                 onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
                                                 disabled={removeLoading}
@@ -702,6 +833,20 @@ export default function SuperAdminAggregatorAction() {
                                                 <>
                                                     <br /><strong>Первый заказ: {courier.orders[0]?.clientTitle || 'Заказ'}</strong>
                                                     <br /><br />
+                                                    <button
+                                                        onClick={() => openReorderModal(courier)}
+                                                        disabled={courier.orders.length < 2}
+                                                        className={clsx("bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-full mb-2", {
+                                                            "opacity-50 cursor-not-allowed hover:bg-purple-500": courier.orders.length < 2
+                                                        })}
+                                                    >
+                                                        Изменить очередность заказов
+                                                    </button>
+                                                    {courier.orders.length < 2 && (
+                                                        <div className="text-xs text-gray-500 mb-2">
+                                                            Нужно минимум два заказа для изменения очередности.
+                                                        </div>
+                                                    )}
                                                     <button 
                                                         onClick={() => handleResendNotification(courier._id)}
                                                         disabled={resendNotificationLoading}
@@ -862,6 +1007,88 @@ export default function SuperAdminAggregatorAction() {
                             <div className="w-8 h-0.5 bg-purple-500 mr-2" style={{borderTop: '2px dashed purple'}}></div>
                             <span className="text-sm">Маршрут курьера</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Модальное окно изменения очередности заказов */}
+        {showReorderModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white text-black p-6 rounded-lg max-w-xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+                    <h3 className="text-lg font-bold mb-4">
+                        Изменить очередность заказов
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Первый заказ зафиксирован и не может быть перенесён. Перетащите остальные заказы, чтобы задать нужный порядок.
+                    </p>
+
+                    {reorderedCourierOrders.length === 0 ? (
+                        <div className="text-gray-500 text-center py-4">
+                            У курьера нет заказов для изменения очередности.
+                        </div>
+                    ) : (
+                        <ul className="space-y-2">
+                            {reorderedCourierOrders.map((order, index) => (
+                                <li
+                                    key={order.orderId || index}
+                                    draggable={index !== 0}
+                                    onDragStart={(event) => handleDragStart(event, index)}
+                                    onDragEnter={(event) => handleDragEnter(event, index)}
+                                    onDragOver={(event) => handleDragOver(event, index)}
+                                    onDragEnd={handleDragEnd}
+                                    onDrop={handleDragEnd}
+                                    className={clsx(
+                                        "border border-gray-300 rounded-md p-3 bg-white shadow-sm transition",
+                                        {
+                                            "opacity-60 cursor-not-allowed": index === 0,
+                                            "cursor-move": index !== 0,
+                                            "ring-2 ring-purple-500": draggedOrderIndex === index && index !== 0
+                                        }
+                                    )}
+                                >
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div>
+                                            <p className="font-semibold">
+                                                {index + 1}. {order.clientName}
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                {order.address}
+                                            </p>
+                                            {order.deliveryTime && (
+                                                <p className="text-xs text-blue-500 mt-1">
+                                                    Время доставки: {order.deliveryTime}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <span className="text-xs uppercase text-gray-500">
+                                            {index === 0 ? "Зафиксирован" : "Перетащите"}
+                                        </span>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    <div className="mt-6 flex justify-end space-x-3">
+                        <button
+                            onClick={closeReorderModal}
+                            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                        >
+                            Отмена
+                        </button>
+                        <button
+                            onClick={handleSaveReorderedOrders}
+                            disabled={reorderLoading || reorderedCourierOrders.length <= 1}
+                            className={clsx(
+                                "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded",
+                                {
+                                    "opacity-50 cursor-not-allowed hover:bg-green-600": reorderLoading || reorderedCourierOrders.length <= 1
+                                }
+                            )}
+                        >
+                            {reorderLoading ? "Сохранение..." : "Сохранить"}
+                        </button>
                     </div>
                 </div>
             </div>

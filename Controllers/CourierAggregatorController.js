@@ -5,20 +5,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { getDateAlmaty } from "../utils/dateUtils.js";
-import queueOrTools from "../orToolsQueue.js";
 import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
 import Client from "../Models/Client.js";
-
-// Функция для сброса ограничений уведомлений (будет импортирована из orTools.js)
-let resetNotificationLimits = null;
-
-// Динамический импорт для избежания циклических зависимостей
-const loadResetFunction = async () => {
-    if (!resetNotificationLimits) {
-        const orToolsModule = await import("../orTools.js");
-        resetNotificationLimits = orToolsModule.resetNotificationLimits;
-    }
-};
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -374,21 +362,6 @@ export const updateCourierAggregatorData = async (req, res) => {
             });
         }
 
-        // if (id === "68412ff4b70d315d3b2b72f9" && changeField === "point") {
-        //     await CourierAggregator.updateOne({_id: id}, { $set: {
-        //         point: {
-        //             lat: 43.41377,
-        //             lon: 76.97149,
-        //             timestamp: new Date().toISOString()
-        //         }
-        //     } })
-
-        //     return res.json({
-        //         success: true,
-        //         message: "Успешно изменен"
-        //     })
-        // }
-
         if (changeField === "capacities") {
             await CourierAggregator.updateOne({_id: id}, { $set: {
                 capacity12: changeData.capacity12 || 0,
@@ -739,12 +712,17 @@ export const completeOrderCourierAggregator = async (req, res) => {
             } 
         })
 
+        const nextOrder = courier1.orders.length > 1 ? courier1.orders[1] : null;
+        if (nextOrder) {
+            await Order.updateOne({_id: nextOrder.orderId}, { $set: { status: "onTheWay" } });
+        }
+
         await CourierAggregator.updateOne({_id: courierId}, {
             $pull: {
                 orders: { orderId }
             },
             $set: {
-                order: null,
+                order: nextOrder,
                 point: {
                     lat: order.address.point.lat,
                     lon: order.address.point.lon
@@ -777,28 +755,28 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 sendOrder
             );
         }
-        // Добавляем задержку в 20 секунд
-        await new Promise(resolve => setTimeout(resolve, 15000));
+        // // Добавляем задержку в 20 секунд
+        // await new Promise(resolve => setTimeout(resolve, 15000));
 
-        // Проверяем наличие следующего заказа в массиве orders
-        const updatedCourier = await CourierAggregator.findById(courierId);
-        if (updatedCourier.orders && updatedCourier.orders.length > 0) {
-            try {
-                const nextOrder = updatedCourier.orders[0];
-                const messageBody = `Следующий заказ: ${nextOrder.clientTitle}`;
+        // // Проверяем наличие следующего заказа в массиве orders
+        // const updatedCourier = await CourierAggregator.findById(courierId);
+        // if (updatedCourier.orders && updatedCourier.orders.length > 0) {
+        //     try {
+        //         const nextOrder = updatedCourier.orders[0];
+        //         const messageBody = `Следующий заказ: ${nextOrder.clientTitle}`;
 
-                const { pushNotification } = await import("../pushNotification.js");
-                await pushNotification(
-                    "newOrder",
-                    messageBody,
-                    [updatedCourier.notificationPushToken],
-                    "newOrder",
-                    nextOrder
-                );
-            } catch (notificationError) {
-                console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
-            }
-        }
+        //         const { pushNotification } = await import("../pushNotification.js");
+        //         await pushNotification(
+        //             "newOrder",
+        //             messageBody,
+        //             [updatedCourier.notificationPushToken],
+        //             "newOrder",
+        //             nextOrder
+        //         );
+        //     } catch (notificationError) {
+        //         console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
+        //     }
+        // }
 
     } catch (error) {
         console.log(error);
@@ -865,11 +843,17 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const courier = await CourierAggregator.findById(id)
 
+        const nextOrder = courier.orders.length > 1 ? courier.orders[1] : null;
+
+        if (nextOrder) {
+            await Order.updateOne({_id: nextOrder.orderId}, { $set: { status: "onTheWay" } });
+        }
+
         // СТАЛО: Убирается только конкретный отменяемый заказ
         await CourierAggregator.updateOne(
             { _id: id },
             { 
-                $set: { order: null },
+                $set: { order: nextOrder },
                 $pull: { orders: { orderId: orderId } }  // Удаляет только конкретный заказ
             }
         );
@@ -890,39 +874,39 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             message: "Заказ отменен"
         });
 
-        // Асинхронная отправка следующего заказа
-        setTimeout(async () => {
-            try {
-                // Получаем актуальные данные курьера после изменений
-                const updatedCourier = await CourierAggregator.findById(id);
-                const courierName = updatedCourier?.fullName?.toLowerCase() || '';
+        // // Асинхронная отправка следующего заказа
+        // setTimeout(async () => {
+        //     try {
+        //         // Получаем актуальные данные курьера после изменений
+        //         const updatedCourier = await CourierAggregator.findById(id);
+        //         const courierName = updatedCourier?.fullName?.toLowerCase() || '';
                 
-                if (updatedCourier && updatedCourier.orders && updatedCourier.orders.length > 0) {
-                    const nextOrderData = updatedCourier.orders[0];
+        //         if (updatedCourier && updatedCourier.orders && updatedCourier.orders.length > 0) {
+        //             const nextOrderData = updatedCourier.orders[0];
                     
-                    // Получаем данные следующего заказа
-                    const nextOrder = await Order.findById(nextOrderData.orderId)
-                        .populate("client", "fullName");
+        //             // Получаем данные следующего заказа
+        //             const nextOrder = await Order.findById(nextOrderData.orderId)
+        //                 .populate("client", "fullName");
                     
-                    if (nextOrder) {
-                        const messageBody = `Новый заказ: ${nextOrder.client.fullName}`;
+        //             if (nextOrder) {
+        //                 const messageBody = `Новый заказ: ${nextOrder.client.fullName}`;
 
-                        const { pushNotification } = await import("../pushNotification.js");
-                        await pushNotification(
-                            "newOrder",
-                            messageBody,
-                            [updatedCourier.notificationPushToken],
-                            "newOrder",
-                            nextOrderData
-                        );
+        //                 const { pushNotification } = await import("../pushNotification.js");
+        //                 await pushNotification(
+        //                     "newOrder",
+        //                     messageBody,
+        //                     [updatedCourier.notificationPushToken],
+        //                     "newOrder",
+        //                     nextOrderData
+        //                 );
                         
-                        console.log(`✅ Отправлено уведомление о следующем заказе курьеру ${updatedCourier.fullName}`);
-                    }
-                }
-            } catch (notificationError) {
-                console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
-            }
-        }, 15000);
+        //                 console.log(`✅ Отправлено уведомление о следующем заказе курьеру ${updatedCourier.fullName}`);
+        //             }
+        //         }
+        //     } catch (notificationError) {
+        //         console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
+        //     }
+        // }, 15000);
         
         sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
     } catch (error) {
@@ -1369,7 +1353,6 @@ export const assignOrderToCourier = async (req, res) => {
 
         // Находим курьера
         const courier = await CourierAggregator.findById(courierId);
-        const courierName = courier?.fullName?.toLowerCase() || '';
 
         if (!courier) {
             return res.status(404).json({
@@ -1400,10 +1383,6 @@ export const assignOrderToCourier = async (req, res) => {
 
         const clientPhone = order.clientPhone !== "" ? order.clientPhone : order.client.phone
 
-
-        console.log("order = ", order);
-        console.log("clientPhone = ", clientPhone);
-
         // Формируем объект заказа в нужном формате
         const orderObject = {
             orderId: order._id,
@@ -1426,30 +1405,20 @@ export const assignOrderToCourier = async (req, res) => {
             income: (order.products.b12 * order.client.price12) + (order.products.b19 * order.client.price19)
         };
 
-        // Обновляем заказ
-        const orderUpdateResult = await Order.updateOne(
+        // Проверяем, есть ли у курьера активный заказ
+        const hasActiveOrder = courier.order && courier.order.orderId;
+
+        const orderStatus = hasActiveOrder ? "awaitingOrder" : "onTheWay";
+
+        await Order.updateOne(
             { _id: orderId },
             { 
                 $set: {
-                    courierAggregator: courierId
+                    courierAggregator: courierId,
+                    status: orderStatus
                 } 
             }
         );
-        
-        console.log("Результат обновления заказа:", orderUpdateResult);
-
-        console.log("данные курьера", courier);
-        console.log("courier.order =", courier.order);
-        console.log("courier.order === null =", courier.order === null);
-        console.log("!courier.order =", !courier.order);
-        console.log("courier.order == null =", courier.order == null);
-        console.log("courier.order === undefined =", courier.order === undefined);
-        console.log("courier.order.orderId =", courier.order?.orderId);
-        console.log("courier.order.status =", courier.order?.status);
-        
-        // Проверяем, есть ли у курьера активный заказ
-        const hasActiveOrder = courier.order && courier.order.orderId && courier.order.status;
-        console.log("hasActiveOrder =", hasActiveOrder);
         
         if (!hasActiveOrder) {
             console.log("У курьера нет активного заказа, добавляем его");
@@ -1471,13 +1440,11 @@ export const assignOrderToCourier = async (req, res) => {
             try {
                 const messageBody = `Новый заказ: ${order.client.fullName}`;
                 
-                const { pushNotification } = await import("../pushNotification.js");
-                await pushNotification(
+                const { pushNotificationText } = await import("../pushNotification.js");
+                await pushNotificationText(
                     "newOrder",
                     messageBody,
-                    [courier.notificationPushToken],
-                    "newOrder",
-                    orderObject
+                    [courier.notificationPushToken]
                 );
             } catch (notificationError) {
                 console.log("Ошибка отправки уведомления:", notificationError);
@@ -1595,6 +1562,95 @@ export const removeOrderFromCourier = async (req, res) => {
     }
 };
 
+export const updateCourierOrdersSequence = async (req, res) => {
+    try {
+        const { courierId, orderIds } = req.body;
+
+        if (!courierId || !Array.isArray(orderIds)) {
+            return res.status(400).json({
+                success: false,
+                message: "Некорректные данные для обновления очередности заказов"
+            });
+        }
+
+        const courier = await CourierAggregator.findById(courierId);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден"
+            });
+        }
+
+        if (!courier.orders || courier.orders.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "У курьера отсутствуют заказы для изменения очередности"
+            });
+        }
+
+        const firstOrderId = courier.orders[0]?.orderId?.toString();
+        if (!firstOrderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Невозможно определить первый заказ курьера"
+            });
+        }
+
+        if (orderIds.length !== courier.orders.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Количество заказов не совпадает с текущим списком курьера"
+            });
+        }
+
+        if (orderIds[0]?.toString() !== firstOrderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Первый заказ не может быть изменён"
+            });
+        }
+
+        const existingOrders = courier.orders.map(order => {
+            if (typeof order.toObject === "function") {
+                return order.toObject();
+            }
+            return order;
+        });
+
+        const orderMap = new Map(
+            existingOrders.map(order => [order.orderId?.toString(), order])
+        );
+
+        const reorderedOrders = [];
+
+        for (const id of orderIds) {
+            const key = id?.toString();
+            if (!orderMap.has(key)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Заказ с идентификатором ${key} не найден у курьера`
+                });
+            }
+            reorderedOrders.push(orderMap.get(key));
+        }
+
+        courier.orders = reorderedOrders;
+        await courier.save();
+
+        res.json({
+            success: true,
+            message: "Очередность заказов успешно обновлена"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
+
 export const resetCourierOrders = async (req, res) => {
     try {
         const { courierId } = req.body;
@@ -1633,8 +1689,6 @@ export const resetCourierOrders = async (req, res) => {
         });
     }
 };
-
-
 
 export const resendNotificationToCourier = async (req, res) => {
     try {
@@ -1721,134 +1775,42 @@ export const resendNotificationToCourier = async (req, res) => {
     }
 };
 
-// db.clients.find({_id: ObjectId("68903e215ebf39f0a25775fd")})
+export const needToGiveTheOrderToCourier = async (req, res) => {
+    try {
+        const { fullName } = req.body;
 
-// db.orders.updateMany(
-//     {
-//       _id: {
-//         $in: [
-//           ObjectId("68c826bb52d3c0402026e021")
-//         ]
-//       }
-//     },
-//     {
-//       $set: { sum: 7400, income: 7400 }
-//     }
-//   )
+        const mailOptions = {
+            from: "info@tibetskaya.kz",
+            to: "edil.kulzhabay01@gmail.com",
+            subject: `Нужно дать заказ курьеру ${fullName}`,
+            text: `Нужно дать заказ курьеру ${fullName}`,
+        };
+    
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                res.status(500).json({
+                    success: false,
+                    message: "Ошибка при отправке письма"
+                })
+            } else {
+                console.log("Email sent: " + info.response);
+                res.status(200).json({
+                    success: true,
+                    message: "Письмо успешно отправлено"
+                })
+            }
+        });
 
-// db.orders.updateMany(
-//     {
-//         _id: {
-//             $in: [
-//                 ObjectId("68c02ee18f8a35991db9d515"),
-//             ]
-//         }
-//     },
-//     {
-//         $set: { status: "delivered", courierAggregator: ObjectId("6827757c3014c4da8e8f8813"), transferred: true, transferredFranchise: "Кудайберди Кулжабай" }
-//     }
-// )
-
-
-/// git suka 43.241065, 76.898668
-
-// db.courieraggregators.updateOne({fullName: "Edil Kulzhabay"}, { $set: { point: { lat: 43.241065, lon: 76.898668 } }}) 
-
-// db.orders.countDocuments({
-//     "date.d": "2025-07-16",
-//     status: "delivered",
-//     forAggregator: true,
-//     franchisee: {$ne: ObjectId('66f15c557a27c92d447a16a0')}
-// })
-
-// db.orders.updateMany({"date.d": "2025-07-17"}, {$set: {forAggregator: false, status: "awaitingOrder", courierAggregator: null}})
-
-// db.couriers.updateMany(
-//     {
-//         _id: {
-//             $in: [
-//                 ObjectId('67975d27ebbff03a59653233'),
-//                     ObjectId('67206df26a3502b572c7ffaf')
-//             ]
-//         }
-//     },
-//     {
-//         $set: { status: "inActive" } 
-//     }
-// )
-
-// db.courieraggregators.updateOne({fullName: "Канат Ахметов"}, { $set: { onTheLine: false }})
-
-// db.orders.updateMany(
-//     {
-//         "date.d": "2025-07-24",
-//         forAggregator: true,
-//         status: "onTheWay"
-//     },
-//     {
-//         $set: {
-//             status: "awaitingOrder"
-//         }
-//     }
-// )
-
-//   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, {$set: {  order:
-//     {
-//         orderId: '6879d531347a61c83c9d38c0',
-//         status: 'onTheWay',
-//         products: { b12: 0, b19: 2 },
-//         sum: 2600,
-//         opForm: 'fakt',
-//         comment: '',
-//         clientReview: '',
-//         date: { d: '2025-07-18', time: '' },
-//         clientTitle: 'Smart Medical - Samal',
-//         clientPhone: '87017558032',
-//         clientPoints: { lat: 43.234822, lon: 76.953763 },
-//         clientAddress: 'Микрорайон Самал-1, 23 кв. 72; 1 этаж',
-//         clientAddressLink: 'https://go.2gis.com/EjqTk',
-//         aquaMarketPoints: { lat: 43.168573, lon: 76.896437 },
-//         aquaMarketAddress: 'Баязитовой 12 1',
-//         aquaMarketAddressLink: 'https://go.2gis.com/ZJw6E',
-//         step: 'toClient',
-//         income: 2600,
-//         _id: ObjectId('687a13f8ca79cb6a34d182e5')
-//     }, orders:[{orderId: '6879d531347a61c83c9d38c0',
-//         status: 'onTheWay',
-//         products: { b12: 0, b19: 2 },
-//         sum: 2600,
-//         opForm: 'fakt',
-//         comment: '',
-//         clientReview: '',
-//         date: { d: '2025-07-18', time: '' },
-//         clientTitle: 'Smart Medical - Samal',
-//         clientPhone: '87017558032',
-//         clientPoints: { lat: 43.234822, lon: 76.953763 },
-//         clientAddress: 'Микрорайон Самал-1, 23 кв. 72; 1 этаж',
-//         clientAddressLink: 'https://go.2gis.com/EjqTk',
-//         aquaMarketPoints: { lat: 43.168573, lon: 76.896437 },
-//         aquaMarketAddress: 'Баязитовой 12 1',
-//         aquaMarketAddressLink: 'https://go.2gis.com/ZJw6E',
-//         step: 'toClient',
-//         income: 2600,
-//         _id: ObjectId('687a13f8ca79cb6a34d182e5')}]
-//    }})
-//   db.courieraggregators.updateOne({fullName: 'Василий Яковлев'}, { $set: { order: null, orders:[] }})
-//   db.courieraggregators.updateOne({fullName: 'Тасқын Әбікен'}, { $set: {order: null, orders:[] }})
-//   db.courieraggregators.updateOne({fullName: 'Бекет Сапарбаев'}, { $set: {  order: null, orders:[] }})
-//  db.courieraggregators.updateOne({fullName: 'Edil Kulzhabay'}, { $set: {  order: null, orders:[] }})
-//   db.courieraggregators.updateOne({fullName: 'Айдынбек Сандыбаев'}, {$set: { order: null, orders:[] }})
-// db.courieraggregators.find({fullName: 'Василий Яковлев'})
-// db.courieraggregators.updateMany({}, {$set: { order: null, orders:[] }})
-
-// db.orders.find({
-//     "date.d": "2025-07-16",
-//     $or: [
-//       { "products.b12": { $in: [null, ""] } },
-//       { "products.b19": { $in: [null, ""] } }
-//     ]
-//   })
-
-// db.courieraggregators.find({onTheLine: true}, {fullName: 1, capacity12: 1, capacity19: 1})
-// db.courieraggregators.find({onTheLine: true})
-  
+        res.status(200).json({
+            success: true,
+            message: "Письмо успешно отправлено"
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+}
