@@ -1322,6 +1322,7 @@ export const getAllOrderForToday = async (req, res) => {
 
         const orders = await Order.find({
             "date.d": todayString,
+            franchisee: { $ne: new mongoose.Types.ObjectId('67010493e6648af4cb0213b7') }
         }).populate("client").populate("courierAggregator", "fullName _id")
         
         res.json({ orders })
