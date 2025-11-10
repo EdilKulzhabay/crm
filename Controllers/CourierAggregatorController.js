@@ -1406,7 +1406,7 @@ export const assignOrderToCourier = async (req, res) => {
         };
 
         // Проверяем, есть ли у курьера активный заказ
-        const hasActiveOrder = courier.order && courier.order.orderId;
+        const hasActiveOrder = courier.orders.length > 0;
 
         const orderStatus = hasActiveOrder ? "awaitingOrder" : "onTheWay";
 

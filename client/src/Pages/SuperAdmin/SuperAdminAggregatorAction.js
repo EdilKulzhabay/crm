@@ -669,6 +669,18 @@ export default function SuperAdminAggregatorAction() {
                         </Popup>
                     </Marker>
 
+                    <Marker 
+                        position={[43.260627, 76.924226]} 
+                        icon={createStarIcon()}
+                    >
+                        <Popup>
+                            <div>
+                                <strong>Аквамаркет</strong><br />
+                                Координаты: 43.260627°N, 76.924226°E
+                            </div>
+                        </Popup>
+                    </Marker>
+
                     {/* Заказы */}
                     {processedOrders.map((order, index) => {
                         const hasCourier = order?.courier && order?.courier !== null;
@@ -697,6 +709,72 @@ export default function SuperAdminAggregatorAction() {
                         // Определяем тип клиента для выбора формы маркера
                         const clientType = order.client?.clientType;
                         const isCircle = clientType === true;
+                        const isFakt = order.opForm === "fakt";
+                        const popupContent = (
+                            <Popup>
+                                <div className="min-w-[300px]">
+                                    <strong>Заказ: {order.client?.fullName}</strong><br />
+                                    Адрес: {order.address?.actual}<br />
+                                    Статус: {order.status}<br />
+                                    Форма оплаты: {opForm}<br />
+                                    Тип клиента: {clientType ? 'Круглый' : 'Квадратный'}<br />
+                                    {order.date?.time && order.date.time !== "" && (
+                                        <><strong>Время доставки: {order.date.time}</strong><br /></>
+                                    )}
+                                    {bottles12 > 0 && `${bottles12} 12л бутылей, `}
+                                    {bottles19 > 0 && `${bottles19} 19л бутылей`}
+                                    {isAssigned && (
+                                        <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
+                                    )}
+                                    <br /><br />
+                                    {order.status === "awaitingOrder" && !secret && !isAssigned && (
+                                        <button 
+                                            onClick={() => openAssignModal(order)}
+                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
+                                        >
+                                            Назначить курьеру
+                                        </button>
+                                    )}
+                                    {isAssigned && !secret && (
+                                        <button 
+                                            onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
+                                            disabled={removeLoading}
+                                            className="bg-red text-white font-bold py-2 px-4 rounded w-full"
+                                        >
+                                            {removeLoading ? "Убирается..." : "Убрать у курьера"}
+                                        </button>
+                                    )}
+                                    {!isAssigned && order.status !== "awaitingOrder" && (
+                                        <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
+                                    )}
+                                </div>
+                            </Popup>
+                        );
+
+                        if (isFakt) {
+                            const diamondOffset = 0.0007;
+                            const diamondCoordinates = [
+                                [order.offsetLat + diamondOffset, order.offsetLon],
+                                [order.offsetLat, order.offsetLon + diamondOffset],
+                                [order.offsetLat - diamondOffset, order.offsetLon],
+                                [order.offsetLat, order.offsetLon - diamondOffset]
+                            ];
+
+                            return (
+                                <Polygon
+                                    key={`order-${order.originalIndex}`}
+                                    positions={diamondCoordinates}
+                                    pathOptions={{
+                                        color: color,
+                                        fillColor: color,
+                                        fillOpacity: 0.7,
+                                        weight: 2
+                                    }}
+                                >
+                                    {popupContent}
+                                </Polygon>
+                            );
+                        }
                         
                         return isCircle ? (
                             <Circle
@@ -709,44 +787,7 @@ export default function SuperAdminAggregatorAction() {
                                     fillOpacity: 0.7
                                 }}
                             >
-                                <Popup>
-                                    <div className="min-w-[300px]">
-                                        <strong>Заказ: {order.client?.fullName}</strong><br />
-                                        Адрес: {order.address?.actual}<br />
-                                        Статус: {order.status}<br />
-                                        Форма оплаты: {opForm}<br />
-                                        Тип клиента: {clientType ? 'Круглый' : 'Квадратный'}<br />
-                                        {order.date?.time && order.date.time !== "" && (
-                                            <><strong>Время доставки: {order.date.time}</strong><br /></>
-                                        )}
-                                        {bottles12 > 0 && `${bottles12} 12л бутылей, `}
-                                        {bottles19 > 0 && `${bottles19} 19л бутылей`}
-                                        {isAssigned && (
-                                            <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
-                                        )}
-                                        <br /><br />
-                                        {order.status === "awaitingOrder" && !secret && !isAssigned && (
-                                            <button 
-                                                onClick={() => openAssignModal(order)}
-                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
-                                            >
-                                                Назначить курьеру
-                                            </button>
-                                        )}
-                                        {isAssigned && !secret && (
-                                            <button 
-                                                onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
-                                                disabled={removeLoading}
-                                                className="bg-red text-white font-bold py-2 px-4 rounded w-full"
-                                            >
-                                                {removeLoading ? "Убирается..." : "Убрать у курьера"}
-                                            </button>
-                                        )}
-                                        {!isAssigned && order.status !== "awaitingOrder" && (
-                                            <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
-                                        )}
-                                    </div>
-                                </Popup>
+                                {popupContent}
                             </Circle>
                         ) : (
                             <Rectangle
@@ -762,44 +803,7 @@ export default function SuperAdminAggregatorAction() {
                                     weight: 2
                                 }}
                             >
-                                <Popup>
-                                    <div className="min-w-[300px]">
-                                        <strong>Заказ: {order.client?.fullName}</strong><br />
-                                        Адрес: {order.address?.actual}<br />
-                                        Статус: {order.status}<br />
-                                        Форма оплаты: {opForm}<br />
-                                        Тип клиента: {clientType ? 'Круглый' : 'Квадратный'}<br />
-                                        {order.date?.time && order.date.time !== "" && (
-                                            <><strong>Время доставки: {order.date.time}</strong><br /></>
-                                        )}
-                                        {bottles12 > 0 && `${bottles12} 12л бутылей, `}
-                                        {bottles19 > 0 && `${bottles19} 19л бутылей`}
-                                        {isAssigned && (
-                                            <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
-                                        )}
-                                        <br /><br />
-                                        {order.status === "awaitingOrder" && !secret && !isAssigned && (
-                                            <button 
-                                                onClick={() => openAssignModal(order)}
-                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
-                                            >
-                                                Назначить курьеру
-                                            </button>
-                                        )}
-                                        {isAssigned && !secret && (
-                                            <button 
-                                                onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
-                                                disabled={removeLoading}
-                                                className="bg-red text-white font-bold py-2 px-4 rounded w-full"
-                                            >
-                                                {removeLoading ? "Убирается..." : "Убрать у курьера"}
-                                            </button>
-                                        )}
-                                        {!isAssigned && order.status !== "awaitingOrder" && (
-                                            <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
-                                        )}
-                                    </div>
-                                </Popup>
+                                {popupContent}
                             </Rectangle>
                         );
                     })}
