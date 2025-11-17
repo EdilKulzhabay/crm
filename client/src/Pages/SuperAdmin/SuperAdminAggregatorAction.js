@@ -5,7 +5,7 @@ import Div from "../../Components/Div"
 import useFetchUserData from "../../customHooks/useFetchUserData"
 import clsx from "clsx"
 import MyButton from "../../Components/MyButton"
-import { MapContainer, TileLayer, Marker, Popup, Circle, Rectangle, Polygon, Polyline } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, Rectangle, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -347,42 +347,63 @@ export default function SuperAdminAggregatorAction() {
         return "Неизвестно";
     };
 
+    // Функция для затемнения цвета для заказов с opForm === "fakt"
+    const getDarkColor = (color) => {
+        const colorMap = {
+            "green": "darkgreen",
+            "yellow": "#b8860b", // dark goldenrod
+            "red": "darkred",
+            "blue": "darkblue",
+            "orange": "#ff8c00", // dark orange
+            "purple": "#4b0082", // indigo
+            "pink": "#c71585", // medium violet red
+            "black": "black",
+            "gray": "#696969" // dim gray
+        };
+        return colorMap[color] || color;
+    };
+
     // Функция для определения цвета заказа по статусу
-    const getOrderColor = (status, isAssigned, hasDeliveryTime, hasCourier) => {
+    const getOrderColor = (status, isAssigned, hasDeliveryTime, hasCourier, opForm) => {
+        let color;
+        
         // Проверяем наличие order.courier
         if (hasCourier && status === "awaitingOrder") {
-            return "purple";
-        }
-
-        if (hasCourier && status === "onTheWay") {
-            return "pink";
-        }
-
-        // Если у заказа есть время доставки, показываем оранжевым
-        if (isAssigned && status === "onTheWay") {
-            return "blue";
-        }
-
-        if (isAssigned && status === "awaitingOrder") {
-            return "yellow";
-        }
-
-        if (hasDeliveryTime && status === "awaitingOrder") {
-            return "orange";
+            color = "purple";
+        } else if (hasCourier && status === "onTheWay") {
+            color = "pink";
+        } else if (isAssigned && status === "onTheWay") {
+            // Если у заказа есть время доставки, показываем оранжевым
+            color = "blue";
+        } else if (isAssigned && status === "awaitingOrder") {
+            color = "yellow";
+        } else if (hasDeliveryTime && status === "awaitingOrder") {
+            color = "orange";
+        } else {
+            switch (status) {
+                case "awaitingOrder":
+                    color = "green";
+                    break;
+                case "onTheWay":
+                    color = "blue";
+                    break;
+                case "delivered":
+                    color = "red";
+                    break;
+                case "cancelled":
+                    color = "black";
+                    break;
+                default:
+                    color = "gray";
+            }
         }
         
-        switch (status) {
-            case "awaitingOrder":
-                return "green";
-            case "onTheWay":
-                return "blue";
-            case "delivered":
-                return "red";
-            case "cancelled":
-                return "black";
-            default:
-                return "gray";
+        // Если opForm === "fakt", возвращаем темный цвет
+        if (opForm === "fakt") {
+            return getDarkColor(color);
         }
+        
+        return color;
     };
 
     // Статистика
@@ -684,10 +705,11 @@ export default function SuperAdminAggregatorAction() {
                     {/* Заказы */}
                     {processedOrders.map((order, index) => {
                         const hasCourier = order?.courier && order?.courier !== null;
-                        const color = getOrderColor(order.status, order.courierAggregator, order.date?.time && order.date.time !== "", hasCourier);
+                        const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
+                        const hasDeliveryTime = order.date?.time && order.date.time !== "";
+                        const color = getOrderColor(order.status, isAssigned, hasDeliveryTime, hasCourier, order.opForm);
                         const bottles12 = order.products?.b12 || 0;
                         const bottles19 = order.products?.b19 || 0;
-                        const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
                         const opForm = getOpForm(order.opForm);
                         
                         // Отладочная информация
@@ -709,7 +731,6 @@ export default function SuperAdminAggregatorAction() {
                         // Определяем тип клиента для выбора формы маркера
                         const clientType = order.client?.clientType;
                         const isCircle = clientType === true;
-                        const isFakt = order.opForm === "fakt";
                         const popupContent = (
                             <Popup>
                                 <div className="min-w-[300px]">
@@ -750,31 +771,6 @@ export default function SuperAdminAggregatorAction() {
                                 </div>
                             </Popup>
                         );
-
-                        if (isFakt) {
-                            const diamondOffset = 0.0007;
-                            const diamondCoordinates = [
-                                [order.offsetLat + diamondOffset, order.offsetLon],
-                                [order.offsetLat, order.offsetLon + diamondOffset],
-                                [order.offsetLat - diamondOffset, order.offsetLon],
-                                [order.offsetLat, order.offsetLon - diamondOffset]
-                            ];
-
-                            return (
-                                <Polygon
-                                    key={`order-${order.originalIndex}`}
-                                    positions={diamondCoordinates}
-                                    pathOptions={{
-                                        color: color,
-                                        fillColor: color,
-                                        fillOpacity: 0.7,
-                                        weight: 2
-                                    }}
-                                >
-                                    {popupContent}
-                                </Polygon>
-                            );
-                        }
                         
                         return isCircle ? (
                             <Circle
