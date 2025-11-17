@@ -68,6 +68,7 @@ import AquaMarketGiving from "./Pages/AquaMarket/AquaMarketGiving";
 import AquaMarketReceiving from "./Pages/AquaMarket/AquaMarketReceiving";
 import AquaMarketLogin from "./Pages/AquaMarket/AquaMarketLogin";
 import AquaMarketHistory from "./Pages/AquaMarket/AquaMarketHistory";
+import AquaMarketSettings from "./Pages/AquaMarket/AquaMarketSettings";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -155,4 +156,5 @@ export const router = createBrowserRouter([
     { path: "/aquaMarket/receiving", element: <AquaMarketReceiving />},
     { path: "/aquaMarketLogin", element: <AquaMarketLogin />},
     { path: "/aquaMarket/history/:aquaMarketId", element: <AquaMarketHistory />},
+    { path: "/aquaMarketSettings", element: <AquaMarketSettings />},
 ]);

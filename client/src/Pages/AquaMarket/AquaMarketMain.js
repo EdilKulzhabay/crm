@@ -40,6 +40,8 @@ export default function AquaMarketMain() {
             <Li><LinkButton href="/aquaMarket/receiving">Принять бутыли</LinkButton></Li>
             <Li><LinkButton href="/aquaMarket/giving">Отпустить бутыли</LinkButton></Li>
             <Div />
+            <Li><LinkButton href={`/aquaMarket/history/${aquaMarket?._id}`}>История</LinkButton></Li>
+            <Div />
         </Container>
     )
 }

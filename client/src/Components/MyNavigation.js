@@ -100,10 +100,6 @@ const AMButtons = [
         title: "Главная страница",
     },
     {
-        href: "/aquaMarketHistory",
-        title: "История",
-    },
-    {
         href: "/aquaMarketSettings",
         title: "Настройки",
     },
