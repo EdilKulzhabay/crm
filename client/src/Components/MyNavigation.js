@@ -94,6 +94,21 @@ const DButtons = [
     },
 ];
 
+const AMButtons = [
+    {
+        href: "/aquaMarket",
+        title: "Главная страница",
+    },
+    {
+        href: "/aquaMarketHistory",
+        title: "История",
+    },
+    {
+        href: "/aquaMarketSettings",
+        title: "Настройки",
+    },
+];
+
 export default function MyNavigation(props) {
     if (props.role === "superAdmin") {
         return (
@@ -190,6 +205,32 @@ export default function MyNavigation(props) {
                 </div>
                 <Div styles="hidden lg:flex">
                     {DButtons.map((item) => (
+                        <LinkButton key={item.href} href={item.href}>
+                            {item.title}
+                        </LinkButton>
+                    ))}
+                </Div>
+            </>
+        );
+    }
+
+    if (props.role === "aquaMarket") {
+        return (
+            <>
+                <Div>
+                    <div>Навигация:</div>
+                </Div>
+                <div className="lg:hidden">
+                    {AMButtons.map((item) => (
+                        <Li key={item.href}>
+                            <LinkButton href={item.href}>
+                                {item.title}
+                            </LinkButton>
+                        </Li>
+                    ))}
+                </div>
+                <Div styles="hidden lg:flex">
+                    {AMButtons.map((item) => (
                         <LinkButton key={item.href} href={item.href}>
                             {item.title}
                         </LinkButton>

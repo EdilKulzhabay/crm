@@ -61,6 +61,13 @@ import SuperAdminAggregatorAction from "./Pages/SuperAdmin/SuperAdminAggregatorA
 import SuperAdminCancelledOrders from "./Pages/SuperAdmin/SuperAdminCancelledOrders";
 import SupportChat from "./Pages/SupportChat";
 import Support from "./Pages/Support";
+import AquaMarketList from "./Pages/AquaMarket/AquaMarketList";
+import AddAquaMarket from "./Pages/AquaMarket/AddAquaMarket";
+import AquaMarketMain from "./Pages/AquaMarket/AquaMarketMain";
+import AquaMarketGiving from "./Pages/AquaMarket/AquaMarketGiving";
+import AquaMarketReceiving from "./Pages/AquaMarket/AquaMarketReceiving";
+import AquaMarketLogin from "./Pages/AquaMarket/AquaMarketLogin";
+import AquaMarketHistory from "./Pages/AquaMarket/AquaMarketHistory";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -139,4 +146,13 @@ export const router = createBrowserRouter([
     { path: "/departamentReceiving", element: <DepartamentReceiving />},
     { path: "/departamentGivingSingle", element: <DepartamentGivingSingle />},
     { path: "/departmentReceivingHistory", element: <DepartmentReceivingHistory />},
+
+    /////AQUAMARKET
+    { path: "/aquaMarketList", element: <AquaMarketList />},
+    { path: "/addAquaMarket", element: <AddAquaMarket />},
+    { path: "/aquaMarket", element: <AquaMarketMain />},
+    { path: "/aquaMarket/giving", element: <AquaMarketGiving />},
+    { path: "/aquaMarket/receiving", element: <AquaMarketReceiving />},
+    { path: "/aquaMarketLogin", element: <AquaMarketLogin />},
+    { path: "/aquaMarket/history/:aquaMarketId", element: <AquaMarketHistory />},
 ]);

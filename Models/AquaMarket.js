@@ -11,11 +11,7 @@ const AquaMarketScheme = new mongoose.Schema(
                 type: Number,
                 default: 0
             },
-            b191: {
-                type: Number,
-                default: 0
-            },
-            b197: {
+            b19: {
                 type: Number,
                 default: 0
             }
@@ -25,11 +21,7 @@ const AquaMarketScheme = new mongoose.Schema(
                 type: Number,
                 default: 0
             },
-            b191: {
-                type: Number,
-                default: 0
-            },
-            b197: {
+            b19: {
                 type: Number,
                 default: 0
             }
@@ -39,11 +31,7 @@ const AquaMarketScheme = new mongoose.Schema(
                 type: Number,
                 default: 0
             },
-            b191: {
-                type: Number,
-                default: 0
-            },
-            b197: {
+            b19: {
                 type: Number,
                 default: 0
             }
@@ -67,6 +55,14 @@ const AquaMarketScheme = new mongoose.Schema(
             default: ""
         },
         link: {
+            type: String,
+            default: ""
+        },
+        userName: {
+            type: String,
+            default: ""
+        },
+        password: {
             type: String,
             default: ""
         }

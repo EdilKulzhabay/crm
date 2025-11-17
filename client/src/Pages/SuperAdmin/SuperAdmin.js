@@ -167,6 +167,23 @@ export default function SuperAdmin() {
             </>
             <Div />
             <Div>
+                <div>Управление аквамаркетами:</div>
+            </Div>
+            <Li>
+                <div className="flex items-center flex-wrap gap-x-3">
+                    <div>Список аквамаркетов:</div>
+                    <LinkButton href="/aquaMarketList">Перейти</LinkButton>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center flex-wrap gap-x-3">
+                    <div>Создать аквамаркет:</div>
+                    <LinkButton href="/addAquaMarket">Перейти</LinkButton>
+                </div>
+            </Li>
+
+            <Div />
+            <Div>
                 <div>Действия:</div>
             </Div>
             <div className="lg:hidden">

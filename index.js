@@ -330,7 +330,14 @@ app.post("/resetCourierOrders", CourierAggregatorController.resetCourierOrders)
 app.post("/needToGiveTheOrderToCourier", CourierAggregatorController.needToGiveTheOrderToCourier)
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
-app.post("/updateUserData", AquaMarketController.updateUserData)
+app.post("/getAquaMarkets", AquaMarketController.getAquaMarkets)
+app.post("/getAquaMarketData", AquaMarketController.getAquaMarketData)
+app.post("/updateAquaMarketData", AquaMarketController.updateAquaMarketData)
+app.post("/deleteAquaMarket", AquaMarketController.deleteAquaMarket)
+app.post("/getAquaMarketHistory", AquaMarketController.getAquaMarketHistory)
+app.post("/aquaMarketAction", AquaMarketController.aquaMarketAction)
+app.post("/aquaMarketFill", AquaMarketController.aquaMarketFill)
+app.post("/aquaMarketLogin", AquaMarketController.aquaMarketLogin)
 
 // app.get("/testOrTools", async (req, res) => {
 //     try {
