@@ -66,6 +66,9 @@ export const courierAggregatorSendCode = async (req, res) => {
 
     codes[email] = confirmCode;
 
+    console.log("email: ", email);
+    console.log("confirmCode: ", confirmCode);
+
     const mailOptions = {
         from: "info@tibetskaya.kz",
         to: email,
@@ -350,8 +353,6 @@ export const courierAggregatorRegister = async (req, res) => {
 export const updateCourierAggregatorData = async (req, res) => {
     try {
         const {id, changeField, changeData} = req.body
-
-        console.log("updateCourierAggregatorData req.body = ", req.body);
 
         const courier = await CourierAggregator.findById(id)
 
