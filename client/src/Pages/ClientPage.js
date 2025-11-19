@@ -575,6 +575,13 @@ export default function ClientPage() {
                             <MyButton click={() => {updateClientData("clientBottleCredit", clientBottleCredit)}}>Сохранить</MyButton>
                         </div>
                     </Li>
+                    <Div>Последние пустые бутылки: </Div>
+                    <Li>
+                        <div>12.5-литровых бутылей: {client?.emptyBottles?.b12}</div>
+                    </Li>
+                    <Li>
+                        <div>18.9-литровых бутылей: {client?.emptyBottles?.b19}</div>
+                    </Li>
                     </>}
                 </>
 

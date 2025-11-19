@@ -113,6 +113,16 @@ const OrderSchema = new mongoose.Schema(
         clientPhone: {
             type: String,
             default: ""
+        },
+        emptyBottles: {
+            b12: {
+                type: Number,
+                default: 0
+            },
+            b19: {
+                type: Number,
+                default: 0
+            }
         }
     },
     {

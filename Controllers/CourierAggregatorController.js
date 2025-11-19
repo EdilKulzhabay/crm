@@ -592,7 +592,7 @@ export const acceptOrderCourierAggregator = async (req, res) => {
 
 export const completeOrderCourierAggregator = async (req, res) => {
     try {
-        const {orderId, courierId, b12, b19} = req.body
+        const {orderId, courierId, b12, b19, emptyb12, emptyb19} = req.body
 
         const products = {
             b12: b12 || 0,
@@ -709,8 +709,21 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 courierAggregator: courierId,
                 products: products,
                 sum: sum,
-                income: sum
+                income: sum,
+                emptyBottles: {
+                    b12: emptyb12 || 0,
+                    b19: emptyb19 || 0
+                }
             } 
+        })
+
+        await Client.updateOne({_id: order.client._id}, {
+            $set: {
+                emptyBottles: {
+                    b12: emptyb12 || 0,
+                    b19: emptyb19 || 0
+                }
+            }
         })
 
         const nextOrder = courier1.orders.length > 1 ? courier1.orders[1] : null;

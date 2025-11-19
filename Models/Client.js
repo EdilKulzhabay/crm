@@ -166,7 +166,17 @@ const ClientSchema = new mongoose.Schema(
             isRead: {
                 type: Boolean
             }
-        }]
+        }],
+        emptyBottles: {
+            b12: {
+                type: Number,
+                default: 0
+            },
+            b19: {
+                type: Number,
+                default: 0
+            }
+        }
     },
     {
         timestamps: true,
