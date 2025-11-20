@@ -575,6 +575,15 @@ export default function OrderPage() {
                         </div>
                     </div>
                 </Div>
+                {userData?.role === "superAdmin" && <>
+                    <Div>Пустые бутылки: </Div>
+                    <Li>
+                        <div>12.5-литровых бутылей: {order?.emptyBottles?.b12 || 0}</div>
+                    </Li>
+                    <Li>
+                        <div>18.9-литровых бутылей: {order?.emptyBottles?.b19 || 0}</div>
+                    </Li>
+                </>}
                 {/* <Li>
                     {order?.status === "awaitingOrder"
                         ? "Ожидает заказ"

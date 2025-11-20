@@ -577,10 +577,10 @@ export default function ClientPage() {
                     </Li>
                     <Div>Последние пустые бутылки: </Div>
                     <Li>
-                        <div>12.5-литровых бутылей: {client?.emptyBottles?.b12}</div>
+                        <div>12.5-литровых бутылей: {client?.emptyBottles?.b12 || 0}</div>
                     </Li>
                     <Li>
-                        <div>18.9-литровых бутылей: {client?.emptyBottles?.b19}</div>
+                        <div>18.9-литровых бутылей: {client?.emptyBottles?.b19 || 0}</div>
                     </Li>
                     </>}
                 </>
