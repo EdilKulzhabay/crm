@@ -935,23 +935,6 @@ export const getActiveOrdersMobile = async (req, res) => {
 
 export const getClientOrdersMobile = async (req, res) => {
     try {
-        // const {clientId, page} = req.body
-
-        // const limit = 5;
-        // const skip = (page - 1) * limit
-
-        // const orders = await Order.find({client: clientId})
-        //     .sort({ createdAt: -1 })
-        //     .skip(skip)
-        //     .limit(limit);
-
-        // if (!orders) {
-        //     return res.status(404).json({
-        //         success: false,
-        //         message: "Хз че не так, но заказов нет("
-        //     })
-        // }
-
         const {mail} = req.body
 
         const client = await Client.findOne({mail})
@@ -1102,6 +1085,19 @@ export const replyToSupportMessage = async (req, res) => {
         const { pushNotificationClientSupport } = await import("../pushNotificationClient.js");
         await pushNotificationClientSupport(messageTitle, messageBody, [notificationTokens], newStatus, sendMessage);
 
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getOrderDataMobile = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const order = await Order.findById(orderId).populate("client").populate("courierAggregator").populate("franchisee");
+        res.json({ order });
     } catch (error) {
         console.log(error);
         res.status(500).json({
