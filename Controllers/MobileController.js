@@ -1105,3 +1105,16 @@ export const getOrderDataMobile = async (req, res) => {
         });
     }
 }
+
+export const cancelOrderMobile = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled" });
+        res.json({ order });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
