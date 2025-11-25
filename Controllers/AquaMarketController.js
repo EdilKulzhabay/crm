@@ -95,6 +95,12 @@ export const updateAquaMarketData = async (req, res) => {
             })
         }
 
+        if (changeField === "password") {
+            const salt = await bcrypt.genSalt(10);
+            const hash = await bcrypt.hash(changeData, salt);
+            changeData = hash;
+        }
+
         const updateResult = await AquaMarket.updateOne({_id: aquaMarketId}, { $set: {
             [changeField]: changeData
         } })
