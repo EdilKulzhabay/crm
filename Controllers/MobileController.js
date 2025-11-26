@@ -920,7 +920,7 @@ export const getActiveOrdersMobile = async (req, res) => {
 
         const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } })
             .sort({ createdAt: -1 })
-            .populate("courierAggregator", "userName _id point phone")
+            .populate("courierAggregator", "userName fullName _id point phone")
 
         if (!orders) {
             return res.status(404).json({
