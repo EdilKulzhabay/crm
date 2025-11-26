@@ -391,7 +391,7 @@ export const updateCourierAggregatorData = async (req, res) => {
             let sum = 0;
             if (courier.isExternal) {
                 sum += changeData.b12 > 0 ? changeData.b12 * 300 : 0;
-                sum += changeData.b19 > 0 ? changeData.b19 * 400 : 0;
+                sum += changeData.b19 > 0 ? changeData.b19 * 500 : 0;
             } else {
                 sum += changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0;
                 sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0;
@@ -696,7 +696,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         if (courier1.order && courier1.order.products) {
             if (courier1.isExternal) {
                 sum += products.b12 > 0 ? products.b12 * 300 : 0;
-                sum += products.b19 > 0 ? products.b19 * 400 : 0;
+                sum += products.b19 > 0 ? products.b19 * 500 : 0;
             } else {    
                 sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
                 sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
@@ -1061,7 +1061,7 @@ export const getCourierAggregatorIncome = async (req, res) => {
             }
             if (order.products.b19 > 0) {
                 if (courier.isExternal) {
-                    sum += order.products.b19 * 400;
+                    sum += order.products.b19 * 500;
                 } else {
                     sum += order.products.b19 * order.client.price19;
                 }
