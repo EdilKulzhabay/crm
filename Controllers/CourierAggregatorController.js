@@ -1483,7 +1483,7 @@ export const assignOrderToCourier = async (req, res) => {
             message: "Заказ успешно назначен курьеру"
         });
 
-        const sendOrder = await Order.findById(order.orderId)
+        const sendOrder = await Order.findById(order._id)
         const client = await Client.findById(sendOrder.client)
         if (client.notificationPushToken) {
             const { pushNotificationClient } = await import("../pushNotificationClient.js");

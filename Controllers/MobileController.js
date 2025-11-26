@@ -354,7 +354,7 @@ export const createTestAccount = async (req, res) => {
 
 export const clientRegister = async (req, res) => {
     try {
-        const { fullName, phone, mail } = req.body;
+        const { userName, phone, mail } = req.body;
         const superAdmin = await User.findOne({ role: "superAdmin" });
         const candidate = await Client.findOne({ phone });
 
@@ -369,7 +369,8 @@ export const clientRegister = async (req, res) => {
         const hash = await bcrypt.hash(req.body.password, salt);
 
         const doc = new Client({
-            fullName,
+            fullName: "Новый клиент",
+            userName,
             password: hash,
             phone,
             mail: mail?.toLowerCase(),
@@ -409,6 +410,7 @@ export const clientRegister = async (req, res) => {
 
         const clientData = {
             fullName: client._doc.fullName,
+            userName: client._doc.userName,
             phone: client._doc.phone,
             mail: client._doc.mail,
             password: client._doc.password,
@@ -478,6 +480,7 @@ export const clientLogin = async (req, res) => {
 
         const clientData = {
             fullName: candidate._doc.fullName,
+            userName: candidate._doc.userName,
             phone: candidate._doc.phone,
             mail: candidate._doc.mail,
             password: candidate._doc.password,
@@ -548,6 +551,7 @@ export const updateClientDataMobile = async (req, res) => {
         const clientData = {
             _id: updatedClient._doc._id,
             fullName: updatedClient._doc.fullName,
+            userName: updatedClient._doc.userName,
             mail: updatedClient._doc.mail,
             avatar: updatedClient._doc.avatar,
             phone: updatedClient._doc.phone,
@@ -915,7 +919,7 @@ export const getActiveOrdersMobile = async (req, res) => {
 
         const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } })
             .sort({ createdAt: -1 })
-            .populate("courierAggregator", "fullName _id point phone")
+            .populate("courierAggregator", "userName _id point phone")
 
         if (!orders) {
             return res.status(404).json({
@@ -941,7 +945,7 @@ export const getClientOrdersMobile = async (req, res) => {
 
         const orders = await Order.find({client: client._id})
             .sort({ createdAt: -1 })
-            .populate("courierAggregator", "fullName _id point phone")
+            .populate("courierAggregator", "userName _id point phone")
 
         console.log("orders: ", orders);
 
