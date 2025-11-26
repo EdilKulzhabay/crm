@@ -615,6 +615,10 @@ export const updateOrder = async (req, res) => {
             await Order.updateOne({_id: orderId}, { $set: { priority: changeData } })
         }
 
+        if (change === "address.point") {
+            await Order.updateOne({_id: orderId}, { $set: { "address.point": changeData } })
+        }
+
         res.json({
             success: true,
             message: "Заказ успешно изменен",

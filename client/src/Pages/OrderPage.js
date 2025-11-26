@@ -17,6 +17,7 @@ import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 import Info from "../Components/Info";
 import useFetchUserData from "../customHooks/useFetchUserData";
 import StarIcon from "../icons/StarIcon";
+import MyInput from "../Components/MyInput";
 
 const adjustDateByDays = (dateStr, days) => {
     const currentDate = new Date(dateStr);
@@ -57,6 +58,11 @@ export default function OrderPage() {
     const [needVerification, setNeedVerification] = useState(false)
 
     const [priority, setPriority] = useState("")
+
+    const [point, setPoint] = useState({
+        lat: "",
+        lon: "",
+    })
 
     const confirmDelete = () => {
         deleteOrder()
@@ -146,6 +152,11 @@ export default function OrderPage() {
                 setOrder(data.order);
                 setOrderStatus(data.order.status);
                 setOrderCourier(data.order.courier);
+
+                setPoint({
+                    lat: data.order.address.point.lat,
+                    lon: data.order.address.point.lon
+                })
 
                 const hasInvalidCoordinates = data.addresses?.some(address => 
                     !address.point?.lat || 
@@ -268,6 +279,35 @@ export default function OrderPage() {
                     </Li>
                 </>
                 <Div />
+                {userData?.role === "superAdmin" && <>
+                    <Div>
+                        <div className="flex items-center gap-x-3">
+                            <div>Адрес:</div>
+                            <div>{order?.address?.actual}</div>
+                        </div>
+                    </Div>
+                    <Li>
+                        <div className="flex items-center gap-x-3">
+                            <div>Координаты:</div>
+                            <MyInput
+                                name={"point.lat"}
+                                value={point?.lat || ""}
+                                change={(e) => setPoint({ ...point, lat: e.target.value })}
+                                color="white"
+                            />
+                            <MyInput
+                                name={"point.lon"}
+                                value={point?.lon || ""}
+                                change={(e) => setPoint({ ...point, lon: e.target.value })}
+                                color="white"
+                            />
+                            {point?.lat !== "" && point?.lon !== "" && (point?.lat !== order?.address?.point?.lat || point?.lon !== order?.address?.point?.lon) && 
+                                <MyButton click={() => {updateOrder("address.point", point)}}>Применить</MyButton>
+                            }
+                        </div>
+                    </Li>
+                    <Div />
+                </>}
                 <Div>Продукты:</Div>
                 <>
                     <Li>
@@ -584,15 +624,6 @@ export default function OrderPage() {
                         <div>18.9-литровых бутылей: {order?.emptyBottles?.b19 || 0}</div>
                     </Li>
                 </>}
-                {/* <Li>
-                    {order?.status === "awaitingOrder"
-                        ? "Ожидает заказ"
-                        : order?.status === "onTheWay"
-                        ? "В пути"
-                        : order?.status === "delivered"
-                        ? "Доставлен"
-                        : "Отменен"}
-                </Li> */}
 
                 <Div />
                 <Div>
