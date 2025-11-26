@@ -123,7 +123,11 @@ const OrderSchema = new mongoose.Schema(
                 type: Number,
                 default: 0
             }
-        }
+        },
+        needCall: {
+            type: Boolean,
+            default: false
+        },
     },
     {
         timestamps: true,
