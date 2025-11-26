@@ -34,7 +34,7 @@ export default function SupportChat() {
     };
 
     const getMessages = () => {
-        api.post(`/getSupportMessages`, { clientId: id }, {
+        api.post(`/getSupportMessagesAdmin`, { clientId: id }, {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             setClient(data.client);

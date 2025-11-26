@@ -142,7 +142,7 @@ app.post("/getPickupInfo", OtherController.getPickupInfo)
 app.post("/sendNotificationToClients", OtherController.sendNotificationToClients)
 app.get("/getSupportContacts", OtherController.getSupportContacts)
 app.post("/deleteSupportContact", OtherController.deleteSupportContact)
-app.post("/getSupportMessages", OtherController.getSupportMessages)
+app.post("/getSupportMessagesAdmin", OtherController.getSupportMessagesAdmin)
 
 /////USER
 app.get("/getMe", checkAuth, UserController.getMe);
