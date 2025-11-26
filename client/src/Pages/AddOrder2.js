@@ -352,10 +352,9 @@ export default function AddOrder2() {
                                     </a>
                                     <MyButton
                                         click={() => {
+                                            const actualAddress = adress.street + " " + (adress.house ? adress.house : "");
                                             setAddress({
-                                                actual:
-                                                    adress.street + " " +
-                                                    adress.house,
+                                                actual: actualAddress,
                                                 link: adress.link,
                                                 phone: adress.phone
                                             });
