@@ -1483,15 +1483,14 @@ export const assignOrderToCourier = async (req, res) => {
             message: "Заказ успешно назначен курьеру"
         });
 
-        const sendOrder = await Order.findById(order._id)
-        const client = await Client.findById(sendOrder.client)
-        if (client.notificationPushToken) {
+        const sendOrder = await Order.findById(order._id).populate("client", "notificationPushToken").populate("courierAggregator");
+        if (sendOrder.client.notificationPushToken) {
             const { pushNotificationClient } = await import("../pushNotificationClient.js");
             await pushNotificationClient(
-                "Order status changed",
-                "Статус заказа изменен на В пути",
-                [client.notificationPushToken],
-                "orderStatusChanged",
+                "Изменение статуса заказа",
+                "Статус заказа изменен на \"В пути\"",
+                [sendOrder.client.notificationPushToken],
+                "",
                 sendOrder
             );
         }
