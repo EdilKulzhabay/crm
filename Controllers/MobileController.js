@@ -1113,8 +1113,8 @@ export const getOrderDataMobile = async (req, res) => {
 
 export const cancelOrderMobile = async (req, res) => {
     try {
-        const { orderId } = req.body;
-        const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled" });
+        const { orderId, reason } = req.body;
+        const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled", reason });
         res.json({ order });
     } catch (error) {
         console.log(error);
