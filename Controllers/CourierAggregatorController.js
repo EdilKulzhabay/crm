@@ -119,6 +119,22 @@ export const courierAggregatorCodeConfirm = async (req, res) => {
 export const createCourierAggregator = async(req, res) => {
     try {
         const { email, password, firstName, lastName, phone, languages, birthDate, country, city, transport, isExternal } = req.body;
+        // Пример JSON для добавления курьера через Insomnia/Postman
+        /*
+        {
+            "email": "courier.email@example.com",
+            "password": "courierpassword123",
+            "firstName": "Нурлан",
+            "lastName": "Сейткалиев",
+            "phone": "+77071234567",
+            "languages": ["ru", "kz"],
+            "birthDate": "1990-05-22",     // формат: YYYY-MM-DD
+            "country": "Kazakhstan",
+            "city": "Astana",
+            "transport": "B",              // A, B или C
+            "isExternal": false
+        }
+        */
         const candidate = await CourierAggregator.findOne({ email });
         if (candidate) {
             return res.status(409).json({
@@ -1054,14 +1070,16 @@ export const getCourierAggregatorIncome = async (req, res) => {
             let sum = 0
             if (order.products.b12 > 0) {
                 if (courier.isExternal) {
-                    sum += order.products.b12 * 300;
+                    // sum += order.products.b12 * 300;
+                    sum += 0
                 } else {
                     sum += order.products.b12 * order.client.price12;
                 }
             }
             if (order.products.b19 > 0) {
                 if (courier.isExternal) {
-                    sum += order.products.b19 * 500;
+                    // sum += order.products.b19 * 500;
+                    sum += 0
                 } else {
                     sum += order.products.b19 * order.client.price19;
                 }
