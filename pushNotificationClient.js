@@ -117,7 +117,6 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
                                     title: messageTitle,
                                     body: messageBody,
                                 },
-                                "content-available": 1,
                                 sound: "default",
                             },
                         },
