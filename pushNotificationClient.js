@@ -123,8 +123,18 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
                 console.log("Firebase message sent successfully:", response);
                 successCount++;
             } catch (tokenError) {
-                console.error(`Ошибка при отправке уведомления на токен ${token}:`, tokenError);
                 errorCount++;
+                const errorCode = tokenError.errorInfo?.code || 'unknown';
+                const shortToken = token.length > 40 ? token.substring(0, 40) + '...' : token;
+                
+                if (errorCode === 'messaging/invalid-argument') {
+                    console.error(`❌ Невалидный токен (invalid-argument): ${shortToken}`);
+                    console.error(`   Токен будет пропущен. Возможно, токен поврежден или имеет неправильный формат.`);
+                } else if (errorCode === 'messaging/registration-token-not-registered') {
+                    console.error(`❌ Токен не зарегистрирован: ${shortToken}`);
+                } else {
+                    console.error(`❌ Ошибка при отправке уведомления на токен ${shortToken}:`, errorCode, tokenError.message);
+                }
                 // Продолжаем отправку на другие токены
             }
         }
@@ -232,8 +242,18 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
                 console.log("Firebase message sent successfully:", response);
                 successCount++;
             } catch (tokenError) {
-                console.error(`Ошибка при отправке уведомления на токен ${token}:`, tokenError);
                 errorCount++;
+                const errorCode = tokenError.errorInfo?.code || 'unknown';
+                const shortToken = token.length > 40 ? token.substring(0, 40) + '...' : token;
+                
+                if (errorCode === 'messaging/invalid-argument') {
+                    console.error(`❌ Невалидный токен (invalid-argument): ${shortToken}`);
+                    console.error(`   Токен будет пропущен. Возможно, токен поврежден или имеет неправильный формат.`);
+                } else if (errorCode === 'messaging/registration-token-not-registered') {
+                    console.error(`❌ Токен не зарегистрирован: ${shortToken}`);
+                } else {
+                    console.error(`❌ Ошибка при отправке уведомления на токен ${shortToken}:`, errorCode, tokenError.message);
+                }
                 // Продолжаем отправку на другие токены
             }
         }

@@ -1501,18 +1501,36 @@ export const assignOrderToCourier = async (req, res) => {
             message: "Заказ успешно назначен курьеру"
         });
 
-        const sendOrder = await Order.findById(order._id)
-            .populate("client", "notificationPushToken")
-            .populate("courierAggregator");
-        if (sendOrder.client.notificationPushToken) {
-            const { pushNotificationClient } = await import("../pushNotificationClient.js");
-            await pushNotificationClient(
-                "Изменение статуса заказа",
-                "Статус заказа изменен на \"В пути\"",
-                [sendOrder.client.notificationPushToken],
-                "test",
-                sendOrder
-            );
+        // Отправка уведомления клиенту (не блокируем основной процесс при ошибках)
+        try {
+            const sendOrder = await Order.findById(order._id)
+                .populate("client", "notificationPushToken")
+                .populate("courierAggregator");
+            
+            if (sendOrder?.client?.notificationPushToken) {
+                const token = sendOrder.client.notificationPushToken.trim();
+                
+                // Базовая валидация токена (должен быть не пустым)
+                if (token && token.length > 0) {
+                    const { pushNotificationClient } = await import("../pushNotificationClient.js");
+                    await pushNotificationClient(
+                        "Изменение статуса заказа",
+                        "Статус заказа изменен на \"В пути\"",
+                        [token],
+                        "test",
+                        sendOrder
+                    ).catch((notifError) => {
+                        console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
+                        console.error("Код ошибки:", notifError.errorInfo?.code);
+                        // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс
+                    });
+                } else {
+                    console.warn("Токен уведомления клиента пуст или невалиден");
+                }
+            }
+        } catch (notifError) {
+            console.error("Ошибка при отправке уведомления клиенту (не критично):", notifError.message);
+            // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс назначения заказа
         }
 
     } catch (error) {
