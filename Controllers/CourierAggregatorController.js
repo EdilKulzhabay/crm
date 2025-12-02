@@ -1517,7 +1517,7 @@ export const assignOrderToCourier = async (req, res) => {
                         "Изменение статуса заказа",
                         "Статус заказа изменен на \"В пути\"",
                         [token],
-                        "test",
+                        "onTheWay",
                         sendOrder
                     ).catch((notifError) => {
                         console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);

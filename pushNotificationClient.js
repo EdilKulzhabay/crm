@@ -109,12 +109,18 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
                     apns: {
                         headers: {
                             "apns-priority": "10",
+                            "apns-push-type": "alert",
                         },
                         payload: {
                             aps: {
+                                alert: {
+                                    title: messageTitle,
+                                    body: messageBody,
+                                },
+                                "content-available": 1,
                                 sound: "default",
-                                contentAvailable: true,
                             },
+                            ...messageData,
                         },
                     },
                 };
@@ -228,12 +234,18 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
                     apns: {
                         headers: {
                             "apns-priority": "10",
+                            "apns-push-type": "alert",
                         },
                         payload: {
                             aps: {
+                                alert: {
+                                    title: messageTitle,
+                                    body: messageBody,
+                                },
+                                "content-available": 1,
                                 sound: "default",
-                                contentAvailable: true,
                             },
+                            ...messageData,
                         },
                     },
                 };
