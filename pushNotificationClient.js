@@ -289,3 +289,43 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
         throw error;
     }
 }
+
+export const testPushNotificationClient = async () => {
+    try {
+        const token = "cKinjO9UkU4is9iVbWt7Dd:APA91bHAA4NEmHUlxuhMe1HlClcvuK7uZNrJCiv2lAXjKJasiBXWxvoPAf04CL4gaHiX1LqDtNv7_gSzIS8MBbFutKPiWZYXT8r7wl9yzjivt8sTE-pebCE"
+        const message = {
+            token,
+            notification: {
+                title: "Test Title",
+                body: "Test Body",
+            },
+            data: {
+                test: "test",
+            },
+            android: {
+                priority: "high",
+            },
+            apns: {
+                headers: {
+                    "apns-priority": "10",
+                    "apns-push-type": "alert",
+                },
+                payload: {
+                    aps: {
+                        alert: {
+                            title: "Test Title",
+                            body: "Test Body",
+                        },
+                        sound: "default",
+                    },
+                },
+            },
+        };
+        const response = await admin.app('client-app').messaging().send(message);
+        console.log("Firebase message sent successfully:", response);
+    }
+    catch (error) {
+        console.error("Критическая ошибка при отправке уведомлений:", error);
+        throw error;
+    }
+}

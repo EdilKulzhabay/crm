@@ -1878,3 +1878,21 @@ export const needToGiveTheOrderToCourier = async (req, res) => {
         });
     }
 }
+
+export const testPushNotificationClient = async (req, res) => {
+    try {
+        const { testPushNotificationClient } = await import("../pushNotificationClient.js");
+        await testPushNotificationClient();
+        res.status(200).json({
+            success: true,
+            message: "Тестовое уведомление успешно отправлено"
+        });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+}
