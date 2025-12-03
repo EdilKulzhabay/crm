@@ -1123,3 +1123,20 @@ export const cancelOrderMobile = async (req, res) => {
         });
     }
 }
+
+export const updateOrderDataMobile = async (req, res) => {
+    try {
+        const { orderId, field, value } = req.body;
+        const order = await Order.findByIdAndUpdate(orderId, { [field]: value }, { new: true });
+        res.json({
+            success: true,
+            message: "Данные успешно изменены",
+            order,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
