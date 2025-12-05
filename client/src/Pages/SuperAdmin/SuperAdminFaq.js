@@ -91,12 +91,14 @@ export default function SuperAdminFaq() {
                     <div>Добавить FAQ</div>
                 </Div>
                 <Div />
-                <Div>
-                    <DataInput placeholder="Вопрос" value={question} onChange={(e) => setQuestion(e.target.value)} />
-                </Div>
-                <Li>
-                    <DataInput placeholder="Ответ" value={answer} onChange={(e) => setAnswer(e.target.value)} />
-                </Li>
+                <Li>Вопрос:</Li>
+                <Li2>
+                    <textarea size={13} style={{ fontSize: '16px' }} value={question} onChange={(e) => {setQuestion(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                </Li2>
+                <Li>Ответ:</Li>
+                <Li2>
+                    <textarea size={13} style={{ fontSize: '16px' }} value={answer} onChange={(e) => {setAnswer(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                </Li2>
                 <Li>
                     <MyButton click={addFaq}>Добавить</MyButton>
                 </Li>
