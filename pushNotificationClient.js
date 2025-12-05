@@ -290,9 +290,9 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
     }
 }
 
-export const testPushNotificationClient = async () => {
+export const testPushNotificationClient = async (sendToken) => {
     try {
-        const token = "cKinjO9UkU4is9iVbWt7Dd:APA91bHAA4NEmHUlxuhMe1HlClcvuK7uZNrJCiv2lAXjKJasiBXWxvoPAf04CL4gaHiX1LqDtNv7_gSzIS8MBbFutKPiWZYXT8r7wl9yzjivt8sTE-pebCE"
+        const token = sendToken;
         const message = {
             token,
             notification: {

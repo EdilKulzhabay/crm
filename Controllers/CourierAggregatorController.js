@@ -1881,8 +1881,9 @@ export const needToGiveTheOrderToCourier = async (req, res) => {
 
 export const testPushNotificationClient = async (req, res) => {
     try {
+        const { sendToken } = req.body;
         const { testPushNotificationClient } = await import("../pushNotificationClient.js");
-        await testPushNotificationClient();
+        await testPushNotificationClient(sendToken);
         res.status(200).json({
             success: true,
             message: "Тестовое уведомление успешно отправлено"
