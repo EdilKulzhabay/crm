@@ -69,6 +69,7 @@ import AquaMarketReceiving from "./Pages/AquaMarket/AquaMarketReceiving";
 import AquaMarketLogin from "./Pages/AquaMarket/AquaMarketLogin";
 import AquaMarketHistory from "./Pages/AquaMarket/AquaMarketHistory";
 import AquaMarketSettings from "./Pages/AquaMarket/AquaMarketSettings";
+import SuperAdminFaq from "./Pages/SuperAdmin/SuperAdminFaq";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -128,6 +129,7 @@ export const router = createBrowserRouter([
     { path: "/courierAggregatorPage/:id", element: <CourierAggregatorPage /> },
     { path: "/aggregatorAction", element: <SuperAdminAggregatorAction /> },
     { path: "/superAdminCancelledOrders", element: <SuperAdminCancelledOrders /> },
+    { path: "/superAdminFaq", element: <SuperAdminFaq /> },
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
