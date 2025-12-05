@@ -358,12 +358,12 @@ export const clientRegister = async (req, res) => {
         const superAdmin = await User.findOne({ role: "superAdmin" });
         const candidate = await Client.findOne({ phone });
 
-        if (candidate) {
-            return res.status(409).json({
-                success: false,
-                message: "Пользователь с таким номером уже существует",
-            });
-        }
+        // if (candidate) {
+        //     return res.status(409).json({
+        //         success: false,
+        //         message: "Пользователь с таким номером уже существует",
+        //     });
+        // }
 
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(req.body.password, salt);

@@ -20,6 +20,7 @@ import {
     AnalyticsController,
     CourierAggregatorController,
     AquaMarketController,
+    FaqController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -341,6 +342,12 @@ app.post("/getAquaMarketHistory", AquaMarketController.getAquaMarketHistory)
 app.post("/aquaMarketAction", AquaMarketController.aquaMarketAction)
 app.post("/aquaMarketFill", AquaMarketController.aquaMarketFill)
 app.post("/aquaMarketLogin", AquaMarketController.aquaMarketLogin)
+
+///////FAQ
+app.post("/addFaq", FaqController.addFaq);
+app.get("/getFaq", FaqController.getFaq);
+app.post("/updateFaq", FaqController.updateFaq);
+app.post("/deleteFaq", FaqController.deleteFaq);
 
 // app.get("/testOrTools", async (req, res) => {
 //     try {

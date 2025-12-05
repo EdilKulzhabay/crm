@@ -11,3 +11,4 @@ export * as DepartmentController from "./DepartmentController.js";
 export * as AnalyticsController from "./AnalyticsController.js";
 export * as CourierAggregatorController from "./CourierAggregatorController.js";
 export * as AquaMarketController from "./AquaMarketController.js";
+export * as FaqController from "./FaqController.js";
