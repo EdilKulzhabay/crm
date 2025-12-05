@@ -42,17 +42,8 @@ function createNotificationKey(messageTitle, messageBody, notificationTokens, ne
     return `${messageTitle}_${messageBody}_${tokensHash}_${newStatus}_${orderId}`;
 }
 
-export const pushNotificationClient = async (messageTitle, messageBody, notificationTokens, newStatus, order) => {
+export const pushNotificationClient = async (messageTitle, messageBody, notificationTokens, newStatus, data) => {
     try {
-        // Валидация входных данных
-        // validateNotificationData(messageTitle, messageBody, notificationTokens, newStatus, order);
-
-        console.log("notificationTokens = ", notificationTokens);
-        console.log("messageTitle = ", messageTitle);
-        console.log("messageBody = ", messageBody);
-        console.log("newStatus = ", newStatus);
-        console.log("order = ", order);
-
         // Фильтрация невалидных токенов
         const validTokens = notificationTokens.filter(token => token && typeof token === 'string');
         if (validTokens.length === 0) {
@@ -60,7 +51,7 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
         }
 
         // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
-        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, order);
+        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, data);
         const now = Date.now();
         
         // Проверяем, не было ли уже отправлено такое же уведомление недавно
@@ -81,9 +72,7 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
                 // Подготавливаем данные с гарантией строкового типа
                 const messageData = {
                     newStatus: newStatus.toString(),
-                    order: order ? JSON.stringify(order) : '{}',
-                    orderId: (order?._id || order?.orderId || 'unknown').toString(),
-                    orderStatus: (order?.status || newStatus || 'unknown').toString(),
+                    orderId: (data?.orderId || 'unknown').toString(),
                 };
 
                 // Проверяем, что все значения являются строками

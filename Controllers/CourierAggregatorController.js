@@ -1507,8 +1507,11 @@ export const assignOrderToCourier = async (req, res) => {
                 .populate("client", "notificationPushToken")
                 .populate("courierAggregator");
             
-            if (sendOrder?.client?.notificationPushToken) {
+            if (sendOrder?.client?.notificationPushToken && orderStatus === "onTheWay") {
                 const token = sendOrder.client.notificationPushToken.trim();
+                const data = {
+                    orderId: sendOrder._id,
+                }
                 
                 // Базовая валидация токена (должен быть не пустым)
                 if (token && token.length > 0) {
@@ -1518,7 +1521,7 @@ export const assignOrderToCourier = async (req, res) => {
                         "Статус заказа изменен на \"В пути\"",
                         [token],
                         "onTheWay",
-                        sendOrder
+                        data
                     ).catch((notifError) => {
                         console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
                         console.error("Код ошибки:", notifError.errorInfo?.code);
