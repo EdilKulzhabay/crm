@@ -18,6 +18,8 @@ export default function SuperAdminFaq() {
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
     const [faq, setFaq] = useState([]);
+    const [question, setQuestion] = useState("");
+    const [answer, setAnswer] = useState("");
 
     const closeSnack = () => {
         setOpen(false);
@@ -49,6 +51,8 @@ export default function SuperAdminFaq() {
                 setStatus("error");
                 setMessage(data.message);
             }
+            setQuestion("");
+            setAnswer("");
         });
     }
 
