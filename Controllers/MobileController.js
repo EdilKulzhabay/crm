@@ -841,7 +841,7 @@ export const getClientAddresses = async (req, res) => {
 
 export const addOrderClientMobile = async (req, res) => {
     try {
-        const {mail, address, products, clientNotes, date, opForm, needCall} = req.body
+        const {mail, address, products, clientNotes, date, opForm, needCall, comment} = req.body
 
         const client = await Client.findOne({mail})
 
@@ -874,6 +874,7 @@ export const addOrderClientMobile = async (req, res) => {
             clientNotes: clientNotes || [],
             opForm,
             needCall,
+            comment,
         });
 
         await order.save();

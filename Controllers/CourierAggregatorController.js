@@ -405,13 +405,15 @@ export const updateCourierAggregatorData = async (req, res) => {
             
 
             let sum = 0;
-            if (courier.isExternal) {
-                sum += changeData.b12 > 0 ? changeData.b12 * 300 : 0;
-                sum += changeData.b19 > 0 ? changeData.b19 * 500 : 0;
-            } else {
-                sum += changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0;
-                sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0;
-            }
+            sum += changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0;
+            sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0;
+            // if (courier.isExternal) {
+            //     sum += changeData.b12 > 0 ? changeData.b12 * 300 : 0;
+            //     sum += changeData.b19 > 0 ? changeData.b19 * 500 : 0;
+            // } else {
+            //     sum += changeData.b12 > 0 ? changeData.b12 * order.client.price12 : 0;
+            //     sum += changeData.b19 > 0 ? changeData.b19 * order.client.price19 : 0;
+            // }
 
             courier.order.income = sum;
             courier.order.products = changeData;
@@ -710,13 +712,15 @@ export const completeOrderCourierAggregator = async (req, res) => {
         
         // Проверяем, что order и products существуют
         if (courier1.order && courier1.order.products) {
-            if (courier1.isExternal) {
-                sum += products.b12 > 0 ? products.b12 * 300 : 0;
-                sum += products.b19 > 0 ? products.b19 * 500 : 0;
-            } else {    
-                sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
-                sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
-            }
+            sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
+            sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
+            // if (courier1.isExternal) {
+            //     sum += products.b12 > 0 ? products.b12 * 300 : 0;
+            //     sum += products.b19 > 0 ? products.b19 * 500 : 0;
+            // } else {    
+            //     sum += products.b12 > 0 ? products.b12 * order.client.price12 : 0;
+            //     sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
+            // }
         }
 
         await Order.updateOne({_id: orderId}, { 
@@ -773,40 +777,39 @@ export const completeOrderCourierAggregator = async (req, res) => {
             income: sum
         })
 
-        const client = await Client.findById(order.client._id)
-        if (client.notificationPushToken) {
-            const sendOrder = await Order.findById(orderId)
-            const { pushNotificationClient } = await import("../pushNotificationClient.js");
-            await pushNotificationClient(
-                "Order status changed",
-                "Статус заказа изменен на Доставлено",
-                [client.notificationPushToken],
-                "orderStatusChanged",
-                sendOrder
-            );
+        try {
+            const sendOrder = await Order.findById(order._id)
+                .populate("client", "notificationPushToken")
+                .populate("courierAggregator");
+            
+            if (sendOrder?.client?.notificationPushToken) {
+                const token = sendOrder.client.notificationPushToken.trim();
+                const data = {
+                    orderId: sendOrder._id,
+                }
+                
+                // Базовая валидация токена (должен быть не пустым)
+                if (token && token.length > 0) {
+                    const { pushNotificationClient } = await import("../pushNotificationClient.js");
+                    await pushNotificationClient(
+                        "Изменение статуса заказа",
+                        "Статус заказа изменен на \"Доставлено\"",
+                        [token],
+                        "delivered",
+                        data
+                    ).catch((notifError) => {
+                        console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
+                        console.error("Код ошибки:", notifError.errorInfo?.code);
+                        // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс
+                    });
+                } else {
+                    console.warn("Токен уведомления клиента пуст или невалиден");
+                }
+            }
+        } catch (notifError) {
+            console.error("Ошибка при отправке уведомления клиенту (не критично):", notifError.message);
+            // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс назначения заказа
         }
-        // // Добавляем задержку в 20 секунд
-        // await new Promise(resolve => setTimeout(resolve, 15000));
-
-        // // Проверяем наличие следующего заказа в массиве orders
-        // const updatedCourier = await CourierAggregator.findById(courierId);
-        // if (updatedCourier.orders && updatedCourier.orders.length > 0) {
-        //     try {
-        //         const nextOrder = updatedCourier.orders[0];
-        //         const messageBody = `Следующий заказ: ${nextOrder.clientTitle}`;
-
-        //         const { pushNotification } = await import("../pushNotification.js");
-        //         await pushNotification(
-        //             "newOrder",
-        //             messageBody,
-        //             [updatedCourier.notificationPushToken],
-        //             "newOrder",
-        //             nextOrder
-        //         );
-        //     } catch (notificationError) {
-        //         console.log("Ошибка отправки уведомления о следующем заказе:", notificationError);
-        //     }
-        // }
 
     } catch (error) {
         console.log(error);
@@ -939,6 +942,40 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         // }, 15000);
         
         sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+
+        try {
+            const sendOrder = await Order.findById(order._id)
+                .populate("client", "notificationPushToken")
+                .populate("courierAggregator");
+            
+            if (sendOrder?.client?.notificationPushToken) {
+                const token = sendOrder.client.notificationPushToken.trim();
+                const data = {
+                    orderId: sendOrder._id,
+                }
+                
+                // Базовая валидация токена (должен быть не пустым)
+                if (token && token.length > 0) {
+                    const { pushNotificationClient } = await import("../pushNotificationClient.js");
+                    await pushNotificationClient(
+                        "Изменение статуса заказа",
+                        "Статус заказа изменен на \"Отменен\"",
+                        [token],
+                        "cancelled",
+                        data
+                    ).catch((notifError) => {
+                        console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
+                        console.error("Код ошибки:", notifError.errorInfo?.code);
+                        // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс
+                    });
+                } else {
+                    console.warn("Токен уведомления клиента пуст или невалиден");
+                }
+            }
+        } catch (notifError) {
+            console.error("Ошибка при отправке уведомления клиенту (не критично):", notifError.message);
+            // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс назначения заказа
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({

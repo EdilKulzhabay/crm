@@ -638,7 +638,7 @@ export default function ClientPage() {
                                             :
                                         </div>
                                         <div>
-                                            {adress?.street || ""} {adress?.house || ""}
+                                            {adress?.street || ""} {adress?.floor ? `этаж ${adress?.floor}` : ""} {adress?.apartment ? `кв. ${adress?.apartment}` : ""}
                                         </div>
                                         <a
                                             href={adress?.link}
@@ -682,10 +682,21 @@ export default function ClientPage() {
                                 </Li2>
                                 <Li2>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>Кв. этаж:</div>
+                                        <div>Кв</div>
                                         <MyInput
-                                            name={`house`}
-                                            value={selectAddress.house}
+                                            name={`apartment`}
+                                            value={selectAddress.apartment}
+                                            change={changeHandler}
+                                            color="white"
+                                        />
+                                    </div>
+                                </Li2>
+                                <Li2>
+                                    <div className="flex items-center gap-x-3 flex-wrap">
+                                        <div>Этаж:</div>
+                                        <MyInput
+                                            name={`floor`}
+                                            value={selectAddress.floor}
                                             change={changeHandler}
                                             color="white"
                                         />

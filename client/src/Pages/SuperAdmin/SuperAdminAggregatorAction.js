@@ -728,6 +728,14 @@ export default function SuperAdminAggregatorAction() {
                                         <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
                                     )}
                                     <br /><br />
+                                    <button 
+                                        onClick={() => {
+                                            window.open(`/clientPage/${order.client._id}`, '_blank');
+                                        }}
+                                        className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
+                                    >
+                                        Профиль клиента
+                                    </button>
                                     {order.status === "awaitingOrder" && !secret && !isAssigned && (
                                         <button 
                                             onClick={() => openAssignModal(order)}
