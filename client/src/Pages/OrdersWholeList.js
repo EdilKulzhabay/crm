@@ -451,7 +451,7 @@ export default function OrdersWholeList() {
                                             <div className={clsx("", {
                                                 "text-yellow-300": new Date(item?.date?.d) > new Date()
                                             })}>{item?.date?.d} {item?.date?.time !== "" && item?.date?.time}</div>
-                                            <div><LinkButton href={`/clientPage/${item?.client?._id}`}>{item?.client?.fullName}</LinkButton></div>
+                                            <div>{item?.client?.fullName}</div>
                                             <a target="_blank" rel="noreferrer" href={item?.address?.link} className={clsx("", {
                                                 "text-blue-500 hover:text-green-500": item?.address?.point?.lat && item?.address?.point?.lon,
                                                 "text-red": !item?.address?.point?.lat || !item?.address?.point?.lon
