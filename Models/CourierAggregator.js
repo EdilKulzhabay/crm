@@ -311,6 +311,14 @@ const CourierAggregatorSchema = new mongoose.Schema(
         isExternal: {
             type: Boolean,
             default: false,
+        },
+        price12: {
+            type: Number,
+            default: 0,
+        },
+        price19: {
+            type: Number,
+            default: 0,
         }
     },
     {

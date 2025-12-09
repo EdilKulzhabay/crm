@@ -518,96 +518,6 @@ export const updateCourierAggregatorDataFull = async (req, res) => {
     }
 }
 
-export const acceptOrderCourierAggregator = async (req, res) => {
-    try {
-        const id = req.userId
-
-        const courier = await CourierAggregator.findById(id)
-
-        if (!courier) {
-            return res.status(404).json({
-                message: "Не получилось найти курьера",
-                success: false
-            });
-        }
-
-        const { order } = req.body
-
-        console.log("order in acceptOrderCourierAggregator = ", order);
-
-        await Order.updateOne({_id: order.orderId}, { 
-            $set: {
-                status: "onTheWay",
-                courierAggregator: courier._id,
-                aquaMarketAddress: order.aquaMarketAddress
-            } 
-        })
-
-        // Проверяем, нет ли уже этого заказа в массиве orders
-        const orderExists = courier.orders.some(existingOrder => existingOrder.orderId === order.orderId);
-
-        order.status = "onTheWay"
-        
-        if (!orderExists) {
-            await CourierAggregator.updateOne({_id: id}, {
-                $set: {
-                    order: order
-                },
-                $push: {
-                    orders: order
-                }
-            })
-            // Проверим, что заказ действительно добавляется в массив orders
-            console.log('Добавление заказа в orders:', order);
-        } else {
-            await CourierAggregator.updateOne({_id: id}, {
-                $set: {
-                    order: order
-                }
-            })
-            console.log('Заказ уже существует в массиве orders курьера');
-        }
-
-        // Обновляем статус заказа в массиве orders курьера
-        await CourierAggregator.updateOne(
-            { 
-                _id: id,
-                "orders.orderId": order.orderId 
-            },
-            {
-                $set: {
-                    "orders.$.status": "onTheWay"
-                }
-            }
-        );
-
-        res.json({
-            success: true,
-            message: "Заказ принят"
-        })
-
-        const sendOrder = await Order.findById(order.orderId)
-        const client = await Client.findById(sendOrder.client)
-        if (client.notificationPushToken) {
-            const { pushNotificationClient } = await import("../pushNotificationClient.js");
-            await pushNotificationClient(
-                "Order status changed",
-                "Статус заказа изменен на В пути",
-                [client.notificationPushToken],
-                "orderStatusChanged",
-                sendOrder
-            );
-        }
-        
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            success: false,
-            message: "Ошибка на стороне сервера"
-        })
-    }
-}
-
 export const completeOrderCourierAggregator = async (req, res) => {
     try {
         const {orderId, courierId, b12, b19, emptyb12, emptyb19} = req.body
@@ -1107,16 +1017,14 @@ export const getCourierAggregatorIncome = async (req, res) => {
             let sum = 0
             if (order.products.b12 > 0) {
                 if (courier.isExternal) {
-                    // sum += order.products.b12 * 300;
-                    sum += 0
+                    sum += order.products.b12 * (courier.price12 ? courier.price12 : 300);
                 } else {
                     sum += order.products.b12 * order.client.price12;
                 }
             }
             if (order.products.b19 > 0) {
                 if (courier.isExternal) {
-                    // sum += order.products.b19 * 500;
-                    sum += 0
+                    sum += order.products.b19 * (courier.price19 ? courier.price19 : 500);
                 } else {
                     sum += order.products.b19 * order.client.price19;
                 }

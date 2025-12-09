@@ -253,7 +253,11 @@ export default function OrderPage() {
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">
                             <div>Имя:</div>
-                            <div>{order?.client?.fullName} {order?.client?.fullName === "" && order?.client?.userName} </div>
+                            <div>
+                                <LinkButton href={`/clientPage/${order?.client?._id}`}>
+                                    {order?.client?.fullName} {order?.client?.fullName === "" && order?.client?.userName}
+                                </LinkButton>
+                            </div>
                         </div>
                     </Li>
                     <Li>

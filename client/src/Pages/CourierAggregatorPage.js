@@ -20,7 +20,8 @@ export default function CourierAggregatorPage() {
     const [capacity, setCapacity] = useState(0);
     const [capacity12, setCapacity12] = useState(0);
     const [capacity19, setCapacity19] = useState(0);
-
+    const [price12, setPrice12] = useState(0);
+    const [price19, setPrice19] = useState(0);
     const loadCourierData = async () => {
         try {
             const { data } = await api.post(
@@ -34,6 +35,8 @@ export default function CourierAggregatorPage() {
             setCapacity(data.userData.capacity);
             setCapacity12(data.userData.capacity12);
             setCapacity19(data.userData.capacity19);
+            setPrice12(data.userData.price12);
+            setPrice19(data.userData.price19);
         } catch (error) {
             console.error("Ошибка при загрузке данных курьера:", error);
         }
@@ -251,6 +254,49 @@ export default function CourierAggregatorPage() {
                 ))
             ) : (
                 <Div>Нет завершенных заказов</Div>
+            )}
+            <Div />
+            <Div>
+                Специальная цена: {courier?.isExternal ? "Включена" : "Отключена"}
+                <MyButton click={() => {
+                    updateCourierAggregatorData(id, "isExternal", !courier?.isExternal)
+                }}>{courier?.isExternal ? "Отключить" : "Включить"}</MyButton>
+            </Div>
+            {courier?.isExternal && (
+                <>
+                    <Li>
+                        <div className="flex items-center gap-x-2 flex-wrap">
+                            <div>Цена 12.5л: {price12}</div>
+                            <MyInput
+                                value={price12}
+                                change={(e) => {
+                                    setPrice12(e.target.value)
+                                }}
+                            />
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex items-center gap-x-2 flex-wrap">
+                            <div>Цена 19л: {price19}</div>
+                            <MyInput
+                                value={price19}
+                                change={(e) => {
+                                    setPrice19(e.target.value)
+                                }}
+                            />
+                        </div>
+                    </Li>
+                    <Li>
+                        <MyButton click={() => {
+                            updateCourierAggregatorData(id, "price12", {
+                                price12: price12
+                            })
+                            updateCourierAggregatorData(id, "price19", {
+                                price19: price19
+                            })
+                        }}>Обновить</MyButton>
+                    </Li>
+                </>
             )}
             <Div />
         </Container>

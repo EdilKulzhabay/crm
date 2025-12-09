@@ -315,7 +315,6 @@ app.post("/courierAggregatorLogin", CourierAggregatorController.courierAggregato
 app.post("/courierAggregatorRegister", CourierAggregatorController.courierAggregatorRegister)
 app.post("/updateCourierAggregatorData", CourierAggregatorController.updateCourierAggregatorData)
 app.post("/updateCourierAggregatorDataFull", CourierAggregatorController.updateCourierAggregatorDataFull)
-app.post("/acceptOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.acceptOrderCourierAggregator)
 app.post("/completeOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.completeOrderCourierAggregator)
 app.post("/getCourierAggregatorOrdersHistory", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorOrdersHistory)
 app.post("/cancelOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.cancelOrderCourierAggregator)
