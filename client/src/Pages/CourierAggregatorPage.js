@@ -143,6 +143,15 @@ export default function CourierAggregatorPage() {
             </Li>
 
             <Div/>
+            <Div>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <div>В сети: {courier.onTheLine ? "Да" : "Нет"}</div>
+                    <MyButton click={() => {
+                        updateCourierAggregatorData(id, "onTheLine", !courier.onTheLine)
+                    }}>{courier.onTheLine ? "Убрать" : "Включить"}</MyButton>
+                </div>
+            </Div>
+            <Div />
 
             <Div>
                 <div className="flex items-center gap-x-2 flex-wrap">
