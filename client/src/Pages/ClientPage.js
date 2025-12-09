@@ -638,7 +638,7 @@ export default function ClientPage() {
                                             :
                                         </div>
                                         <div>
-                                            {adress?.street || ""} {adress?.floor ? `этаж ${adress?.floor}` : ""} {adress?.apartment ? `кв. ${adress?.apartment}` : ""}
+                                            {adress?.street || ""} {adress?.floor ? `этаж ${adress?.floor}` : ""} {adress?.apartment ? `${client?.type ? "кв." : "офис"} ${adress?.apartment}` : ""}
                                         </div>
                                         <a
                                             href={adress?.link}
@@ -682,7 +682,7 @@ export default function ClientPage() {
                                 </Li2>
                                 <Li2>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>Кв</div>
+                                        <div>{client?.type ? "Кв" : "Офис"}</div>
                                         <MyInput
                                             name={`apartment`}
                                             value={selectAddress.apartment}
@@ -797,7 +797,7 @@ export default function ClientPage() {
                             </Li>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>Кв. этаж:</div>
+                                    <div>{client?.type ? "Кв." : "Офис"} этаж:</div>
                                     <MyInput
                                         value={newAdress.house}
                                         change={(event) =>
