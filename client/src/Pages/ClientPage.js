@@ -682,7 +682,7 @@ export default function ClientPage() {
                                 </Li2>
                                 <Li2>
                                     <div className="flex items-center gap-x-3 flex-wrap">
-                                        <div>{client?.type ? "Кв" : "Офис"}</div>
+                                        <div>{client?.clientType ? "Кв" : "Офис"}</div>
                                         <MyInput
                                             name={`apartment`}
                                             value={selectAddress.apartment}
