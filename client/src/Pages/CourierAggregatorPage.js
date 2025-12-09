@@ -265,8 +265,8 @@ export default function CourierAggregatorPage() {
             {courier?.isExternal && (
                 <>
                     <Li>
-                        <div className="flex items-center gap-x-2 flex-wrap">
-                            <div>Цена 12.5л: {price12}</div>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Цена 12.5л:</div>
                             <MyInput
                                 value={price12}
                                 change={(e) => {
@@ -276,8 +276,8 @@ export default function CourierAggregatorPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div className="flex items-center gap-x-2 flex-wrap">
-                            <div>Цена 19л: {price19}</div>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Цена 19л:</div>
                             <MyInput
                                 value={price19}
                                 change={(e) => {
@@ -288,12 +288,8 @@ export default function CourierAggregatorPage() {
                     </Li>
                     <Li>
                         <MyButton click={() => {
-                            updateCourierAggregatorData(id, "price12", {
-                                price12: price12
-                            })
-                            updateCourierAggregatorData(id, "price19", {
-                                price19: price19
-                            })
+                            updateCourierAggregatorData(id, "price12", Number(price12))
+                            updateCourierAggregatorData(id, "price19", Number(price19))
                         }}>Обновить</MyButton>
                     </Li>
                 </>
