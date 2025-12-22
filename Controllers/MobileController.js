@@ -898,6 +898,7 @@ export const addOrderClientMobile = async (req, res) => {
         // });
 
         client.bonus = client.bonus + 50
+        client.balance = client.balance - sum
         await client.save()
 
         res.json({
