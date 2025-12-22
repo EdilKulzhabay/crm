@@ -9,7 +9,7 @@ import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import { getDateAlmaty } from "../utils/dateUtils.js";
-import queueOrTools from "../orToolsQueue.js";
+// import queueOrTools from "../orToolsQueue.js";
 
 export const addOrder = async (req, res) => {
     try {

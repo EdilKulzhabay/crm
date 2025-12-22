@@ -30,7 +30,7 @@ import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 
 // Импортируем функцию оптимизации маршрутов
 // import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
-import queueOrTools, { getQueueStatus, clearQueue } from "./orToolsQueue.js";
+// import queueOrTools, { getQueueStatus, clearQueue } from "./orToolsQueue.js";
 // import testOrTools from "./testOrTools.js";
 
 mongoose
@@ -374,56 +374,56 @@ app.post("/deleteFaq", FaqController.deleteFaq);
 // });
 
 /////////////ORTOOLS
-app.get("/orTools", async (req, res) => {
-    try {
-        // Сначала отправляем ответ клиенту
-        res.json({ success: true, message: "orTools запущен в фоновом режиме" }); 
+// app.get("/orTools", async (req, res) => {
+//     try {
+//         // Сначала отправляем ответ клиенту
+//         res.json({ success: true, message: "orTools запущен в фоновом режиме" }); 
         
-        // Затем запускаем orTools в фоне
-        try {
-            await queueOrTools('api_request');
-        } catch (queueError) {
-            console.error("Ошибка в очереди orTools:", queueError);
-        }
-    } catch (error) {
-        // Если ответ еще не отправлен, отправляем ошибку
-        if (!res.headersSent) {
-            res.status(500).json({
-                success: false,
-                message: "Error executing Python script",
-                error: error.message
-            });
-        } else {
-            console.error("Ошибка в orTools:", error);
-        }
-    }
-});
+//         // Затем запускаем orTools в фоне
+//         try {
+//             await queueOrTools('api_request');
+//         } catch (queueError) {
+//             console.error("Ошибка в очереди orTools:", queueError);
+//         }
+//     } catch (error) {
+//         // Если ответ еще не отправлен, отправляем ошибку
+//         if (!res.headersSent) {
+//             res.status(500).json({
+//                 success: false,
+//                 message: "Error executing Python script",
+//                 error: error.message
+//             });
+//         } else {
+//             console.error("Ошибка в orTools:", error);
+//         }
+//     }
+// });
 
-app.get("/orTools/status", async (req, res) => {
-    try {
-        const status = getQueueStatus();
-        res.json({ success: true, status });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Error getting queue status",
-            error: error.message
-        });
-    }
-});
+// app.get("/orTools/status", async (req, res) => {
+//     try {
+//         const status = getQueueStatus();
+//         res.json({ success: true, status });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Error getting queue status",
+//             error: error.message
+//         });
+//     }
+// });
 
-app.get("/orTools/clear", async (req, res) => {
-    try {
-        clearQueue();
-        res.json({ success: true, message: "Queue cleared" });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Error clearing queue",
-            error: error.message
-        });
-    }
-});
+// app.get("/orTools/clear", async (req, res) => {
+//     try {
+//         clearQueue();
+//         res.json({ success: true, message: "Queue cleared" });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Error clearing queue",
+//             error: error.message
+//         });
+//     }
+// });
 
 /////////////ROUTE OPTIMIZATION - TSP
 // Endpoint для запуска оптимизации маршрутов
