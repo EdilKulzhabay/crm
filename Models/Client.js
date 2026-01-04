@@ -84,6 +84,15 @@ const ClientSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        paidBootles: {
+            type: Number,
+            default: 0,
+        },
+        paymentMethod: {
+            type: String,
+            default: "fakt",
+            enum: ["fakt", "coupon"],
+        },
         cart: {
             b12: {
                 type: Number,

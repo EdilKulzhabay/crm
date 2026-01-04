@@ -55,6 +55,11 @@ export default function ClientPage() {
     const [selectAddress, setSelectAddress] = useState(null)
     const [clientBottleCount, setClientBottleCount] = useState(0)
     const [clientBottleCredit, setClientBottleCredit] = useState(0)
+    const [paidBootles, setPaidBootles] = useState(0)
+    const [updatePaidBottlesModal, setUpdatePaidBottlesModal] = useState(false)
+    const [balance, setBalance] = useState(0)
+    const [secretCode, setSecretCode] = useState("")
+    const [updateBalanceModal, setUpdateBalanceModal] = useState(false)
 
     const [needVerification, setNeedVerification] = useState(false)
 
@@ -170,7 +175,8 @@ export default function ClientPage() {
         )
             .then(({ data }) => {
                 setClient(data);
-                
+                setPaidBootles(data?.paidBootles)
+                setBalance(data?.balance)
                 // Проверяем координаты всех адресов
                 const hasInvalidCoordinates = data.addresses?.some(address => 
                     address == null ||
@@ -457,6 +463,85 @@ export default function ClientPage() {
                 scrollPosition={scrollPosition}
                 add={true}
             />}
+            {updatePaidBottlesModal && 
+                <div 
+                    onClick={() => {
+                        setUpdatePaidBottlesModal(false)
+                    }}
+                    className="absolute inset-0 bg-black bg-opacity-80"
+                    style={{ minHeight: props.scrollPosition }} >
+                    <div
+                        className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-80"
+                        style={{ top: props.scrollPosition + 50 }} 
+                    >
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                            className="relative px-8 py-4 border border-red rounded-md"
+                        >
+                            <div>
+                                <MyInput
+                                    value={secretCode}
+                                    change={(e) => {setSecretCode(e.target.value)}}
+                                    color="white"
+                                />
+                                <MyButton click={() => {
+                                    if (secretCode === process.env.REACT_APP_SECRET_CODE) {
+                                        setUpdatePaidBottlesModal(false)
+                                        updateClientData("paidBootles", paidBootles)
+                                        updateClientData("paymentMethod", "coupon")
+                                    } else {
+                                        setOpen(true);
+                                        setStatus("error");
+                                        setMessage("Неверный код");
+                                        setSecretCode("")
+                                    }
+                                }}>Подтвердить</MyButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            {updateBalanceModal && 
+                <div 
+                    onClick={() => {
+                        setUpdateBalanceModal(false)
+                    }}
+                    className="absolute inset-0 bg-black bg-opacity-80"
+                    style={{ minHeight: props.scrollPosition }} >
+                    <div
+                        className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-80"
+                        style={{ top: props.scrollPosition + 50 }} 
+                    >
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                            className="relative px-8 py-4 border border-red rounded-md"
+                        >
+                            <div>
+                                <MyInput
+                                    value={secretCode}
+                                    change={(e) => {setSecretCode(e.target.value)}}
+                                    color="white"
+                                />
+                                <MyButton click={() => {
+                                    if (secretCode === process.env.REACT_APP_SECRET_CODE) {
+                                        setUpdateBalanceModal(false)
+                                        updateClientData("balance", balance)
+                                    } else {
+                                        setOpen(true);
+                                        setStatus("error");
+                                        setMessage("Неверный код");
+                                        setSecretCode("")
+                                    }
+                                }}>Подтвердить</MyButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
             <Container role={userData?.role}>
                 <Div>Карточка клиента</Div>
                 {userData?.role === "superAdmin" && needVerification && <>
@@ -621,6 +706,31 @@ export default function ClientPage() {
                     </Div>
                 </div>
 
+                {userData?.role === "superAdmin" && <>
+                    <Li>
+                        <div>Баланс: {client?.balance || 0}</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-green-400">
+                            <MyInput
+                                value={balance}
+                                change={(e) => {setBalance(e.target.value)}}
+                                color="white"
+                            />
+                            <MyButton click={() => {setUpdateBalanceModal(true)}}>Сохранить</MyButton>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Кол-во оплаченных талонов: {client?.paidBootles || 0}</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-green-400">
+                            <MyInput
+                                value={paidBootles}
+                                change={(e) => {setPaidBootles(e.target.value)}}
+                                color="white"
+                            />
+                            <MyButton click={() => {setUpdatePaidBottlesModal(true)}}>Сохранить</MyButton>
+                        </div>
+                    </Li>
+                </>}
+
                 <Div />
                 <Div>Адреса:</Div>
                 {client.addresses &&
@@ -638,7 +748,7 @@ export default function ClientPage() {
                                             :
                                         </div>
                                         <div>
-                                            {adress?.street || ""} {adress?.floor ? `этаж ${adress?.floor}` : ""} {adress?.apartment ? `${client?.clientType ? "кв." : "офис"} ${adress?.apartment}` : ""}
+                                            {adress?.name || ""}, {adress?.street || ""} {adress?.floor ? `этаж ${adress?.floor}` : ""} {adress?.apartment ? `${client?.clientType ? "кв." : "офис"} ${adress?.apartment}` : ""}
                                         </div>
                                         <a
                                             href={adress?.link}

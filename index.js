@@ -21,6 +21,7 @@ import {
     CourierAggregatorController,
     AquaMarketController,
     FaqController,
+    PaymentController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -45,6 +46,7 @@ mongoose
 const app = express();
 app.use(express.json());
 app.use(express.text());
+app.use(express.urlencoded({ extended: true })); // Для поддержки URL-encoded данных
 app.use(
     cors({
         origin: "*",
@@ -347,6 +349,16 @@ app.post("/addFaq", FaqController.addFaq);
 app.get("/getFaq", FaqController.getFaq);
 app.post("/updateFaq", FaqController.updateFaq);
 app.post("/deleteFaq", FaqController.deleteFaq);
+
+///////PAYMENT (Hillstarpay)
+// Callback URL для обработки результата платежа (без авторизации)
+// Поддерживаем URL-encoded, form-data и JSON форматы
+// Для form-data используем multer().none(), для остальных - express.urlencoded() и express.json()
+app.post("/api/payment/callback", multer().none(), PaymentController.handlePaymentCallback);
+// Success URL - перенаправление после успешного платежа
+app.get("/api/payment/success", PaymentController.handlePaymentSuccess);
+// Error URL - перенаправление после неуспешного платежа
+app.get("/api/payment/error", PaymentController.handlePaymentError);
 
 // app.get("/testOrTools", async (req, res) => {
 //     try {

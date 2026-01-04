@@ -70,6 +70,9 @@ import AquaMarketLogin from "./Pages/AquaMarket/AquaMarketLogin";
 import AquaMarketHistory from "./Pages/AquaMarket/AquaMarketHistory";
 import AquaMarketSettings from "./Pages/AquaMarket/AquaMarketSettings";
 import SuperAdminFaq from "./Pages/SuperAdmin/SuperAdminFaq";
+import SuperAdminNotifications from "./Pages/SuperAdmin/SuperAdminNotifications";
+import PaymentSuccess from "./Pages/PaymentSuccess";
+import PaymentError from "./Pages/PaymentError";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -130,6 +133,7 @@ export const router = createBrowserRouter([
     { path: "/aggregatorAction", element: <SuperAdminAggregatorAction /> },
     { path: "/superAdminCancelledOrders", element: <SuperAdminCancelledOrders /> },
     { path: "/superAdminFaq", element: <SuperAdminFaq /> },
+    { path: "/superAdminNotifications", element: <SuperAdminNotifications /> },
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
@@ -159,4 +163,8 @@ export const router = createBrowserRouter([
     { path: "/aquaMarketLogin", element: <AquaMarketLogin />},
     { path: "/aquaMarket/history/:aquaMarketId", element: <AquaMarketHistory />},
     { path: "/aquaMarketSettings", element: <AquaMarketSettings />},
+
+    /////PAYMENT
+    { path: "/payment/success", element: <PaymentSuccess />},
+    { path: "/payment/error", element: <PaymentError />},
 ]);

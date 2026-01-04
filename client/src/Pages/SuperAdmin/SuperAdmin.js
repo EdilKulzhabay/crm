@@ -125,7 +125,7 @@ export default function SuperAdmin() {
             </>
             <Div />
             <Div>
-                <div>Управление франчайзи:</div>
+                <div>Общие настройки:</div>
             </Div>
             <>
                 <Li>
@@ -168,6 +168,12 @@ export default function SuperAdmin() {
                     <div className="flex items-center flex-wrap gap-x-3">
                         <div>FAQ:</div>
                         <LinkButton href="/superAdminFaq">Перейти</LinkButton>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
+                        <div>Уведомления:</div>
+                        <LinkButton href="/superAdminNotifications">Перейти</LinkButton>
                     </div>
                 </Li>
             </>
