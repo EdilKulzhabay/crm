@@ -351,6 +351,8 @@ app.post("/updateFaq", FaqController.updateFaq);
 app.post("/deleteFaq", FaqController.deleteFaq);
 
 ///////PAYMENT (Hillstarpay)
+// Создание ссылки для оплаты заказа
+app.post("/api/payment/create", PaymentController.createPaymentLink);
 // Callback URL для обработки результата платежа (без авторизации)
 // Поддерживаем URL-encoded, form-data и JSON форматы
 // Для form-data используем multer().none(), для остальных - express.urlencoded() и express.json()

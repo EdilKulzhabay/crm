@@ -112,4 +112,4 @@ export async function initPayment({
 }
 
 // Экспортируем также функцию генерации подписи для использования в контроллере
-export { generateSignature, MERCHANT_ID, SECRET_KEY };
+export { generateSignature, initPayment, MERCHANT_ID, SECRET_KEY };

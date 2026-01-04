@@ -1,6 +1,8 @@
 import crypto from 'crypto';
+import axios from 'axios';
 import Order from '../Models/Order.js';
-import { SECRET_KEY } from '../utils/hillstar.js';
+import { SECRET_KEY, MERCHANT_ID, generateSignature } from '../utils/hillstar.js';
+import 'dotenv/config';
 
 /**
  * Проверка подписи для callback от Hillstarpay
@@ -224,6 +226,102 @@ export const handlePaymentError = async (req, res) => {
     } catch (error) {
         console.error('Ошибка при обработке error URL:', error);
         res.redirect('/payment/error?message=Ошибка обработки платежа');
+    }
+};
+
+/**
+ * Создание ссылки для оплаты заказа
+ * POST /api/payment/create
+ * Body: { orderId: string }
+ */
+export const createPaymentLink = async (req, res) => {
+    try {
+        const { sum } = req.body;
+
+        // Проверяем обязательные параметры
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Не указан ID заказа'
+            });
+        }
+
+        // Определяем базовый URL
+        const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
+
+        // Параметры платежа
+        const paymentData = {
+            pg_order_id: new Date().getTime().toString(),
+            pg_merchant_id: MERCHANT_ID,
+            pg_amount: sum.toString(),
+            pg_description: `Оплата заказа`,
+            pg_salt: crypto.randomBytes(8).toString('hex'), // Случайная строка
+            pg_currency: 'KZT',
+            pg_result_url: `${baseUrl}/api/payment/callback`,
+            pg_success_url: `${baseUrl}/api/payment/success`,
+            pg_failure_url: `${baseUrl}/api/payment/error`,
+            pg_request_method: 'POST',
+            pg_success_url_method: 'GET',
+            pg_failure_url_method: 'GET',
+            pg_testing_mode: '1' // 1 для теста
+        };
+
+        // Генерируем подпись
+        // Важно: в PHP примере используется имя файла 'init_payment.php' как первый элемент
+        paymentData.pg_sig = generateSignature('init_payment.php', paymentData, SECRET_KEY);
+
+        try {
+            // Отправляем POST запрос (в формате multipart/form-data или x-www-form-urlencoded)
+            const formData = new URLSearchParams();
+            for (const key in paymentData) {
+                formData.append(key, paymentData[key]);
+            }
+
+            const response = await axios.post('https://api.hillstarpay.com/init_payment.php', formData, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            // API возвращает XML, нужно извлечь pg_redirect_url
+            const xmlResponse = response.data;
+            const redirectUrlMatch = xmlResponse.match(/<pg_redirect_url>(.*?)<\/pg_redirect_url>/);
+            
+            if (redirectUrlMatch && redirectUrlMatch[1]) {
+                return res.json({
+                    success: true,
+                    paymentUrl: redirectUrlMatch[1],
+                    orderId: new Date().getTime().toString(),
+                    amount: sum,
+                    message: 'Ссылка для оплаты успешно создана'
+                });
+            } else {
+                console.error('Не удалось получить URL для редиректа из ответа API:', xmlResponse);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Не удалось получить ссылку для оплаты от платежного сервиса'
+                });
+            }
+
+        } catch (error) {
+            console.error('Ошибка при инициализации платежа:', error.message);
+            if (error.response) {
+                console.error('Ответ от сервера:', error.response.data);
+            }
+            return res.status(500).json({
+                success: false,
+                message: 'Ошибка при создании ссылки для оплаты',
+                error: error.message
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка при создании ссылки для оплаты:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Внутренняя ошибка сервера',
+            error: error.message
+        });
     }
 };
 
