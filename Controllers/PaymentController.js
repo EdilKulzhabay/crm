@@ -238,14 +238,6 @@ export const createPaymentLink = async (req, res) => {
     try {
         const { sum } = req.body;
 
-        // Проверяем обязательные параметры
-        if (!orderId) {
-            return res.status(400).json({
-                success: false,
-                message: 'Не указан ID заказа'
-            });
-        }
-
         // Определяем базовый URL
         const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
 
