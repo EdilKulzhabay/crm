@@ -7,3 +7,14 @@ tibetskaya-courier
 tibetskaya-courier
 ./vrp_routes_visualization.png
 vrp_routes_visualization.png
+# build artifacts
+client/build/
+
+# uploads
+uploads/
+
+# python venv
+venv/
+
+# generated files
+*.png
