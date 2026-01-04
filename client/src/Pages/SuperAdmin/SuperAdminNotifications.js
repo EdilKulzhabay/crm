@@ -1,15 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import api from "../../api";
 import Div from "../../Components/Div";
 import Li from "../../Components/Li";
 import MyButton from "../../Components/MyButton";
-import LinkButton from "../../Components/LinkButton";
 import Container from "../../Components/Container";
-import clsx from "clsx";
-import OrderInfo from "../../Components/OrderInfo";
 import useFetchUserData from "../../customHooks/useFetchUserData";
-import DataInput from "../../Components/DataInput";
 import MySnackBar from "../../Components/MySnackBar";
+import MyInput from "../../Components/MyInput";
 
 export default function SuperAdminNotifications() {
     const userData = useFetchUserData();

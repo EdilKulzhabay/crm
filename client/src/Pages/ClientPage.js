@@ -469,10 +469,10 @@ export default function ClientPage() {
                         setUpdatePaidBottlesModal(false)
                     }}
                     className="absolute inset-0 bg-black bg-opacity-80"
-                    style={{ minHeight: props.scrollPosition }} >
+                    style={{ minHeight: scrollPosition }} >
                     <div
                         className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-80"
-                        style={{ top: props.scrollPosition + 50 }} 
+                        style={{ top: scrollPosition + 50 }} 
                     >
                         <div
                             onClick={(e) => {
@@ -509,10 +509,10 @@ export default function ClientPage() {
                         setUpdateBalanceModal(false)
                     }}
                     className="absolute inset-0 bg-black bg-opacity-80"
-                    style={{ minHeight: props.scrollPosition }} >
+                    style={{ minHeight: scrollPosition }} >
                     <div
                         className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-80"
-                        style={{ top: props.scrollPosition + 50 }} 
+                        style={{ top: scrollPosition + 50 }} 
                     >
                         <div
                             onClick={(e) => {
