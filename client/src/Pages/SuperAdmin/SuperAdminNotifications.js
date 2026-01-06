@@ -45,8 +45,9 @@ export default function SuperAdminNotifications() {
             setMessage("Выберите клиентов")
             return
         }
-        const notificationTokens = selectedClients.map(client => client.expoPushToken);
-        api.post("/sendNotification", {notificationTitle, notificationText, notificationTokens}, {
+        const notificationTokens = selectedClients.map(client => client.notificationPushToken);
+        console.log(notificationTokens)
+        api.post("/sendNotification", {title: notificationTitle, text: notificationText, tokens: notificationTokens}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             console.log(data)
@@ -70,18 +71,22 @@ export default function SuperAdminNotifications() {
                 </Div>
                 <Div>Найденные клиенты:</Div>
                 {clients && clients.length > 0 && clients.map((client) => {
-                    return <Li>
-                        <div>{client.fullName} {client.userName} {client.phone}</div>
-                        <MyButton click={() => {setSelectedClients(prev => [...prev, client])}}>Выбрать</MyButton>
-                    </Li>
+                    return <div key={client._id}>
+                        <Li>
+                            <div>{client.fullName} {client.userName} {client.phone}</div>
+                            <MyButton click={() => {setSelectedClients(prev => [...prev, client])}}>Выбрать</MyButton>
+                        </Li>
+                    </div>
                 })}
                 <Div />
                 <Div>Выбранные клиенты:</Div>
                 {selectedClients && selectedClients.length > 0 && selectedClients.map((client) => {
-                    return <Li>
-                        <div>{client.fullName} {client.userName} {client.phone}</div>
-                        <MyButton click={() => {setSelectedClients(prev => prev.filter(c => c._id !== client._id))}}>Убрать</MyButton>
-                    </Li>
+                    return <div key={client._id}>
+                        <Li>
+                            <div>{client.fullName} {client.userName} {client.phone}</div>
+                            <MyButton click={() => {setSelectedClients(prev => prev.filter(c => c._id !== client._id))}}>Убрать</MyButton>
+                        </Li>
+                    </div>
                 })}
                 <Div />
                 <Div>

@@ -6,6 +6,7 @@ import DepartmentHistory from "../Models/DepartmentHistory.js";
 import Pickup from "../Models/Pickup.js";
 import { pushNotification, pushNotificationText } from "../pushNotification.js";
 import SupportContacts from "../Models/SupportContacts.js";
+import { pushNotificationClient } from "../pushNotificationClient.js";
 
 export const addPickup = async (req, res) => {
     try {
@@ -514,7 +515,7 @@ export const sendNotificationToClients = async (req, res) => {
 export const sendNotification = async (req, res) => {
     try {
         const { title, text, tokens } = req.body;
-        await pushNotificationText(title, text, tokens);
+        await pushNotificationClient(title, text, tokens, "sendNotification", null);
         res.status(200).json({
             success: true,
             message: "Уведомление успешно отправлено",
