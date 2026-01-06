@@ -28,7 +28,7 @@ export default function SuperAdminNotifications() {
         api.post("/searchClient", {search}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
-            setClients(data.clients)
+            setClients(data)
         })
     }
 
@@ -69,7 +69,7 @@ export default function SuperAdminNotifications() {
                     <MyButton click={searchClient}>Найти</MyButton>
                 </Div>
                 <Div>Найденные клиенты:</Div>
-                {clients.length > 0 && clients.map((client) => {
+                {clients && clients.length > 0 && clients.map((client) => {
                     return <Li>
                         <div>{client.fullName} {client.userName} {client.phone}</div>
                         <MyButton click={() => {setSelectedClients(prev => [...prev, client])}}>Выбрать</MyButton>
@@ -77,7 +77,7 @@ export default function SuperAdminNotifications() {
                 })}
                 <Div />
                 <Div>Выбранные клиенты:</Div>
-                {selectedClients.length > 0 && selectedClients.map((client) => {
+                {selectedClients && selectedClients.length > 0 && selectedClients.map((client) => {
                     return <Li>
                         <div>{client.fullName} {client.userName} {client.phone}</div>
                         <MyButton click={() => {setSelectedClients(prev => prev.filter(c => c._id !== client._id))}}>Убрать</MyButton>
