@@ -297,6 +297,7 @@ app.post("/saveFcmToken", MobileController.saveFcmToken)
 app.post("/getOrderDataMobile", MobileController.getOrderDataMobile)
 app.post("/cancelOrderMobile", MobileController.cancelOrderMobile)
 app.post("/updateOrderDataMobile", MobileController.updateOrderDataMobile)
+app.post("/getLastOrderMobile", MobileController.getLastOrderMobile)
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)

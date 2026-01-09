@@ -864,6 +864,18 @@ export const addOrderClientMobile = async (req, res) => {
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`; 
 
+        const findOrder = await Order.findOne({
+            client: client._id,
+            "date.d": date.d,
+        })
+
+        if (findOrder) {
+            return res.json({
+                success: false,
+                message: "Заказ на эту дату уже существует"
+            })
+        }
+
         const order = new Order({
             franchisee: franchisee._id,
             client: client._id,
@@ -1143,6 +1155,30 @@ export const updateOrderDataMobile = async (req, res) => {
     } catch (error) {
         console.log(error);
         res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const getLastOrderMobile = async (req, res) => {
+    try {
+        const { mail } = req.body;
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const order = await Order.findOne({ client: client._id }).sort({ createdAt: -1 });
+        if (!order) {
+            return res.json({
+                success: false,
+                message: "Заказ не найден"
+            })
+        }
+        res.json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
             message: "Что-то пошло не так",
         });
     }
