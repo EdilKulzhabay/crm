@@ -491,6 +491,7 @@ export default function ClientPage() {
                                         setUpdatePaidBottlesModal(false)
                                         updateClientData("paidBootles", paidBootles)
                                         updateClientData("paymentMethod", "coupon")
+                                        setSecretCode("")
                                     } else {
                                         setOpen(true);
                                         setStatus("error");
@@ -530,6 +531,7 @@ export default function ClientPage() {
                                     if (secretCode === process.env.REACT_APP_SECRET_CODE) {
                                         setUpdateBalanceModal(false)
                                         updateClientData("balance", balance)
+                                        setSecretCode("")
                                     } else {
                                         setOpen(true);
                                         setStatus("error");

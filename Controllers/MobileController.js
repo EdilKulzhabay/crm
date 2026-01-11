@@ -78,12 +78,12 @@ export const sendMail = async (req, res) => {
     try {
         const candidate = await Client.findOne({ mail: normalizedMail });
 
-        // if (candidate) {
-        //     sendingInProgress.delete(normalizedMail);
-        //     return res.status(409).json({
-        //         message: "Пользователь с такой почтой уже существует",
-        //     });
-        // }
+        if (candidate) {
+            sendingInProgress.delete(normalizedMail);
+            return res.status(409).json({
+                message: "Пользователь с такой почтой уже существует",
+            });
+        }
 
         const confirmCode = generateCode();
 
@@ -130,6 +130,171 @@ export const sendMail = async (req, res) => {
         });
     }
 };
+
+export const sendMailForgotPassword = async (req, res) => {
+    const { mail } = req.body;
+
+    // Валидация email
+    if (!mail || !mail.includes('@')) {
+        return res.status(400).json({
+            success: false,
+            message: "Некорректный email адрес"
+        });
+    }
+
+    const normalizedMail = mail.toLowerCase();
+
+    // Проверка на повторную отправку (защита от спама)
+    const now = Date.now();
+    const lastSent = lastSentTime[normalizedMail];
+    const COOLDOWN_PERIOD = 60000; // 1 минута
+
+    if (lastSent && (now - lastSent) < COOLDOWN_PERIOD) {
+        const remainingTime = Math.ceil((COOLDOWN_PERIOD - (now - lastSent)) / 1000);
+        return res.status(429).json({
+            success: false,
+            message: `Повторная отправка возможна через ${remainingTime} секунд`
+        });
+    }
+
+    // Проверка на отправку в процессе
+    if (sendingInProgress.has(normalizedMail)) {
+        return res.status(429).json({
+            success: false,
+            message: "Отправка уже в процессе, пожалуйста подождите"
+        });
+    }
+
+    // Добавляем в процесс отправки
+    sendingInProgress.add(normalizedMail);
+
+    try {
+        const candidate = await Client.findOne({ mail: normalizedMail });
+
+        if (!candidate) {
+            sendingInProgress.delete(normalizedMail);
+            return res.status(409).json({
+                message: "Пользователь с такой почтой не существует",
+            });
+        }
+
+        const confirmCode = generateCode();
+
+        codes[normalizedMail] = confirmCode;
+        lastSentTime[normalizedMail] = now;
+
+        const mailOptions = {
+            from: "info@tibetskaya.kz",
+            to: normalizedMail,
+            subject: "Подтверждение электронной почты",
+            text: `Ваш код подтверждения: ${confirmCode}`,
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+            // Убираем из процесса отправки
+            sendingInProgress.delete(normalizedMail);
+            
+            if (error) {
+                console.log("Ошибка отправки email:", error);
+                // Удаляем сохраненный код при ошибке
+                delete codes[normalizedMail];
+                delete lastSentTime[normalizedMail];
+                
+                res.status(500).json({
+                    success: false,
+                    message: "Ошибка при отправке письма"
+                });
+            } else {
+                console.log("Email sent successfully:", info.response);
+                res.status(200).json({
+                    success: true,
+                    message: "Письмо успешно отправлено"
+                });
+            }
+        });
+
+    } catch (error) {
+        // Убираем из процесса отправки при ошибке
+        sendingInProgress.delete(normalizedMail);
+        console.log("Ошибка в sendMail:", error);
+        res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка сервера"
+        });
+    }
+}
+
+export const codeConfirmForgotPassword = async (req, res) => {
+    try {
+        const { mail, code } = req.body;
+        console.log("codeConfirm req.body: ", req.body);
+        
+        const normalizedMail = mail?.toLowerCase();
+        
+        if (!normalizedMail || !code) {
+            return res.status(400).json({
+                success: false,
+                message: "Необходимо указать email и код"
+            });
+        }
+        
+        if (codes[normalizedMail] === code) {
+            console.log("codeConfirm code is correct");
+            delete codes[normalizedMail]; // Удаляем код после успешного подтверждения
+            delete lastSentTime[normalizedMail]; // Удаляем время последней отправки
+            res.status(200).json({
+                success: true,
+                message: "Код успешно подтвержден"
+            });
+        } else {
+            console.log("codeConfirm code is incorrect");
+            res.status(400).json({
+                success: false,
+                message: "Неверный код"
+            });
+        }
+    } catch (error) {
+        console.log("Ошибка в codeConfirm:", error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
+export const updateForgottenPassword = async (req, res) => {
+    try {
+        const { mail, password } = req.body;
+        console.log("updateForgottenPassword req.body: ", req.body);
+        const normalizedMail = mail?.toLowerCase();
+        if (!normalizedMail || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Необходимо указать email и пароль"
+            });
+        }
+        const candidate = await Client.findOne({ mail: normalizedMail });
+        if (!candidate) {
+            return res.status(404).json({
+                success: false,
+                message: "Пользователь с такой почтой не существует"
+            });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+        await Client.findByIdAndUpdate(candidate._id, { password: hash });
+        res.status(200).json({
+            success: true,
+            message: "Пароль успешно обновлен"
+        });
+    } catch (error) {
+        console.log("Ошибка в updateForgottenPassword:", error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+}
 
 export const sendMailRecovery = async (req, res) => {
     const { mail } = req.body;
@@ -630,58 +795,6 @@ export const logOutClient = async (req, res) => {
         res.status(200).json({ success: true, message: "Вы вышли из системы" });
     } catch (error) {
         return res.status(403).json({ success: false, message: "Неверный refresh токен" });
-    }
-};
-
-export const updateForgottenPassword = async (req, res) => {
-    try {
-        const { mail } = req.body;
-
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
-
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(req.body.password, salt);
-
-        client.password = hash;
-
-        await client.save();
-
-        const {
-            password,
-            franchisee,
-            addresses,
-            status,
-            refreshToken,
-            ...clientData
-        } = client._doc;
-
-        const accessToken = jwt.sign(
-            { client: clientData },
-            process.env.SecretKey,
-            {
-                expiresIn: "15m", // Время жизни access токена (например, 15 минут)
-            }
-        );
-
-        const refreshToken2 = jwt.sign(
-            { client: clientData },
-            process.env.SecretKeyRefresh,
-            {
-                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
-            }
-        );
-
-        await Client.findByIdAndUpdate(client._id, {
-            refreshToken: refreshToken2,
-        });
-
-        res.json({ accessToken, refreshToken: refreshToken2 });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            success: false,
-            message: "Что-то пошло не так",
-        });
     }
 };
 
