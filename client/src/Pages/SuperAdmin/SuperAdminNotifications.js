@@ -39,7 +39,7 @@ export default function SuperAdminNotifications() {
             setMessage("Введите заголовок и текст уведомления")
             return
         }
-        if (selectedClients.length === 0) {
+        if (selectedClients?.length === 0) {
             setOpen(true)
             setStatus("error")
             setMessage("Выберите клиентов")
@@ -70,21 +70,21 @@ export default function SuperAdminNotifications() {
                     <MyButton click={searchClient}>Найти</MyButton>
                 </Div>
                 <Div>Найденные клиенты:</Div>
-                {clients && clients.length > 0 && clients.map((client) => {
-                    return <div key={client._id}>
+                {clients && clients?.length > 0 && clients?.map((client) => {
+                    return <div key={client?._id}>
                         <Li>
-                            <div>{client.fullName} {client.userName} {client.phone}</div>
+                            <div>{client?.fullName} {client?.userName} {client?.phone}</div>
                             <MyButton click={() => {setSelectedClients(prev => [...prev, client])}}>Выбрать</MyButton>
                         </Li>
                     </div>
                 })}
                 <Div />
                 <Div>Выбранные клиенты:</Div>
-                {selectedClients && selectedClients.length > 0 && selectedClients.map((client) => {
-                    return <div key={client._id}>
+                {selectedClients && selectedClients?.length > 0 && selectedClients?.map((client) => {
+                    return <div key={client?._id}>
                         <Li>
-                            <div>{client.fullName} {client.userName} {client.phone}</div>
-                            <MyButton click={() => {setSelectedClients(prev => prev.filter(c => c._id !== client._id))}}>Убрать</MyButton>
+                            <div>{client?.fullName} {client?.userName} {client?.phone}</div>
+                            <MyButton click={() => {setSelectedClients(prev => prev.filter(c => c?._id !== client?._id))}}>Убрать</MyButton>
                         </Li>
                     </div>
                 })}

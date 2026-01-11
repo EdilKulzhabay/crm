@@ -230,10 +230,28 @@ export const searchClient = async (req, res) => {
             franch.franchisee = id;
         }
 
-        const clients = await Client.find({
+        let clients = await Client.find({
             ...franch,
             $or: filter,
         }).populate("franchisee");
+
+        if (clients?.length === 0) {
+            // Если поиск по общему фильтру не дал результатов, пробуем искать по номеру телефона "очищенному" от всех символов кроме цифр
+            const numbersOnly = search?.replace(/\D/g, "");
+            if (numbersOnly.length > 0) {
+                // phoneRaw хранится у клиентов как только цифры или с +7 и т.п.
+                clients = await Client.find({
+                    ...franch,
+                    $or: [
+                        { phone: { $regex: numbersOnly } },
+                    ],
+                }).populate("franchisee");
+
+                if (clients?.length > 0) {
+                    return res.json(clients);
+                }
+            }
+        }
 
         res.json(clients);
     } catch (error) {
