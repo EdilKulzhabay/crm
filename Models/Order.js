@@ -128,10 +128,6 @@ const OrderSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        fromTheApp: {
-            type: Boolean,
-            default: false
-        },
         paymentMethod: {
             type: String,
             default: "fakt"

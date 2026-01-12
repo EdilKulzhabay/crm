@@ -1010,8 +1010,7 @@ export const addOrderClientMobile = async (req, res) => {
             opForm,
             needCall,
             comment,
-            fromTheApp,
-            paymentMethod
+            paymentMethod: paymentMethod,
         });
 
         await order.save();
