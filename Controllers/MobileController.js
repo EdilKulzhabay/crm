@@ -980,6 +980,7 @@ export const addOrderClientMobile = async (req, res) => {
         const findOrder = await Order.findOne({
             client: client._id,
             "date.d": date.d,
+            status: { $ne: "cancelled" }
         })
 
         if (findOrder) {
@@ -987,6 +988,15 @@ export const addOrderClientMobile = async (req, res) => {
                 success: false,
                 message: "Заказ на эту дату уже существует"
             })
+        }
+
+        let paymentMethod = "fakt";
+        if (opForm === "card") {
+            if (client.paidBootles > 0) {
+                paymentMethod = "coupon";
+            } else {
+                paymentMethod = "balance";
+            }
         }
 
         const order = new Order({
@@ -1000,6 +1010,8 @@ export const addOrderClientMobile = async (req, res) => {
             opForm,
             needCall,
             comment,
+            fromTheApp,
+            paymentMethod
         });
 
         await order.save();
@@ -1026,7 +1038,7 @@ export const addOrderClientMobile = async (req, res) => {
         if (opForm === "card" && client.paidBootles <= 0) {
             client.balance = client.balance - sum
         }
-        if (opForm === "card" && client.paymentMethod > 0) {
+        if (opForm === "card" && client.paidBootles > 0) {
             client.paidBootles = client.paidBootles - (Number(products.b12) + Number(products.b19))
         }
         await client.save()
@@ -1247,6 +1259,16 @@ export const cancelOrderMobile = async (req, res) => {
     try {
         const { orderId, reason } = req.body;
         const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled", reason });
+        if (order.paymentMethod === "coupon") {
+            const client = await Client.findById(order.client);
+            client.paidBootles = client.paidBootles + (Number(order.products.b12) + Number(order.products.b19));
+            await client.save();
+        }
+        if (order.paymentMethod === "balance") {
+            const client = await Client.findById(order.client);
+            client.balance = client.balance + order.sum;
+            await client.save();
+        }
         res.json({ order });
     } catch (error) {
         console.log(error);

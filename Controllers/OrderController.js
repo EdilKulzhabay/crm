@@ -343,7 +343,8 @@ export const getOrders = async (req, res) => {
             .populate("courier")
             .populate("client")
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .sort({ createdAt: -1 });
 
         res.json({ orders, totalOrders });
     } catch (error) {
