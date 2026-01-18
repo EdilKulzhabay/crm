@@ -46,6 +46,7 @@ export const handlePaymentCallback = async (req, res) => {
     try {
         // Получаем данные из запроса
         const callbackData = req.body;
+        const scriptName = (req.path || '').split('/').filter(Boolean).pop() || 'result';
         
         console.log('Callback received:', callbackData);
         
@@ -96,7 +97,6 @@ export const handlePaymentCallback = async (req, res) => {
         } else {
             // Старый формат (form-data или URL-encoded)
             // Проверяем подпись для старого формата
-            const scriptName = (req.path || '').split('/').filter(Boolean).pop() || 'result';
             const isValidSignature = verifySignature(callbackData, SECRET_KEY, scriptName);
             
             if (!isValidSignature) {
