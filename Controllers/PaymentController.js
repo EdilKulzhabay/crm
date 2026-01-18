@@ -7,15 +7,15 @@ import 'dotenv/config';
 /**
  * Проверка подписи для callback от Hillstarpay
  */
-function verifySignature(params, secretKey) {
+function verifySignature(params, secretKey, scriptName) {
     // Исключаем pg_sig из параметров для проверки
     const { pg_sig, ...paramsWithoutSig } = params;
     
     // Сортируем ключи по алфавиту
     const sortedKeys = Object.keys(paramsWithoutSig).sort();
     
-    // Формируем массив значений: имя скрипта (result) + значения параметров + секретный ключ
-    const signatureArray = ['result'];
+    // Формируем массив значений: имя скрипта + значения параметров + секретный ключ
+    const signatureArray = [scriptName];
     
     for (const key of sortedKeys) {
         signatureArray.push(paramsWithoutSig[key]);
@@ -96,7 +96,8 @@ export const handlePaymentCallback = async (req, res) => {
         } else {
             // Старый формат (form-data или URL-encoded)
             // Проверяем подпись для старого формата
-            const isValidSignature = verifySignature(callbackData, SECRET_KEY);
+            const scriptName = (req.path || '').split('/').filter(Boolean).pop() || 'result';
+            const isValidSignature = verifySignature(callbackData, SECRET_KEY, scriptName);
             
             if (!isValidSignature) {
                 console.error('Неверная подпись в callback');
@@ -149,7 +150,7 @@ export const handlePaymentCallback = async (req, res) => {
 
             // Генерируем подпись для ответа
             const sortedKeys = Object.keys(responseParams).sort();
-            const signatureArray = ['result', ...sortedKeys.map(key => responseParams[key]), SECRET_KEY];
+            const signatureArray = [scriptName, ...sortedKeys.map(key => responseParams[key]), SECRET_KEY];
             const signString = signatureArray.join(';');
             const responseSig = crypto.createHash('md5').update(signString).digest('hex');
             responseParams.pg_sig = responseSig;
@@ -174,7 +175,7 @@ export const handlePaymentCallback = async (req, res) => {
             };
 
             const sortedKeys = Object.keys(responseParams).sort();
-            const signatureArray = ['result', ...sortedKeys.map(key => responseParams[key]), SECRET_KEY];
+            const signatureArray = [scriptName, ...sortedKeys.map(key => responseParams[key]), SECRET_KEY];
             const signString = signatureArray.join(';');
             const responseSig = crypto.createHash('md5').update(signString).digest('hex');
             responseParams.pg_sig = responseSig;
