@@ -434,13 +434,13 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && changeData) {
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} появился в сети`
             sendEmailAboutAggregator(mail, "online", sendText)
         }
 
         if (changeField === "onTheLine" && !changeData) {
-            const mail = "edil.kulzhabay01@gmail.com"
+            const mail = "outofreach5569@gmail.com"
             const sendText = `Курьер ${courier.fullName} вышел из сети`
             sendEmailAboutAggregator(mail, "offline", sendText)
         }
@@ -851,7 +851,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         //     }
         // }, 15000);
         
-        sendEmailAboutAggregator("edil.kulzhabay01@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+        sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
 
         try {
             const sendOrder = await Order.findById(order._id)
@@ -1793,7 +1793,7 @@ export const needToGiveTheOrderToCourier = async (req, res) => {
 
         const mailOptions = {
             from: "info@tibetskaya.kz",
-            to: "edil.kulzhabay01@gmail.com",
+            to: "outofreach5569@gmail.com",
             subject: `Нужно дать заказ курьеру ${fullName}`,
             text: `Нужно дать заказ курьеру ${fullName}`,
         };
