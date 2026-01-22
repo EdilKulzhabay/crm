@@ -731,6 +731,15 @@ export default function ClientPage() {
                             <MyButton click={() => {setUpdatePaidBottlesModal(true)}}>Сохранить</MyButton>
                         </div>
                     </Li>
+                    <Li>
+                        <div>Метод оплаты: {client?.paymentMethod === "balance" ? "Баланс" : "Талоны"}</div>
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "balance")}}>Баланс</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "coupon")}}>Талоны</button>
+                            ]
+                        </div>
+                    </Li>
                 </>}
 
                 <Div />

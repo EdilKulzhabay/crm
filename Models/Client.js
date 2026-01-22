@@ -90,8 +90,8 @@ const ClientSchema = new mongoose.Schema(
         },
         paymentMethod: {
             type: String,
-            default: "fakt",
-            enum: ["fakt", "coupon"],
+            default: "balance",
+            enum: ["balance", "coupon"],
         },
         cart: {
             b12: {
