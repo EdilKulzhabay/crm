@@ -956,6 +956,8 @@ export const addOrderClientMobile = async (req, res) => {
     try {
         const {mail, address, products, clientNotes, date, opForm, needCall, comment} = req.body
 
+        console.log("addOrderClientMobile req.body: ", req.body);
+
         const client = await Client.findOne({mail})
 
         if (!client) {
