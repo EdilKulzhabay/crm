@@ -982,6 +982,7 @@ export const addOrderClientMobile = async (req, res) => {
         const findOrder = await Order.findOne({
             client: client._id,
             "date.d": date.d,
+            "address.actual": address.actual,
             status: { $ne: "cancelled" }
         })
 
