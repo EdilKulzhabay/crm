@@ -791,6 +791,28 @@ export default function ClientPage() {
                                 </Li>
                                 {selectAddress?._id === adress?._id && <>
                                     <Li2>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div>Наименование:</div>
+                                            <MyInput
+                                                name="name"
+                                                value={selectAddress?.name || ""}
+                                                change={changeHandler}
+                                                color="white"
+                                            />
+                                        </div>
+                                    </Li2>
+                                    <Li2>
+                                        <div className="flex items-center gap-x-3 flex-wrap">
+                                            <div>Город:</div>
+                                            <MyInput
+                                                name="city"
+                                                value={selectAddress?.city || ""}
+                                                change={changeHandler}
+                                                color="white"
+                                            />
+                                        </div>
+                                    </Li2>
+                                    <Li2>
                                     <div className="flex items-center gap-x-3 flex-wrap gap-y-2">
                                         <div>Улица, дом, под:</div>
                                         <MyInput
