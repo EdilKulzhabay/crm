@@ -132,6 +132,11 @@ const OrderSchema = new mongoose.Schema(
             type: String,
             default: "fakt"
         },
+        wereCreated: {
+            type: String,
+            default: "crm",
+            enum: ["crm", "app"]
+        }
     },
     {
         timestamps: true,

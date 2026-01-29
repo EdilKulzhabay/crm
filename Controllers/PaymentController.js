@@ -3,6 +3,7 @@ import axios from 'axios';
 import Order from '../Models/Order.js';
 import { SECRET_KEY, MERCHANT_ID, generateSignature } from '../utils/hillstar.js';
 import 'dotenv/config';
+import Client from '../Models/Client.js';
 
 /**
  * Проверка подписи для callback от Hillstarpay
@@ -52,7 +53,7 @@ export const handlePaymentCallback = async (req, res) => {
         
         // Проверяем формат запроса (новый JSON формат или старый form-data)
         let orderId, paymentId, result, amount, currency;
-        
+        let clientMail = callbackData.pg_user_contact_email;
         if (callbackData.order && callbackData.status) {
             // Новый JSON формат
             orderId = callbackData.order.toString();
@@ -121,7 +122,7 @@ export const handlePaymentCallback = async (req, res) => {
             currency = callbackData.pg_currency;
         }
 
-        console.log('Payment callback received:', { orderId, paymentId, result, amount, currency });
+        console.log('Payment callback received:', { orderId, paymentId, result, amount, currency, clientMail });
 
         // Примечание: если orderId - это timestamp, а не ID из базы, то проверку заказа можно пропустить
         // Или можно найти заказ по другому полю, если оно было сохранено
@@ -139,6 +140,14 @@ export const handlePaymentCallback = async (req, res) => {
             // });
 
             console.log('Платеж успешно обработан для заказа:', orderId);
+
+            if (clientMail) {
+                await Client.findOneAndUpdate({mail: clientMail?.toLowerCase().trim()}, {
+                    $inc: {
+                            balance: Number(amount)
+                        }
+                    });
+            }
 
             // Генерируем ответ со статусом ok
             const salt = crypto.randomBytes(8).toString('hex');
