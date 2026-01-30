@@ -3,7 +3,7 @@ import Order from "../Models/Order.js";
 
 const migrateBClients = async () => {
     // 1) Найти уникальные clientId у заказов нужного franchisee
-    const franchiseeId = ObjectId("66fc0cc6953c2dbbc86c2132");
+    const franchiseeId = "66fc0cc6953c2dbbc86c2132";
 
     const clientIds = await Order.distinct("client", { franchisee: franchiseeId });
 
