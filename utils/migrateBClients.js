@@ -12,13 +12,16 @@ const migrateBClients = async () => {
 
         const clientIds = await Order.distinct("client", { franchisee: franchiseeId });
 
-        // 2) Получить список клиентов
-        const clients = await Client.find(
-            { _id: { $in: clientIds } },
-            { _id: 1, fullName: 1, phone: 1, mail: 1, franchisee: 1 }
+        // 2) Обновить franchisee для найденных клиентов
+        const fromFranchiseeId = new mongoose.Types.ObjectId("66f15c557a27c92d447a16a0");
+        const toFranchiseeId = new mongoose.Types.ObjectId("697c1dbedfdc5bb6a0c21089");
+
+        const updateResult = await Client.updateMany(
+            { _id: { $in: clientIds }, franchisee: fromFranchiseeId },
+            { $set: { franchisee: toFranchiseeId } }
         );
 
-        console.log(JSON.stringify(clients, null, 2));
+        console.log("Обновлено клиентов:", updateResult.modifiedCount);
     } catch (error) {
         console.error("Ошибка при миграции:", error);
     } finally {
