@@ -140,11 +140,14 @@ export const handlePaymentCallback = async (req, res) => {
             // });
 
             console.log('Платеж успешно обработан для заказа:', orderId);
+            // const client = await Client.findOne({mail: clientMail?.toLowerCase().trim()});
+            // const paidBootles = Number(amount) / client.price19;
 
             if (clientMail) {
                 await Client.findOneAndUpdate({mail: clientMail?.toLowerCase().trim()}, {
                     $inc: {
-                            balance: Number(amount)
+                            balance: Number(amount),
+                            // paidBootles: paidBootles
                         }
                     });
             }
