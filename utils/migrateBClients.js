@@ -15,8 +15,8 @@ const migrateBClients = async () => {
         // 2) Получить список клиентов
         const clients = await Client.find(
             { _id: { $in: clientIds } },
-            { _id: 1, fullName: 1, phone: 1, mail: 1 }
-        ).populate("franchisee", "userName");
+            { _id: 1, fullName: 1, phone: 1, mail: 1, franchisee: 1 }
+        );
 
         console.log(JSON.stringify(clients, null, 2));
     } catch (error) {
