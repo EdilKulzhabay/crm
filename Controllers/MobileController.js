@@ -1038,10 +1038,10 @@ export const addOrderClientMobile = async (req, res) => {
         // });
 
         client.bonus = client.bonus + 50
-        if (opForm === "card" && client.paymentMethod === "balance") {
+        if (opForm === "credit" && client.paymentMethod === "balance") {
             client.balance = client.balance - sum
         }
-        if (opForm === "card" && client.paymentMethod === "coupon") {
+        if (opForm === "coupon" && client.paymentMethod === "coupon") {
             if (products.b12 > 0) {
                 client.paidBootlesFor12 = client.paidBootlesFor12 - Number(products.b12)
             }
