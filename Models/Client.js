@@ -88,6 +88,14 @@ const ClientSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        paidBootlesFor19: {
+            type: Number,
+            default: 0,
+        },
+        paidBootlesFor12: {
+            type: Number,
+            default: 0,
+        },
         paymentMethod: {
             type: String,
             default: "balance",
@@ -185,6 +193,14 @@ const ClientSchema = new mongoose.Schema(
                 type: Number,
                 default: 0
             }
+        },
+        doesItTake19Bottles: {
+            type: Boolean,
+            default: true
+        },
+        doesItTake12Bottles: {
+            type: Boolean,
+            default: false
         }
     },
     {

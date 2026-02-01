@@ -55,7 +55,8 @@ export default function ClientPage() {
     const [selectAddress, setSelectAddress] = useState(null)
     const [clientBottleCount, setClientBottleCount] = useState(0)
     const [clientBottleCredit, setClientBottleCredit] = useState(0)
-    const [paidBootles, setPaidBootles] = useState(0)
+    const [paidBootlesFor12, setPaidBootlesFor12] = useState(0)
+    const [paidBootlesFor19, setPaidBootlesFor19] = useState(0)
     const [updatePaidBottlesModal, setUpdatePaidBottlesModal] = useState(false)
     const [balance, setBalance] = useState(0)
     const [secretCode, setSecretCode] = useState("")
@@ -175,7 +176,8 @@ export default function ClientPage() {
         )
             .then(({ data }) => {
                 setClient(data);
-                setPaidBootles(data?.paidBootles)
+                setPaidBootlesFor12(data?.paidBootlesFor12)
+                setPaidBootlesFor19(data?.paidBootlesFor19)
                 setBalance(data?.balance)
                 // Проверяем координаты всех адресов
                 const hasInvalidCoordinates = data.addresses?.some(address => 
@@ -489,7 +491,8 @@ export default function ClientPage() {
                                 <MyButton click={() => {
                                     if (secretCode === process.env.REACT_APP_SECRET_CODE) {
                                         setUpdatePaidBottlesModal(false)
-                                        updateClientData("paidBootles", paidBootles)
+                                        updateClientData("paidBootlesFor19", paidBootlesFor19)
+                                        updateClientData("paidBootlesFor12", paidBootlesFor12)
                                         updateClientData("paymentMethod", "coupon")
                                         setSecretCode("")
                                     } else {
@@ -721,11 +724,21 @@ export default function ClientPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div>Кол-во оплаченных талонов: {client?.paidBootles || 0}</div>
+                        <div>Кол-во оплаченных талонов 12-литровых бутылей : {client?.paidBootlesFor12 || 0}</div>
                         <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                             <MyInput
-                                value={paidBootles}
-                                change={(e) => {setPaidBootles(e.target.value)}}
+                                value={paidBootlesFor12}
+                                change={(e) => {setPaidBootlesFor12(e.target.value)}}
+                                color="white"
+                            />
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Кол-во оплаченных талонов 19-литровых бутылей: {client?.paidBootlesFor19 || 0}</div>
+                        <div className="flex items-center gap-x-2 flex-wrap text-green-400">
+                            <MyInput
+                                value={paidBootlesFor19}
+                                change={(e) => {setPaidBootlesFor19(e.target.value)}}
                                 color="white"
                             />
                             <MyButton click={() => {setUpdatePaidBottlesModal(true)}}>Сохранить</MyButton>
@@ -737,6 +750,24 @@ export default function ClientPage() {
                             [
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "balance")}}>Баланс</button> /
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "coupon")}}>Талоны</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Берут ли 19-литровые бутыли: {client?.doesItTake19Bottles ? "Да" : "Нет"}</div>
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("doesItTake19Bottles", true)}}>Да</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("doesItTake19Bottles", false)}}>Нет</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Берут ли 12-литровые бутыли: {client?.doesItTake12Bottles ? "Да" : "Нет"}</div>
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("doesItTake12Bottles", true)}}>Да</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("doesItTake12Bottles", false)}}>Нет</button>
                             ]
                         </div>
                     </Li>
