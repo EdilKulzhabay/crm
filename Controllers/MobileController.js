@@ -1042,7 +1042,12 @@ export const addOrderClientMobile = async (req, res) => {
             client.balance = client.balance - sum
         }
         if (opForm === "card" && client.paymentMethod === "coupon") {
-            client.paidBootles = client.paidBootles - (Number(products.b12) + Number(products.b19))
+            if (products.b12 > 0) {
+                client.paidBootlesFor12 = client.paidBootlesFor12 - Number(products.b12)
+            }
+            if (products.b19 > 0) {
+                client.paidBootlesFor19 = client.paidBootlesFor19 - Number(products.b19)
+            }
         }
         await client.save()
 
