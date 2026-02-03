@@ -529,6 +529,25 @@ export const sendNotification = async (req, res) => {
     }
 }
 
+export const getClientsWithPushToken = async (req, res) => {
+    try {
+        const clients = await Client.find({
+            notificationPushToken: { $exists: true, $ne: "" }
+        }, { _id: 1, fullName: 1, userName: 1, phone: 1, notificationPushToken: 1 });
+
+        res.json({
+            success: true,
+            clients
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+}
+
 export const getSupportContacts = async (req, res) => {
     try {
         const supportContacts = await SupportContacts.find().populate("client").sort({ createdAt: -1 });

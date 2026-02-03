@@ -144,6 +144,7 @@ app.post("/addPickup", OtherController.addPickup);
 app.post("/getPickupInfo", OtherController.getPickupInfo)
 app.post("/sendNotificationToClients", OtherController.sendNotificationToClients)
 app.post("/sendNotification", OtherController.sendNotification)
+app.post("/getClientsWithPushToken", OtherController.getClientsWithPushToken)
 app.get("/getSupportContacts", OtherController.getSupportContacts)
 app.post("/deleteSupportContact", OtherController.deleteSupportContact)
 app.post("/getSupportMessagesAdmin", OtherController.getSupportMessagesAdmin)

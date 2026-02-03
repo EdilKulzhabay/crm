@@ -32,6 +32,22 @@ export default function SuperAdminNotifications() {
         })
     }
 
+    const selectAllWithToken = () => {
+        api.post("/getClientsWithPushToken", {}, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({data}) => {
+            setSelectedClients(data.clients || [])
+            setOpen(true)
+            setStatus("success")
+            setMessage(`Выбрано клиентов: ${data.clients?.length || 0}`)
+        }).catch((e) => {
+            console.log(e)
+            setOpen(true)
+            setStatus("error")
+            setMessage("Ошибка при получении клиентов")
+        })
+    }
+
     const sendNotification = () => {
         if (notificationTitle === "" || notificationText === "") {
             setOpen(true)
@@ -79,7 +95,11 @@ export default function SuperAdminNotifications() {
                     </div>
                 })}
                 <Div />
-                <Div>Выбранные клиенты:</Div>
+                <Div>
+                    <MyButton click={selectAllWithToken}>Выбрать всех с push-токеном</MyButton>
+                </Div>
+                <Div />
+                <Div>Выбранные клиенты: {selectedClients?.length > 0 && <span className="text-red">{selectedClients.length}</span>}</Div>
                 {selectedClients && selectedClients?.length > 0 && selectedClients?.map((client) => {
                     return <div key={client?._id}>
                         <Li>
