@@ -1300,12 +1300,18 @@ export const cancelOrderMobile = async (req, res) => {
     try {
         const { orderId, reason } = req.body;
         const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled", reason });
-        if (order.paymentMethod === "coupon") {
+        if (order.opForm === "coupon") {
             const client = await Client.findById(order.client);
             client.paidBootles = client.paidBootles + (Number(order.products.b12) + Number(order.products.b19));
+            if (order.products.b12 > 0) {
+                client.paidBootlesFor12 = client.paidBootlesFor12 + Number(order.products.b12);
+            }
+            if (order.products.b19 > 0) {
+                client.paidBootlesFor19 = client.paidBootlesFor19 + Number(order.products.b19);
+            }
             await client.save();
         }
-        if (order.paymentMethod === "balance") {
+        if (order.opForm === "credit") {
             const client = await Client.findById(order.client);
             client.balance = client.balance + order.sum;
             await client.save();
