@@ -651,15 +651,15 @@ export const completeOrderCourierAggregator = async (req, res) => {
             if (order.opForm === "coupon") {
                 await Client.updateOne({_id: order.client._id}, {
                     $inc: {
-                        paidBootlesFor12: b12 - order.products.b12,
-                        paidBootlesFor19: b19 - order.products.b19,
+                        paidBootlesFor12: order.products.b12 - (b12 || 0),
+                        paidBootlesFor19: order.products.b19 - (b19 || 0),
                     }
                 })
             }
             if (order.opForm === "credit") {
                 await Client.updateOne({_id: order.client._id}, {
                     $inc: {
-                        balance: order.client.price12 * (b12 - order.products.b12) + order.client.price19 * (b19 - order.products.b19),
+                        balance: order.client.price12 * ((order.products.b12 || 0) - (b12 || 0)) + order.client.price19 * ((order.products.b19 || 0) - (b19 || 0)),
                     }
                 })
             }
