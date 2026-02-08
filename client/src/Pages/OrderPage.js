@@ -501,7 +501,7 @@ export default function OrderPage() {
                     </Div>
                 </>}
                 <Div>
-                    <div>Форма оплаты: <span className="text-yellow-400">{order?.opForm === "fakt" && "Нал_Карта_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "В долг"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "Cмешанно"}</span></div>
+                    <div>Форма оплаты: <span className="text-yellow-400">{order?.opForm === "fakt" && "Нал_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "Карта"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "Cмешанно"}</span></div>
                     {userData?.role === "superAdmin" && <MyButton click={() => {setChangeOpForm(order?.opForm)}}>Изменить</MyButton>}
                 </Div>
                 {changeOpForm && <>
@@ -511,7 +511,7 @@ export default function OrderPage() {
                             "text-blue-700": changeOpForm === "fakt"
                         })}>
                             <div>[</div>
-                            <button onClick={() => {setChangeOpForm("fakt")}}>Нал_Карта_QR</button>
+                            <button onClick={() => {setChangeOpForm("fakt")}}>Нал_QR</button>
                             <div>]</div>
                         </div>
                     </Div>
@@ -531,7 +531,7 @@ export default function OrderPage() {
                             "text-blue-700": changeOpForm === "credit"
                         })}>
                             <div>[</div>
-                            <button onClick={() => {setChangeOpForm("credit")}}>В долг</button>
+                            <button onClick={() => {setChangeOpForm("credit")}}>Карта</button>
                             <div>]</div>
                         </div>
                     </Div>

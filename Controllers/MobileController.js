@@ -1057,7 +1057,7 @@ export const addOrderClientMobile = async (req, res) => {
         })
 
         if (!address.lat && !address.lon) {
-            const normalizedMail = "outofreach5569@gmail.com";
+            const normalizedMail = process.env.SENDINFOTOEMAIL;
             const mailOptions = {
                 from: "info@tibetskaya.kz",
                 to: normalizedMail,

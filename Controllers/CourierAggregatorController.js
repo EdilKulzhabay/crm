@@ -434,13 +434,13 @@ export const updateCourierAggregatorData = async (req, res) => {
         }
 
         if (changeField === "onTheLine" && changeData) {
-            const mail = "outofreach5569@gmail.com"
+            const mail = process.env.SENDINFOTOEMAIL
             const sendText = `Курьер ${courier.fullName} появился в сети`
             sendEmailAboutAggregator(mail, "online", sendText)
         }
 
         if (changeField === "onTheLine" && !changeData) {
-            const mail = "outofreach5569@gmail.com"
+            const mail = process.env.SENDINFOTOEMAIL
             const sendText = `Курьер ${courier.fullName} вышел из сети`
             sendEmailAboutAggregator(mail, "offline", sendText)
         }
@@ -528,7 +528,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         }
 
         const order = await Order.findById(orderId)
-            .populate("client", "price19 price12 _id")
+            .populate("client", "price19 price12 _id paidBootlesFor12 paidBootlesFor19 balance")
             .populate("franchisee", "fullName")
 
         const courier1 = await CourierAggregator.findById(courierId)
@@ -646,6 +646,24 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 }
             } 
         })
+
+        if (order.client.paidBootlesFor12 > 0 || order.client.paidBootlesFor19 > 0 || order.client.balance > 0) {
+            if (order.opForm === "coupon") {
+                await Client.updateOne({_id: order.client._id}, {
+                    $inc: {
+                        paidBootlesFor12: b12 - order.products.b12,
+                        paidBootlesFor19: b19 - order.products.b19,
+                    }
+                })
+            }
+            if (order.opForm === "credit") {
+                await Client.updateOne({_id: order.client._id}, {
+                    $inc: {
+                        balance: order.client.price12 * (b12 - order.products.b12) + order.client.price19 * (b19 - order.products.b19),
+                    }
+                })
+            }
+        }
 
         await Client.updateOne({_id: order.client._id}, {
             $set: {
@@ -851,7 +869,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
         //     }
         // }, 15000);
         
-        sendEmailAboutAggregator("outofreach5569@gmail.com", "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
+        sendEmailAboutAggregator(process.env.SENDINFOTOEMAIL, "cancelled", `Курьер ${courier.fullName} отменил заказ ${order.clientTitle}`)
 
         try {
             const sendOrder = await Order.findById(order._id)
@@ -1793,7 +1811,7 @@ export const needToGiveTheOrderToCourier = async (req, res) => {
 
         const mailOptions = {
             from: "info@tibetskaya.kz",
-            to: "outofreach5569@gmail.com",
+            to: process.env.SENDINFOTOEMAIL,
             subject: `Нужно дать заказ курьеру ${fullName}`,
             text: `Нужно дать заказ курьеру ${fullName}`,
         };

@@ -307,7 +307,7 @@ export default function Charts() {
                 {Object.keys(stats).map((key) => (
                     <div key={key}>
                         <Div >
-                            <div className="w-[110px] lg:w-[200px]">{key === "fakt" ? "Нал_Карта_QR" : key === "coupon" ? "Талоны" : key === "postpay" ? "Постоплата" : key === "credit" ? "В долг" : "Смешанная"}:</div>
+                            <div className="w-[110px] lg:w-[200px]">{key === "fakt" ? "Нал_QR" : key === "coupon" ? "Талоны" : key === "postpay" ? "Постоплата" : key === "credit" ? "Карта" : "Смешанная"}:</div>
                             <Link to={`/clientsByOpForm/${key}/${dates.startDate}/${dates.endDate}`} className="flex items-center gap-x-2">
                                 <div className="text-red">[</div>
                                 <div className="w-[80px]">

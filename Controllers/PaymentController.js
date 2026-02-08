@@ -264,7 +264,7 @@ export const handlePaymentError = async (req, res) => {
  */
 export const createPaymentLink = async (req, res) => {
     try {
-        const { sum } = req.body;
+        const { sum, email, phone } = req.body;
 
         // Определяем базовый URL
         const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
@@ -284,6 +284,16 @@ export const createPaymentLink = async (req, res) => {
             pg_success_url_method: 'GET',
             pg_failure_url_method: 'GET',
         };
+
+        // Добавляем телефон и email, если переданы
+        if (phone) {
+            // Убираем все нецифровые символы и убеждаемся что начинается с кода страны
+            const cleanPhone = phone.replace(/\D/g, '');
+            paymentData.pg_user_phone = cleanPhone;
+        }
+        if (email) {
+            paymentData.pg_user_contact_email = email.toLowerCase().trim();
+        }
 
         // Генерируем подпись
         // Важно: в PHP примере используется имя файла 'init_payment.php' как первый элемент

@@ -330,13 +330,13 @@ export default function SuperAdminAggregatorAction() {
 
     const getOpForm = (opForm) => {
         if (opForm === "fakt") {
-            return "Нал_Карта_QR";
+            return "Нал_QR";
         }
         if (opForm === "postpay") {
             return "Постоплата";
         }
         if (opForm === "credit") {
-            return "В долг";
+            return "Карта";
         }
         if (opForm === "coupon") {
             return "Талоны";

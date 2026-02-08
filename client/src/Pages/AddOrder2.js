@@ -486,8 +486,8 @@ export default function AddOrder2() {
                 <Li>
                     <div>
                         Форма оплаты:{" "}
-                        {opForm === "fakt" && "Нал_Карта_QR"}
-                        {opForm === "credit" && "В долг"}
+                        {opForm === "fakt" && "Нал_QR"}
+                        {opForm === "credit" && "Карта"}
                         {opForm === "coupon" && "Талоны"}
                         {opForm === "postpay" && "Постоплата"}
                         {opForm === "mixed" && "Смешанная"}
@@ -498,10 +498,10 @@ export default function AddOrder2() {
                     <Li>
                         <div className="text-green-400 flex items-center gap-x-3">
                             [
-                                <button className="hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button> /
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_QR</button> /
                                 <button className="hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> /
                                 <button className="hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> /
-                                <button className="hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> /
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("credit")}}>Карта</button> /
                                 <button className="hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button>
                             ]
                         </div>
@@ -511,7 +511,7 @@ export default function AddOrder2() {
                     <Li>
                         <div className="text-green-400">
                             [
-                                <button className="hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button>
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_QR</button>
                             ]
                         </div>
                     </Li>
@@ -532,7 +532,7 @@ export default function AddOrder2() {
                     <Li>
                         <div className="text-green-400">
                             [
-                                <button className="hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button>
+                                <button className="hover:text-blue-500" onClick={() => {setOpForm("credit")}}>Карта</button>
                             ]
                         </div>
                     </Li>

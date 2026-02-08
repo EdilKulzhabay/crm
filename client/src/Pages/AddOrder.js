@@ -498,8 +498,8 @@ export default function AddOrder() {
                 <Li>
                     <div>
                         Форма оплаты:{" "}
-                        {client?.opForm === "fakt" && "Нал_Карта_QR"}
-                        {client?.opForm === "credit" && "В долг"}
+                        {client?.opForm === "fakt" && "Нал_QR"}
+                        {client?.opForm === "credit" && "Карта"}
                         {client?.opForm === "coupon" && "Талоны"}
                         {client?.opForm === "postpay" && "Постоплата"}
                         {client?.opForm === "mixed" && "Смешанная"}

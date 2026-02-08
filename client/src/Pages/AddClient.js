@@ -217,16 +217,16 @@ export default function AddClient() {
                 </>
                 <Div />
                 <Div>
-                    <div>Форма оплаты: <span className="text-yellow-300">{form.opForm === "fakt" && "Нал_Карта_QR"}{form.opForm === "postpay" && "Постоплата"}{form.opForm === "credit" && "В долг"}{form.opForm === "coupon" && "Талоны"}{form.opForm === "mixed" && "Смешанная"}</span></div>
+                    <div>Форма оплаты: <span className="text-yellow-300">{form.opForm === "fakt" && "Нал_QR"}{form.opForm === "postpay" && "Постоплата"}{form.opForm === "credit" && "Карта"}{form.opForm === "coupon" && "Талоны"}{form.opForm === "mixed" && "Смешанная"}</span></div>
                 </Div>
                 <div className="hidden lg:block">
                     <Div>
                         <div className="text-green-400 flex items-center gap-x-3">
                             [
-                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("fakt")}}>Нал_Карта_QR</button> /
+                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("fakt")}}>Нал_QR</button> /
                                 <button className="hover:text-blue-500" onClick={() => {updateOpForm("coupon")}}>Талоны</button> /
                                 <button className="hover:text-blue-500" onClick={() => {updateOpForm("postpay")}}>Постоплата</button> /
-                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("credit")}}>В долг</button> /
+                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("credit")}}>Карта</button> /
                                 <button className="hover:text-blue-500" onClick={() => {updateOpForm("mixed")}}>Смешанная</button>
                             ]
                         </div>
@@ -236,7 +236,7 @@ export default function AddClient() {
                     <Div>
                         <div className="text-green-400">
                             [
-                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("fakt")}}>Нал_Карта_QR</button>
+                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("fakt")}}>Нал_QR</button>
                             ]
                         </div>
                     </Div>
@@ -257,7 +257,7 @@ export default function AddClient() {
                     <Div>
                         <div className="text-green-400">
                             [
-                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("credit")}}>В долг</button>
+                                <button className="hover:text-blue-500" onClick={() => {updateOpForm("credit")}}>Карта</button>
                             ]
                         </div>
                     </Div>

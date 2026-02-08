@@ -168,19 +168,19 @@ export default function CourierMain() {
                     <div>Сумма оплаты: <span className="text-blue-500">{getSum()}</span></div>
                 </Li>
                 <Li>
-                    <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "fakt" && "Нал_Карта_QR"}{firstActiveOrder?.order?.opForm === "postpay" && "Постоплата"}{firstActiveOrder?.order?.opForm === "credit" && "В долг"}{firstActiveOrder?.order?.opForm === "coupon" && "Талоны"}{firstActiveOrder?.order?.opForm === "mixed" && "Смешанная"}</span></div>
+                    <div>Форма оплаты:<span className="text-blue-500"> {firstActiveOrder?.order?.opForm === "fakt" && "Нал_QR"}{firstActiveOrder?.order?.opForm === "postpay" && "Постоплата"}{firstActiveOrder?.order?.opForm === "credit" && "Карта"}{firstActiveOrder?.order?.opForm === "coupon" && "Талоны"}{firstActiveOrder?.order?.opForm === "mixed" && "Смешанная"}</span></div>
                 </Li>
                 <Li>
-                    <div>Форма оплаты по факту:<span className="text-yellow-300"> {opForm === "fakt" && "Нал_Карта_QR"}{opForm === "postpay" && "Постоплата"}{opForm === "credit" && "В долг"}{opForm === "coupon" && "Талоны"}{opForm === "mixed" && "Смешанная"}</span></div>
+                    <div>Форма оплаты по факту:<span className="text-yellow-300"> {opForm === "fakt" && "Нал_QR"}{opForm === "postpay" && "Постоплата"}{opForm === "credit" && "Карта"}{opForm === "coupon" && "Талоны"}{opForm === "mixed" && "Смешанная"}</span></div>
                 </Li>
                 <div className="hidden lg:block">
                     <Li>
                         <div className="text-green-400 flex items-center gap-x-3">
                             [
-                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_QR</button> /
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> /
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> /
-                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("credit")}}>Карта</button> /
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button>
                             ]
                         </div>
@@ -188,7 +188,7 @@ export default function CourierMain() {
                 </div>
                 <div className="lg:hidden">
                     <Li>
-                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_Карта_QR</button> ]
+                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("fakt")}}>Нал_QR</button> ]
                     </Li>
                     <Li>
                         [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("coupon")}}>Талоны</button> ]
@@ -197,7 +197,7 @@ export default function CourierMain() {
                         [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("postpay")}}>Постоплата</button> ]
                     </Li>
                     <Li>
-                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("credit")}}>В долг</button> ]
+                        [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("credit")}}>Карта</button> ]
                     </Li>
                     <Li>
                         [ <button className="text-green-400 hover:text-blue-500" onClick={() => {setOpForm("mixed")}}>Смешанная</button> ]

@@ -273,7 +273,7 @@ export default function ClientList() {
                         Почта: item.mail,
                         "Цена18,9": item.price19,
                         "Цена12,5": item.price12,
-                        "Форма оплаты": item?.opForm === "fakt" ? "Нал_Карта_QR" : item?.opForm === "credit" ? "В долг" : item?.opForm === "coupon" ? "Талоны" : item?.opForm === "postpay" ? "Постоплата" : item?.opForm === "mixed" ? "Смешанная" : "",
+                        "Форма оплаты": item?.opForm === "fakt" ? "Нал_QR" : item?.opForm === "credit" ? "Карта" : item?.opForm === "coupon" ? "Талоны" : item?.opForm === "postpay" ? "Постоплата" : item?.opForm === "mixed" ? "Смешанная" : "",
                         "Статус клиента":
                             item.status === "active" ? "Раб." : "Не раб.",
                         "Дата добавления": item.createdAt.slice(0, 10),
