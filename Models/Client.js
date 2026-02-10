@@ -201,6 +201,14 @@ const ClientSchema = new mongoose.Schema(
         doesItTake12Bottles: {
             type: Boolean,
             default: false
+        },
+        platform: {
+            type: String,
+            default: null
+        },
+        appVersion: {
+            type: String,
+            default: null
         }
     },
     {

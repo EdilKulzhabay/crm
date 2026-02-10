@@ -967,7 +967,7 @@ export const addOrderClientMobile = async (req, res) => {
             })
         }
 
-        const franchisee = User.findOne({role: "superAdmin"})
+        const franchisee = await User.findOne({role: "superAdmin"})
 
         const sum =
             Number(products.b12) * Number(client.price12) +
