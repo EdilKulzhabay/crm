@@ -315,7 +315,7 @@ export const createPaymentLink = async (req, res) => {
             const cleanPhone = phone.replace(/\D/g, '');
             paymentData.pg_user_phone = cleanPhone;
         }
-        if (email) {
+        if (email && email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
             paymentData.pg_user_contact_email = email.toLowerCase().trim();
         }
 
