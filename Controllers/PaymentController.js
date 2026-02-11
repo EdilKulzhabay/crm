@@ -324,7 +324,8 @@ export const createPaymentLink = async (req, res) => {
             const client = await Client.findOne({ mail: email.toLowerCase().trim() });
             if (client) {
                 paymentData.pg_user_id = client._id.toString();
-                paymentData.pg_recurring_start = '1'; // Запрос на сохранение карты
+                paymentData.pg_recurring_start = '1';
+                paymentData.pg_recurring_lifetime = '31536000'; // 1 год в секундах (365 * 24 * 60 * 60)
             }
         }
 
