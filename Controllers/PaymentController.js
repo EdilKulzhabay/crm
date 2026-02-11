@@ -141,40 +141,45 @@ export const handlePaymentCallback = async (req, res) => {
 
             console.log('Платеж успешно обработан для заказа:', orderId);
 
-            if (clientMail) {
-                const updateData = {
-                    $inc: {
-                        balance: Number(amount),
-                    }
-                };
+            // Определяем клиента: по custom_params.clientId (виджет) или по email
+            const customClientId = callbackData.custom_params?.clientId;
+            const cardToken = callbackData.pg_card_token;
+            const cardId = callbackData.pg_card_id;
+            const cardPan = callbackData.pg_card_pan; // например "5269-88XX-XXXX-9117"
 
-                // Сохраняем данные карты, если они пришли в callback
-                // Hillstarpay возвращает pg_recurring_profile_id (как токен) и pg_card_pan
-                const cardToken = callbackData.pg_card_token || callbackData.pg_recurring_profile_id;
-                const cardId = callbackData.pg_card_id || callbackData.pg_recurring_profile_id;
-                const cardPan = callbackData.pg_card_pan; // например "5269-88XX-XXXX-9117"
+            const updateData = {
+                $inc: {
+                    balance: Number(amount),
+                }
+            };
 
-                if (cardToken) {
-                    // Извлекаем последние 4 цифры из маскированного номера карты
-                    let last4 = null;
-                    if (cardPan) {
-                        const digits = cardPan.replace(/\D/g, '');
-                        last4 = digits.slice(-4);
-                    }
-
-                    updateData.$set = {
-                        'savedCard.cardToken': cardToken,
-                        'savedCard.cardId': cardId,
-                        'savedCard.cardPan': last4
-                    };
-
-                    console.log('Сохраняем карту для клиента:', { cardToken, cardId, last4 });
+            // Сохраняем данные карты, если они пришли (от виджета — pg_card_token + pg_card_id)
+            if (cardToken) {
+                let last4 = null;
+                if (cardPan) {
+                    const digits = cardPan.replace(/\D/g, '');
+                    last4 = digits.slice(-4);
                 }
 
+                updateData.$set = {
+                    'savedCard.cardToken': cardToken,
+                    'savedCard.cardId': cardId,
+                    'savedCard.cardPan': last4
+                };
+
+                console.log('Сохраняем карту для клиента:', { cardToken, cardId, last4 });
+            }
+
+            // Обновляем клиента: по _id (виджет) или по email (init_payment.php)
+            if (customClientId) {
+                await Client.findByIdAndUpdate(customClientId, updateData);
+                console.log('Клиент обновлён по clientId:', customClientId);
+            } else if (clientMail) {
                 await Client.findOneAndUpdate(
                     { mail: clientMail.toLowerCase().trim() },
                     updateData
                 );
+                console.log('Клиент обновлён по email:', clientMail);
             }
 
             // Генерируем ответ со статусом ok
@@ -320,15 +325,7 @@ export const createPaymentLink = async (req, res) => {
             paymentData.pg_user_contact_email = email.toLowerCase().trim();
         }
 
-        // Если нужно сохранить карту — добавляем pg_user_id для привязки карты
-        if (saveCard && email) {
-            const client = await Client.findOne({ mail: email.toLowerCase().trim() });
-            if (client) {
-                paymentData.pg_user_id = client._id.toString();
-                paymentData.pg_recurring_start = '1';
-                paymentData.pg_recurring_lifetime = '156'; // максимум 156 месяцев
-            }
-        }
+        // Для сохранения карты используйте виджет (endpoint /api/payment/widget-config)
 
         // Генерируем подпись
         // Важно: в PHP примере используется имя файла 'init_payment.php' как первый элемент
@@ -390,6 +387,68 @@ export const createPaymentLink = async (req, res) => {
 };
 
 /**
+ * Получение конфига для виджета Hillstarpay с сохранением карты
+ * POST /api/payment/widget-config
+ * Body: { clientId: string, amount: number }
+ * Возвращает данные для инициализации Widget(data).create() на фронте
+ */
+export const getWidgetConfig = async (req, res) => {
+    try {
+        const { clientId, mail, amount } = req.body;
+
+        if ((!clientId && !mail) || !amount) {
+            return res.status(400).json({ success: false, message: 'clientId (или mail) и amount обязательны' });
+        }
+
+        const client = mail 
+            ? await Client.findOne({ mail: mail.toLowerCase().trim() })
+            : await Client.findById(clientId);
+        if (!client) {
+            return res.status(404).json({ success: false, message: 'Клиент не найден' });
+        }
+
+        const widgetToken = process.env.HILLSTAR_WIDGET_TOKEN;
+        if (!widgetToken) {
+            return res.status(500).json({ success: false, message: 'HILLSTAR_WIDGET_TOKEN не настроен' });
+        }
+
+        const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
+        const orderId = `widget-${Date.now()}`;
+
+        const cId = client._id.toString();
+        const config = {
+            token: widgetToken,
+            payment: {
+                order: orderId,
+                amount: Number(amount),
+                currency: 'KZT',
+                description: 'Balance replenishment',
+                test: process.env.HILLSTAR_TEST_MODE === '1' ? 1 : 0,
+                options: {
+                    callbacks: {
+                        result_url: `${baseUrl}/api/payment/callback`
+                    },
+                    user: { id: cId },
+                    custom_params: {
+                        clientId: cId,
+                        email: client.mail || ''
+                    }
+                }
+            }
+        };
+
+        return res.json({
+            success: true,
+            widgetConfig: config,
+            orderId
+        });
+    } catch (error) {
+        console.error('Ошибка получения конфига виджета:', error);
+        return res.status(500).json({ success: false, message: 'Внутренняя ошибка сервера' });
+    }
+};
+
+/**
  * Оплата сохранённой картой (рекуррентный платёж)
  * POST /api/payment/charge-saved-card
  * Body: { clientId: string, amount: number }
@@ -426,6 +485,8 @@ export const chargeWithSavedCard = async (req, res) => {
             pg_order_id: orderId,
             pg_user_id: client._id.toString(),
             pg_card_token: client.savedCard.cardToken,
+            pg_client_email: client.mail,
+            pg_client_phone: client.phone,
             pg_description: 'Balance replenishment',
             pg_salt: crypto.randomBytes(8).toString('hex'),
             pg_result_url: `${baseUrl}/api/payment/callback`,
