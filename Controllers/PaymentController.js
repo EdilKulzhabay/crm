@@ -140,16 +140,40 @@ export const handlePaymentCallback = async (req, res) => {
             // });
 
             console.log('Платеж успешно обработан для заказа:', orderId);
-            // const client = await Client.findOne({mail: clientMail?.toLowerCase().trim()});
-            // const paidBootles = Number(amount) / client.price19;
 
             if (clientMail) {
-                await Client.findOneAndUpdate({mail: clientMail?.toLowerCase().trim()}, {
+                const updateData = {
                     $inc: {
-                            balance: Number(amount),
-                            // paidBootles: paidBootles
-                        }
-                    });
+                        balance: Number(amount),
+                    }
+                };
+
+                // Сохраняем данные карты, если они пришли в callback
+                const cardToken = callbackData.pg_card_token;
+                const cardId = callbackData.pg_card_id;
+                const cardPan = callbackData.pg_card_pan; // например "4111-11XX-XXXX-1111"
+
+                if (cardToken && cardId) {
+                    // Извлекаем последние 4 цифры из маскированного номера карты
+                    let last4 = null;
+                    if (cardPan) {
+                        const digits = cardPan.replace(/\D/g, '');
+                        last4 = digits.slice(-4);
+                    }
+
+                    updateData.$set = {
+                        'savedCard.cardToken': cardToken,
+                        'savedCard.cardId': cardId,
+                        'savedCard.cardPan': last4
+                    };
+
+                    console.log('Сохраняем карту для клиента:', { cardToken, cardId, last4 });
+                }
+
+                await Client.findOneAndUpdate(
+                    { mail: clientMail.toLowerCase().trim() },
+                    updateData
+                );
             }
 
             // Генерируем ответ со статусом ok
@@ -264,7 +288,7 @@ export const handlePaymentError = async (req, res) => {
  */
 export const createPaymentLink = async (req, res) => {
     try {
-        const { sum, email, phone } = req.body;
+        const { sum, email, phone, saveCard } = req.body;
 
         // Определяем базовый URL
         const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
@@ -293,6 +317,15 @@ export const createPaymentLink = async (req, res) => {
         }
         if (email) {
             paymentData.pg_user_contact_email = email.toLowerCase().trim();
+        }
+
+        // Если нужно сохранить карту — добавляем pg_user_id для привязки карты
+        if (saveCard && email) {
+            const client = await Client.findOne({ mail: email.toLowerCase().trim() });
+            if (client) {
+                paymentData.pg_user_id = client._id.toString();
+                paymentData.pg_recurring_start = '1'; // Запрос на сохранение карты
+            }
         }
 
         // Генерируем подпись
@@ -351,6 +384,195 @@ export const createPaymentLink = async (req, res) => {
             message: 'Внутренняя ошибка сервера',
             error: error.message
         });
+    }
+};
+
+/**
+ * Оплата сохранённой картой (рекуррентный платёж)
+ * POST /api/payment/charge-saved-card
+ * Body: { clientId: string, amount: number }
+ */
+export const chargeWithSavedCard = async (req, res) => {
+    try {
+        // Поддерживаем и mail+sum (от мобильного клиента) и clientId+amount (от админки)
+        const { mail, sum, clientId, amount } = req.body;
+        const payAmount = sum || amount;
+
+        if ((!mail && !clientId) || !payAmount) {
+            return res.status(400).json({ success: false, message: 'mail (или clientId) и sum обязательны' });
+        }
+
+        const client = mail 
+            ? await Client.findOne({ mail: mail.toLowerCase().trim() })
+            : await Client.findById(clientId);
+            
+        if (!client) {
+            return res.status(404).json({ success: false, message: 'Клиент не найден' });
+        }
+
+        if (!client.savedCard?.cardToken) {
+            return res.status(400).json({ success: false, message: 'У клиента нет сохранённой карты' });
+        }
+
+        const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
+        const orderId = Date.now().toString();
+
+        // Шаг 1: card/init — инициация платежа по сохранённой карте
+        const initParams = {
+            pg_merchant_id: MERCHANT_ID,
+            pg_amount: payAmount.toString(),
+            pg_order_id: orderId,
+            pg_user_id: client._id.toString(),
+            pg_card_token: client.savedCard.cardToken,
+            pg_description: 'Balance replenishment',
+            pg_salt: crypto.randomBytes(8).toString('hex'),
+            pg_result_url: `${baseUrl}/api/payment/callback`,
+            pg_currency: 'KZT',
+        };
+
+        initParams.pg_sig = generateSignature('card/init', initParams, SECRET_KEY);
+
+        const initFormData = new URLSearchParams();
+        for (const key in initParams) {
+            initFormData.append(key, initParams[key]);
+        }
+
+        console.log('card/init запрос:', initParams);
+
+        const initResponse = await axios.post(
+            `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/init`,
+            initFormData,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+
+        const initXml = initResponse.data;
+        console.log('card/init ответ:', initXml);
+
+        const statusMatch = initXml.match(/<pg_status>(.*?)<\/pg_status>/);
+        if (!statusMatch || statusMatch[1] !== 'ok') {
+            const errorDesc = initXml.match(/<pg_error_description>(.*?)<\/pg_error_description>/);
+            return res.status(400).json({
+                success: false,
+                message: 'Ошибка инициации платежа',
+                error: errorDesc ? errorDesc[1] : initXml
+            });
+        }
+
+        const paymentIdMatch = initXml.match(/<pg_payment_id>(.*?)<\/pg_payment_id>/);
+        if (!paymentIdMatch) {
+            return res.status(500).json({ success: false, message: 'Не получен payment_id' });
+        }
+
+        const paymentId = paymentIdMatch[1];
+
+        // Шаг 2: card/direct — подтверждение платежа
+        const directParams = {
+            pg_merchant_id: MERCHANT_ID,
+            pg_payment_id: paymentId,
+            pg_salt: crypto.randomBytes(8).toString('hex'),
+        };
+
+        directParams.pg_sig = generateSignature('card/direct', directParams, SECRET_KEY);
+
+        const directFormData = new URLSearchParams();
+        for (const key in directParams) {
+            directFormData.append(key, directParams[key]);
+        }
+
+        console.log('card/direct запрос:', directParams);
+
+        const directResponse = await axios.post(
+            `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/direct`,
+            directFormData,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+
+        const directXml = directResponse.data;
+        console.log('card/direct ответ:', directXml);
+
+        const txStatusMatch = directXml.match(/<pg_transaction_status>(.*?)<\/pg_transaction_status>/);
+
+        if (txStatusMatch && txStatusMatch[1] === 'ok') {
+            // Обновляем баланс клиента
+            await Client.findByIdAndUpdate(client._id, {
+                $inc: { balance: Number(payAmount) }
+            });
+
+            return res.json({
+                success: true,
+                message: 'Оплата прошла успешно',
+                paymentId,
+                amount: Number(payAmount)
+            });
+        } else {
+            const errorDesc = directXml.match(/<pg_error_description>(.*?)<\/pg_error_description>/);
+            return res.status(400).json({
+                success: false,
+                message: 'Оплата не прошла',
+                error: errorDesc ? errorDesc[1] : directXml
+            });
+        }
+    } catch (error) {
+        console.error('Ошибка оплаты сохранённой картой:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Внутренняя ошибка сервера',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Получение данных сохранённой карты клиента
+ * POST /api/payment/saved-card
+ * Body: { clientId: string }
+ */
+export const getSavedCard = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+
+        const client = await Client.findById(clientId, { savedCard: 1 });
+        if (!client) {
+            return res.status(404).json({ success: false, message: 'Клиент не найден' });
+        }
+
+        const hasCard = !!(client.savedCard?.cardToken && client.savedCard?.cardId);
+
+        return res.json({
+            success: true,
+            hasCard,
+            card: hasCard ? {
+                cardPan: client.savedCard.cardPan,  // последние 4 цифры
+                cardId: client.savedCard.cardId
+            } : null
+        });
+    } catch (error) {
+        console.error('Ошибка получения карты:', error);
+        return res.status(500).json({ success: false, message: 'Внутренняя ошибка сервера' });
+    }
+};
+
+/**
+ * Удаление сохранённой карты клиента
+ * POST /api/payment/delete-card
+ * Body: { clientId: string }
+ */
+export const deleteSavedCard = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+
+        const client = await Client.findById(clientId);
+        if (!client) {
+            return res.status(404).json({ success: false, message: 'Клиент не найден' });
+        }
+
+        client.savedCard = { cardToken: null, cardId: null, cardPan: null };
+        await client.save();
+
+        return res.json({ success: true, message: 'Карта удалена' });
+    } catch (error) {
+        console.error('Ошибка удаления карты:', error);
+        return res.status(500).json({ success: false, message: 'Внутренняя ошибка сервера' });
     }
 };
 

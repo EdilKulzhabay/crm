@@ -366,6 +366,12 @@ app.post("/api/payment/callback", multer().none(), PaymentController.handlePayme
 app.get("/api/payment/success", PaymentController.handlePaymentSuccess);
 // Error URL - перенаправление после неуспешного платежа
 app.get("/api/payment/error", PaymentController.handlePaymentError);
+// Оплата сохранённой картой
+app.post("/api/payment/charge-saved-card", PaymentController.chargeWithSavedCard);
+// Получение данных сохранённой карты
+app.post("/api/payment/saved-card", PaymentController.getSavedCard);
+// Удаление сохранённой карты
+app.post("/api/payment/delete-card", PaymentController.deleteSavedCard);
 
 // app.get("/testOrTools", async (req, res) => {
 //     try {

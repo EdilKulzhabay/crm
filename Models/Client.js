@@ -209,6 +209,20 @@ const ClientSchema = new mongoose.Schema(
         appVersion: {
             type: String,
             default: null
+        },
+        savedCard: {
+            cardToken: {
+                type: String,
+                default: null
+            },
+            cardId: {
+                type: String,
+                default: null
+            },
+            cardPan: {
+                type: String,   // последние 4 цифры карты, например "1111"
+                default: null
+            }
         }
     },
     {
