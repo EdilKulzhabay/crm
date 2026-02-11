@@ -325,7 +325,7 @@ export const createPaymentLink = async (req, res) => {
             if (client) {
                 paymentData.pg_user_id = client._id.toString();
                 paymentData.pg_recurring_start = '1';
-                paymentData.pg_recurring_lifetime = '31536000'; // 1 год в секундах (365 * 24 * 60 * 60)
+                paymentData.pg_recurring_lifetime = '156'; // максимум 156 месяцев
             }
         }
 
