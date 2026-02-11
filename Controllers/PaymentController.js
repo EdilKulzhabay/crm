@@ -340,6 +340,8 @@ export const createPaymentLink = async (req, res) => {
                 formData.append(key, paymentData[key]);
             }
 
+            console.log("FormData: ", formData)
+
             const response = await axios.post('https://api.hillstarpay.com/init_payment.php', formData, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
