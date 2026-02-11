@@ -149,11 +149,12 @@ export const handlePaymentCallback = async (req, res) => {
                 };
 
                 // Сохраняем данные карты, если они пришли в callback
-                const cardToken = callbackData.pg_card_token;
-                const cardId = callbackData.pg_card_id;
-                const cardPan = callbackData.pg_card_pan; // например "4111-11XX-XXXX-1111"
+                // Hillstarpay возвращает pg_recurring_profile_id (как токен) и pg_card_pan
+                const cardToken = callbackData.pg_card_token || callbackData.pg_recurring_profile_id;
+                const cardId = callbackData.pg_card_id || callbackData.pg_recurring_profile_id;
+                const cardPan = callbackData.pg_card_pan; // например "5269-88XX-XXXX-9117"
 
-                if (cardToken && cardId) {
+                if (cardToken) {
                     // Извлекаем последние 4 цифры из маскированного номера карты
                     let last4 = null;
                     if (cardPan) {
