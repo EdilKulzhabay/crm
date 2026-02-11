@@ -429,6 +429,8 @@ export const chargeWithSavedCard = async (req, res) => {
             pg_description: 'Balance replenishment',
             pg_salt: crypto.randomBytes(8).toString('hex'),
             pg_result_url: `${baseUrl}/api/payment/callback`,
+            pg_success_url: 'https://tibetskayacrm.kz/api/payment/success',
+            pg_failure_url: 'https://tibetskayacrm.kz/api/payment/error',
             pg_currency: 'KZT',
         };
 
