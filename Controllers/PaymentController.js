@@ -141,35 +141,43 @@ export const handlePaymentCallback = async (req, res) => {
 
             console.log('Платеж успешно обработан для заказа:', orderId);
 
-            if (clientMail) {
-                const updateData = {
-                    $inc: {
-                        balance: Number(amount),
-                    }
-                };
+            const updateData = {
+                $inc: { balance: Number(amount) }
+            };
 
-                // Сохраняем данные карты, если они пришли в callback
-                const recurringProfileId = callbackData.pg_recurring_profile_id;
-                const cardToken = callbackData.pg_card_token;
-                const cardPan = callbackData.pg_card_pan; // например "5269-88XX-XXXX-9117"
+            // Сохраняем данные карты, если они пришли в callback
+            const recurringProfileId = callbackData.pg_recurring_profile_id;
+            const cardToken = callbackData.pg_card_token;
+            const cardId = callbackData.pg_card_id;
+            const cardPan = callbackData.pg_card_pan; // например "5269-88XX-XXXX-9117"
 
-                if (recurringProfileId || cardToken) {
-                    // Извлекаем последние 4 цифры из маскированного номера карты
-                    let last4 = null;
-                    if (cardPan) {
-                        const digits = cardPan.replace(/\D/g, '');
-                        last4 = digits.slice(-4);
-                    }
-
-                    updateData.$set = {
-                        'savedCard.cardToken': cardToken || recurringProfileId,
-                        'savedCard.cardId': recurringProfileId || null,
-                        'savedCard.cardPan': last4
-                    };
-
-                    console.log('Сохраняем карту для клиента:', { recurringProfileId, cardToken, last4 });
+            if (recurringProfileId || cardToken || cardId) {
+                let last4 = null;
+                if (cardPan) {
+                    const digits = cardPan.replace(/\D/g, '');
+                    last4 = digits.slice(-4);
                 }
+                updateData.$set = {
+                    'savedCard.cardToken': cardToken || recurringProfileId,
+                    'savedCard.cardId': cardId || recurringProfileId || null,
+                    'savedCard.cardPan': last4
+                };
+                console.log('Сохраняем карту для клиента:', { recurringProfileId, cardToken, cardId, last4 });
+            }
 
+            // Платеж через виджет: orderId = "topup-{userId}-{timestamp}"
+            const topupMatch = orderId && orderId.toString().match(/^topup-([a-f0-9]{24})-(\d+)$/);
+            if (topupMatch) {
+                const [, clientId] = topupMatch;
+                const client = await Client.findById(clientId);
+                if (client) {
+                    await Client.findByIdAndUpdate(clientId, updateData);
+                    console.log('[callback] Виджет: обновлён баланс клиента', clientId);
+                } else {
+                    console.error('[callback] Виджет: клиент не найден по id', clientId);
+                }
+            } else if (clientMail) {
+                // Платеж через init_payment (redirect)
                 await Client.findOneAndUpdate(
                     { mail: clientMail.toLowerCase().trim() },
                     updateData
@@ -390,4 +398,50 @@ export const createPaymentLink = async (req, res) => {
     }
 };
 
+/**
+ * Получение конфигурации для JS-виджета Hillstarpay
+ * POST /api/payment/widget-config
+ * Body: { userId: string, amount: number, email?: string, phone?: string }
+ */
+export const getWidgetConfig = async (req, res) => {
+    try {
+        const { userId, amount, email, phone } = req.body;
 
+        if (!userId || amount === undefined || amount === null) {
+            return res.status(400).json({
+                success: false,
+                message: 'userId и amount обязательны'
+            });
+        }
+
+        const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
+        const orderId = `topup-${userId}-${Date.now()}`;
+
+        const widgetToken = process.env.HILLSTAR_WIDGET_TOKEN;
+        if (!widgetToken) {
+            console.error('HILLSTAR_WIDGET_TOKEN не задан в .env');
+            return res.status(500).json({
+                success: false,
+                message: 'Сервер не настроен для виджета оплаты. Обратитесь к администратору.'
+            });
+        }
+
+        const config = {
+            success: true,
+            widgetToken,
+            orderId,
+            resultUrl: `${baseUrl}/api/payment/callback`,
+            test: process.env.NODE_ENV === 'production' ? 0 : 1,
+        };
+
+        console.log('[getWidgetConfig] Конфиг виджета:', { orderId, amount, userId, hasEmail: !!email });
+
+        return res.json(config);
+    } catch (error) {
+        console.error('Ошибка getWidgetConfig:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Внутренняя ошибка сервера'
+        });
+    }
+};
