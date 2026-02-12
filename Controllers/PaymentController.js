@@ -5,6 +5,26 @@ import { SECRET_KEY, MERCHANT_ID, generateSignature } from '../utils/hillstar.js
 import 'dotenv/config';
 import Client from '../Models/Client.js';
 
+// Сессии для страницы виджета (sessionId -> данные), TTL 10 минут
+const widgetSessions = new Map();
+const WIDGET_SESSION_TTL = 10 * 60 * 1000;
+
+function createWidgetSession(data) {
+    const sessionId = crypto.randomBytes(16).toString('hex');
+    widgetSessions.set(sessionId, { ...data, expiresAt: Date.now() + WIDGET_SESSION_TTL });
+    return sessionId;
+}
+
+function getWidgetSession(sessionId) {
+    const session = widgetSessions.get(sessionId);
+    if (!session) return null;
+    if (Date.now() > session.expiresAt) {
+        widgetSessions.delete(sessionId);
+        return null;
+    }
+    return session;
+}
+
 /**
  * Проверка подписи для callback от Hillstarpay
  */
@@ -405,11 +425,12 @@ export const createPaymentLink = async (req, res) => {
  */
 export const getWidgetConfig = async (req, res) => {
     try {
+        console.log('[getWidgetConfig] Вход. Body:', JSON.stringify(req.body));
+
         const { userId, amount, email, phone } = req.body;
 
-        console.log("getWidgetConfig: ", req.body)
-
         if (!userId || amount === undefined || amount === null) {
+            console.error('[getWidgetConfig] Валидация: userId или amount отсутствуют');
             return res.status(400).json({
                 success: false,
                 message: 'userId и amount обязательны'
@@ -421,29 +442,153 @@ export const getWidgetConfig = async (req, res) => {
 
         const widgetToken = process.env.HILLSTAR_WIDGET_TOKEN;
         if (!widgetToken) {
-            console.error('HILLSTAR_WIDGET_TOKEN не задан в .env');
+            console.error('[getWidgetConfig] HILLSTAR_WIDGET_TOKEN не задан в .env');
             return res.status(500).json({
                 success: false,
                 message: 'Сервер не настроен для виджета оплаты. Обратитесь к администратору.'
             });
         }
 
-        const config = {
-            success: true,
-            widgetToken,
+        const sessionId = createWidgetSession({
+            token: widgetToken,
             orderId,
+            amount: Number(amount),
+            userId,
             resultUrl: `${baseUrl}/api/payment/callback`,
-            test: 0,
-        };
+            test: process.env.NODE_ENV === 'production' ? 0 : 1,
+            email: email || null,
+        });
 
-        console.log('[getWidgetConfig] Конфиг виджета:', { orderId, amount, userId, hasEmail: !!email });
+        const widgetPageUrl = `${baseUrl}/api/payment/widget-page?sessionId=${sessionId}`;
 
-        return res.json(config);
+        console.log('[getWidgetConfig] Успех. Создана сессия:', {
+            sessionId: sessionId.substring(0, 8) + '...',
+            orderId,
+            amount,
+            userId,
+        });
+
+        return res.json({
+            success: true,
+            widgetPageUrl,
+            orderId,
+        });
     } catch (error) {
-        console.error('Ошибка getWidgetConfig:', error);
+        console.error('[getWidgetConfig] Исключение:', error);
         return res.status(500).json({
             success: false,
             message: 'Внутренняя ошибка сервера'
         });
+    }
+};
+
+/**
+ * Страница с виджетом Hillstarpay (по гайду)
+ * GET /api/payment/widget-page?sessionId=xxx
+ * Страница отдаётся с origin api.tibetskayacrm.kz — домен для Hillstarpay
+ */
+export const getWidgetPage = async (req, res) => {
+    try {
+        const { sessionId } = req.query;
+        if (!sessionId) {
+            return res.status(400).send('sessionId обязателен');
+        }
+
+        const session = getWidgetSession(sessionId);
+        if (!session) {
+            console.error('[getWidgetPage] Сессия не найдена или истекла:', sessionId.substring(0, 8) + '...');
+            return res.status(404).send('Сессия истекла или не найдена. Попробуйте снова.');
+        }
+
+        const { token, orderId, amount, userId, resultUrl, test } = session;
+
+        const widgetData = JSON.stringify({
+            token,
+            payment: {
+                order: orderId,
+                amount,
+                currency: 'KZT',
+                description: 'Пополнение баланса',
+                test,
+                options: {
+                    callbacks: { result_url: resultUrl },
+                    user: { id: userId },
+                },
+            },
+        });
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f6f6; min-height: 100vh; }
+    .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: #666; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #e3e3e3; border-top: 3px solid #DC1818; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .error { text-align: center; padding: 40px 20px; color: #DC1818; display: none; }
+    .success { display: none; text-align: center; padding: 40px 20px; }
+    .success.visible { display: block; }
+    .btn { display: block; width: calc(100% - 40px); margin: 20px auto; padding: 16px; background: #DC1818; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading"><div class="spinner"></div><div>Загрузка платёжной формы...</div></div>
+  <div id="error" class="error"></div>
+  <div id="success" class="success"><div style="font-size:60px;margin-bottom:16px">✅</div><div style="font-size:18px;font-weight:600;color:#2e7d32">Оплата прошла успешно!</div><button class="btn" onclick="returnToApp(true)">Вернуться в приложение</button></div>
+  <button id="return-btn" class="btn" style="display:none" onclick="returnToApp(false)">Вернуться в приложение</button>
+
+  <script>
+    var paymentDone = false;
+    function sendMessage(data) { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(data)); }
+    function returnToApp(success) { sendMessage({ type: success ? 'payment-success' : 'close' }); }
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').innerHTML = '<p>' + (msg || 'Ошибка') + '</p>';
+      document.getElementById('return-btn').style.display = 'block';
+      document.getElementById('return-btn').innerText = 'Закрыть';
+      sendMessage({ type: 'payment-error', message: msg });
+    }
+    (function(w,i,d,g,e,t){
+      e = w.createElement(i);
+      t = w.getElementsByTagName(i)[0];
+      e.async = 1;
+      e.src = 'https://cdn.hillstarpay.com/widget-js/pbwidget.js?' + (1 * new Date());
+      e.onload = function() {
+        try {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('return-btn').style.display = 'block';
+          var data = ${widgetData};
+          Widget(data).create();
+          sendMessage({ type: 'widget-loaded' });
+        } catch(err) {
+          showError('Ошибка виджета: ' + err.message);
+        }
+      };
+      e.onerror = function() { showError('Не удалось загрузить скрипт оплаты'); };
+      t.parentNode.insertBefore(e, t);
+    })(document, 'script');
+
+    var observer = new MutationObserver(function() {
+      if (paymentDone) return;
+      var body = document.body.innerText.toLowerCase();
+      if (body.indexOf('оплата прошла успешно') !== -1 || body.indexOf('успешно оплачено') !== -1) { paymentDone = true; document.getElementById('loading').style.display = 'none'; document.getElementById('return-btn').style.display = 'none'; document.getElementById('success').classList.add('visible'); sendMessage({ type: 'payment-success' }); }
+      if (body.indexOf('неверный токен') !== -1 || body.indexOf('неверный токен или домен') !== -1) {
+        showError('Неверный токен или домен. Передайте менеджеру Hillstarpay домен: api.tibetskayacrm.kz');
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  </script>
+</body>
+</html>`;
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+    } catch (error) {
+        console.error('[getWidgetPage] Ошибка:', error);
+        res.status(500).send('Ошибка загрузки страницы');
     }
 };
