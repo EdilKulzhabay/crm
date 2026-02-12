@@ -419,7 +419,7 @@ export const getWidgetConfig = async (req, res) => {
         const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
         const orderId = `topup-${userId}-${Date.now()}`;
 
-        const widgetToken = MERCHANT_ID;
+        const widgetToken = process.env.HILLSTAR_WIDGET_TOKEN;
         if (!widgetToken) {
             console.error('HILLSTAR_WIDGET_TOKEN не задан в .env');
             return res.status(500).json({
