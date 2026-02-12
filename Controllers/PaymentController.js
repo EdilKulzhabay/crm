@@ -474,10 +474,12 @@ export const getWidgetConfig = async (req, res) => {
             orderId,
         });
     } catch (error) {
-        console.error('[getWidgetConfig] Исключение:', error);
+        console.error('[getWidgetConfig] Исключение:', error?.message);
+        console.error('[getWidgetConfig] Stack:', error?.stack);
         return res.status(500).json({
             success: false,
-            message: 'Внутренняя ошибка сервера'
+            message: 'Внутренняя ошибка сервера',
+            debug: process.env.NODE_ENV !== 'production' ? error?.message : undefined,
         });
     }
 };
@@ -588,7 +590,8 @@ export const getWidgetPage = async (req, res) => {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
     } catch (error) {
-        console.error('[getWidgetPage] Ошибка:', error);
-        res.status(500).send('Ошибка загрузки страницы');
+        console.error('[getWidgetPage] Ошибка:', error?.message);
+        console.error('[getWidgetPage] Stack:', error?.stack);
+        res.status(500).send('Ошибка загрузки страницы: ' + (process.env.NODE_ENV !== 'production' ? error?.message : ''));
     }
 };
