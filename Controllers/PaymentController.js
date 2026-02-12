@@ -433,7 +433,7 @@ export const getWidgetConfig = async (req, res) => {
             widgetToken,
             orderId,
             resultUrl: `${baseUrl}/api/payment/callback`,
-            test: process.env.NODE_ENV === 'production' ? 0 : 1,
+            test: 0,
         };
 
         console.log('[getWidgetConfig] Конфиг виджета:', { orderId, amount, userId, hasEmail: !!email });
