@@ -407,6 +407,8 @@ export const getWidgetConfig = async (req, res) => {
     try {
         const { userId, amount, email, phone } = req.body;
 
+        console.log("getWidgetConfig: ", req.body)
+
         if (!userId || amount === undefined || amount === null) {
             return res.status(400).json({
                 success: false,
