@@ -578,7 +578,7 @@ export const getWidgetPage = async (req, res) => {
                         user_phone: '77006837203'
                     },
                 },
-
+                user_phone: '77006837203'
             },
         };
         const widgetData = JSON.stringify(data);
