@@ -419,6 +419,31 @@ export const createPaymentLink = async (req, res) => {
 };
 
 /**
+ * Получение clientId по email (для страницы оплаты)
+ * POST /api/payment/get-client-by-email
+ * Body: { email: string }
+ */
+export const getClientByEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email || !email.trim()) {
+            return res.status(400).json({ success: false, message: 'Email обязателен' });
+        }
+        const client = await Client.findOne(
+            { mail: email.toLowerCase().trim() },
+            { _id: 1 }
+        );
+        if (!client) {
+            return res.status(404).json({ success: false, message: 'Клиент не найден' });
+        }
+        return res.json({ success: true, clientId: client._id.toString() });
+    } catch (error) {
+        console.error('getClientByEmail:', error);
+        return res.status(500).json({ success: false, message: 'Внутренняя ошибка сервера' });
+    }
+};
+
+/**
  * Получение конфигурации для JS-виджета Hillstarpay
  * POST /api/payment/widget-config
  * Body: { userId: string, amount: number, email?: string, phone?: string }
@@ -437,7 +462,7 @@ export const getWidgetConfig = async (req, res) => {
             });
         }
 
-        const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
+        const baseUrl = 'https://api.tibetskayacrm.kz';
         const orderId = `topup-${userId}-${Date.now()}`;
 
         const widgetToken = process.env.HILLSTAR_WIDGET_TOKEN;
@@ -462,7 +487,7 @@ export const getWidgetConfig = async (req, res) => {
         const widgetPageUrl = `${baseUrl}/api/payment/widget-page?sessionId=${sessionId}`;
 
         console.log('[getWidgetConfig] Успех. Создана сессия:', {
-            sessionId: sessionId.substring(0, 8) + '...',
+            sessionId: sessionId,
             orderId,
             amount,
             userId,
@@ -544,7 +569,11 @@ export const getWidgetPage = async (req, res) => {
 
   <script>
     var paymentDone = false;
-    function sendMessage(data) { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(data)); }
+    function sendMessage(data) {
+      var str = JSON.stringify(data);
+      if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(str);
+      if (window.opener) window.opener.postMessage(str, '*');
+    }
     function returnToApp(success) { sendMessage({ type: success ? 'payment-success' : 'close' }); }
     function showError(msg) {
       document.getElementById('loading').style.display = 'none';

@@ -73,6 +73,7 @@ import SuperAdminFaq from "./Pages/SuperAdmin/SuperAdminFaq";
 import SuperAdminNotifications from "./Pages/SuperAdmin/SuperAdminNotifications";
 import PaymentSuccess from "./Pages/PaymentSuccess";
 import PaymentError from "./Pages/PaymentError";
+import PaymentPage from "./Pages/PaymentPage";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -165,6 +166,7 @@ export const router = createBrowserRouter([
     { path: "/aquaMarketSettings", element: <AquaMarketSettings />},
 
     /////PAYMENT
+    { path: "/payment", element: <PaymentPage />},
     { path: "/payment/success", element: <PaymentSuccess />},
     { path: "/payment/error", element: <PaymentError />},
 ]);

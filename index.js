@@ -358,6 +358,7 @@ app.post("/deleteFaq", FaqController.deleteFaq);
 ///////PAYMENT (Hillstarpay)
 // Создание ссылки для оплаты заказа
 app.post("/api/payment/create", PaymentController.createPaymentLink);
+app.post("/api/payment/get-client-by-email", PaymentController.getClientByEmail);
 // Конфигурация для JS-виджета оплаты
 app.post("/api/payment/widget-config", PaymentController.getWidgetConfig);
 // Страница виджета (HTML с origin api.tibetskayacrm.kz)
