@@ -556,23 +556,23 @@ export const getWidgetPage = async (req, res) => {
         if (!cleanPhone || cleanPhone.length < 10) {
             return res.status(400).send('Телефон обязателен для оплаты. Укажите номер на странице оплаты или в карточке клиента.');
         }
+        if (!cleanPhone.startsWith('7')) {
+            cleanPhone = '7' + cleanPhone;
+        }
 
-        // Структура по документации Hillstarpay (с сохранением карты)
+        // Минимальный payload для widget/init (без custom_params — может вызывать 500)
         const data = {
             token,
             payment: {
                 order: orderId,
-                amount,
+                amount: Number(amount),
                 currency: 'KZT',
                 description: 'Пополнение баланса',
                 test: test ?? 0,
                 options: {
-                    callbacks: {
-                        result_url: resultUrl,
-                    },
+                    callbacks: { result_url: resultUrl },
                     user: { id: numericUserId },
                     user_phone: cleanPhone,
-                    ...(email && { custom_params: { email } }),
                 },
             },
         };
