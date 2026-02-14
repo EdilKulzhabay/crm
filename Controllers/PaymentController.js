@@ -559,12 +559,11 @@ export const getWidgetPage = async (req, res) => {
         }
 
         // Структура по документации Hillstarpay (с сохранением карты)
-        // user_phone передаём в user и на уровне payment — форма ожидает его для валидации
         const data = {
             token,
             payment: {
                 order: orderId,
-                amount: Number(amount),
+                amount,
                 currency: 'KZT',
                 description: 'Пополнение баланса',
                 test: test ?? 0,
