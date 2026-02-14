@@ -568,7 +568,6 @@ export const getWidgetPage = async (req, res) => {
                 currency: 'KZT',
                 description: 'Пополнение баланса',
                 test: test ?? 0,
-                user_phone: cleanPhone,
                 options: {
                     callbacks: { result_url: resultUrl },
                     user: {
