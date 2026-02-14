@@ -76,6 +76,14 @@ export default function PaymentPage() {
                 userId: clientId,
                 amount: sum,
                 email: emailTrim.toLowerCase(),
+                currency: "KZT",
+                description: "Пополнение баланса",
+                test: 0,
+                options: {
+                    callbacks: {
+                        result_url: `${API_BASE}/api/payment/callback`,
+                    },
+                },
                 phone: phone?.replace(/\D/g, "") || undefined,
             });
 
@@ -151,8 +159,9 @@ export default function PaymentPage() {
 
                 <form onSubmit={handleSubmit} className="w-full space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Сумма (тенге)</label>
-                        <MyInput
+                        <label className="block w-full text-sm font-medium text-gray-700 mb-1">Сумма (тенге)</label>
+                        <input
+                            type="number"
                             value={amount}
                             change={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
                             color="red"
@@ -161,8 +170,8 @@ export default function PaymentPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                        <MyInput
+                        <label className="block w-full text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <input
                             value={email}
                             change={(e) => setEmail(e.target.value)}
                             color="red"
@@ -170,8 +179,8 @@ export default function PaymentPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
-                        <MyInput
+                        <label className="block w-full text-sm font-medium text-gray-700 mb-1">Телефон</label>
+                        <input
                             value={phone}
                             change={(e) => setPhone(e.target.value)}
                             color="red"

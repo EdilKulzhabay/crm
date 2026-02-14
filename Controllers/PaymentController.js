@@ -452,7 +452,7 @@ export const getWidgetConfig = async (req, res) => {
     try {
         console.log('[getWidgetConfig] Вход. Body:', JSON.stringify(req.body));
 
-        const { userId, amount, email, phone } = req.body;
+        const { userId, amount, email, phone, currency, description, test, options } = req.body;
 
         if (!userId || amount === undefined || amount === null) {
             console.error('[getWidgetConfig] Валидация: userId или amount отсутствуют');
@@ -479,8 +479,15 @@ export const getWidgetConfig = async (req, res) => {
             orderId,
             amount: Number(amount),
             userId,
+            currency: currency || 'KZT',
+            description: description || 'Пополнение баланса',
+            options: options || {
+                callbacks: {
+                    result_url: `${baseUrl}/api/payment/callback`,
+                },
+            },
             resultUrl: `${baseUrl}/api/payment/callback`,
-            test: 0,
+            test: test || 0,
             email: email || null,
         });
 
