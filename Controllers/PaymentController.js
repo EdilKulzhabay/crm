@@ -543,6 +543,9 @@ export const getWidgetPage = async (req, res) => {
 
         const { token, orderId, amount, userId, resultUrl, test, email } = session;
 
+        // options.user.id должен быть целым числом (требование API widget/init)
+        const numericUserId = parseInt(crypto.createHash('md5').update(String(userId)).digest('hex').slice(0, 8), 16);
+
         // Структура по документации Hillstarpay (с сохранением карты)
         const data = {
             token,
@@ -556,7 +559,7 @@ export const getWidgetPage = async (req, res) => {
                     callbacks: {
                         result_url: resultUrl,
                     },
-                    user: { id: String(userId) },
+                    user: { id: numericUserId },
                     ...(email && { custom_params: { email } }),
                 },
             },
