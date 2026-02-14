@@ -143,6 +143,12 @@ export const handlePaymentCallback = async (req, res) => {
         }
 
         console.log('Payment callback received:', { orderId, paymentId, result, amount, currency, clientMail });
+        console.log('Card data in callback:', {
+            pg_card_token: callbackData.pg_card_token ? '***' : undefined,
+            pg_card_id: callbackData.pg_card_id,
+            pg_recurring_profile_id: callbackData.pg_recurring_profile_id,
+            pg_card_pan: callbackData.pg_card_pan,
+        });
 
         // Примечание: если orderId - это timestamp, а не ID из базы, то проверку заказа можно пропустить
         // Или можно найти заказ по другому полю, если оно было сохранено
@@ -462,8 +468,9 @@ export const getWidgetConfig = async (req, res) => {
             });
         }
 
-        const baseUrl = 'https://api.tibetskayacrm.kz';
+        const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
         const orderId = `topup-${userId}-${Date.now()}`;
+        const testMode = process.env.HILLSTAR_WIDGET_TEST === '1' ? 1 : 0;
 
         const widgetToken = process.env.HILLSTAR_WIDGET_TOKEN;
         if (!widgetToken) {
@@ -487,7 +494,7 @@ export const getWidgetConfig = async (req, res) => {
                 },
             },
             resultUrl: `${baseUrl}/api/payment/callback`,
-            test: test || 0,
+            test: test !== undefined ? Number(test) : testMode,
             email: email || null,
         });
 
@@ -534,9 +541,9 @@ export const getWidgetPage = async (req, res) => {
             return res.status(404).send('Сессия истекла или не найдена. Попробуйте снова.');
         }
 
-        const { token, orderId, amount, userId, resultUrl, test } = session;
+        const { token, orderId, amount, userId, resultUrl, test, email } = session;
 
-        // Структура по документации Hillstarpay
+        // Структура по документации Hillstarpay (с сохранением карты)
         const data = {
             token,
             payment: {
@@ -550,6 +557,7 @@ export const getWidgetPage = async (req, res) => {
                         result_url: resultUrl,
                     },
                     user: { id: String(userId) },
+                    ...(email && { custom_params: { email } }),
                 },
             },
         };
