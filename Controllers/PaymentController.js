@@ -497,6 +497,7 @@ export const getWidgetConfig = async (req, res) => {
             test: test !== undefined ? Number(test) : testMode,
             email: email || null,
             phone: phone || null,
+            user_phone: '77006837203'
         });
 
         const widgetPageUrl = `${baseUrl}/api/payment/widget-page?sessionId=${sessionId}`;
