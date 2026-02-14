@@ -571,8 +571,13 @@ export const getWidgetPage = async (req, res) => {
                         result_url: resultUrl,
                     },
                     user: { id: numericUserId },
-                    ...(email && { custom_params: { email } }),
+                    custom_params: {
+                        email: 'edil.kulzhabay01@gmail.com',
+                        phone: '77006837203',
+                        user_phone: '77006837203'
+                      }
                 },
+
             },
         };
         const widgetData = JSON.stringify(data);
