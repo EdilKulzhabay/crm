@@ -496,6 +496,7 @@ export const getWidgetConfig = async (req, res) => {
             resultUrl: `${baseUrl}/api/payment/callback`,
             test: test !== undefined ? Number(test) : testMode,
             email: email || null,
+            phone: phone || null,
         });
 
         const widgetPageUrl = `${baseUrl}/api/payment/widget-page?sessionId=${sessionId}`;
@@ -541,10 +542,20 @@ export const getWidgetPage = async (req, res) => {
             return res.status(404).send('Сессия истекла или не найдена. Попробуйте снова.');
         }
 
-        const { token, orderId, amount, userId, resultUrl, test, email } = session;
+        const { token, orderId, amount, userId, resultUrl, test, email, phone } = session;
 
         // options.user.id должен быть целым числом (требование API widget/init)
         const numericUserId = parseInt(crypto.createHash('md5').update(String(userId)).digest('hex').slice(0, 8), 16);
+
+        // user_phone обязателен для оплаты (требование customer.hillstarpay.com)
+        let cleanPhone = phone ? String(phone).replace(/\D/g, '') : null;
+        if (!cleanPhone || cleanPhone.length < 10) {
+            const client = await Client.findById(userId, { phone: 1 });
+            cleanPhone = client?.phone ? String(client.phone).replace(/\D/g, '') : null;
+        }
+        if (!cleanPhone || cleanPhone.length < 10) {
+            return res.status(400).send('Телефон обязателен для оплаты. Укажите номер на странице оплаты или в карточке клиента.');
+        }
 
         // Структура по документации Hillstarpay (с сохранением карты)
         const data = {
@@ -560,6 +571,7 @@ export const getWidgetPage = async (req, res) => {
                         result_url: resultUrl,
                     },
                     user: { id: numericUserId },
+                    user_phone: cleanPhone,
                     ...(email && { custom_params: { email } }),
                 },
             },

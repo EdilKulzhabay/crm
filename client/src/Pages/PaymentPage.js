@@ -46,6 +46,14 @@ export default function PaymentPage() {
             return;
         }
 
+        const phoneClean = phone?.replace(/\D/g, "") || "";
+        if (phoneClean.length < 10) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Введите корректный номер телефона (минимум 10 цифр)");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -179,7 +187,7 @@ export default function PaymentPage() {
                     </div>
 
                     <div>
-                        <label className="block w-full text-sm font-medium text-gray-700 mb-1">Телефон</label>
+                        <label className="block w-full text-sm font-medium text-gray-700 mb-1">Телефон *</label>
                         <input
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
