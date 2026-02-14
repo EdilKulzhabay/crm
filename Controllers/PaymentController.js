@@ -576,7 +576,8 @@ export const getWidgetPage = async (req, res) => {
                         email: 'edil.kulzhabay01@gmail.com',
                         phone: '77006837203',
                         user_phone: '77006837203'
-                      }
+                    },
+                    user_phone: '77006837203'
                 },
 
             },
