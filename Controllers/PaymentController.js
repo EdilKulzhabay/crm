@@ -455,7 +455,7 @@ export const getWidgetConfig = async (req, res) => {
             amount: Number(amount),
             userId,
             resultUrl: `${baseUrl}/api/payment/callback`,
-            test: process.env.NODE_ENV === 'production' ? 0 : 1,
+            test: 0,
             email: email || null,
         });
 
