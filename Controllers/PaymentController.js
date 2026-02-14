@@ -536,20 +536,24 @@ export const getWidgetPage = async (req, res) => {
 
         const { token, orderId, amount, userId, resultUrl, test } = session;
 
-        const widgetData = JSON.stringify({
+        // Структура по документации Hillstarpay
+        const data = {
             token,
             payment: {
                 order: orderId,
                 amount,
                 currency: 'KZT',
                 description: 'Пополнение баланса',
-                test,
+                test: test ?? 0,
                 options: {
-                    callbacks: { result_url: resultUrl },
-                    user: { id: userId },
+                    callbacks: {
+                        result_url: resultUrl,
+                    },
+                    user: { id: String(userId) },
                 },
             },
-        });
+        };
+        const widgetData = JSON.stringify(data);
 
         const html = `<!DOCTYPE html>
 <html>

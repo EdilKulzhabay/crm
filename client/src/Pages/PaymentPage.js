@@ -163,7 +163,7 @@ export default function PaymentPage() {
                         <input
                             type="number"
                             value={amount}
-                            change={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+                            onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
                             color="red"
                             format="numeric"
                         />
@@ -173,7 +173,7 @@ export default function PaymentPage() {
                         <label className="block w-full text-sm font-medium text-gray-700 mb-1">Email *</label>
                         <input
                             value={email}
-                            change={(e) => setEmail(e.target.value)}
+                            onChange={(e) => setEmail(e.target.value)}
                             color="red"
                         />
                     </div>
@@ -182,7 +182,7 @@ export default function PaymentPage() {
                         <label className="block w-full text-sm font-medium text-gray-700 mb-1">Телефон</label>
                         <input
                             value={phone}
-                            change={(e) => setPhone(e.target.value)}
+                            onChange={(e) => setPhone(e.target.value)}
                             color="red"
                         />
                     </div>
