@@ -559,26 +559,24 @@ export const getWidgetPage = async (req, res) => {
         }
 
         // Структура по документации Hillstarpay (с сохранением карты)
+        // user_phone передаём в user и на уровне payment — форма ожидает его для валидации
         const data = {
             token,
             payment: {
                 order: orderId,
-                amount,
+                amount: Number(amount),
                 currency: 'KZT',
                 description: 'Пополнение баланса',
                 test: test ?? 0,
+                user_phone: cleanPhone,
                 options: {
-                    callbacks: {
-                        result_url: resultUrl,
+                    callbacks: { result_url: resultUrl },
+                    user: {
+                        id: numericUserId,
+                        phone: cleanPhone,
                     },
-                    user: { id: numericUserId },
-                    custom_params: {
-                        email: 'edil.kulzhabay01@gmail.com',
-                        phone: '77006837203',
-                        user_phone: '77006837203'
-                    },
+                    user_phone: cleanPhone,
                 },
-                user_phone: '77006837203'
             },
         };
         const widgetData = JSON.stringify(data);
