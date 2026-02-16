@@ -698,12 +698,14 @@ export const chargeWithSavedCard = async (req, res) => {
 
         const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
         const orderId = `saved-${client._id}-${Date.now()}`;
+        // pg_user_id должен совпадать с user.id при сохранении карты через виджет (целое число)
+        const numericUserId = parseInt(crypto.createHash('md5').update(String(client._id)).digest('hex').slice(0, 8), 16);
 
         const initParams = {
             pg_merchant_id: MERCHANT_ID,
             pg_amount: Number(amount).toString(),
             pg_order_id: orderId,
-            pg_user_id: client._id.toString(),
+            pg_user_id: String(numericUserId),
             pg_card_token: cardToken,
             pg_description: 'Пополнение баланса (сохранённая карта)',
             pg_salt: crypto.randomBytes(8).toString('hex'),
