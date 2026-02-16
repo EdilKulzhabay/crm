@@ -571,6 +571,7 @@ export const getWidgetPage = async (req, res) => {
                     callbacks: { result_url: resultUrl },
                     user: {
                         id: numericUserId,
+                        phone: '77777777777' 
                     },
                 },
             },
