@@ -437,12 +437,18 @@ export const getClientByEmail = async (req, res) => {
         }
         const client = await Client.findOne(
             { mail: email.toLowerCase().trim() },
-            { _id: 1 }
+            { _id: 1, savedCard: 1 }
         );
         if (!client) {
             return res.status(404).json({ success: false, message: 'Клиент не найден' });
         }
-        return res.json({ success: true, clientId: client._id.toString() });
+        const hasCard = !!(client.savedCard?.cardToken || client.savedCard?.cardId);
+        return res.json({
+            success: true,
+            clientId: client._id.toString(),
+            hasSavedCard: hasCard,
+            cardPan: hasCard ? client.savedCard?.cardPan : null,
+        });
     } catch (error) {
         console.error('getClientByEmail:', error);
         return res.status(500).json({ success: false, message: 'Внутренняя ошибка сервера' });
@@ -656,5 +662,123 @@ export const getWidgetPage = async (req, res) => {
         console.error('[getWidgetPage] Ошибка:', error?.message);
         console.error('[getWidgetPage] Stack:', error?.stack);
         res.status(500).send('Ошибка загрузки страницы: ' + (process.env.NODE_ENV !== 'production' ? error?.message : ''));
+    }
+};
+
+/**
+ * Оплата сохранённой картой (card/init + card/direct)
+ * POST /api/payment/charge-saved-card
+ * Body: { clientId: string, amount: number } или { email: string, amount: number }
+ */
+export const chargeWithSavedCard = async (req, res) => {
+    try {
+        const { clientId, email, amount } = req.body;
+
+        if (!amount || Number(amount) < 1) {
+            return res.status(400).json({ success: false, message: 'Укажите сумму' });
+        }
+
+        let client;
+        if (clientId) {
+            client = await Client.findById(clientId);
+        } else if (email) {
+            client = await Client.findOne({ mail: email.toLowerCase().trim() });
+        } else {
+            return res.status(400).json({ success: false, message: 'Укажите clientId или email' });
+        }
+
+        if (!client) {
+            return res.status(404).json({ success: false, message: 'Клиент не найден' });
+        }
+
+        const cardToken = client.savedCard?.cardToken || client.savedCard?.cardId;
+        if (!cardToken) {
+            return res.status(400).json({ success: false, message: 'У клиента нет сохранённой карты' });
+        }
+
+        const baseUrl = process.env.BASE_URL || 'https://api.tibetskayacrm.kz';
+        const orderId = `saved-${client._id}-${Date.now()}`;
+
+        const initParams = {
+            pg_merchant_id: MERCHANT_ID,
+            pg_amount: Number(amount).toString(),
+            pg_order_id: orderId,
+            pg_user_id: client._id.toString(),
+            pg_card_token: cardToken,
+            pg_description: 'Пополнение баланса (сохранённая карта)',
+            pg_salt: crypto.randomBytes(8).toString('hex'),
+            pg_result_url: `${baseUrl}/api/payment/callback`,
+            pg_currency: 'KZT',
+        };
+
+        initParams.pg_sig = generateSignature('card/init', initParams, SECRET_KEY);
+
+        const initFormData = new URLSearchParams();
+        for (const key in initParams) {
+            initFormData.append(key, initParams[key]);
+        }
+
+        const initResponse = await axios.post(
+            `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/init`,
+            initFormData,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+
+        const initXml = initResponse.data;
+        const statusMatch = initXml.match(/<pg_status>(.*?)<\/pg_status>/);
+        if (!statusMatch || statusMatch[1] !== 'ok') {
+            const errDesc = initXml.match(/<pg_error_description>(.*?)<\/pg_error_description>/);
+            return res.status(400).json({
+                success: false,
+                message: errDesc ? errDesc[1] : 'Ошибка инициации платежа',
+            });
+        }
+
+        const paymentIdMatch = initXml.match(/<pg_payment_id>(.*?)<\/pg_payment_id>/);
+        if (!paymentIdMatch) {
+            return res.status(500).json({ success: false, message: 'Не получен payment_id' });
+        }
+
+        const directParams = {
+            pg_merchant_id: MERCHANT_ID,
+            pg_payment_id: paymentIdMatch[1],
+            pg_salt: crypto.randomBytes(8).toString('hex'),
+        };
+        directParams.pg_sig = generateSignature('card/direct', directParams, SECRET_KEY);
+
+        const directFormData = new URLSearchParams();
+        for (const key in directParams) {
+            directFormData.append(key, directParams[key]);
+        }
+
+        const directResponse = await axios.post(
+            `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/direct`,
+            directFormData,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+
+        const directXml = directResponse.data;
+        const txStatusMatch = directXml.match(/<pg_transaction_status>(.*?)<\/pg_transaction_status>/);
+
+        if (txStatusMatch && txStatusMatch[1] === 'ok') {
+            await Client.findByIdAndUpdate(client._id, { $inc: { balance: Number(amount) } });
+            return res.json({
+                success: true,
+                message: 'Оплата прошла успешно',
+                amount: Number(amount),
+            });
+        }
+
+        const errDesc = directXml.match(/<pg_error_description>(.*?)<\/pg_error_description>/);
+        return res.status(400).json({
+            success: false,
+            message: errDesc ? errDesc[1] : 'Оплата не прошла',
+        });
+    } catch (error) {
+        console.error('chargeWithSavedCard:', error);
+        return res.status(500).json({
+            success: false,
+            message: error?.response?.data?.message || error?.message || 'Внутренняя ошибка сервера',
+        });
     }
 };

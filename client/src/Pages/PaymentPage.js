@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import LogoText from "../icons/LogoText";
-import MyInput from "../Components/MyInput";
 import MySnackBar from "../Components/MySnackBar";
 
 const API_BASE = "https://api.tibetskayacrm.kz";
@@ -14,74 +13,126 @@ export default function PaymentPage() {
     const [phone, setPhone] = useState("");
     const [saveCard, setSaveCard] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [chargeSavedLoading, setChargeSavedLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
 
     const closeSnack = () => setOpen(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
+    const validateForm = () => {
         const sum = Number(amount);
         if (!sum || sum < 1) {
             setOpen(true);
             setStatus("error");
             setMessage("Введите корректную сумму");
-            return;
+            return false;
         }
-
         const emailTrim = email?.trim();
         if (!emailTrim) {
             setOpen(true);
             setStatus("error");
             setMessage("Введите email");
-            return;
+            return false;
         }
-
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
             setOpen(true);
             setStatus("error");
             setMessage("Введите корректный email");
-            return;
+            return false;
         }
-
         const phoneClean = phone?.replace(/\D/g, "") || "";
         if (phoneClean.length < 10) {
             setOpen(true);
             setStatus("error");
             setMessage("Введите корректный номер телефона (минимум 10 цифр)");
-            return;
+            return false;
         }
+        return { sum, emailTrim, phoneClean };
+    };
 
-        setLoading(true);
+    const fetchClient = async () => {
+        const emailTrim = email?.trim();
+        if (!emailTrim || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) return null;
+        try {
+            const { data } = await api.post("/api/payment/get-client-by-email", {
+                email: emailTrim.toLowerCase(),
+            });
+            return data;
+        } catch {
+            return null;
+        }
+    };
+
+    const handleChargeSavedCard = async (e) => {
+        e.preventDefault();
+        const validated = validateForm();
+        if (!validated) return;
+
+        const { sum, emailTrim } = validated;
+        setChargeSavedLoading(true);
 
         try {
-            let clientId = null;
-
-            try {
-                const { data: clientRes } = await api.post("/api/payment/get-client-by-email", {
-                    email: emailTrim.toLowerCase(),
-                });
-                if (!clientRes?.clientId) {
-                    setOpen(true);
-                    setStatus("error");
-                    setMessage("Клиент с таким email не найден. Зарегистрируйтесь в приложении.");
-                    setLoading(false);
-                    return;
-                }
-                clientId = clientRes.clientId;
-            } catch (clientErr) {
-                const msg = clientErr?.response?.data?.message || "Клиент с таким email не найден. Зарегистрируйтесь в приложении.";
+            const clientData = await fetchClient();
+            if (!clientData?.clientId) {
                 setOpen(true);
                 setStatus("error");
-                setMessage(msg);
-                setLoading(false);
+                setMessage("Клиент с таким email не найден.");
+                setChargeSavedLoading(false);
+                return;
+            }
+            if (!clientData?.hasSavedCard) {
+                setOpen(true);
+                setStatus("error");
+                setMessage("У клиента нет сохранённой карты. Используйте обычную оплату.");
+                setChargeSavedLoading(false);
                 return;
             }
 
+            const { data } = await api.post("/api/payment/charge-saved-card", {
+                clientId: clientData.clientId,
+                amount: sum,
+            });
+
+            if (data?.success) {
+                setOpen(true);
+                setStatus("success");
+                setMessage("Оплата прошла успешно!");
+                setTimeout(() => navigate("/payment/success"), 1500);
+            } else {
+                setOpen(true);
+                setStatus("error");
+                setMessage(data?.message || "Ошибка оплаты");
+            }
+        } catch (err) {
+            setOpen(true);
+            setStatus("error");
+            setMessage(err?.response?.data?.message || "Ошибка при оплате");
+        } finally {
+            setChargeSavedLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const validated = validateForm();
+        if (!validated) return;
+
+        const { sum, emailTrim, phoneClean } = validated;
+        setLoading(true);
+
+        try {
+            const clientData = await fetchClient();
+            if (!clientData?.clientId) {
+                setOpen(true);
+                setStatus("error");
+                setMessage("Клиент с таким email не найден. Зарегистрируйтесь в приложении.");
+                setLoading(false);
+                return;
+            }
             const { data: configRes } = await api.post("/api/payment/widget-config", {
-                userId: clientId,
+                userId: clientData.clientId,
                 amount: sum,
                 email: emailTrim.toLowerCase(),
                 currency: "KZT",
@@ -92,7 +143,7 @@ export default function PaymentPage() {
                         result_url: `${API_BASE}/api/payment/callback`,
                     },
                 },
-                phone: phone?.replace(/\D/g, "") || undefined,
+                phone: phoneClean || undefined,
             });
 
             if (!configRes?.success || !configRes?.widgetPageUrl) {
@@ -208,13 +259,21 @@ export default function PaymentPage() {
                         </label>
                     </div>
 
-                    <div className="w-full mt-6">
+                    <div className="w-full mt-6 space-y-3">
                         <button
                             type="submit"
                             disabled={loading}
                             className="w-full py-3 px-4 bg-[#DC1818] hover:bg-[#b81414] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
                         >
-                            {loading ? "Загрузка..." : "Оплатить"}
+                            {loading ? "Загрузка..." : "Оплатить новой картой"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleChargeSavedCard}
+                            disabled={chargeSavedLoading}
+                            className="w-full py-3 px-4 bg-gray-600 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
+                        >
+                            {chargeSavedLoading ? "Обработка..." : "Оплатить сохранённой картой"}
                         </button>
                     </div>
                 </form>
