@@ -722,13 +722,17 @@ export const chargeWithSavedCard = async (req, res) => {
             initFormData.append(key, initParams[key]);
         }
 
+        const initUrl = `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/init`;
+        console.log('[Hillstarpay] card/init REQUEST:', { url: initUrl, body: Object.fromEntries(initFormData) });
+
         const initResponse = await axios.post(
-            `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/init`,
+            initUrl,
             initFormData,
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
         const initXml = initResponse.data;
+        console.log('[Hillstarpay] card/init RESPONSE:', initXml);
         const statusMatch = initXml.match(/<pg_status>(.*?)<\/pg_status>/);
         if (!statusMatch || statusMatch[1] !== 'ok') {
             const errDesc = initXml.match(/<pg_error_description>(.*?)<\/pg_error_description>/);
@@ -755,13 +759,17 @@ export const chargeWithSavedCard = async (req, res) => {
             directFormData.append(key, directParams[key]);
         }
 
+        const directUrl = `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/direct`;
+        console.log('[Hillstarpay] card/direct REQUEST:', { url: directUrl, body: Object.fromEntries(directFormData) });
+
         const directResponse = await axios.post(
-            `https://api.hillstarpay.com/v1/merchant/${MERCHANT_ID}/card/direct`,
+            directUrl,
             directFormData,
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
         const directXml = directResponse.data;
+        console.log('[Hillstarpay] card/direct RESPONSE:', directXml);
         const txStatusMatch = directXml.match(/<pg_transaction_status>(.*?)<\/pg_transaction_status>/);
 
         if (txStatusMatch && txStatusMatch[1] === 'ok') {
@@ -780,6 +788,9 @@ export const chargeWithSavedCard = async (req, res) => {
         });
     } catch (error) {
         console.error('chargeWithSavedCard:', error);
+        if (error?.response) {
+            console.error('[Hillstarpay] Error response:', { status: error.response.status, data: error.response.data });
+        }
         return res.status(500).json({
             success: false,
             message: error?.response?.data?.message || error?.message || 'Внутренняя ошибка сервера',

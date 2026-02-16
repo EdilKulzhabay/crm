@@ -222,8 +222,8 @@ async function initSavedCardPayment({ userId, cardToken, orderId, amount, descri
     pg_result_url: 'https://api.tibetskayacrm.kz/api/payment/callback',
   };
 
-  // Подпись: имя скрипта = "card/init"
-  params.pg_sig = generateSignature('card/init', params, SECRET_KEY);
+  // Подпись: имя скрипта = "init" (от последнего / в URL .../card/init)
+  params.pg_sig = generateSignature('init', params, SECRET_KEY);
 
   const formData = new URLSearchParams();
   for (const key in params) {
@@ -271,7 +271,7 @@ async function confirmSavedCardPayment(paymentId) {
     pg_salt: crypto.randomBytes(8).toString('hex'),
   };
 
-  params.pg_sig = generateSignature('card/direct', params, SECRET_KEY);
+  params.pg_sig = generateSignature('direct', params, SECRET_KEY);
 
   const formData = new URLSearchParams();
   for (const key in params) {
@@ -301,8 +301,10 @@ export const chargeWithSavedCard = async (req, res) => {
     }
 
     // Шаг 1: init
+    // pg_user_id должен совпадать с user.id при сохранении карты (виджет требует целое число)
+    const numericUserId = parseInt(crypto.createHash('md5').update(String(clientId)).digest('hex').slice(0, 8), 16);
     const paymentId = await initSavedCardPayment({
-      userId: clientId,
+      userId: String(numericUserId),
       cardToken: client.savedCard.cardToken,
       orderId: Date.now().toString(),
       amount,
@@ -396,8 +398,8 @@ function generateSignature(scriptName, params, secretKey) {
 |----------|-------------|
 | Инициация платежа | `init_payment.php` |
 | Callback (result_url) | последний сегмент URL (например `callback`) |
-| Оплата сохранённой картой (init) | `card/init` |
-| Подтверждение (direct) | `card/direct` |
+| Оплата сохранённой картой (init) | `init` |
+| Подтверждение (direct) | `direct` |
 | Статус платежа | `get_status3.php` |
 | Возврат | `revoke.php` |
 
