@@ -708,6 +708,8 @@ export const chargeWithSavedCard = async (req, res) => {
             pg_description: 'Пополнение баланса (сохранённая карта)',
             pg_salt: crypto.randomBytes(8).toString('hex'),
             pg_result_url: `${baseUrl}/api/payment/callback`,
+            pg_success_url: `${baseUrl}/api/payment/success`,
+            pg_failure_url: `${baseUrl}/api/payment/error`,
             pg_currency: 'KZT',
         };
 
