@@ -711,7 +711,7 @@ export const chargeWithSavedCard = async (req, res) => {
             pg_currency: 'KZT',
         };
 
-        initParams.pg_sig = generateSignature('card/init', initParams, SECRET_KEY);
+        initParams.pg_sig = generateSignature('init', initParams, SECRET_KEY);
 
         const initFormData = new URLSearchParams();
         for (const key in initParams) {
@@ -744,7 +744,7 @@ export const chargeWithSavedCard = async (req, res) => {
             pg_payment_id: paymentIdMatch[1],
             pg_salt: crypto.randomBytes(8).toString('hex'),
         };
-        directParams.pg_sig = generateSignature('card/direct', directParams, SECRET_KEY);
+        directParams.pg_sig = generateSignature('direct', directParams, SECRET_KEY);
 
         const directFormData = new URLSearchParams();
         for (const key in directParams) {
