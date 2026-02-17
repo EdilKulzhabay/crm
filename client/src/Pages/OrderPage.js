@@ -502,7 +502,7 @@ export default function OrderPage() {
                 </>}
                 <Div>
                     <div>Форма оплаты: <span className="text-yellow-400">{order?.opForm === "fakt" && "Нал_QR"}{order?.opForm === "postpay" && "Постоплата"}{order?.opForm === "credit" && "Карта"}{order?.opForm === "coupon" && "Талоны"}{order?.opForm === "mixed" && "Cмешанно"}</span></div>
-                    {userData?.role === "superAdmin" && <MyButton click={() => {setChangeOpForm(order?.opForm)}}>Изменить</MyButton>}
+                    {userData?.role === "superAdmin" && <MyButton click={() => {setChangeOpForm(order?.opForm || "fakt")}}>Изменить</MyButton>}
                 </Div>
                 {changeOpForm && <>
                     <Div>
