@@ -986,6 +986,9 @@ export const addOrderClientMobile = async (req, res) => {
 
         if (client.clientType === false && address?.actual) {
             address.actual = address.actual.replace(/квартира/gi, 'офис');
+            const actualAddress = client.addresses.find(
+                addr => addr.name === address.name);
+            address.phone = actualAddress.phone
         }
 
         const franchisee = await User.findOne({role: "superAdmin"})
