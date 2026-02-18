@@ -118,7 +118,7 @@ export const courierAggregatorCodeConfirm = async (req, res) => {
 
 export const createCourierAggregator = async(req, res) => {
     try {
-        const { email, password, firstName, lastName, phone, languages, birthDate, country, city, transport, isExternal } = req.body;
+        const { email, password, firstName, lastName, phone } = req.body;
         // Пример JSON для добавления курьера через Insomnia/Postman
         /*
         {
@@ -153,13 +153,12 @@ export const createCourierAggregator = async(req, res) => {
             email,
             phone,
             status: "active",
-            carType: transport || "A", // Если транспорт не указан, устанавливаем тип A по умолчанию
+            carType: "A", // Если транспорт не указан, устанавливаем тип A по умолчанию
             income: 0,
-            birthDate,
-            country,
-            city,
-            languages,
-            isExternal
+            country: "kz",
+            city: "almaty",
+            languages: [ 'kz', 'ru' ],
+            isExternal: false
         });
         await courier.save();
         res.status(200).json({
