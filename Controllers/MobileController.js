@@ -984,6 +984,10 @@ export const addOrderClientMobile = async (req, res) => {
             })
         }
 
+        if (client.clientType === false && address?.actual) {
+            address.actual = address.actual.replace(/квартира/gi, 'офис');
+        }
+
         const franchisee = await User.findOne({role: "superAdmin"})
 
         const sum =
@@ -1019,6 +1023,8 @@ export const addOrderClientMobile = async (req, res) => {
             }
         }
 
+        const clientPhone = address.phone !== "" ? address.phone : client.phone
+
         const order = new Order({
             franchisee: franchisee._id,
             client: client._id,
@@ -1031,7 +1037,8 @@ export const addOrderClientMobile = async (req, res) => {
             needCall,
             comment,
             paymentMethod: paymentMethod,
-            wereCreated: "app"
+            wereCreated: "app",
+            clientPhone: clientPhone
         });
 
         await order.save();

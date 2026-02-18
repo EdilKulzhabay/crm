@@ -362,7 +362,7 @@ export default function AddOrder() {
                                     </a>
                                     <MyButton
                                         click={() => {
-                                            const actualAddress = adress.street + " " + (adress.house ? adress.house : "");
+                                            const actualAddress = adress.street + " " + (adress.house ? adress.house : "") + " " + (adress.apartment ? (client.clientType ? "кв." : "офис") + " " + adress.apartment : "");
                                             setAddress({
                                                 name: adress?.name,
                                                 actual: actualAddress,
