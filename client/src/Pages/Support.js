@@ -93,11 +93,11 @@ export default function Support() {
             <Div />
             { supportContacts?.length > 0 && supportContacts?.map((contact) => (
                 <Li key={contact?._id}>
-                    <div>{contact?.client?.fullName || contact?.client?.userName}</div>
+                    <div>{contact?.client?.fullName}</div>
                     <div>|</div>
-                    <div>{contact?.lastMessage}</div>
+                    <div>{contact?.userName}</div>
                     <div>|</div>
-                    <div>{contact?.lastMessageTime}</div>
+                    <div>{contact?.phone}</div>
                     <div>|</div>
                     <LinkButton href={`/SupportChat/${contact?.client?._id}`}>Перейти</LinkButton>
                     <div>|</div>

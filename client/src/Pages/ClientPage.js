@@ -562,6 +562,8 @@ export default function ClientPage() {
                 </>}
                 <Div>Личные данные:</Div>
                 <>
+                    <Div>Платформа: {client?.platform || "Не указана"}</Div>
+                    <Div>Версия приложения: {client?.appVersion || "Не указана"}</Div>
                     <UpdateClientData
                         title="Наименование"
                         open={updates.fullNameOpen}

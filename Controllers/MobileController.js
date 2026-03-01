@@ -1245,6 +1245,28 @@ export const sendSupportMessage = async (req, res) => {
             await SupportContacts.create({ client: client._id, lastMessage: message.text, lastMessageTime: new Date().toISOString() });
         } else {
             await SupportContacts.findByIdAndUpdate(supportContact._id, { lastMessage: message.text, lastMessageTime: new Date().toISOString() });
+            const mailOptions = {
+                from: "info@tibetskaya.kz",
+                to: process.env.SENDINFOTOEMAIL,
+                subject: `Новое сообщение от клиента ${client.fullName}`,
+                text: `Новое сообщение от клиента ${client.fullName}: ${message.text}`,
+            };
+        
+            transporter.sendMail(mailOptions, function (error, info) {
+                if (error) {
+                    console.log(error);
+                    res.status(500).json({
+                        success: false,
+                        message: "Ошибка при отправке письма"
+                    })
+                } else {
+                    console.log("Email sent: " + info.response);
+                    res.status(200).json({
+                        success: true,
+                        message: "Письмо успешно отправлено"
+                    })
+                }
+            });
         }
     } catch (error) {
         console.log(error);
