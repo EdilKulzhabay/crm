@@ -95,9 +95,9 @@ export default function Support() {
                 <Li key={contact?._id}>
                     <div>{contact?.client?.fullName}</div>
                     <div>|</div>
-                    <div>{contact?.userName}</div>
+                    <div>{contact?.client?.userName}</div>
                     <div>|</div>
-                    <div>{contact?.phone}</div>
+                    <div>{contact?.client?.phone}</div>
                     <div>|</div>
                     <LinkButton href={`/SupportChat/${contact?.client?._id}`}>Перейти</LinkButton>
                     <div>|</div>
