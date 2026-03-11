@@ -21,9 +21,6 @@ const fetchAddressId = async (addressActual) => {
             },
         });
         
-        console.log(`Поиск координат для: ${addressActual}`);
-        console.log("response.data.result", response.data.result);
-        
         return response.data.result.items[0] || null;
     } catch (error) {
         console.log(`Невозможно найти адрес: ${addressActual}`);

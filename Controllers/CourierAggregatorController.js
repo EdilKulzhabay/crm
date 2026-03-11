@@ -1364,10 +1364,6 @@ export const assignOrderToCourier = async (req, res) => {
         }
 
         // Проверяем вместимость курьера
-        console.log("Проверка вместимости:");
-        console.log("Заказ требует:", order.products?.b12 || 0, "12л и", order.products?.b19 || 0, "19л");
-        console.log("У курьера есть:", courier.capacity12, "12л и", courier.capacity19, "19л");
-        
         if (courier.capacity12 < (order.products?.b12 || 0) || courier.capacity19 < (order.products?.b19 || 0)) {
             return res.status(400).json({
                 success: false,
@@ -1428,8 +1424,6 @@ export const assignOrderToCourier = async (req, res) => {
                 }
             );
             
-            console.log("Результат обновления курьера (установка активного заказа):", courierUpdateResult);
-
             // Отправляем уведомление курьеру
             try {
                 const messageBody = `Новый заказ: ${order.client.fullName}`;
@@ -1454,8 +1448,6 @@ export const assignOrderToCourier = async (req, res) => {
                 }
             );
             
-            console.log("Результат обновления курьера (добавление в список):", courierUpdateResult);
-            console.log("Заказ добавлен в список заказов курьера");
         }
 
         res.json({
@@ -1575,8 +1567,6 @@ export const removeOrderFromCourier = async (req, res) => {
             }
         );
         
-        console.log("Результат обновления курьера (удаление заказа):", courierUpdateResult);
-
         res.json({
             success: true,
             message: "Заказ успешно убран у курьера"

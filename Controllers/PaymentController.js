@@ -31,6 +31,7 @@ function generateOrderId() {
 export const createPayment = async (req, res) => {
     try {
         const { sum, email, phone, clientId } = req.body;
+        console.log("[Payplus] createPayment REQUEST:", { sum, email, phone: phone ? "***" : undefined, clientId });
 
         if (!sum || Number(sum) <= 0) {
             return res.status(400).json({
@@ -96,13 +97,14 @@ export const createPayment = async (req, res) => {
         const query = new URLSearchParams(params).toString();
         const paymentUrl = `${PAYPLUS_BASE_URL}/payment/form?${query}`;
 
+        console.log("[Payplus] createPayment SUCCESS:", { orderId, clientId: client._id.toString(), amount: sum });
         return res.json({
             success: true,
             paymentUrl,
             orderId,
         });
     } catch (err) {
-        console.error("[createPayment]", err);
+        console.error("[Payplus] createPayment ERROR:", err?.message);
         return res.status(500).json({
             success: false,
             message: "Ошибка создания платежа",
@@ -118,9 +120,15 @@ export const createPayment = async (req, res) => {
 export const payplusCallback = async (req, res) => {
     try {
         const data = req.body && Object.keys(req.body).length ? req.body : req.query;
+        console.log("[Payplus] payplusCallback RECEIVED:", {
+            co_order_no: data.co_order_no,
+            co_inv_st: data.co_inv_st,
+            co_amount: data.co_amount,
+            co_inv_id: data.co_inv_id,
+        });
 
         if (!verifyCallbackSign(data, PAYPLUS_SECRET)) {
-            console.error("[payplusCallback] Invalid sign");
+            console.error("[Payplus] payplusCallback INVALID SIGN");
             return res.status(400).send("Sign error");
         }
 
@@ -130,11 +138,12 @@ export const payplusCallback = async (req, res) => {
 
         const session = await PaymentSession.findOne({ orderId: orderNo });
         if (!session) {
-            console.error("[payplusCallback] Session not found:", orderNo);
+            console.error("[Payplus] payplusCallback SESSION NOT FOUND:", orderNo);
             return res.send("OK");
         }
 
         if (session.status !== "pending") {
+            console.log("[Payplus] payplusCallback SKIP (already processed):", orderNo, "status:", session.status);
             return res.send("OK");
         }
 
@@ -145,17 +154,28 @@ export const payplusCallback = async (req, res) => {
 
             const client = await Client.findById(session.clientId);
             if (client) {
-                client.balance = (client.balance || 0) + amount;
+                const prevBalance = client.balance || 0;
+                client.balance = prevBalance + amount;
                 await client.save();
+                console.log("[Payplus] payplusCallback SUCCESS:", {
+                    orderId: orderNo,
+                    clientId: client._id.toString(),
+                    amount,
+                    balanceBefore: prevBalance,
+                    balanceAfter: client.balance,
+                });
+            } else {
+                console.error("[Payplus] payplusCallback CLIENT NOT FOUND:", session.clientId);
             }
         } else {
             session.status = "fail";
             await session.save();
+            console.log("[Payplus] payplusCallback FAIL:", { orderId: orderNo, status: data.co_inv_st });
         }
 
         return res.send("OK");
     } catch (err) {
-        console.error("[payplusCallback]", err);
+        console.error("[Payplus] payplusCallback ERROR:", err?.message);
         return res.send("OK");
     }
 };
@@ -168,6 +188,7 @@ export const payplusCallback = async (req, res) => {
 export const getWidgetConfig = async (req, res) => {
     try {
         const { userId, amount, email, phone } = req.body;
+        console.log("[Payplus] getWidgetConfig REQUEST:", { userId, amount });
 
         if (!userId || !amount || Number(amount) <= 0) {
             return res.status(400).json({
@@ -221,6 +242,7 @@ export const getWidgetConfig = async (req, res) => {
 
         const widgetPageUrl = `${API_BASE_URL}/api/payment/widget-page?sessionId=${orderId}`;
 
+        console.log("[Payplus] getWidgetConfig SUCCESS:", { orderId, userId, amount, widgetPageUrl });
         return res.json({
             success: true,
             widgetPageUrl,
@@ -228,7 +250,7 @@ export const getWidgetConfig = async (req, res) => {
             orderId,
         });
     } catch (err) {
-        console.error("[getWidgetConfig]", err);
+        console.error("[Payplus] getWidgetConfig ERROR:", err?.message);
         return res.status(500).json({
             success: false,
             message: "Ошибка получения конфигурации",
@@ -242,15 +264,19 @@ export const getWidgetConfig = async (req, res) => {
  */
 export const getWidgetPage = async (req, res) => {
     const { sessionId } = req.query;
+    console.log("[Payplus] getWidgetPage REQUEST:", { sessionId });
 
     if (!sessionId) {
-        return res.status(400).send("Missing sessionId");
+        return res.status(400).send("Missing sessionId. URL: /api/payment/widget-page?sessionId=ORDER_ID");
     }
 
     const session = await PaymentSession.findOne({ orderId: sessionId });
     if (!session) {
-        return res.status(404).send("Session not found");
+        console.error("[Payplus] getWidgetPage SESSION NOT FOUND:", sessionId);
+        return res.status(404).send(`Session not found for orderId: ${sessionId}. Call widget-config first.`);
     }
+
+    console.log("[Payplus] getWidgetPage SUCCESS:", { orderId: sessionId, amount: session.amount });
 
     const params = {
         merchant: PAYPLUS_MERCHANT,
@@ -316,6 +342,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || process.env.CLIENT_URL || "http
  * Редирект на фронтенд или postMessage для WebView
  */
 export const paymentSuccessPage = (req, res) => {
+    console.log("[Payplus] paymentSuccessPage", req.query);
     const redirectUrl = `${FRONTEND_URL}/payment/success`;
     const html = `<!DOCTYPE html>
 <html>
@@ -349,6 +376,7 @@ export const paymentSuccessPage = (req, res) => {
  * Страница ошибки оплаты (fail_url в настройках мерчанта Payplus)
  */
 export const paymentErrorPage = (req, res) => {
+    console.log("[Payplus] paymentErrorPage", req.query);
     const redirectUrl = `${FRONTEND_URL}/payment/error`;
     const html = `<!DOCTYPE html>
 <html>

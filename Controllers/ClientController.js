@@ -390,7 +390,6 @@ export const updateClientData = async (req, res) => {
                             q: `Алматы, ${item.street}`,
                         },
                     });
-                    console.log("response.data.result", response.data.result);
                     
                     return response.data.result.items[0] || null; // Возвращаем ID или null
                 } catch (error) {

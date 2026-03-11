@@ -17,6 +17,9 @@ import {
 
 const router = Router();
 
+// Тест доступности: GET /api/payment/health
+router.get("/health", (req, res) => res.json({ ok: true, service: "payplus" }));
+
 router.post("/create", createPayment);
 router.post("/payplus-callback", payplusCallback);
 router.get("/payplus-callback", payplusCallback);
