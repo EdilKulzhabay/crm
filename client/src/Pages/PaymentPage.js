@@ -4,16 +4,12 @@ import api from "../api";
 import LogoText from "../icons/LogoText";
 import MySnackBar from "../Components/MySnackBar";
 
-const API_BASE = "https://api.tibetskayacrm.kz";
-
 export default function PaymentPage() {
     const navigate = useNavigate();
     const [amount, setAmount] = useState("");
     const [email, setEmail] = useState("");
     const [phone, setPhone] = useState("");
-    const [saveCard, setSaveCard] = useState(true);
     const [loading, setLoading] = useState(false);
-    const [chargeSavedLoading, setChargeSavedLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
@@ -51,68 +47,6 @@ export default function PaymentPage() {
         return { sum, emailTrim, phoneClean };
     };
 
-    const fetchClient = async () => {
-        const emailTrim = email?.trim();
-        if (!emailTrim || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) return null;
-        try {
-            const { data } = await api.post("/api/payment/get-client-by-email", {
-                email: emailTrim.toLowerCase(),
-            });
-            return data;
-        } catch {
-            return null;
-        }
-    };
-
-    const handleChargeSavedCard = async (e) => {
-        e.preventDefault();
-        const validated = validateForm();
-        if (!validated) return;
-
-        const { sum, emailTrim } = validated;
-        setChargeSavedLoading(true);
-
-        try {
-            const clientData = await fetchClient();
-            if (!clientData?.clientId) {
-                setOpen(true);
-                setStatus("error");
-                setMessage("Клиент с таким email не найден.");
-                setChargeSavedLoading(false);
-                return;
-            }
-            if (!clientData?.hasSavedCard) {
-                setOpen(true);
-                setStatus("error");
-                setMessage("У клиента нет сохранённой карты. Используйте обычную оплату.");
-                setChargeSavedLoading(false);
-                return;
-            }
-
-            const { data } = await api.post("/api/payment/charge-saved-card", {
-                clientId: clientData.clientId,
-                amount: sum,
-            });
-
-            if (data?.success) {
-                setOpen(true);
-                setStatus("success");
-                setMessage("Оплата прошла успешно!");
-                setTimeout(() => navigate("/payment/success"), 1500);
-            } else {
-                setOpen(true);
-                setStatus("error");
-                setMessage(data?.message || "Ошибка оплаты");
-            }
-        } catch (err) {
-            setOpen(true);
-            setStatus("error");
-            setMessage(err?.response?.data?.message || "Ошибка при оплате");
-        } finally {
-            setChargeSavedLoading(false);
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -123,59 +57,35 @@ export default function PaymentPage() {
         setLoading(true);
 
         try {
-            const clientData = await fetchClient();
-            if (!clientData?.clientId) {
-                setOpen(true);
-                setStatus("error");
-                setMessage("Клиент с таким email не найден. Зарегистрируйтесь в приложении.");
-                setLoading(false);
-                return;
-            }
-            const { data: configRes } = await api.post("/api/payment/widget-config", {
-                userId: clientData.clientId,
-                amount: sum,
+            const { data } = await api.post("/api/payment/create", {
+                sum,
                 email: emailTrim.toLowerCase(),
-                currency: "KZT",
-                description: "Пополнение баланса",
-                test: 0,
-                options: {
-                    callbacks: {
-                        result_url: `${API_BASE}/api/payment/callback`,
-                    },
-                },
-                phone: phoneClean || undefined,
+                phone: phoneClean,
             });
 
-            if (!configRes?.success || !configRes?.widgetPageUrl) {
+            if (!data?.success || !data?.paymentUrl) {
                 setOpen(true);
                 setStatus("error");
-                setMessage(configRes?.message || "Ошибка при создании платежа");
+                setMessage(data?.message || "Ошибка при создании платежа");
                 setLoading(false);
                 return;
             }
 
-            const widgetUrl = configRes.widgetPageUrl;
-            const widgetWindow = window.open(widgetUrl, "payment", "width=600,height=700,scrollbars=yes");
+            const paymentUrl = data.paymentUrl;
+            const paymentWindow = window.open(paymentUrl, "payment", "width=600,height=700,scrollbars=yes");
 
-            if (!widgetWindow || widgetWindow.closed) {
-                setOpen(true);
-                setStatus("error");
-                setMessage("Разрешите всплывающие окна для этого сайта и попробуйте снова.");
+            if (!paymentWindow || paymentWindow.closed) {
+                window.location.href = paymentUrl;
                 setLoading(false);
                 return;
             }
-
-            const allowedOrigin = (() => {
-                try { return new URL(API_BASE).origin; } catch (_) { return null; }
-            })();
 
             const handleMessage = (event) => {
-                if (allowedOrigin && event.origin !== allowedOrigin) return;
                 try {
                     const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
                     if (data?.type === "payment-success") {
                         window.removeEventListener("message", handleMessage);
-                        if (widgetWindow) widgetWindow.close();
+                        if (paymentWindow) paymentWindow.close();
                         navigate("/payment/success");
                     } else if (data?.type === "payment-error") {
                         setOpen(true);
@@ -188,7 +98,7 @@ export default function PaymentPage() {
             window.addEventListener("message", handleMessage);
 
             const checkClosed = setInterval(() => {
-                if (widgetWindow && widgetWindow.closed) {
+                if (paymentWindow && paymentWindow.closed) {
                     clearInterval(checkClosed);
                     window.removeEventListener("message", handleMessage);
                 }
@@ -223,57 +133,37 @@ export default function PaymentPage() {
                             type="number"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-                            color="red"
-                            format="numeric"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         />
                     </div>
 
                     <div>
                         <label className="block w-full text-sm font-medium text-gray-700 mb-1">Email *</label>
                         <input
+                            type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            color="red"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         />
                     </div>
 
                     <div>
                         <label className="block w-full text-sm font-medium text-gray-700 mb-1">Телефон *</label>
                         <input
+                            type="tel"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            color="red"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                         />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            id="saveCard"
-                            checked={saveCard}
-                            onChange={(e) => setSaveCard(e.target.checked)}
-                            className="w-4 h-4 rounded border-gray-300"
-                        />
-                        <label htmlFor="saveCard" className="text-sm text-gray-700">
-                            Сохранить карту для быстрой оплаты
-                        </label>
-                    </div>
-
-                    <div className="w-full mt-6 space-y-3">
+                    <div className="w-full mt-6">
                         <button
                             type="submit"
                             disabled={loading}
                             className="w-full py-3 px-4 bg-[#DC1818] hover:bg-[#b81414] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
                         >
-                            {loading ? "Загрузка..." : "Оплатить новой картой"}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleChargeSavedCard}
-                            disabled={chargeSavedLoading}
-                            className="w-full py-3 px-4 bg-gray-600 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
-                        >
-                            {chargeSavedLoading ? "Обработка..." : "Оплатить сохранённой картой"}
+                            {loading ? "Загрузка..." : "Оплатить"}
                         </button>
                     </div>
                 </form>

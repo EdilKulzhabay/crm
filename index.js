@@ -21,10 +21,10 @@ import {
     CourierAggregatorController,
     AquaMarketController,
     FaqController,
-    PaymentController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
+import paymentRoutes from "./paymentRoutes.js";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
@@ -355,23 +355,8 @@ app.get("/getFaq", FaqController.getFaq);
 app.post("/updateFaq", FaqController.updateFaq);
 app.post("/deleteFaq", FaqController.deleteFaq);
 
-///////PAYMENT (Hillstarpay)
-// Создание ссылки для оплаты заказа
-app.post("/api/payment/create", PaymentController.createPaymentLink);
-app.post("/api/payment/get-client-by-email", PaymentController.getClientByEmail);
-app.post("/api/payment/charge-saved-card", PaymentController.chargeWithSavedCard);
-// Конфигурация для JS-виджета оплаты
-app.post("/api/payment/widget-config", PaymentController.getWidgetConfig);
-// Страница виджета (HTML с origin api.tibetskayacrm.kz)
-app.get("/api/payment/widget-page", PaymentController.getWidgetPage);
-// Callback URL для обработки результата платежа (без авторизации)
-// Поддерживаем URL-encoded, form-data и JSON форматы
-// Для form-data используем multer().none(), для остальных - express.urlencoded() и express.json()
-app.post("/api/payment/callback", multer().none(), PaymentController.handlePaymentCallback);
-// Success URL - перенаправление после успешного платежа
-app.get("/api/payment/success", PaymentController.handlePaymentSuccess);
-// Error URL - перенаправление после неуспешного платежа
-app.get("/api/payment/error", PaymentController.handlePaymentError);
+///////PAYMENT (Payplus.kz)
+app.use("/api/payment", paymentRoutes);
 
 // app.get("/testOrTools", async (req, res) => {
 //     try {
