@@ -33,6 +33,14 @@ export const createPayment = async (req, res) => {
         const { sum, email, phone, clientId } = req.body;
         console.log("[Payplus] createPayment REQUEST:", { sum, email, phone: phone ? "***" : undefined, clientId });
 
+        if (!PAYPLUS_MERCHANT || !PAYPLUS_SECRET) {
+            console.error("[Payplus] createPayment: PAYPLUS_MERCHANT или PAYPLUS_SECRET не заданы в .env");
+            return res.status(500).json({
+                success: false,
+                message: "Платёжная система не настроена. Обратитесь к администратору.",
+            });
+        }
+
         if (!sum || Number(sum) <= 0) {
             return res.status(400).json({
                 success: false,
@@ -190,6 +198,14 @@ export const getWidgetConfig = async (req, res) => {
         const { userId, amount, email, phone } = req.body;
         console.log("[Payplus] getWidgetConfig REQUEST:", { userId, amount });
 
+        if (!PAYPLUS_MERCHANT || !PAYPLUS_SECRET) {
+            console.error("[Payplus] getWidgetConfig: PAYPLUS_MERCHANT или PAYPLUS_SECRET не заданы в .env");
+            return res.status(500).json({
+                success: false,
+                message: "Платёжная система не настроена. Обратитесь к администратору.",
+            });
+        }
+
         if (!userId || !amount || Number(amount) <= 0) {
             return res.status(400).json({
                 success: false,
@@ -242,7 +258,13 @@ export const getWidgetConfig = async (req, res) => {
 
         const widgetPageUrl = `${API_BASE_URL}/api/payment/widget-page?sessionId=${orderId}`;
 
-        console.log("[Payplus] getWidgetConfig SUCCESS:", { orderId, userId, amount, widgetPageUrl });
+        console.log("[Payplus] getWidgetConfig SUCCESS:", {
+            orderId,
+            userId,
+            amount,
+            hasPaymentUrl: !!paymentUrl,
+            paymentUrlPreview: paymentUrl ? paymentUrl.substring(0, 45) + "..." : "EMPTY",
+        });
         return res.json({
             success: true,
             widgetPageUrl,
