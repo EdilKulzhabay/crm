@@ -86,7 +86,7 @@ export const createPayment = async (req, res) => {
             order: orderId,
             amount,
             currency,
-            item_name: "Пополнение баланса Тибетская",
+            item_name: "Popolnenie balansa Tibetskaya",
             first_name: (client.fullName || "Client").split(" ")[0].replace(/[^a-zA-Z]/g, "A") || "Client",
             last_name: (client.fullName || "User").split(" ")[1]?.replace(/[^a-zA-Z]/g, "U") || "User",
             user_id: String(client._id),
@@ -141,7 +141,7 @@ export const payplusCallback = async (req, res) => {
         }
 
         const orderNo = data.co_order_no;
-        const status = (data.co_inv_st || "").toLowerCase();
+        const status = (data.co_inv_st || "").toLowerCase().trim();
         const amount = parseFloat(data.co_amount || 0);
 
         const session = await PaymentSession.findOne({ orderId: orderNo });
@@ -287,6 +287,13 @@ export const getWidgetConfig = async (req, res) => {
 export const getWidgetPage = async (req, res) => {
     const { sessionId } = req.query;
     console.log("[Payplus] getWidgetPage REQUEST:", { sessionId });
+
+    if (!PAYPLUS_MERCHANT || !PAYPLUS_SECRET) {
+        console.error("[Payplus] getWidgetPage: PAYPLUS_MERCHANT или PAYPLUS_SECRET не заданы в .env");
+        return res.status(500).send(
+            "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Ошибка</title></head><body><h2>Платёжная система не настроена</h2><p>Обратитесь к администратору.</p></body></html>"
+        );
+    }
 
     if (!sessionId) {
         return res.status(400).send("Missing sessionId. URL: /api/payment/widget-page?sessionId=ORDER_ID");

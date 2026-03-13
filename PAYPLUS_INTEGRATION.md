@@ -57,3 +57,10 @@ FRONTEND_URL=https://tibetskayacrm.kz
 ## 6. Модель PaymentSession
 
 Используется для хранения сессий платежей. Уже импортируется в PaymentController.
+
+## 7. Устранение неполадок
+
+- **Форма не открывается** — проверьте, что `PAYPLUS_MERCHANT` и `PAYPLUS_SECRET` заданы в `.env` на сервере.
+- **Callback не приходит** — убедитесь, что в Pay Plus указан правильный `process_url` и мерчант активирован.
+- **Ошибка подписи** — проверьте, что `PAYPLUS_SECRET` совпадает с ключом в личном кабинете Pay Plus.
+- **Параметры** — Pay Plus требует только латинские буквы и цифры в query string (item_name, first_name, last_name).
