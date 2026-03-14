@@ -19,6 +19,9 @@ const PAYPLUS_MERCHANT = process.env.PAYPLUS_MERCHANT || "";
 const PAYPLUS_SECRET = process.env.PAYPLUS_SECRET || "";
 const API_BASE_URL = process.env.API_BASE_URL || "https://api.tibetskayacrm.kz";
 
+/** Pay Plus поддерживает: USD, EUR, KZT, BRL, MXN, INR, AZN. Используем только KZT. */
+const PAYPLUS_CURRENCY = "KZT";
+
 function generateOrderId() {
     return `PP${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -72,20 +75,19 @@ export const createPayment = async (req, res) => {
 
         const orderId = generateOrderId();
         const amount = Number(sum).toFixed(2);
-        const currency = "KZT";
 
         await PaymentSession.create({
             orderId,
             clientId: client._id,
             amount: Number(sum),
-            currency,
+            currency: PAYPLUS_CURRENCY,
         });
 
         const params = {
             merchant: PAYPLUS_MERCHANT,
             order: orderId,
             amount,
-            currency,
+            currency: PAYPLUS_CURRENCY,
             item_name: "Popolnenie balansa Tibetskaya",
             first_name: (client.fullName || "Client").split(" ")[0].replace(/[^a-zA-Z]/g, "A") || "Client",
             last_name: (client.fullName || "User").split(" ")[1]?.replace(/[^a-zA-Z]/g, "U") || "User",
@@ -223,20 +225,19 @@ export const getWidgetConfig = async (req, res) => {
 
         const orderId = generateOrderId();
         const amountNum = Number(amount).toFixed(2);
-        const currency = "KZT";
 
         await PaymentSession.create({
             orderId,
             clientId: client._id,
             amount: Number(amount),
-            currency,
+            currency: PAYPLUS_CURRENCY,
         });
 
         const params = {
             merchant: PAYPLUS_MERCHANT,
             order: orderId,
             amount: amountNum,
-            currency,
+            currency: PAYPLUS_CURRENCY,
             item_name: "Popolnenie balansa Tibetskaya",
             first_name: (client.fullName || "Client").split(" ")[0].replace(/[^a-zA-Z]/g, "A") || "Client",
             last_name: (client.fullName || "User").split(" ")[1]?.replace(/[^a-zA-Z]/g, "U") || "User",
@@ -262,8 +263,9 @@ export const getWidgetConfig = async (req, res) => {
             orderId,
             userId,
             amount,
+            currency: params.currency,
             hasPaymentUrl: !!paymentUrl,
-            paymentUrlPreview: paymentUrl ? paymentUrl.substring(0, 45) + "..." : "EMPTY",
+            paymentUrlPreview: paymentUrl ? paymentUrl.substring(0, 55) + "..." : "EMPTY",
         });
         return res.json({
             success: true,
@@ -311,7 +313,7 @@ export const getWidgetPage = async (req, res) => {
         merchant: PAYPLUS_MERCHANT,
         order: session.orderId,
         amount: session.amount.toFixed(2),
-        currency: session.currency || "KZT",
+        currency: PAYPLUS_CURRENCY,
         item_name: "Popolnenie balansa Tibetskaya",
         first_name: "Client",
         last_name: "User",
