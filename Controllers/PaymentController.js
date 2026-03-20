@@ -20,7 +20,7 @@ const PAYPLUS_SECRET = process.env.PAYPLUS_SECRET || "";
 const API_BASE_URL = process.env.API_BASE_URL || "https://api.tibetskayacrm.kz";
 
 /** Pay Plus поддерживает: USD, EUR, KZT, BRL, MXN, INR, AZN. Используем только KZT. */
-const PAYPLUS_CURRENCY = "TST";
+const PAYPLUS_CURRENCY = "KZT";
 
 function generateOrderId() {
     return `PP${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
