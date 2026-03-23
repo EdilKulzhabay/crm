@@ -1455,36 +1455,9 @@ export const getLastOrderMobile = async (req, res) => {
 
 export const requestMasterCallMobile = async (req, res) => {
     try {
-        if (req.userType !== "client") {
-            return res.status(403).json({
-                success: false,
-                message: "Доступ запрещён",
-            });
-        }
+        const { fullName, phone, mail } = req.body;
 
-        const client = await Client.findById(req.userId);
-        if (!client) {
-            return res.status(404).json({
-                success: false,
-                message: "Клиент не найден",
-            });
-        }
-
-        const fullNameFromDb = (client.fullName || client.userName || "").trim();
-        const phoneFromDb = (client.phone || "").trim();
-        const mailFromDb = (client.mail || "").trim();
-
-        const bodyFullName =
-            typeof req.body?.fullName === "string"
-                ? req.body.fullName.trim()
-                : "";
-        const bodyPhone =
-            typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
-
-        const fullName = fullNameFromDb || bodyFullName;
-        const phone = phoneFromDb || bodyPhone;
-
-        if (!fullName || !phone) {
+        if (!fullName || !phone || !mail) {
             return res.status(400).json({
                 success: false,
                 message:
@@ -1495,7 +1468,7 @@ export const requestMasterCallMobile = async (req, res) => {
         const tgResult = await sendMasterCallTelegram({
             fullName,
             phone,
-            mail: mailFromDb,
+            mail,
         });
 
         if (!tgResult.ok) {

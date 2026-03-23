@@ -303,7 +303,7 @@ app.post("/getOrderDataMobile", MobileController.getOrderDataMobile)
 app.post("/cancelOrderMobile", MobileController.cancelOrderMobile)
 app.post("/updateOrderDataMobile", MobileController.updateOrderDataMobile)
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile)
-app.post("/requestMasterCallMobile", checkAuth, MobileController.requestMasterCallMobile)
+app.post("/requestMasterCallMobile", MobileController.requestMasterCallMobile)
 app.post("/codeConfirmForgotPassword", MobileController.codeConfirmForgotPassword)
 app.post("/sendMailForgotPassword", MobileController.sendMailForgotPassword)
 ////////ANALYTICS
