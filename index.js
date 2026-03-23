@@ -28,6 +28,10 @@ import paymentRoutes from "./paymentRoutes.js";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
+import {
+    startWhatsAppWebClient,
+    shutdownWhatsAppWeb,
+} from "./whatsApp/waWebClient.js";
 
 // Импортируем функцию оптимизации маршрутов
 // import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
@@ -299,6 +303,7 @@ app.post("/getOrderDataMobile", MobileController.getOrderDataMobile)
 app.post("/cancelOrderMobile", MobileController.cancelOrderMobile)
 app.post("/updateOrderDataMobile", MobileController.updateOrderDataMobile)
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile)
+app.post("/requestMasterCallMobile", checkAuth, MobileController.requestMasterCallMobile)
 app.post("/codeConfirmForgotPassword", MobileController.codeConfirmForgotPassword)
 app.post("/sendMailForgotPassword", MobileController.sendMailForgotPassword)
 ////////ANALYTICS
@@ -480,5 +485,17 @@ app.use("/api/payment", paymentRoutes);
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
-    
+
+    if (process.env.WHATSAPP_WEB_AUTOSTART !== "false") {
+        startWhatsAppWebClient().catch((e) =>
+            console.error("[WhatsApp Web] Ошибка старта:", e?.message || e)
+        );
+    }
 });
+
+const gracefulShutdown = async () => {
+    await shutdownWhatsAppWeb();
+    process.exit(0);
+};
+process.once("SIGINT", gracefulShutdown);
+process.once("SIGTERM", gracefulShutdown);

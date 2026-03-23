@@ -8,6 +8,12 @@ import "dotenv/config";
 import User from "../Models/User.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import SupportContacts from "../Models/SupportContacts.js";
+import { sendMasterCallTelegram } from "../telegram/sendMasterCall.js";
+import {
+    normalizePhoneForWhatsApp,
+    phonesMatch,
+    sendRegistrationOtpWhatsApp,
+} from "../whatsApp/sendRegistrationOtp.js";
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -39,94 +45,120 @@ const lastSentTime = {}; // Отслеживание времени послед
 const sendingInProgress = new Set(); // Отслеживание отправок в процессе
 
 export const sendMail = async (req, res) => {
-    const { mail } = req.body;
+    const { mail, phone } = req.body;
 
-    // Валидация email
-    if (!mail || !mail.includes('@')) {
+    if (!mail || !mail.includes("@")) {
         return res.status(400).json({
             success: false,
-            message: "Некорректный email адрес"
+            message: "Некорректный email адрес",
+        });
+    }
+
+    if (!phone || String(phone).trim() === "") {
+        return res.status(400).json({
+            success: false,
+            message: "Укажите номер телефона для получения кода в WhatsApp",
         });
     }
 
     const normalizedMail = mail.toLowerCase();
+    const phoneNorm = normalizePhoneForWhatsApp(phone);
 
-    // Проверка на повторную отправку (защита от спама)
+    if (!phoneNorm || phoneNorm.length < 11) {
+        return res.status(400).json({
+            success: false,
+            message: "Некорректный номер телефона",
+        });
+    }
+
     const now = Date.now();
-    const lastSent = lastSentTime[normalizedMail];
-    const COOLDOWN_PERIOD = 60000; // 1 минута
+    const lastSent = lastSentTime[phoneNorm];
+    const COOLDOWN_PERIOD = 60000;
 
-    if (lastSent && (now - lastSent) < COOLDOWN_PERIOD) {
-        const remainingTime = Math.ceil((COOLDOWN_PERIOD - (now - lastSent)) / 1000);
+    if (lastSent && now - lastSent < COOLDOWN_PERIOD) {
+        const remainingTime = Math.ceil(
+            (COOLDOWN_PERIOD - (now - lastSent)) / 1000
+        );
         return res.status(429).json({
             success: false,
-            message: `Повторная отправка возможна через ${remainingTime} секунд`
+            message: `Повторная отправка возможна через ${remainingTime} секунд`,
         });
     }
 
-    // Проверка на отправку в процессе
-    if (sendingInProgress.has(normalizedMail)) {
+    if (sendingInProgress.has(phoneNorm)) {
         return res.status(429).json({
             success: false,
-            message: "Отправка уже в процессе, пожалуйста подождите"
+            message: "Отправка уже в процессе, пожалуйста подождите",
         });
     }
 
-    // Добавляем в процесс отправки
-    sendingInProgress.add(normalizedMail);
+    sendingInProgress.add(phoneNorm);
 
     try {
-        const candidate = await Client.findOne({ mail: normalizedMail });
-
-        if (candidate) {
-            sendingInProgress.delete(normalizedMail);
+        const candidateMail = await Client.findOne({ mail: normalizedMail });
+        if (candidateMail) {
+            sendingInProgress.delete(phoneNorm);
             return res.status(409).json({
                 message: "Пользователь с такой почтой уже существует",
             });
         }
 
+        const last10 = phoneNorm.slice(-10);
+        const candidates = await Client.find({
+            phone: { $regex: last10, $options: "i" },
+        })
+            .select("phone")
+            .limit(200)
+            .lean();
+
+        const phoneTaken = candidates.some((c) =>
+            phonesMatch(c.phone, phoneNorm)
+        );
+        if (phoneTaken) {
+            sendingInProgress.delete(phoneNorm);
+            return res.status(409).json({
+                message: "Пользователь с таким номером телефона уже существует",
+            });
+        }
+
         const confirmCode = generateCode();
 
-        codes[normalizedMail] = confirmCode;
-        lastSentTime[normalizedMail] = now;
+        codes[phoneNorm] = confirmCode;
+        lastSentTime[phoneNorm] = now;
 
-        const mailOptions = {
-            from: "info@tibetskaya.kz",
-            to: normalizedMail,
-            subject: "Подтверждение электронной почты",
-            text: `Ваш код подтверждения: ${confirmCode}`,
-        };
+        const wa = await sendRegistrationOtpWhatsApp(phone, confirmCode);
 
-        transporter.sendMail(mailOptions, function (error, info) {
-            // Убираем из процесса отправки
-            sendingInProgress.delete(normalizedMail);
-            
-            if (error) {
-                console.log("Ошибка отправки email:", error);
-                // Удаляем сохраненный код при ошибке
-                delete codes[normalizedMail];
-                delete lastSentTime[normalizedMail];
-                
-                res.status(500).json({
+        sendingInProgress.delete(phoneNorm);
+
+        if (!wa.ok) {
+            delete codes[phoneNorm];
+            delete lastSentTime[phoneNorm];
+            if (wa.error === "INVALID_PHONE") {
+                return res.status(400).json({
                     success: false,
-                    message: "Ошибка при отправке письма"
-                });
-            } else {
-                console.log("Email sent successfully:", info.response);
-                res.status(200).json({
-                    success: true,
-                    message: "Письмо успешно отправлено"
+                    message: "Некорректный номер телефона",
                 });
             }
-        });
+            const detail =
+                typeof wa.error === "string" && wa.error.length < 240
+                    ? wa.error
+                    : "Не удалось отправить код в WhatsApp. Попробуйте позже.";
+            return res.status(500).json({
+                success: false,
+                message: detail,
+            });
+        }
 
+        return res.status(200).json({
+            success: true,
+            message: "Код отправлен в WhatsApp",
+        });
     } catch (error) {
-        // Убираем из процесса отправки при ошибке
-        sendingInProgress.delete(normalizedMail);
+        sendingInProgress.delete(phoneNorm);
         console.log("Ошибка в sendMail:", error);
         res.status(500).json({
             success: false,
-            message: "Внутренняя ошибка сервера"
+            message: "Внутренняя ошибка сервера",
         });
     }
 };
@@ -396,31 +428,37 @@ export const sendMailRecovery = async (req, res) => {
 
 export const codeConfirm = async (req, res) => {
     try {
-        const { mail, code } = req.body;
+        const { phone, code } = req.body;
         console.log("codeConfirm req.body: ", req.body);
-        
-        const normalizedMail = mail?.toLowerCase();
-        
-        if (!normalizedMail || !code) {
+
+        if (!phone || !code) {
             return res.status(400).json({
                 success: false,
-                message: "Необходимо указать email и код"
+                message: "Необходимо указать номер телефона и код",
             });
         }
-        
-        if (codes[normalizedMail] === code) {
+
+        const phoneNorm = normalizePhoneForWhatsApp(phone);
+        if (!phoneNorm) {
+            return res.status(400).json({
+                success: false,
+                message: "Некорректный номер телефона",
+            });
+        }
+
+        if (codes[phoneNorm] === code) {
             console.log("codeConfirm code is correct");
-            delete codes[normalizedMail]; // Удаляем код после успешного подтверждения
-            delete lastSentTime[normalizedMail]; // Удаляем время последней отправки
+            delete codes[phoneNorm];
+            delete lastSentTime[phoneNorm];
             res.status(200).json({
                 success: true,
-                message: "Код успешно подтвержден"
+                message: "Код успешно подтвержден",
             });
         } else {
             console.log("codeConfirm code is incorrect");
             res.status(400).json({
                 success: false,
-                message: "Неверный код"
+                message: "Неверный код",
             });
         }
     } catch (error) {
@@ -1414,3 +1452,74 @@ export const getLastOrderMobile = async (req, res) => {
         });
     }
 }
+
+export const requestMasterCallMobile = async (req, res) => {
+    try {
+        if (req.userType !== "client") {
+            return res.status(403).json({
+                success: false,
+                message: "Доступ запрещён",
+            });
+        }
+
+        const client = await Client.findById(req.userId);
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: "Клиент не найден",
+            });
+        }
+
+        const fullNameFromDb = (client.fullName || client.userName || "").trim();
+        const phoneFromDb = (client.phone || "").trim();
+        const mailFromDb = (client.mail || "").trim();
+
+        const bodyFullName =
+            typeof req.body?.fullName === "string"
+                ? req.body.fullName.trim()
+                : "";
+        const bodyPhone =
+            typeof req.body?.phone === "string" ? req.body.phone.trim() : "";
+
+        const fullName = fullNameFromDb || bodyFullName;
+        const phone = phoneFromDb || bodyPhone;
+
+        if (!fullName || !phone) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Укажите имя и телефон в профиле, чтобы мы могли с вами связаться",
+            });
+        }
+
+        const tgResult = await sendMasterCallTelegram({
+            fullName,
+            phone,
+            mail: mailFromDb,
+        });
+
+        if (!tgResult.ok) {
+            if (tgResult.error === "TELEGRAM_NOT_CONFIGURED") {
+                return res.status(500).json({
+                    success: false,
+                    message: "Сервис временно недоступен",
+                });
+            }
+            return res.status(500).json({
+                success: false,
+                message: "Не удалось отправить заявку. Попробуйте позже.",
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Заявка отправлена",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+};

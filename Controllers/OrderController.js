@@ -500,8 +500,6 @@ export const updateOrder = async (req, res) => {
 
         if (change === "courier") {
             if (order?.courier && order?.courier !== null) {
-                console.log("order?.courier", order?.courier);
-                
                 const courierId = order.courier
                 const lCourier = await Courier.findById(courierId)
                 const mail = lCourier?.mail || ""
@@ -846,8 +844,6 @@ export const getCompletedOrders = async (req, res) => {
         const id = req.userId;
         const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa, courierAggregator} = req.body
 
-        console.log(req.body)
-        
         const user = await User.findById(id)
         const limit = 5;
         const skip = (page - 1) * limit;
@@ -1179,7 +1175,6 @@ export const fixRinat = async (req, res) => {
                 sum += Number(order.products.b19 * order.client.price19);
             }
             if (sum !== order.sum) {
-                console.log(order.address.actual, order.client.fullName, sum, order.sum)
                 message.push(`${order.address.actual}, ${order.client.fullName}, ${sum}, ${order.sum}`)
             }
             qwe += sum
@@ -1262,10 +1257,6 @@ export const getResultForToday = async (req, res) => {
                 activeOrders[franchiseeName] = (activeOrders[franchiseeName] || 0) + 1;
             }
         });
-
-        console.log("📊 Статистика заказов на сегодня:");
-        console.log("   Доставленные заказы:", deliveredOrders);
-        console.log("   Активные заказы:", activeOrders);
 
         res.json({ deliveredOrders, activeOrders })
     } catch (error) {
@@ -1362,7 +1353,6 @@ export const fixOrdersSum = async (req, res) => {
             }
             if (sum !== order.sum) {
                 await Order.findByIdAndUpdate(order._id, { $set: { sum: sum } })
-                console.log(order.address.actual, order.client.fullName, sum, order.sum)
             }
         }
 

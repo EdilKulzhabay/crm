@@ -393,7 +393,6 @@ export const updateClientData = async (req, res) => {
                     
                     return response.data.result.items[0] || null; // Возвращаем ID или null
                 } catch (error) {
-                    console.log(`Невозможно найти адрес: ${item.street}`);
                     return null;
                 }
             };
@@ -401,7 +400,6 @@ export const updateClientData = async (req, res) => {
             // Получаем IDs для всех адресов
             const res2Gis = await Promise.allSettled(clientAddresses.map(fetchAddressId));
             res2Gis.forEach((result, index) => {
-                console.log("result: ", result);
                 
                 if (result.status === "fulfilled") {
                     clientAddresses[index].id2Gis = result?.value?.id
@@ -425,8 +423,6 @@ export const updateClientData = async (req, res) => {
                 orConditions.push({ mail: client.mail, franchisee: { $ne: client.franchisee } });
             }
             client.addresses.forEach((address) => {
-                console.log(address.id2Gis);
-                
                 orConditions.push({
                     addresses: {
                     $elemMatch: {
