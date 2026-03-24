@@ -4,6 +4,9 @@ import qrcode from "qrcode-terminal";
 
 const { Client, LocalAuth } = pkg;
 
+/** Версия WA Web (должна совпадать с архивом wppconnect / см. whatsapp-web.js DefaultOptions) */
+const DEFAULT_WEB_VERSION = "2.3000.1017054665";
+
 /** Папка сессии относительно корня CRM (или WWEBJS_AUTH_PATH в .env) */
 function getAuthDataPath() {
     if (process.env.WWEBJS_AUTH_PATH) {
@@ -27,23 +30,50 @@ export function startWhatsAppWebClient() {
     }
 
     clientPromise = new Promise((resolve, reject) => {
+        const puppeteerOpts = {
+            headless: true,
+            defaultViewport: null,
+            args: [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-accelerated-2d-canvas",
+                "--disable-gpu",
+                "--window-size=1920,1080",
+            ],
+        };
+        // Системный Chrome/Chromium (рекомендуется на сервере): PUPPETEER_EXECUTABLE_PATH
+        if (process.env.PUPPETEER_EXECUTABLE_PATH?.trim()) {
+            puppeteerOpts.executablePath =
+                process.env.PUPPETEER_EXECUTABLE_PATH.trim();
+        }
+
         const client = new Client({
             authStrategy: new LocalAuth({
                 dataPath: getAuthDataPath(),
                 clientId: process.env.WWEBJS_CLIENT_ID || "tibetskaya-crm",
             }),
-            puppeteer: {
-                headless: true,
-                args: [
-                    "--no-sandbox",
-                    "--disable-setuid-sandbox",
-                    "--disable-dev-shm-usage",
-                    "--disable-accelerated-2d-canvas",
-                    "--no-first-run",
-                    "--no-zygote",
-                    "--disable-gpu",
-                ],
+            // Стабильная подгрузка index.html под версию WA Web (меньше срывов inject при навигации)
+            webVersion: process.env.WWEBJS_WEB_VERSION || DEFAULT_WEB_VERSION,
+            webVersionCache: {
+                type: "remote",
+                remotePath:
+                    process.env.WWEBJS_WEB_VERSION_REMOTE_PATH ||
+                    "https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html",
             },
+            // Дольше ждём загрузку после скана QR (слабый VPS / долгий первый старт)
+            authTimeoutMs:
+                Number(process.env.WWEBJS_AUTH_TIMEOUT_MS) || 180000,
+            qrMaxRetries: Number(process.env.WWEBJS_QR_MAX_RETRIES) || 5,
+            takeoverOnConflict:
+                process.env.WWEBJS_TAKEOVER_ON_CONFLICT !== "false",
+            takeoverTimeoutMs:
+                Number(process.env.WWEBJS_TAKEOVER_TIMEOUT_MS) || 15000,
+            bypassCSP: true,
+            userAgent:
+                process.env.WWEBJS_USER_AGENT ||
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            puppeteer: puppeteerOpts,
         });
 
         client.on("qr", (qr) => {
@@ -54,6 +84,10 @@ export function startWhatsAppWebClient() {
             console.log(
                 "\nТелефон → Настройки → Связанные устройства → Привязка устройства\n"
             );
+        });
+
+        client.on("loading_screen", (percent, message) => {
+            console.log(`[WhatsApp Web] Загрузка: ${percent}% — ${message || ""}`);
         });
 
         client.on("authenticated", () => {

@@ -210,6 +210,11 @@ const ClientSchema = new mongoose.Schema(
             type: String,
             default: null
         },
+        /** Блок «Ремонт техники / Вызвать мастера» в мобильном приложении */
+        showRepairMasterInApp: {
+            type: Boolean,
+            default: false,
+        },
         savedCard: {
             cardToken: {
                 type: String,

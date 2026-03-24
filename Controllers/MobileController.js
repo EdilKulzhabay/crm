@@ -711,6 +711,7 @@ export const clientLogin = async (req, res) => {
             haveCompletedOrder: candidate._doc.haveCompletedOrder,
             savedCard: candidate._doc.savedCard,
             isStartedHydration: candidate._doc.isStartedHydration,
+            showRepairMasterInApp: candidate._doc.showRepairMasterInApp !== false,
             createdAt: candidate._doc.createdAt,
             updatedAt: candidate._doc.updatedAt,
         };
@@ -782,6 +783,7 @@ export const updateClientDataMobile = async (req, res) => {
             addresses: updatedClient._doc.addresses,
             savedCard: updatedClient._doc.savedCard,
             isStartedHydration: updatedClient._doc.isStartedHydration,
+            showRepairMasterInApp: updatedClient._doc.showRepairMasterInApp !== false,
             createdAt: updatedClient._doc.createdAt,
         }
 

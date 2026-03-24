@@ -406,6 +406,50 @@ export const paymentSuccessPage = (req, res) => {
  * GET /api/payment/error
  * Страница ошибки оплаты (fail_url в настройках мерчанта Payplus)
  */
+/**
+ * GET /api/payment/session-status?orderId=...&userId=...
+ * Для мобильного приложения: опрос статуса после оплаты (callback приходит раньше редиректа в WebView)
+ */
+export const getPaymentSessionStatus = async (req, res) => {
+    try {
+        const { orderId, userId } = req.query;
+        if (!orderId || !userId) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите orderId и userId",
+            });
+        }
+
+        const session = await PaymentSession.findOne({ orderId: String(orderId) });
+        if (!session) {
+            return res.status(404).json({
+                success: false,
+                message: "Сессия не найдена",
+            });
+        }
+
+        if (String(session.clientId) !== String(userId)) {
+            return res.status(403).json({
+                success: false,
+                message: "Нет доступа",
+            });
+        }
+
+        return res.json({
+            success: true,
+            status: session.status,
+            amount: session.amount,
+            orderId: session.orderId,
+        });
+    } catch (err) {
+        console.error("[Payplus] getPaymentSessionStatus ERROR:", err?.message);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
+    }
+};
+
 export const paymentErrorPage = (req, res) => {
     console.log("[Payplus] paymentErrorPage", req.query);
     const redirectUrl = `${FRONTEND_URL}/payment/error`;

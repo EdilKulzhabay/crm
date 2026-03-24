@@ -11,6 +11,7 @@ import {
     payplusCallback,
     getWidgetConfig,
     getWidgetPage,
+    getPaymentSessionStatus,
     paymentSuccessPage,
     paymentErrorPage,
 } from "./Controllers/PaymentController.js";
@@ -25,6 +26,7 @@ router.post("/payplus-callback", payplusCallback);
 router.get("/payplus-callback", payplusCallback);
 router.post("/widget-config", getWidgetConfig);
 router.get("/widget-page", getWidgetPage);
+router.get("/session-status", getPaymentSessionStatus);
 router.get("/success", paymentSuccessPage);
 router.get("/error", paymentErrorPage);
 

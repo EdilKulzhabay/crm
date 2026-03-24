@@ -773,6 +773,15 @@ export default function ClientPage() {
                             ]
                         </div>
                     </Li>
+                    <Li>
+                        <div>Блок «Ремонт техники» в приложении: {client?.showRepairMasterInApp !== false ? "Показывать" : "Скрыть"}</div>
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("showRepairMasterInApp", true)}}>Показывать</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("showRepairMasterInApp", false)}}>Скрыть</button>
+                            ]
+                        </div>
+                    </Li>
                 </>}
 
                 <Div />
