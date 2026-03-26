@@ -377,6 +377,10 @@ export const updateClientData = async (req, res) => {
             client[field] = value;
         }
 
+        if (field === "showRepairMasterInApp") {
+            client.showRepairMasterInApp = value
+        }
+
         if (field === "verify" && value.status === "verified") {
             const clientAddresses = client.addresses;
 
