@@ -10,6 +10,8 @@ import CourierAggregator from "../Models/CourierAggregator.js";
 import SupportContacts from "../Models/SupportContacts.js";
 import { sendMasterCallTelegram } from "../telegram/sendMasterCall.js";
 import {
+    maskEmailForLog,
+    maskPhoneForLog,
     normalizePhoneForWhatsApp,
     phonesMatch,
     sendRegistrationOtpWhatsApp,
@@ -48,6 +50,7 @@ export const sendMail = async (req, res) => {
     const { mail, phone } = req.body;
 
     if (!mail || !mail.includes("@")) {
+        console.log("[WhatsApp OTP] sendMail: отклонено — неверный email");
         return res.status(400).json({
             success: false,
             message: "Некорректный email адрес",
@@ -55,6 +58,7 @@ export const sendMail = async (req, res) => {
     }
 
     if (!phone || String(phone).trim() === "") {
+        console.log("[WhatsApp OTP] sendMail: отклонено — нет телефона");
         return res.status(400).json({
             success: false,
             message: "Укажите номер телефона для получения кода в WhatsApp",
@@ -63,8 +67,13 @@ export const sendMail = async (req, res) => {
 
     const normalizedMail = mail.toLowerCase();
     const phoneNorm = normalizePhoneForWhatsApp(phone);
+    const pm = maskPhoneForLog(phoneNorm || phone);
+    const em = maskEmailForLog(normalizedMail);
+
+    console.log(`[WhatsApp OTP] sendMail: запрос кода, phone=${pm}, mail=${em}`);
 
     if (!phoneNorm || phoneNorm.length < 11) {
+        console.warn(`[WhatsApp OTP] sendMail: отклонено — некорректный телефон, phone=${pm}`);
         return res.status(400).json({
             success: false,
             message: "Некорректный номер телефона",
@@ -79,6 +88,9 @@ export const sendMail = async (req, res) => {
         const remainingTime = Math.ceil(
             (COOLDOWN_PERIOD - (now - lastSent)) / 1000
         );
+        console.log(
+            `[WhatsApp OTP] sendMail: отклонено — cooldown ${remainingTime}s, phone=${pm}`
+        );
         return res.status(429).json({
             success: false,
             message: `Повторная отправка возможна через ${remainingTime} секунд`,
@@ -86,6 +98,9 @@ export const sendMail = async (req, res) => {
     }
 
     if (sendingInProgress.has(phoneNorm)) {
+        console.log(
+            `[WhatsApp OTP] sendMail: отклонено — отправка уже в процессе, phone=${pm}`
+        );
         return res.status(429).json({
             success: false,
             message: "Отправка уже в процессе, пожалуйста подождите",
@@ -93,11 +108,15 @@ export const sendMail = async (req, res) => {
     }
 
     sendingInProgress.add(phoneNorm);
+    console.log(`[WhatsApp OTP] sendMail: блокировка отправки взята, phone=${pm}`);
 
     try {
         const candidateMail = await Client.findOne({ mail: normalizedMail });
         if (candidateMail) {
             sendingInProgress.delete(phoneNorm);
+            console.log(
+                `[WhatsApp OTP] sendMail: отклонено — почта уже занята, phone=${pm}, mail=${em}`
+            );
             return res.status(409).json({
                 message: "Пользователь с такой почтой уже существует",
             });
@@ -116,6 +135,9 @@ export const sendMail = async (req, res) => {
         );
         if (phoneTaken) {
             sendingInProgress.delete(phoneNorm);
+            console.log(
+                `[WhatsApp OTP] sendMail: отклонено — телефон уже занят, phone=${pm}`
+            );
             return res.status(409).json({
                 message: "Пользователь с таким номером телефона уже существует",
             });
@@ -126,13 +148,21 @@ export const sendMail = async (req, res) => {
         codes[phoneNorm] = confirmCode;
         lastSentTime[phoneNorm] = now;
 
+        console.log(
+            `[WhatsApp OTP] sendMail: код сгенерирован, вызов WhatsApp, phone=${pm}`
+        );
         const wa = await sendRegistrationOtpWhatsApp(phone, confirmCode);
 
         sendingInProgress.delete(phoneNorm);
+        console.log(`[WhatsApp OTP] sendMail: блокировка снята, phone=${pm}`);
 
         if (!wa.ok) {
             delete codes[phoneNorm];
             delete lastSentTime[phoneNorm];
+            console.error(
+                `[WhatsApp OTP] sendMail: WhatsApp не доставил код, phone=${pm}, error=`,
+                wa.error
+            );
             if (wa.error === "INVALID_PHONE") {
                 return res.status(400).json({
                     success: false,
@@ -149,13 +179,20 @@ export const sendMail = async (req, res) => {
             });
         }
 
+        console.log(`[WhatsApp OTP] sendMail: успех, код ушёл в WhatsApp, phone=${pm}`);
         return res.status(200).json({
             success: true,
             message: "Код отправлен в WhatsApp",
         });
     } catch (error) {
         sendingInProgress.delete(phoneNorm);
-        console.log("Ошибка в sendMail:", error);
+        console.error(
+            `[WhatsApp OTP] sendMail: исключение, phone=${pm}:`,
+            error?.message || error
+        );
+        if (error?.stack) {
+            console.error("[WhatsApp OTP] stack:", error.stack);
+        }
         res.status(500).json({
             success: false,
             message: "Внутренняя ошибка сервера",

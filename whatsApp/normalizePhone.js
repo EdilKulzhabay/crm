@@ -1,3 +1,19 @@
+/** Маска для логов: без полного номера */
+export function maskPhoneForLog(digits) {
+    const s = digits == null ? "" : String(digits).replace(/\D/g, "");
+    if (s.length < 4) return "***";
+    return `${s.slice(0, 1)}***${s.slice(-4)}`;
+}
+
+/** Маска email для логов */
+export function maskEmailForLog(email) {
+    if (email == null || email === "") return "***";
+    const m = String(email);
+    const at = m.indexOf("@");
+    if (at < 1) return "***";
+    return `${m[0]}***${m.slice(at)}`;
+}
+
 /**
  * Нормализация номера для WhatsApp (Meta): только цифры, формат 7XXXXXXXXXX (11 цифр для KZ/RU).
  */

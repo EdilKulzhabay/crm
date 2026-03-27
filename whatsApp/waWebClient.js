@@ -2,6 +2,8 @@ import path from "path";
 import pkg from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
 
+import { maskPhoneForLog } from "./normalizePhone.js";
+
 const { Client, LocalAuth } = pkg;
 
 /** Версия WA Web (должна совпадать с архивом wppconnect / см. whatsapp-web.js DefaultOptions) */
@@ -124,25 +126,57 @@ export function startWhatsAppWebClient() {
  * Ожидание готовности с таймаутом (пока не отсканирован QR).
  */
 export async function sendWhatsAppText(phoneDigits, text) {
+    const masked = maskPhoneForLog(phoneDigits);
     const timeoutMs = Number(process.env.WHATSAPP_READY_TIMEOUT_MS) || 300000;
+    const textLen = text == null ? 0 : String(text).length;
+    console.log(
+        `[WhatsApp OTP] sendWhatsAppText: ожидание клиента, phone=${masked}, timeoutMs=${timeoutMs}, textLen=${textLen}`
+    );
 
-    const client = await Promise.race([
-        startWhatsAppWebClient(),
-        new Promise((_, reject) =>
-            setTimeout(
-                () =>
-                    reject(
-                        new Error(
-                            "Таймаут ожидания WhatsApp: отсканируйте QR в консоли сервера или проверьте WWEBJS_AUTH_PATH"
-                        )
-                    ),
-                timeoutMs
-            )
-        ),
-    ]);
+    let client;
+    try {
+        client = await Promise.race([
+            startWhatsAppWebClient(),
+            new Promise((_, reject) =>
+                setTimeout(
+                    () =>
+                        reject(
+                            new Error(
+                                "Таймаут ожидания WhatsApp: отсканируйте QR в консоли сервера или проверьте WWEBJS_AUTH_PATH"
+                            )
+                        ),
+                    timeoutMs
+                )
+            ),
+        ]);
+    } catch (err) {
+        console.error(
+            `[WhatsApp OTP] sendWhatsAppText: клиент не готов, phone=${masked}:`,
+            err?.message || err
+        );
+        throw err;
+    }
 
     const jid = `${phoneDigits}@c.us`;
-    await client.sendMessage(jid, text);
+    console.log(
+        `[WhatsApp OTP] sendWhatsAppText: клиент готов, отправка, phone=${masked}, jid=${masked}@c.us`
+    );
+
+    try {
+        await client.sendMessage(jid, text);
+        console.log(
+            `[WhatsApp OTP] sendWhatsAppText: сообщение ушло в WhatsApp, phone=${masked}`
+        );
+    } catch (err) {
+        console.error(
+            `[WhatsApp OTP] sendWhatsAppText: ошибка sendMessage, phone=${masked}:`,
+            err?.message || err
+        );
+        if (err?.stack) {
+            console.error("[WhatsApp OTP] stack:", err.stack);
+        }
+        throw err;
+    }
 }
 
 /**
