@@ -33,6 +33,34 @@ const generateCode = () => {
 
 const codes = {};
 
+/** Расстояние между двумя точками на сфере, метры (WGS84) */
+const haversineDistanceMeters = (lat1, lon1, lat2, lon2) => {
+    if (
+        lat1 == null ||
+        lon1 == null ||
+        lat2 == null ||
+        lon2 == null ||
+        Number.isNaN(lat1) ||
+        Number.isNaN(lon1) ||
+        Number.isNaN(lat2) ||
+        Number.isNaN(lon2)
+    ) {
+        return Infinity;
+    }
+    const R = 6371000;
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
 export const courierAggregatorTestLog = async (req, res) => {
     try {
         console.log("req.body = ", req.body);
@@ -706,36 +734,31 @@ export const completeOrderCourierAggregator = async (req, res) => {
 
         try {
             const sendOrder = await Order.findById(order._id)
-                .populate("client", "notificationPushToken")
+                .populate("client", "notificationPushToken notificationPushTokens")
                 .populate("courierAggregator");
             
-            if (sendOrder?.client?.notificationPushToken) {
-                const token = sendOrder.client.notificationPushToken.trim();
-                const data = {
-                    orderId: sendOrder._id,
-                }
-                
-                // Базовая валидация токена (должен быть не пустым)
-                if (token && token.length > 0) {
-                    const { pushNotificationClient } = await import("../pushNotificationClient.js");
-                    await pushNotificationClient(
-                        "Изменение статуса заказа",
-                        "Статус заказа изменен на \"Доставлено\"",
-                        [token],
-                        "delivered",
-                        data
-                    ).catch((notifError) => {
-                        console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
-                        console.error("Код ошибки:", notifError.errorInfo?.code);
-                        // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс
-                    });
-                } else {
-                    console.warn("Токен уведомления клиента пуст или невалиден");
-                }
+            const tokens = sendOrder?.notificationToken
+                ? [sendOrder.notificationToken]
+                : (sendOrder?.client?.notificationPushTokens?.length
+                    ? sendOrder.client.notificationPushTokens
+                    : (sendOrder?.client?.notificationPushToken ? [sendOrder.client.notificationPushToken] : []));
+            const validTokens = tokens.filter(t => t && t.trim().length > 0);
+
+            if (validTokens.length > 0) {
+                const data = { orderId: sendOrder._id };
+                const { pushNotificationClient } = await import("../pushNotificationClient.js");
+                await pushNotificationClient(
+                    "Изменение статуса заказа",
+                    "Статус заказа изменен на \"Доставлено\"",
+                    validTokens,
+                    "delivered",
+                    data
+                ).catch((notifError) => {
+                    console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
+                });
             }
         } catch (notifError) {
             console.error("Ошибка при отправке уведомления клиенту (не критично):", notifError.message);
-            // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс назначения заказа
         }
 
     } catch (error) {
@@ -872,36 +895,31 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         try {
             const sendOrder = await Order.findById(order._id)
-                .populate("client", "notificationPushToken")
+                .populate("client", "notificationPushToken notificationPushTokens")
                 .populate("courierAggregator");
             
-            if (sendOrder?.client?.notificationPushToken) {
-                const token = sendOrder.client.notificationPushToken.trim();
-                const data = {
-                    orderId: sendOrder._id,
-                }
-                
-                // Базовая валидация токена (должен быть не пустым)
-                if (token && token.length > 0) {
-                    const { pushNotificationClient } = await import("../pushNotificationClient.js");
-                    await pushNotificationClient(
-                        "Изменение статуса заказа",
-                        "Статус заказа изменен на \"Отменен\"",
-                        [token],
-                        "cancelled",
-                        data
-                    ).catch((notifError) => {
-                        console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
-                        console.error("Код ошибки:", notifError.errorInfo?.code);
-                        // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс
-                    });
-                } else {
-                    console.warn("Токен уведомления клиента пуст или невалиден");
-                }
+            const tokens = sendOrder?.notificationToken
+                ? [sendOrder.notificationToken]
+                : (sendOrder?.client?.notificationPushTokens?.length
+                    ? sendOrder.client.notificationPushTokens
+                    : (sendOrder?.client?.notificationPushToken ? [sendOrder.client.notificationPushToken] : []));
+            const validTokens = tokens.filter(t => t && t.trim().length > 0);
+
+            if (validTokens.length > 0) {
+                const data = { orderId: sendOrder._id };
+                const { pushNotificationClient } = await import("../pushNotificationClient.js");
+                await pushNotificationClient(
+                    "Изменение статуса заказа",
+                    "Статус заказа изменен на \"Отменен\"",
+                    validTokens,
+                    "cancelled",
+                    data
+                ).catch((notifError) => {
+                    console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
+                });
             }
         } catch (notifError) {
             console.error("Ошибка при отправке уведомления клиенту (не критично):", notifError.message);
-            // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс назначения заказа
         }
     } catch (error) {
         console.log(error);
@@ -1455,41 +1473,106 @@ export const assignOrderToCourier = async (req, res) => {
             message: "Заказ успешно назначен курьеру"
         });
 
-        // Отправка уведомления клиенту (не блокируем основной процесс при ошибках)
         try {
-            const sendOrder = await Order.findById(order._id)
-                .populate("client", "notificationPushToken")
-                .populate("courierAggregator");
-            
-            if (sendOrder?.client?.notificationPushToken && orderStatus === "onTheWay") {
-                const token = sendOrder.client.notificationPushToken.trim();
-                const data = {
-                    orderId: sendOrder._id,
-                }
+            if (orderStatus === "onTheWay") {
+                const sendOrder = await Order.findById(order._id)
+                    .populate("client", "notificationPushToken notificationPushTokens")
+                    .populate("courierAggregator");
                 
-                // Базовая валидация токена (должен быть не пустым)
-                if (token && token.length > 0) {
+                const tokens = sendOrder?.notificationToken
+                    ? [sendOrder.notificationToken]
+                    : (sendOrder?.client?.notificationPushTokens?.length
+                        ? sendOrder.client.notificationPushTokens
+                        : (sendOrder?.client?.notificationPushToken ? [sendOrder.client.notificationPushToken] : []));
+                const validTokens = tokens.filter(t => t && t.trim().length > 0);
+
+                if (validTokens.length > 0) {
+                    const data = { orderId: sendOrder._id };
                     const { pushNotificationClient } = await import("../pushNotificationClient.js");
                     await pushNotificationClient(
                         "Изменение статуса заказа",
                         "Статус заказа изменен на \"В пути\"",
-                        [token],
+                        validTokens,
                         "onTheWay",
                         data
                     ).catch((notifError) => {
                         console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
-                        console.error("Код ошибки:", notifError.errorInfo?.code);
-                        // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс
                     });
-                } else {
-                    console.warn("Токен уведомления клиента пуст или невалиден");
                 }
             }
         } catch (notifError) {
             console.error("Ошибка при отправке уведомления клиенту (не критично):", notifError.message);
-            // Не пробрасываем ошибку дальше, чтобы не прерывать основной процесс назначения заказа
         }
 
+
+        try {
+            const orderLat = order.address?.point?.lat;
+            const orderLon = order.address?.point?.lon;
+            const clientId = order.client?._id;
+
+            if (
+                orderStatus === "onTheWay" &&
+                clientId != null &&
+                typeof orderLat === "number" &&
+                typeof orderLon === "number"
+            ) {
+                const radiusM = 200;
+                const candidates = await Client.find({
+                    _id: { $ne: clientId },
+                    $expr: {
+                        $gt: [{ $size: { $ifNull: ["$notificationPushTokens", []] } }, 0],
+                    },
+                    addresses: {
+                        $elemMatch: {
+                            "point.lat": { $exists: true, $type: "number" },
+                            "point.lon": { $exists: true, $type: "number" },
+                        },
+                    },
+                }).select("notificationPushTokens addresses.point");
+
+                const tokenSet = new Set();
+                for (const c of candidates) {
+                    const addrs = c.addresses || [];
+                    const near = addrs.some((addr) => {
+                        const p = addr.point;
+                        if (!p) return false;
+                        return (
+                            haversineDistanceMeters(orderLat, orderLon, p.lat, p.lon) <=
+                            radiusM
+                        );
+                    });
+                    if (!near) continue;
+                    for (const t of c.notificationPushTokens || []) {
+                        const s = typeof t === "string" ? t.trim() : "";
+                        if (s) tokenSet.add(s);
+                    }
+                }
+
+                const nearbyTokens = [...tokenSet];
+                if (nearbyTokens.length > 0) {
+                    const { pushNotificationClient } = await import(
+                        "../pushNotificationClient.js"
+                    );
+                    await pushNotificationClient(
+                        "Курьер рядом",
+                        "Курьер рядом — успейте заказать, чтобы получить воду быстрее",
+                        nearbyTokens,
+                        "courierNearby",
+                        { orderId: String(order._id) }
+                    ).catch((e) =>
+                        console.error(
+                            "Ошибка уведомления соседям о курьере (не критично):",
+                            e?.message
+                        )
+                    );
+                }
+            }
+        } catch (error) {
+            console.error(
+                "Ошибка поиска соседей / рассылки о курьере (не критично):",
+                error?.message
+            );
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({

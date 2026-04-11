@@ -934,6 +934,7 @@ export const saveFcmToken = async (req, res) => {
         }
         await Client.findByIdAndUpdate(client._id, {
             notificationPushToken: fcmToken,
+            $addToSet: { notificationPushTokens: fcmToken },
         });
         res.json({
             success: true,
@@ -944,6 +945,33 @@ export const saveFcmToken = async (req, res) => {
         res.status(500).json({
             message: "Что-то пошло не так",
         });
+    }
+}
+
+export const removeFcmToken = async (req, res) => {
+    try {
+        const { mail, fcmToken } = req.body;
+        if (!mail || !fcmToken) {
+            return res.status(400).json({ message: "mail и fcmToken обязательны" });
+        }
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        if (!client) {
+            return res.status(404).json({ message: "Клиент не найден" });
+        }
+        await Client.findByIdAndUpdate(client._id, {
+            $pull: { notificationPushTokens: fcmToken },
+        });
+        if (client.notificationPushToken === fcmToken) {
+            const updated = await Client.findById(client._id);
+            const last = updated.notificationPushTokens?.length
+                ? updated.notificationPushTokens[updated.notificationPushTokens.length - 1]
+                : "";
+            await Client.findByIdAndUpdate(client._id, { notificationPushToken: last });
+        }
+        res.json({ success: true, message: "FCM токен успешно удален" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Что-то пошло не так" });
     }
 }
 
@@ -1048,7 +1076,7 @@ export const getClientAddresses = async (req, res) => {
 
 export const addOrderClientMobile = async (req, res) => {
     try {
-        const {mail, address, products, clientNotes, date, opForm, needCall, comment} = req.body
+        const {mail, address, products, clientNotes, date, opForm, needCall, comment, notificationToken} = req.body
 
         console.log("addOrderClientMobile req.body: ", req.body);
 
@@ -1063,9 +1091,6 @@ export const addOrderClientMobile = async (req, res) => {
 
         if (client.clientType === false && address?.actual) {
             address.actual = address.actual.replace(/квартира/gi, 'офис');
-            const actualAddress = client.addresses.find(
-                addr => addr.name === address.name);
-            address.phone = actualAddress.phone
         }
 
         const franchisee = await User.findOne({role: "superAdmin"})
@@ -1118,7 +1143,8 @@ export const addOrderClientMobile = async (req, res) => {
             comment,
             paymentMethod: paymentMethod,
             wereCreated: "app",
-            clientPhone: clientPhone
+            clientPhone: clientPhone,
+            notificationToken: notificationToken || "",
         });
 
         await order.save();
@@ -1392,14 +1418,15 @@ export const replyToSupportMessage = async (req, res) => {
             message: "Сообщение успешно отправлено",
         });
 
-        const notificationTokens = client.notificationPushToken;
-        const messageTitle = "Ответ на ваше сообщение"
-        const messageBody = message.text
-        const newStatus = "newSupportMessage"
-        const sendMessage = message
+        const tokens = client.notificationPushTokens?.length
+            ? client.notificationPushTokens
+            : (client.notificationPushToken ? [client.notificationPushToken] : []);
+        const validTokens = tokens.filter(t => t && t.trim().length > 0);
         
-        const { pushNotificationClientSupport } = await import("../pushNotificationClient.js");
-        await pushNotificationClientSupport(messageTitle, messageBody, [notificationTokens], newStatus, sendMessage);
+        if (validTokens.length > 0) {
+            const { pushNotificationClientSupport } = await import("../pushNotificationClient.js");
+            await pushNotificationClientSupport("Ответ на ваше сообщение", message.text, validTokens, "newSupportMessage", message);
+        }
 
     } catch (error) {
         console.log(error);

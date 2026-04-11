@@ -532,8 +532,11 @@ export const sendNotification = async (req, res) => {
 export const getClientsWithPushToken = async (req, res) => {
     try {
         const clients = await Client.find({
-            notificationPushToken: { $exists: true, $ne: "" }
-        }, { _id: 1, fullName: 1, userName: 1, phone: 1, notificationPushToken: 1 });
+            $or: [
+                { notificationPushToken: { $exists: true, $ne: "" } },
+                { notificationPushTokens: { $exists: true, $not: { $size: 0 } } }
+            ]
+        }, { _id: 1, fullName: 1, userName: 1, phone: 1, notificationPushToken: 1, notificationPushTokens: 1 });
 
         res.json({
             success: true,

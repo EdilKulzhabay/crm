@@ -136,6 +136,10 @@ const OrderSchema = new mongoose.Schema(
             type: String,
             default: "crm",
             enum: ["crm", "app"]
+        },
+        notificationToken: {
+            type: String,
+            default: "",
         }
     },
     {

@@ -299,6 +299,7 @@ app.post("/getActiveOrdersMobile", MobileController.getActiveOrdersMobile);
 app.post("/getClientOrdersMobile", MobileController.getClientOrdersMobile);
 app.post("/getCourierLocation", MobileController.getCourierLocation)
 app.post("/saveFcmToken", MobileController.saveFcmToken)
+app.post("/removeFcmToken", MobileController.removeFcmToken)
 app.post("/getOrderDataMobile", MobileController.getOrderDataMobile)
 app.post("/cancelOrderMobile", MobileController.cancelOrderMobile)
 app.post("/updateOrderDataMobile", MobileController.updateOrderDataMobile)
