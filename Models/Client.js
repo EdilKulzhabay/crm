@@ -232,7 +232,35 @@ const ClientSchema = new mongoose.Schema(
                 type: String,   // последние 4 цифры карты, например "1111"
                 default: null
             }
-        }
+        },
+        /** Уникальный код вида XXXX-XXXX-XXXX для приглашения друзей */
+        referralCode: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
+        referredBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Client",
+            default: null,
+        },
+        /**
+         * У ПРИГЛАШЁННОГО клиента: пригласившему уже начислили бонус за первую доставку этого человека.
+         * Каждый приглашённый друг — отдельный документ Client со своим полем → число друзей не ограничено.
+         */
+        firstOrderReferrerBonusPaid: {
+            type: Boolean,
+            default: false,
+        },
+        /** @deprecated прежнее имя; читается в referralRewards.js, затем снимается через $unset */
+        referralReferrerBonusPaid: {
+            type: Boolean,
+        },
+        /** Счётчик успешно оформленных заказов через приложение (для показа реф. модалки каждые 3) */
+        appOrdersPlacedCount: {
+            type: Number,
+            default: 0,
+        },
     },
     {
         timestamps: true,

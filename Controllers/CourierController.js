@@ -518,6 +518,15 @@ export const updateCourierOrderStatus = async (req, res) => {
 
         await order.save()
 
+        if (newStatus === "delivered") {
+            try {
+                const { applyReferrerBonusOnFirstDeliveredOrder } = await import("../utils/referralRewards.js");
+                await applyReferrerBonusOnFirstDeliveredOrder(order.client);
+            } catch (refErr) {
+                console.error("Реферальный бонус (не критично):", refErr);
+            }
+        }
+
         const clientId2 = order.client
 
         const client = await Client.findById(clientId2)

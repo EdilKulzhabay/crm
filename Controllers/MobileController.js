@@ -16,8 +16,22 @@ import {
     phonesMatch,
     sendRegistrationOtpWhatsApp,
 } from "../whatsApp/sendRegistrationOtp.js";
+import {
+    generateUniqueReferralCode,
+    normalizeReferralCodeInput,
+} from "../utils/referralCode.js";
 
 let expo = new Expo({ useFcmV1: true });
+
+async function ensureReferralCodeForClient(client) {
+    if (client.referralCode) {
+        return client;
+    }
+    const code = await generateUniqueReferralCode();
+    client.referralCode = code;
+    await client.save();
+    return client;
+}
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -594,7 +608,7 @@ export const createTestAccount = async (req, res) => {
 
 export const clientRegister = async (req, res) => {
     try {
-        const { userName, phone, mail } = req.body;
+        const { userName, phone, mail, referralCode: referralCodeRaw } = req.body;
         const superAdmin = await User.findOne({ role: "superAdmin" });
         const candidate = await Client.findOne({ phone });
 
@@ -605,8 +619,36 @@ export const clientRegister = async (req, res) => {
         //     });
         // }
 
+        let referredById = null;
+        let signupBalance = 0;
+        if (referralCodeRaw && String(referralCodeRaw).trim()) {
+            const normalized = normalizeReferralCodeInput(referralCodeRaw);
+            if (!normalized) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Неверный формат реферального кода (нужно 12 латинских букв)",
+                });
+            }
+            const referrer = await Client.findOne({ referralCode: normalized });
+            if (!referrer) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Реферальный код не найден",
+                });
+            }
+            if (referrer.phone && phone && referrer.phone === phone) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Нельзя указать свой номер как реферальный код",
+                });
+            }
+            referredById = referrer._id;
+            signupBalance = 1000;
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(req.body.password, salt);
+        const myReferralCode = await generateUniqueReferralCode();
 
         const doc = new Client({
             fullName: "Новый клиент",
@@ -623,7 +665,10 @@ export const clientRegister = async (req, res) => {
             price19: 1300,
             dailyWater: 2,
             opForm: "fakt",
-            type: true
+            type: true,
+            referralCode: myReferralCode,
+            referredBy: referredById || undefined,
+            balance: signupBalance,
         });
 
         const client = await doc.save();
@@ -649,6 +694,7 @@ export const clientRegister = async (req, res) => {
         });
 
         const clientData = {
+            _id: client._id,
             fullName: client._doc.fullName,
             userName: client._doc.userName,
             phone: client._doc.phone,
@@ -659,6 +705,9 @@ export const clientRegister = async (req, res) => {
             status: client._doc.status,
             cart: client._doc.cart,
             bonus: client._doc.bonus,
+            balance: client._doc.balance,
+            referralCode: client._doc.referralCode,
+            appOrdersPlacedCount: client._doc.appOrdersPlacedCount || 0,
             subscription: client._doc.subscription,
             chooseTime: client._doc.chooseTime,
             clientType: client._doc.clientType,
@@ -669,7 +718,7 @@ export const clientRegister = async (req, res) => {
             haveCompletedOrder: client._doc.haveCompletedOrder,
             createdAt: client._doc.createdAt,
             updatedAt: client._doc.updatedAt,
-        }
+        };
 
         res.json({ success: true, accessToken, refreshToken: refreshToken, clientData });
     } catch (error) {
@@ -717,40 +766,45 @@ export const clientLogin = async (req, res) => {
             });
         }
 
+        await ensureReferralCodeForClient(candidate);
+        const c = await Client.findById(candidate._id);
 
         const clientData = {
-            fullName: candidate._doc.fullName,
-            userName: candidate._doc.userName,
-            phone: candidate._doc.phone,
-            mail: candidate._doc.mail,
-            password: candidate._doc.password,
-            franchisee: candidate._doc.franchisee,
-            addresses: candidate._doc.addresses,
-            status: candidate._doc.status,
-            cart: candidate._doc.cart,
-            bonus: candidate._doc.bonus,
-            balance: candidate._doc.balance,
-            price12: candidate._doc.price12,
-            price19: candidate._doc.price19,
-            paymentMethod: candidate._doc.paymentMethod,
-            paidBootlesFor19: candidate._doc.paidBootlesFor19,
-            paidBootlesFor12: candidate._doc.paidBootlesFor12,
-            doesItTake19Bottles: candidate._doc.doesItTake19Bottles,
-            doesItTake12Bottles: candidate._doc.doesItTake12Bottles,
-            subscription: candidate._doc.subscription,
-            chooseTime: candidate._doc.chooseTime,
-            expoPushToken: candidate._doc.expoPushToken,
-            clientType: candidate._doc.clientType,
-            clientBottleType: candidate._doc.clientBottleType,
-            clientBottleCount: candidate._doc.clientBottleCount,
-            clientBottleCredit: candidate._doc.clientBottleCredit,
-            verify: candidate._doc.verify,
-            haveCompletedOrder: candidate._doc.haveCompletedOrder,
-            savedCard: candidate._doc.savedCard,
-            isStartedHydration: candidate._doc.isStartedHydration,
-            showRepairMasterInApp: candidate._doc.showRepairMasterInApp !== false,
-            createdAt: candidate._doc.createdAt,
-            updatedAt: candidate._doc.updatedAt,
+            _id: c._id,
+            fullName: c.fullName,
+            userName: c.userName,
+            phone: c.phone,
+            mail: c.mail,
+            password: c.password,
+            franchisee: c.franchisee,
+            addresses: c.addresses,
+            status: c.status,
+            cart: c.cart,
+            bonus: c.bonus,
+            balance: c.balance,
+            referralCode: c.referralCode,
+            appOrdersPlacedCount: c.appOrdersPlacedCount || 0,
+            price12: c.price12,
+            price19: c.price19,
+            paymentMethod: c.paymentMethod,
+            paidBootlesFor19: c.paidBootlesFor19,
+            paidBootlesFor12: c.paidBootlesFor12,
+            doesItTake19Bottles: c.doesItTake19Bottles,
+            doesItTake12Bottles: c.doesItTake12Bottles,
+            subscription: c.subscription,
+            chooseTime: c.chooseTime,
+            expoPushToken: c.expoPushToken,
+            clientType: c.clientType,
+            clientBottleType: c.clientBottleType,
+            clientBottleCount: c.clientBottleCount,
+            clientBottleCredit: c.clientBottleCredit,
+            verify: c.verify,
+            haveCompletedOrder: c.haveCompletedOrder,
+            savedCard: c.savedCard,
+            isStartedHydration: c.isStartedHydration,
+            showRepairMasterInApp: c.showRepairMasterInApp !== false,
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
         };
 
         const accessToken = jwt.sign(
@@ -808,6 +862,8 @@ export const updateClientDataMobile = async (req, res) => {
             phone: updatedClient._doc.phone,
             notificationPushToken: updatedClient._doc.notificationPushToken,
             balance: updatedClient._doc.balance,
+            referralCode: updatedClient._doc.referralCode,
+            appOrdersPlacedCount: updatedClient._doc.appOrdersPlacedCount || 0,
             price12: updatedClient._doc.price12,
             price19: updatedClient._doc.price19,
             paymentMethod: updatedClient._doc.paymentMethod,
@@ -1080,13 +1136,13 @@ export const addOrderClientMobile = async (req, res) => {
 
         console.log("addOrderClientMobile req.body: ", req.body);
 
-        const client = await Client.findOne({mail})
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
 
         if (!client) {
-            return res.json(404).json({
+            return res.status(404).json({
                 success: false,
-                message: "Не удалось найти клиента"
-            })
+                message: "Не удалось найти клиента",
+            });
         }
 
         if (client.clientType === false && address?.actual) {
@@ -1179,12 +1235,16 @@ export const addOrderClientMobile = async (req, res) => {
                 client.paidBootlesFor19 = client.paidBootlesFor19 - Number(products.b19)
             }
         }
-        await client.save()
+        client.appOrdersPlacedCount = (client.appOrdersPlacedCount || 0) + 1;
+        const placedCount = client.appOrdersPlacedCount;
+        await client.save();
 
         res.json({
             success: true,
-            message: "Заказ успешно создан"
-        })
+            message: "Заказ успешно создан",
+            showReferralModal: placedCount > 0 && placedCount % 3 === 0,
+            appOrdersPlacedCount: placedCount,
+        });
 
         if (!address.lat && !address.lon) {
             const normalizedMail = process.env.SENDINFOTOEMAIL;
@@ -1290,7 +1350,11 @@ export const getCourierLocation = async (req, res) => {
 export const getClientDataMobile = async (req, res) => {
     try {
         const { mail } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        let client = await Client.findOne({ mail: mail?.toLowerCase() });
+        if (client) {
+            await ensureReferralCodeForClient(client);
+            client = await Client.findOne({ mail: mail?.toLowerCase() });
+        }
         res.json({ client });
     } catch (error) {
         console.log(error);

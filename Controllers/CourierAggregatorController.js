@@ -761,6 +761,13 @@ export const completeOrderCourierAggregator = async (req, res) => {
             console.error("Ошибка при отправке уведомления клиенту (не критично):", notifError.message);
         }
 
+        try {
+            const { applyReferrerBonusOnFirstDeliveredOrder } = await import("../utils/referralRewards.js");
+            await applyReferrerBonusOnFirstDeliveredOrder(order.client?._id || order.client);
+        } catch (refErr) {
+            console.error("Реферальный бонус (не критично):", refErr);
+        }
+
     } catch (error) {
         console.log(error);
         res.status(500).json({
