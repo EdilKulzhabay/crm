@@ -361,7 +361,7 @@ app.get("/getFaq", FaqController.getFaq);
 app.post("/updateFaq", FaqController.updateFaq);
 app.post("/deleteFaq", FaqController.deleteFaq);
 
-///////PAYMENT (Payplus.kz)
+///////PAYMENT (Pay Plus → API ventrapay.net)
 app.use("/api/payment", paymentRoutes);
 
 // app.get("/testOrTools", async (req, res) => {

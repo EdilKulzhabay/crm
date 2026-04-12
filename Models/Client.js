@@ -170,6 +170,11 @@ const ClientSchema = new mongoose.Schema(
             type: [String],
             default: [],
         },
+        /** Последняя отправка push «Курьер рядом»; не чаще одного раза за календарный день (см. getDateAlmaty) */
+        lastCourierNearbyPushAt: {
+            type: Date,
+            default: null,
+        },
         isStartedHydration: {
             type: Boolean,
             default: false

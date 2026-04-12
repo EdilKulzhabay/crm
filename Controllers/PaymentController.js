@@ -1,6 +1,6 @@
 /**
- * Payplus.kz — контроллер платежей
- * Документация: https://payplus.kz/docs/en/
+ * Pay Plus (Payplus) — контроллер платежей
+ * Документация: https://payplus.kz/docs/en/ | API: PAYPLUS_BASE_URL (по умолчанию https://ventrapay.net)
  *
  * Endpoints:
  * - POST /api/payment/create — создание платежа, возврат URL формы Payplus
@@ -14,7 +14,8 @@ import Client from "../Models/Client.js";
 import PaymentSession from "../PaymentSession.js";
 import { buildPaymentFormSign, verifyCallbackSign } from "../utils/payplusUtils.js";
 
-const PAYPLUS_BASE_URL = process.env.PAYPLUS_BASE_URL || "https://payplus.kz";
+const PAYPLUS_BASE_URL =
+    process.env.PAYPLUS_BASE_URL || "https://ventrapay.net";
 const PAYPLUS_MERCHANT = process.env.PAYPLUS_MERCHANT || "";
 const PAYPLUS_SECRET = process.env.PAYPLUS_SECRET || "";
 const API_BASE_URL = process.env.API_BASE_URL || "https://api.tibetskayacrm.kz";

@@ -1,6 +1,6 @@
 /**
- * Payplus.kz — утилиты для подписи и верификации
- * Документация: https://payplus.kz/docs/en/
+ * Pay Plus (Payplus) — утилиты для подписи и верификации
+ * API по умолчанию: https://ventrapay.net | Документация: https://payplus.kz/docs/en/
  *
  * Подпись: sort(params) + secretKey, concat через ":", MD5, Base64
  */

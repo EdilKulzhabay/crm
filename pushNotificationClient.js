@@ -59,7 +59,7 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
         if (lastSent && (now - lastSent) < NOTIFICATION_DEDUP_WINDOW) {
             const remainingTime = Math.ceil((NOTIFICATION_DEDUP_WINDOW - (now - lastSent)) / 1000);
             console.log(`⚠️  ДУБЛИКАТ: пропускаем (${remainingTime} сек назад)`);
-            return;
+            return { successCount: 0, errorCount: 0 };
         }
 
         console.log(`Отправка уведомления "${messageTitle}" на ${validTokens.length} устройств`);
@@ -148,6 +148,7 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
             console.log(`❌ Не удалось отправить уведомление ни на одно устройство`);
         }
 
+        return { successCount, errorCount };
     } catch (error) {
         console.error("Критическая ошибка при отправке уведомлений:", error);
         throw error;

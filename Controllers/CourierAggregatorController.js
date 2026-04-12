@@ -1535,10 +1535,21 @@ export const assignOrderToCourier = async (req, res) => {
                             "point.lon": { $exists: true, $type: "number" },
                         },
                     },
-                }).select("notificationPushTokens addresses.point");
+                }).select(
+                    "notificationPushTokens addresses.point lastCourierNearbyPushAt"
+                );
 
                 const tokenSet = new Set();
+                const recipientClientIds = [];
+                const todayAlmaty = getDateAlmaty();
+
                 for (const c of candidates) {
+                    if (
+                        c.lastCourierNearbyPushAt &&
+                        getDateAlmaty(c.lastCourierNearbyPushAt) === todayAlmaty
+                    ) {
+                        continue;
+                    }
                     const addrs = c.addresses || [];
                     const near = addrs.some((addr) => {
                         const p = addr.point;
@@ -1549,6 +1560,7 @@ export const assignOrderToCourier = async (req, res) => {
                         );
                     });
                     if (!near) continue;
+                    recipientClientIds.push(c._id);
                     for (const t of c.notificationPushTokens || []) {
                         const s = typeof t === "string" ? t.trim() : "";
                         if (s) tokenSet.add(s);
@@ -1560,18 +1572,35 @@ export const assignOrderToCourier = async (req, res) => {
                     const { pushNotificationClient } = await import(
                         "../pushNotificationClient.js"
                     );
-                    await pushNotificationClient(
-                        "Курьер рядом",
-                        "Курьер рядом — успейте заказать, чтобы получить воду быстрее",
-                        nearbyTokens,
-                        "courierNearby",
-                        { orderId: String(order._id) }
-                    ).catch((e) =>
+                    try {
+                        const pushResult = await pushNotificationClient(
+                            "Курьер рядом",
+                            "Курьер рядом — успейте заказать, чтобы получить воду быстрее",
+                            nearbyTokens,
+                            "courierNearby",
+                            { orderId: String(order._id) }
+                        );
+                        if (
+                            pushResult?.successCount > 0 &&
+                            recipientClientIds.length > 0
+                        ) {
+                            const sentAt = new Date();
+                            await Client.updateMany(
+                                { _id: { $in: recipientClientIds } },
+                                { $set: { lastCourierNearbyPushAt: sentAt } }
+                            ).catch((updErr) =>
+                                console.error(
+                                    "Ошибка сохранения lastCourierNearbyPushAt (не критично):",
+                                    updErr?.message
+                                )
+                            );
+                        }
+                    } catch (e) {
                         console.error(
                             "Ошибка уведомления соседям о курьере (не критично):",
                             e?.message
-                        )
-                    );
+                        );
+                    }
                 }
             }
         } catch (error) {
