@@ -1330,7 +1330,8 @@ export const getAllOrderForToday = async (req, res) => {
             franchisee: { 
                 $nin: [
                     new mongoose.Types.ObjectId('67010493e6648af4cb0213b7'),
-                    new mongoose.Types.ObjectId('66fc0cc6953c2dbbc86c2132')
+                    new mongoose.Types.ObjectId('66fc0cc6953c2dbbc86c2132'),
+                    new mongoose.Types.ObjectId('66fc0d01953c2dbbc86c2135')
                 ]
             }
         }).populate("client").populate("courierAggregator", "fullName _id")
