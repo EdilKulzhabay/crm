@@ -10,9 +10,13 @@
  */
 
 import "dotenv/config";
+import mongoose from "mongoose";
 import Client from "../Models/Client.js";
+import ClientPayment from "../Models/ClientPayment.js";
 import PaymentSession from "../PaymentSession.js";
+import User from "../Models/User.js";
 import { buildPaymentFormSign, verifyCallbackSign } from "../utils/payplusUtils.js";
+import { extractPayplusCardLast4 } from "../utils/extractPayplusCardLast4.js";
 
 const PAYPLUS_BASE_URL =
     process.env.PAYPLUS_BASE_URL || "https://ventrapay.net";
@@ -25,6 +29,30 @@ const PAYPLUS_CURRENCY = "KZT";
 
 function generateOrderId() {
     return `PP${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/** Запись в журнал оплат (не влияет на успех callback) */
+async function persistClientPayment({ session, data, status }) {
+    const amountRaw = parseFloat(data.co_amount || 0);
+    const amount =
+        Number.isFinite(amountRaw) && amountRaw > 0 ? amountRaw : session.amount;
+    const cardLast4 = extractPayplusCardLast4(data);
+    try {
+        await ClientPayment.create({
+            client: session.clientId,
+            paidAt: new Date(),
+            amount,
+            currency: session.currency || "KZT",
+            status,
+            cardLast4: cardLast4 && cardLast4.length === 4 ? cardLast4 : null,
+            sessionOrderId: session.orderId,
+            providerInvoiceId: data.co_inv_id != null ? String(data.co_inv_id) : null,
+            rawProviderStatus:
+                data.co_inv_st != null ? String(data.co_inv_st) : null,
+        });
+    } catch (e) {
+        console.error("[Payplus] persistClientPayment (не критично):", e?.message);
+    }
 }
 
 /**
@@ -178,10 +206,12 @@ export const payplusCallback = async (req, res) => {
             } else {
                 console.error("[Payplus] payplusCallback CLIENT NOT FOUND:", session.clientId);
             }
+            await persistClientPayment({ session, data, status: "success" });
         } else {
             session.status = "fail";
             await session.save();
             console.log("[Payplus] payplusCallback FAIL:", { orderId: orderNo, status: data.co_inv_st });
+            await persistClientPayment({ session, data, status: "fail" });
         }
 
         return res.send("OK");
@@ -479,4 +509,109 @@ export const paymentErrorPage = (req, res) => {
 </html>`;
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(html);
+};
+
+/**
+ * POST /getClientPaymentsForSuperAdmin
+ * Body: { startDate?, endDate?, searchClient?, paymentStatus? } — paymentStatus: success | fail (опционально)
+ */
+export const getClientPaymentsForSuperAdmin = async (req, res) => {
+    try {
+        const admin = await User.findById(req.userId);
+        if (!admin || admin.role !== "superAdmin") {
+            return res.status(403).json({
+                success: false,
+                message: "Нет доступа",
+            });
+        }
+
+        const { startDate, endDate, searchClient, paymentStatus } = req.body || {};
+        const filter = {};
+
+        if (startDate && endDate && String(startDate).length === 10 && String(endDate).length === 10) {
+            const start = new Date(`${startDate}T00:00:00.000`);
+            const end = new Date(`${endDate}T23:59:59.999`);
+            filter.paidAt = { $gte: start, $lte: end };
+        }
+
+        if (paymentStatus === "success" || paymentStatus === "fail") {
+            filter.status = paymentStatus;
+        }
+
+        const q = searchClient != null ? String(searchClient).trim() : "";
+        if (q) {
+            const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const regex = new RegExp(escaped, "i");
+            const or = [
+                { mail: regex },
+                { phone: regex },
+                { fullName: regex },
+                { userName: regex },
+            ];
+            if (mongoose.Types.ObjectId.isValid(q)) {
+                or.push({ _id: new mongoose.Types.ObjectId(q) });
+            }
+            const clients = await Client.find({ $or: or }).select("_id").lean();
+            const ids = clients.map((c) => c._id);
+            if (ids.length === 0) {
+                return res.json({
+                    success: true,
+                    summary: {
+                        totalCount: 0,
+                        successCount: 0,
+                        failCount: 0,
+                        totalAmountSuccess: 0,
+                    },
+                    payments: [],
+                });
+            }
+            filter.client = { $in: ids };
+        }
+
+        const matchStage = { ...filter };
+        const agg = await ClientPayment.aggregate([
+            { $match: matchStage },
+            {
+                $group: {
+                    _id: null,
+                    totalCount: { $sum: 1 },
+                    successCount: {
+                        $sum: { $cond: [{ $eq: ["$status", "success"] }, 1, 0] },
+                    },
+                    failCount: {
+                        $sum: { $cond: [{ $eq: ["$status", "fail"] }, 1, 0] },
+                    },
+                    totalAmountSuccess: {
+                        $sum: {
+                            $cond: [{ $eq: ["$status", "success"] }, "$amount", 0],
+                        },
+                    },
+                },
+            },
+        ]);
+        const summary = agg[0] || {
+            totalCount: 0,
+            successCount: 0,
+            failCount: 0,
+            totalAmountSuccess: 0,
+        };
+
+        const payments = await ClientPayment.find(filter)
+            .sort({ paidAt: -1 })
+            .populate("client", "fullName mail phone userName")
+            .limit(500)
+            .lean();
+
+        return res.json({
+            success: true,
+            summary,
+            payments,
+        });
+    } catch (err) {
+        console.error("[Payplus] getClientPaymentsForSuperAdmin:", err?.message);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
+    }
 };

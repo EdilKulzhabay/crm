@@ -11,7 +11,8 @@
         "dev": "concurrently \"npm run server\" \"npm run client\"",
         "test-vrp": "node test_vrp_api.js",
         "vrp-api": "node vrp_api.js",
-        "setup-python": "./setup-python.sh"
+        "setup-python": "./setup-python.sh",
+        "recompute-address-order-stats": "node migrations/recompute_client_address_order_stats.js"
     },
     "keywords": [],
     "author": "",

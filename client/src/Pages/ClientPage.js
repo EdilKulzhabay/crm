@@ -399,6 +399,7 @@ export default function ClientPage() {
                     return {
                         "Имя Клиента": item?.client?.fullName,
                         "Имя Пользователя": item?.client?.userName,
+                        "Телефон": item?.client?.phone,
                         Адрес: item?.address?.actual,
                         "Кол18,9": item?.products?.b19 && item?.products?.b19 !== 0 ? item?.products?.b19 : "",
                         "Кол12,5": item?.products?.b12 && item?.products?.b12 !== 0 ? item?.products?.b12 : "",

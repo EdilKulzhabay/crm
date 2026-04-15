@@ -1,5 +1,6 @@
 import admin from "firebase-admin"
 import fs from 'fs';
+import { persistClientNotificationLogs } from "./utils/pushNotificationLogUtils.js";
 
 // Чтение JSON-файла
 const serviceAccount = JSON.parse(fs.readFileSync('./FireBase/tibetskayaclientapp-88b45-firebase-adminsdk-fbsvc-b11b56d42a.json', 'utf8'));
@@ -42,7 +43,18 @@ function createNotificationKey(messageTitle, messageBody, notificationTokens, ne
     return `${messageTitle}_${messageBody}_${tokensHash}_${newStatus}_${orderId}`;
 }
 
-export const pushNotificationClient = async (messageTitle, messageBody, notificationTokens, newStatus, data) => {
+/**
+ * @param {object} [options]
+ * @param {import("mongoose").Types.ObjectId|string} [options.clientId] — если не указан, клиенты ищутся по токенам
+ */
+export const pushNotificationClient = async (
+    messageTitle,
+    messageBody,
+    notificationTokens,
+    newStatus,
+    data,
+    options = {}
+) => {
     try {
         // Фильтрация невалидных токенов
         const validTokens = notificationTokens.filter(token => token && typeof token === 'string');
@@ -148,6 +160,17 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
             console.log(`❌ Не удалось отправить уведомление ни на одно устройство`);
         }
 
+        await persistClientNotificationLogs({
+            clientId: options?.clientId,
+            validTokens,
+            title: messageTitle,
+            messageBody,
+            newStatus,
+            data,
+            successCount,
+            errorCount,
+        });
+
         return { successCount, errorCount };
     } catch (error) {
         console.error("Критическая ошибка при отправке уведомлений:", error);
@@ -155,7 +178,18 @@ export const pushNotificationClient = async (messageTitle, messageBody, notifica
     }
 }
 
-export const pushNotificationClientSupport = async (messageTitle, messageBody, notificationTokens, newStatus, newMessage) => {
+/**
+ * @param {object} [options]
+ * @param {import("mongoose").Types.ObjectId|string} [options.clientId]
+ */
+export const pushNotificationClientSupport = async (
+    messageTitle,
+    messageBody,
+    notificationTokens,
+    newStatus,
+    newMessage,
+    options = {}
+) => {
     try {
         // Валидация входных данных
         // validateNotificationData(messageTitle, messageBody, notificationTokens, newStatus, order);
@@ -181,7 +215,7 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
         if (lastSent && (now - lastSent) < NOTIFICATION_DEDUP_WINDOW) {
             const remainingTime = Math.ceil((NOTIFICATION_DEDUP_WINDOW - (now - lastSent)) / 1000);
             console.log(`⚠️  ДУБЛИКАТ: пропускаем (${remainingTime} сек назад)`);
-            return;
+            return { successCount: 0, errorCount: 0 };
         }
 
         console.log(`Отправка уведомления "${messageTitle}" на ${validTokens.length} устройств`);
@@ -274,6 +308,18 @@ export const pushNotificationClientSupport = async (messageTitle, messageBody, n
             console.log(`❌ Не удалось отправить уведомление ни на одно устройство`);
         }
 
+        await persistClientNotificationLogs({
+            clientId: options?.clientId,
+            validTokens,
+            title: messageTitle,
+            messageBody,
+            newStatus,
+            data: newMessage,
+            successCount,
+            errorCount,
+        });
+
+        return { successCount, errorCount };
     } catch (error) {
         console.error("Критическая ошибка при отправке уведомлений:", error);
         throw error;

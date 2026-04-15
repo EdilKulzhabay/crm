@@ -1030,7 +1030,9 @@ export const testNotification = async (req, res) => {
         const sendOrder = order
         
         const { pushNotificationClient } = await import("../pushNotificationClient.js");
-        await pushNotificationClient(messageTitle, messageBody, [notificationTokens], newStatus, order);
+        await pushNotificationClient(messageTitle, messageBody, [notificationTokens], newStatus, order, {
+            clientId: client._id,
+        });
 
         console.log("Тестовое уведомление успешно отправлено");
 
@@ -1474,7 +1476,14 @@ export const replyToSupportMessage = async (req, res) => {
         
         if (validTokens.length > 0) {
             const { pushNotificationClientSupport } = await import("../pushNotificationClient.js");
-            await pushNotificationClientSupport("Ответ на ваше сообщение", message.text, validTokens, "newSupportMessage", message);
+            await pushNotificationClientSupport(
+                "Ответ на ваше сообщение",
+                message.text,
+                validTokens,
+                "newSupportMessage",
+                message,
+                { clientId: client._id }
+            );
         }
 
     } catch (error) {

@@ -752,7 +752,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
                     "Статус заказа изменен на \"Доставлено\"",
                     validTokens,
                     "delivered",
-                    data
+                    data,
+                    { clientId: sendOrder.client?._id ?? sendOrder.client }
                 ).catch((notifError) => {
                     console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
                 });
@@ -920,7 +921,8 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                     "Статус заказа изменен на \"Отменен\"",
                     validTokens,
                     "cancelled",
-                    data
+                    data,
+                    { clientId: sendOrder.client?._id ?? sendOrder.client }
                 ).catch((notifError) => {
                     console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
                 });
@@ -1501,7 +1503,8 @@ export const assignOrderToCourier = async (req, res) => {
                         "Статус заказа изменен на \"В пути\"",
                         validTokens,
                         "onTheWay",
-                        data
+                        data,
+                        { clientId: sendOrder.client?._id ?? sendOrder.client }
                     ).catch((notifError) => {
                         console.error("Ошибка отправки уведомления клиенту (не критично):", notifError.message);
                     });
@@ -1536,11 +1539,21 @@ export const assignOrderToCourier = async (req, res) => {
                         },
                     },
                 }).select(
-                    "notificationPushTokens addresses.point lastCourierNearbyPushAt"
+                    "notificationPushTokens addresses lastCourierNearbyPushAt"
                 );
 
-                const tokenSet = new Set();
-                const recipientClientIds = [];
+                /** Подпись адреса для текста push (название или улица + дом) */
+                const nearbyAddressLabel = (addr) => {
+                    const name = (addr?.name || "").trim();
+                    if (name) return name;
+                    const street = (addr?.street || "").trim();
+                    const house = (addr?.house || "").trim();
+                    const joined = [street, house].filter(Boolean).join(", ").trim();
+                    if (joined) return joined;
+                    return "ваш адрес";
+                };
+
+                const nearbyRecipients = [];
                 const todayAlmaty = getDateAlmaty();
 
                 for (const c of candidates) {
@@ -1551,7 +1564,8 @@ export const assignOrderToCourier = async (req, res) => {
                         continue;
                     }
                     const addrs = c.addresses || [];
-                    const near = addrs.some((addr) => {
+                    const qualifyingAddr = addrs.find((addr) => {
+                        if (addr?.shouldOrderBySchedule !== true) return false;
                         const p = addr.point;
                         if (!p) return false;
                         return (
@@ -1559,34 +1573,46 @@ export const assignOrderToCourier = async (req, res) => {
                             radiusM
                         );
                     });
-                    if (!near) continue;
-                    recipientClientIds.push(c._id);
+                    if (!qualifyingAddr) continue;
+
+                    const tokens = [];
                     for (const t of c.notificationPushTokens || []) {
                         const s = typeof t === "string" ? t.trim() : "";
-                        if (s) tokenSet.add(s);
+                        if (s) tokens.push(s);
                     }
+                    if (tokens.length === 0) continue;
+
+                    nearbyRecipients.push({
+                        clientId: c._id,
+                        tokens,
+                        addressLabel: nearbyAddressLabel(qualifyingAddr),
+                    });
                 }
 
-                const nearbyTokens = [...tokenSet];
-                if (nearbyTokens.length > 0) {
+                if (nearbyRecipients.length > 0) {
                     const { pushNotificationClient } = await import(
                         "../pushNotificationClient.js"
                     );
+                    const sentClientIds = [];
                     try {
-                        const pushResult = await pushNotificationClient(
-                            "Курьер рядом",
-                            "Курьер рядом — успейте заказать, чтобы получить воду быстрее",
-                            nearbyTokens,
-                            "courierNearby",
-                            { orderId: String(order._id) }
-                        );
-                        if (
-                            pushResult?.successCount > 0 &&
-                            recipientClientIds.length > 0
-                        ) {
+                        for (const r of nearbyRecipients) {
+                            const body = `Курьер рядом с адресом (${r.addressLabel}) — успейте заказать, чтобы получить воду быстрее`;
+                            const pushResult = await pushNotificationClient(
+                                "Курьер рядом",
+                                body,
+                                r.tokens,
+                                "courierNearby",
+                                { orderId: String(order._id) },
+                                { clientId: r.clientId }
+                            );
+                            if (pushResult?.successCount > 0) {
+                                sentClientIds.push(r.clientId);
+                            }
+                        }
+                        if (sentClientIds.length > 0) {
                             const sentAt = new Date();
                             await Client.updateMany(
-                                { _id: { $in: recipientClientIds } },
+                                { _id: { $in: sentClientIds } },
                                 { $set: { lastCourierNearbyPushAt: sentAt } }
                             ).catch((updErr) =>
                                 console.error(

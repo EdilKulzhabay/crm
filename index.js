@@ -21,6 +21,7 @@ import {
     CourierAggregatorController,
     AquaMarketController,
     FaqController,
+    PaymentController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -363,6 +364,11 @@ app.post("/deleteFaq", FaqController.deleteFaq);
 
 ///////PAYMENT (Pay Plus → API ventrapay.net)
 app.use("/api/payment", paymentRoutes);
+app.post(
+    "/getClientPaymentsForSuperAdmin",
+    checkAuth,
+    PaymentController.getClientPaymentsForSuperAdmin
+);
 
 // app.get("/testOrTools", async (req, res) => {
 //     try {

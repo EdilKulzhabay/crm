@@ -59,7 +59,22 @@ const ClientSchema = new mongoose.Schema(
                     lon: {
                         type: Number,
                     }
-                }
+                },
+                /** Дата последнего доставленного заказа по этому адресу (пересчёт скриптом / cron) */
+                lastOrderDate: {
+                    type: Date,
+                    default: null,
+                },
+                /** Средний интервал между заказами в днях (по последним до 5 доставленным заказам); null если данных мало */
+                orderPeriodicityDays: {
+                    type: Number,
+                    default: null,
+                },
+                /** true, если календарный день (Алматы) уже наступил день «пора снова заказать»: lastOrderDate + orderPeriodicityDays */
+                shouldOrderBySchedule: {
+                    type: Boolean,
+                    default: false,
+                },
             },
         ],
         price19: {
