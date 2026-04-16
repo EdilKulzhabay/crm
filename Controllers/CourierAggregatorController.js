@@ -642,6 +642,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 }
             );
         }
+
+        await Order.updateOne({_id: orderId}, { $set: { deliveredTime: new Date() } })
         
         await CourierRestrictions.deleteMany({orderId: orderId})
         

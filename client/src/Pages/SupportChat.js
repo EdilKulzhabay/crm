@@ -6,8 +6,6 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
-import Li from "../Components/Li";
-
 export default function SupportChat() {
     const userData = useFetchUserData();
     const { id } = useParams();
@@ -17,7 +15,7 @@ export default function SupportChat() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
-    const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
 
     useEffect(() => {
         if (id) {  
@@ -30,7 +28,12 @@ export default function SupportChat() {
     }, [messages]);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        requestAnimationFrame(() => {
+            const el = messagesContainerRef.current;
+            if (el) {
+                el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+            }
+        });
     };
 
     const getMessages = () => {
@@ -75,19 +78,44 @@ export default function SupportChat() {
                 </Div>
                 <Div />
                 <Div>
-                    <div>Переписка с клиентом</div>
+                    <div>Переписка с клиентом: {client?.userName}</div>
                 </Div>
                 <Div />
-                <div className="flex flex-col gap-y-3 max-h-[500px] overflow-y-auto">
-                    {messages?.length > 0 && messages?.map((message) => (
-                        <div key={message?._id}>
-                            <Li>{message?.isUser ? "Клиент:" : "Вы:"}</Li>
-                            <Li>{message?.text}</Li>
-                            <Li>{message?.timestamp?.slice(0, 10)} {message?.timestamp?.slice(11, 16)}</Li>
-                            <Div />
-                        </div>
-                    ))}
-                    <div ref={messagesEndRef} />
+                <div
+                    ref={messagesContainerRef}
+                    className="flex flex-col gap-y-3 max-h-[400px] lg:w-1/3 overflow-y-auto px-2 py-2 rounded-lg border border-white/20"
+                >
+                    {messages?.length > 0 &&
+                        messages?.map((msg) => {
+                            const time = (new Date(msg.timestamp).getTime() + 5 * 60 * 1000) - (5 * 60 * 1000)
+                            return (
+                                <div
+                                    key={msg?._id}
+                                    className={`flex w-full ${msg?.isUser ? "justify-start" : "justify-end"}`}
+                                >
+                                    <div
+                                        className={`max-w-[85%] rounded-2xl px-4 py-2 shadow-sm ${
+                                            msg?.isUser
+                                                ? "rounded-tl-sm bg-neutral-200 text-neutral-900"
+                                                : "rounded-tr-sm bg-red text-white"
+                                        }`}
+                                    >
+                                        <div className="text-sm whitespace-pre-wrap break-words">
+                                            {msg?.text}
+                                        </div>
+                                        <div
+                                            className={`text-[11px] mt-1.5 ${
+                                                msg?.isUser ? "text-neutral-500" : "text-red-100"
+                                            }`}
+                                        >
+                                            {new Date(time)?.toLocaleString('ru-RU')}
+                                            {/* {time?.slice(0, 10)}{" "}
+                                            {time?.slice(11, 16)} */}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
                 </div>
                 <Div />
                 <Div>

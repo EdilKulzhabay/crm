@@ -140,6 +140,10 @@ const OrderSchema = new mongoose.Schema(
         notificationToken: {
             type: String,
             default: "",
+        },
+        deliveredTime: {
+            type: Date,
+            default: null
         }
     },
     {

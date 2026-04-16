@@ -9,6 +9,7 @@ import useFetchUserData from "../../customHooks/useFetchUserData";
 import DataInput from "../../Components/DataInput";
 import MySnackBar from "../../Components/MySnackBar";
 import MyInput from "../../Components/MyInput";
+import LinkButton from "../../Components/LinkButton";
 
 const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) {
@@ -242,7 +243,7 @@ export default function SuperAdminPayments() {
                 <Div />
                 {payments.length > 0 &&
                     payments.map((item) => (
-                        <div key={item._id} className="mb-4 border-b border-gray-600 pb-2">
+                        <div key={item._id} className="mb-4 pb-2">
                             <Li>
                                 {formatPaidAt(item.paidAt)} —{" "}
                                 <span
@@ -264,18 +265,12 @@ export default function SuperAdminPayments() {
                                     : "—"}
                             </Li2>
                             <Li2>
-                                Карта:{" "}
-                                {item.cardLast4
-                                    ? `•••• ${item.cardLast4}`
-                                    : "нет данных"}
-                            </Li2>
-                            <Li2>
                                 Сессия: {item.sessionOrderId || "—"} | инвойс:{" "}
                                 {item.providerInvoiceId || "—"}
                             </Li2>
-                            {item.rawProviderStatus && (
-                                <Li2>Ответ провайдера: {item.rawProviderStatus}</Li2>
-                            )}
+                            <Li2>
+                                <LinkButton href={`/clientPage/${item?.client?._id}`}>Просмотр</LinkButton>
+                            </Li2>
                         </div>
                     ))}
                 {payments.length === 0 && <Li>Нет платежей по текущим фильтрам</Li>}

@@ -176,6 +176,12 @@ export default function SuperAdmin() {
                         <LinkButton href="/superAdminNotifications">Перейти</LinkButton>
                     </div>
                 </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
+                        <div>История по платежам:</div>
+                        <LinkButton href="/superAdminPayments">Перейти</LinkButton>
+                    </div>
+                </Li>
             </>
             <Div />
             <Div>

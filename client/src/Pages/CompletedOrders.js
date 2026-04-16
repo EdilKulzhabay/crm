@@ -40,6 +40,7 @@ export default function CompletedOrders() {
         startDate: "",
         endDate: "",
     });
+    const [fromAggregator, setFromAggregator] = useState(false)
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -125,7 +126,7 @@ export default function CompletedOrders() {
         api.post(
             "/getCompletedOrders",
             {
-                page, ...dates, search, searchStatus, searchF, opForm, sa, courierAggregator
+                page, ...dates, search, searchStatus, searchF, opForm, sa, courierAggregator, fromAggregator
             },
             {
                 headers: { "Content-Type": "application/json" },
@@ -328,6 +329,14 @@ export default function CompletedOrders() {
                         loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator)
                     }}>Найти</MyButton>
                 </div>
+            </Div>
+            <Div />
+            <Div>
+                Фильтр по заказам: {fromAggregator ? "Агрегатор" : "Все"}
+            </Div>
+            <Div>
+                <MyButton click={() => setFromAggregator(false)}>Все</MyButton>
+                <MyButton click={() => setFromAggregator(true)}>Агрегатор</MyButton>
             </Div>
         </>
         }

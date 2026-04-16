@@ -491,6 +491,7 @@ export const updateOrder = async (req, res) => {
 
             if (changeData === "delivered") {
                 try {
+                    await Order.updateOne({_id: orderId}, { $set: { deliveredTime: new Date() } })
                     const { applyReferrerBonusOnFirstDeliveredOrder } = await import("../utils/referralRewards.js");
                     await applyReferrerBonusOnFirstDeliveredOrder(order.client);
                 } catch (refErr) {
@@ -851,7 +852,7 @@ export const getAdditionalOrders = async (req, res) => {
 export const getCompletedOrders = async (req, res) => {
     try {
         const id = req.userId;
-        const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa, courierAggregator} = req.body
+        const {page, startDate, endDate, search, searchStatus, searchF, opForm, sa, courierAggregator, fromAggregator} = req.body
 
         const user = await User.findById(id)
         const limit = 5;
@@ -879,6 +880,10 @@ export const getCompletedOrders = async (req, res) => {
         const filter = {
             status: "delivered",
             "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
+        }
+
+        if (fromAggregator) {
+            filter.courierAggregator = { $ne: null }
         }
 
         if (courierAggregator !== "" && typeof courierAggregator === 'string') {
