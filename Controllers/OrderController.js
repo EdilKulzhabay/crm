@@ -882,8 +882,11 @@ export const getCompletedOrders = async (req, res) => {
             "date.d": { $gte: startDate !== "" ? startDate : todayDate, $lte: endDate !== "" ? endDate : tomorrowDate },
         }
 
-        if (fromAggregator) {
+        if (fromAggregator === "aggregator") {
             filter.courierAggregator = { $ne: null }
+        }
+        if (fromAggregator === "notAggregator") {
+            filter.courierAggregator = null
         }
 
         if (courierAggregator !== "" && typeof courierAggregator === 'string') {

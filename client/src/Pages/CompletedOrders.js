@@ -40,7 +40,7 @@ export default function CompletedOrders() {
         startDate: "",
         endDate: "",
     });
-    const [fromAggregator, setFromAggregator] = useState(false)
+    const [fromAggregator, setFromAggregator] = useState("all")
 
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -77,7 +77,7 @@ export default function CompletedOrders() {
             setHasMore(true);
             setLoading(false)
             setSearchStatus(false)
-            loadMoreCompletedOrders(1, dates, "", false, searchF, opForm, sa, courierAggregator)
+            loadMoreCompletedOrders(1, dates, "", false, searchF, opForm, sa, courierAggregator, fromAggregator)
         }
     };
 
@@ -88,7 +88,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            loadMoreCompletedOrders(1, dates, search, searchStatus, "", opForm, sa, courierAggregator)
+            loadMoreCompletedOrders(1, dates, search, searchStatus, "", opForm, sa, courierAggregator, fromAggregator)
         }
     };
 
@@ -99,7 +99,7 @@ export default function CompletedOrders() {
             setPage(1);
             setHasMore(true);
             setLoading(false)
-            loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa, "")
+            loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa, "", fromAggregator)
         }
     };
 
@@ -115,10 +115,19 @@ export default function CompletedOrders() {
         setPage(1)
         setLoading(false)
         setHasMore(true)
-        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa, courierAggregator)
+        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa, courierAggregator, fromAggregator)
     }
 
-    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator) => {
+    const handleFromAggregator = (value) => {
+        setFromAggregator(value)
+        setCompletedOrders([])
+        setPage(1)
+        setHasMore(true)
+        setLoading(false)
+        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, sa, courierAggregator, value)
+    }
+
+    const loadMoreCompletedOrders = useCallback(async (page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator, fromAggregator) => {
         if (loading || !hasMore) return;
 
         setLoading(true);
@@ -158,7 +167,7 @@ export default function CompletedOrders() {
 
     useEffect(() => {
         if (hasMore) {
-            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator);
+            loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator, fromAggregator);
         }
     }, [hasMore]);
 
@@ -170,7 +179,7 @@ export default function CompletedOrders() {
             if (observer.current) observer.current.disconnect();
             observer.current = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting && hasMore) {
-                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator);
+                    loadMoreCompletedOrders(page, dates, search, searchStatus, searchF, opForm, sa, courierAggregator, fromAggregator);
                 }
             });
             if (node) observer.current.observe(node);
@@ -271,7 +280,7 @@ export default function CompletedOrders() {
                     setHasMore(true);
                     setSearchStatus(true)
                     setLoading(false)
-                    loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator)
+                    loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator, fromAggregator)
                 }}>Найти</MyButton>
             </div>
         </Div>
@@ -293,7 +302,7 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator)
+                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator, fromAggregator)
                     }}>Найти</MyButton>
                     <MyButton click={() => {
                         const saStatus = !sa
@@ -301,7 +310,7 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, saStatus, courierAggregator)
+                        loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, opForm, saStatus, courierAggregator, fromAggregator)
                         setSa(saStatus)
                     }}><span className={clsx("", {"text-yellow-300": sa})}>admin</span></MyButton>
                 </div>
@@ -326,17 +335,18 @@ export default function CompletedOrders() {
                         setPage(1);
                         setHasMore(true);
                         setLoading(false)
-                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator)
+                        loadMoreCompletedOrders(1, dates, search, true, searchF, opForm, sa, courierAggregator, fromAggregator)
                     }}>Найти</MyButton>
                 </div>
             </Div>
             <Div />
             <Div>
-                Фильтр по заказам: {fromAggregator ? "Агрегатор" : "Все"}
+                Фильтр по заказам: {fromAggregator === "aggregator" ? "Агрегатор" : fromAggregator === "notAggregator" ? "Не Агрегатор" : "Все"}
             </Div>
             <Div>
-                <MyButton click={() => setFromAggregator(false)}>Все</MyButton>
-                <MyButton click={() => setFromAggregator(true)}>Агрегатор</MyButton>
+                <MyButton click={() => handleFromAggregator("all")}>Все</MyButton>
+                <MyButton click={() => handleFromAggregator("aggregator")}>Агрегатор</MyButton>
+                <MyButton click={() => handleFromAggregator("notAggregator")}>Не Агрегатор</MyButton>
             </Div>
         </>
         }
@@ -400,7 +410,7 @@ export default function CompletedOrders() {
                                 setPage(1);
                                 setHasMore(true);
                                 setLoading(false)
-                                loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm, sa, courierAggregator)
+                                loadMoreCompletedOrders(1, dates, search, searchStatus, searchF, newOpForm, sa, courierAggregator, fromAggregator)
                             }}
                             className={clsx("lg:hover:text-blue-500 w-[150px] text-left", {
                                 "text-green-400": opForm !== item,
