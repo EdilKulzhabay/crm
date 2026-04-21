@@ -46,31 +46,32 @@ function formatDate(d) {
     return `${dd}.${mm}.${yyyy}`;
 }
 
-/** Шапка: слева pdfTitle.png (50% ширины) или текст; справа уведомление */
+/** Шапка: слева уведомление; справа pdfTitle.png (50% ширины) или текст-заглушка */
 function drawInvoiceHeaderBanner(doc, left, y, pageW) {
     const notice = STATIC.noticeHeader;
-    const textW = pageW * 0.48;
-    const textX = left + pageW * 0.52;
+    const leftW = pageW * 0.5;
+    const rightX = left + pageW * 0.5;
+    const rightW = pageW * 0.5;
     doc.font("main").fontSize(7).fillColor("#000000");
 
-    let leftBlockH = 0;
+    let rightBlockH = 0;
     if (fs.existsSync(PDF_TITLE_PNG)) {
         const img = doc.openImage(PDF_TITLE_PNG);
         const imgW = pageW * 0.5;
-        leftBlockH = (img.height / img.width) * imgW;
-        doc.image(PDF_TITLE_PNG, left, y, { width: imgW });
+        rightBlockH = (img.height / img.width) * imgW;
+        doc.image(PDF_TITLE_PNG, rightX, y, { width: imgW });
     } else {
         doc.fontSize(8);
         const fallback = "Тибетская since 1996";
-        leftBlockH = doc.heightOfString(fallback, { width: pageW * 0.45 });
-        doc.text(fallback, left, y, { width: pageW * 0.45 });
+        rightBlockH = doc.heightOfString(fallback, { width: rightW });
+        doc.text(fallback, rightX, y, { width: rightW, align: "right" });
         doc.fontSize(7);
     }
 
-    const textH = doc.heightOfString(notice, { width: textW, align: "right" });
-    doc.text(notice, textX, y, { width: textW, align: "right" });
+    const textH = doc.heightOfString(notice, { width: leftW, align: "left" });
+    doc.text(notice, left, y, { width: leftW, align: "left" });
 
-    const rowH = Math.max(leftBlockH, textH);
+    const rowH = Math.max(textH, rightBlockH);
     return y + rowH;
 }
 
@@ -406,9 +407,7 @@ export function buildInvoicePdfBuffer(params) {
         doc.text(`Всего к оплате: ${words} 00 тиын`, left, y, { width: pageW });
         y = doc.y + 20;
 
-        doc.text("Исполнитель: _________________________", left, y, { width: pageW * 0.6 });
-        y = doc.y + 4;
-        doc.text(STATIC.signer, left, y, { width: pageW });
+        doc.text(`Исполнитель: _________________________ ${STATIC.signer}`, left, y, { width: pageW });
         y = doc.y + 8;
 
         if (fs.existsSync(PDF_END_PNG)) {
