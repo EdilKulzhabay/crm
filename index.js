@@ -287,6 +287,7 @@ app.post("/addClientAddress", checkAuth, MobileController.addClientAddress);
 app.post("/updateClientAddress", checkAuth, MobileController.updateClientAddress);
 app.post("/getClientAddresses", checkAuth, MobileController.getClientAddresses);
 app.post("/getClientDataMobile", MobileController.getClientDataMobile);
+app.post("/generateInvoicePdfMobile", MobileController.generateInvoicePdfMobile);
 app.post("/updateClientDataMobile", MobileController.updateClientDataMobile);
 app.post("/sendSupportMessage", MobileController.sendSupportMessage);
 app.post("/getSupportMessages", MobileController.getSupportMessages);

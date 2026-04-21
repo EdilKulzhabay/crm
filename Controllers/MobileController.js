@@ -19,6 +19,24 @@ import {
     generateUniqueReferralCode,
     normalizeReferralCodeInput,
 } from "../utils/referralCode.js";
+import {
+    buildInvoicePdfBuffer,
+    nextInvoiceSequentialNumber,
+} from "../utils/invoicePdf.js";
+
+/** Строка для счёта; старые документы могли хранить вложенный объект */
+function normalizeInvoiceLegalData(raw) {
+    if (raw == null || raw === "") return "";
+    if (typeof raw === "string") return raw.trim();
+    if (typeof raw === "object") {
+        const o = raw;
+        return [o.binIin, o.legalName, o.legalAddress, o.invoicePhone]
+            .map((x) => String(x || "").trim())
+            .filter(Boolean)
+            .join(", ");
+    }
+    return String(raw).trim();
+}
 
 let expo = new Expo({ useFcmV1: true });
 
@@ -790,6 +808,8 @@ export const clientLogin = async (req, res) => {
             showRepairMasterInApp: c.showRepairMasterInApp !== false,
             createdAt: c.createdAt,
             updatedAt: c.updatedAt,
+            invoiceSequentialNumber: c.invoiceSequentialNumber || "",
+            invoiceLegalData: normalizeInvoiceLegalData(c.invoiceLegalData),
         };
 
         const accessToken = jwt.sign(
@@ -818,6 +838,85 @@ export const clientLogin = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Не удалось авторизоваться",
+        });
+    }
+};
+
+/**
+ * Генерация PDF-счёта для клиентов с заполненными полями счёта в CRM.
+ */
+export const generateInvoicePdfMobile = async (req, res) => {
+    try {
+        const { mail, qty19: q19raw, qty12: q12raw } = req.body;
+        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        if (!client) {
+            return res.status(404).json({ success: false, message: "Клиент не найден" });
+        }
+
+        const inv = String(client.invoiceSequentialNumber || "").trim();
+        const legalText = normalizeInvoiceLegalData(client.invoiceLegalData);
+        if (!inv || !legalText) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Не заполнены данные для счёта. Обратитесь в поддержку или заполните поля в CRM.",
+            });
+        }
+
+        const qty19 = Math.max(0, Math.floor(Number(q19raw)));
+        const qty12 = Math.max(0, Math.floor(Number(q12raw)));
+        if (qty19 === 0 && qty12 === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите количество бутылей 19 л и/или 12 л",
+            });
+        }
+
+        const price19 = Number(client.price19) || 0;
+        const price12 = Number(client.price12) || 0;
+        if (qty19 > 0 && price19 <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Не задана цена за 19 л в карточке клиента",
+            });
+        }
+        if (qty12 > 0 && price12 <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Не задана цена за 12 л в карточке клиента",
+            });
+        }
+
+        const pdfBuffer = await buildInvoicePdfBuffer({
+            invoiceNumber: inv,
+            invoiceDate: new Date(),
+            buyer: legalText,
+            qty19,
+            qty12,
+            price19,
+            price12,
+        });
+
+        const nextNum = nextInvoiceSequentialNumber(inv);
+        await Client.findByIdAndUpdate(client._id, {
+            invoiceSequentialNumber: nextNum,
+        });
+
+        const safeInv = inv.replace(/[^\w\u0400-\u04FF-]+/g, "_");
+        const fileName = `schet_${safeInv}_${Date.now()}.pdf`;
+
+        res.json({
+            success: true,
+            pdfBase64: pdfBuffer.toString("base64"),
+            fileName,
+            invoiceNumberUsed: inv,
+            nextInvoiceSequentialNumber: nextNum,
+        });
+    } catch (error) {
+        console.error("generateInvoicePdfMobile", error);
+        res.status(500).json({
+            success: false,
+            message: "Не удалось сформировать счёт",
         });
     }
 };
@@ -863,6 +962,8 @@ export const updateClientDataMobile = async (req, res) => {
             isStartedHydration: updatedClient._doc.isStartedHydration,
             showRepairMasterInApp: updatedClient._doc.showRepairMasterInApp !== false,
             createdAt: updatedClient._doc.createdAt,
+            invoiceSequentialNumber: updatedClient._doc.invoiceSequentialNumber || "",
+            invoiceLegalData: normalizeInvoiceLegalData(updatedClient._doc.invoiceLegalData),
         }
 
         res.json({ success: true, message: "Данные успешно изменены", clientData });

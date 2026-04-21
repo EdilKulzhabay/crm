@@ -281,6 +281,17 @@ const ClientSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        /** Порядковый номер следующего счёта (после генерации PDF увеличивается, если значение — только цифры) */
+        invoiceSequentialNumber: {
+            type: String,
+            default: "",
+        },
+        /** Юр. данные покупателя для счёта (заполняет CRM) */
+        /** Произвольный текст юр. реквизитов покупателя для счёта (заполняет админ) */
+        invoiceLegalData: {
+            type: String,
+            default: "",
+        },
     },
     {
         timestamps: true,

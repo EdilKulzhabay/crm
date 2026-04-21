@@ -64,6 +64,9 @@ export default function ClientPage() {
 
     const [needVerification, setNeedVerification] = useState(false)
 
+    const [invoiceSeq, setInvoiceSeq] = useState("")
+    const [invLegal, setInvLegal] = useState("")
+
     const closeSnack = () => {
         setOpen(false);
     };
@@ -204,6 +207,23 @@ export default function ClientPage() {
                     price19Open: false,
                     price19Str: data?.price19,
                 });
+                setInvoiceSeq(data?.invoiceSequentialNumber ?? "")
+                {
+                    const ild = data?.invoiceLegalData
+                    if (typeof ild === "string") {
+                        setInvLegal(ild)
+                    } else if (ild && typeof ild === "object") {
+                        setInvLegal(
+                            [ild.binIin, ild.legalName, ild.legalAddress, ild.invoicePhone]
+                                .map((x) => (x != null ? String(x) : ""))
+                                .map((s) => s.trim())
+                                .filter(Boolean)
+                                .join(", ")
+                        )
+                    } else {
+                        setInvLegal("")
+                    }
+                }
             })
             .catch((e) => {
                 console.log(e);
@@ -1216,6 +1236,36 @@ export default function ClientPage() {
                         client={client}
                         updateClientData={updateClientData}
                     />
+                </>
+
+                <Div />
+                <Div>Счёт в мобильном приложении (юр. лица):</Div>
+                <>
+                    <Li>
+                        <div className="flex flex-col gap-y-2 w-full max-w-xl">
+                            <div>Порядковый номер счёта (следующий):</div>
+                            <div className="flex items-center gap-x-2 flex-wrap">
+                                <MyInput
+                                    value={invoiceSeq}
+                                    change={(e) => { setInvoiceSeq(e.target.value) }}
+                                    color="white"
+                                />
+                                <MyButton click={() => { updateClientData("invoiceSequentialNumber", invoiceSeq) }}>Сохранить</MyButton>
+                            </div>
+                        </div>
+                    </Li>
+                    <Li>
+                        <div className="flex flex-col gap-y-2 w-full max-w-xl">
+                            <div>Юр. данные для счёта (произвольный текст для PDF):</div>
+                            <textarea
+                                className="w-full min-h-[120px] bg-black outline-none border-b border-white border-dashed text-sm lg:text-base p-2 text-white"
+                                style={{ fontSize: "16px" }}
+                                value={invLegal}
+                                onChange={(e) => { setInvLegal(e.target.value) }}
+                            />
+                            <MyButton click={() => { updateClientData("invoiceLegalData", invLegal) }}>Сохранить юр. данные</MyButton>
+                        </div>
+                    </Li>
                 </>
 
                 <Div />
