@@ -1239,34 +1239,27 @@ export default function ClientPage() {
                 </>
 
                 <Div />
-                <Div>Счёт в мобильном приложении (юр. лица):</Div>
-                <>
-                    <Li>
-                        <div className="flex flex-col gap-y-2 w-full max-w-xl">
-                            <div>Порядковый номер счёта (следующий):</div>
-                            <div className="flex items-center gap-x-2 flex-wrap">
-                                <MyInput
-                                    value={invoiceSeq}
-                                    change={(e) => { setInvoiceSeq(e.target.value) }}
-                                    color="white"
-                                />
-                                <MyButton click={() => { updateClientData("invoiceSequentialNumber", invoiceSeq) }}>Сохранить</MyButton>
-                            </div>
-                        </div>
-                    </Li>
-                    <Li>
-                        <div className="flex flex-col gap-y-2 w-full max-w-xl">
-                            <div>Юр. данные для счёта (произвольный текст для PDF):</div>
-                            <textarea
-                                className="w-full min-h-[120px] bg-black outline-none border-b border-white border-dashed text-sm lg:text-base p-2 text-white"
-                                style={{ fontSize: "16px" }}
-                                value={invLegal}
-                                onChange={(e) => { setInvLegal(e.target.value) }}
-                            />
-                            <MyButton click={() => { updateClientData("invoiceLegalData", invLegal) }}>Сохранить юр. данные</MyButton>
-                        </div>
-                    </Li>
-                </>
+                <Div>Порядковый номер счёта (следующий):</Div>
+                <Li>
+                    <div className="flex flex-row gap-x-2">
+                        <MyInput
+                            value={invoiceSeq}
+                            change={(e) => { setInvoiceSeq(e.target.value) }}
+                            color="white"
+                        />
+                        <MyButton click={() => { updateClientData("invoiceSequentialNumber", invoiceSeq) }}>Сохранить</MyButton>
+                    </div>
+                </Li>
+                <Div />
+                <Div>
+                    Юр. данные для счёта:
+                </Div>
+                <Li>
+                    <div className="flex flex-col gap-y-2">
+                    <textarea size={13} style={{ fontSize: '16px' }} value={invLegal} onChange={(e) => {setInvLegal(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                        <MyButton click={() => { updateClientData("invoiceLegalData", invLegal) }}>Сохранить юр. данные</MyButton>
+                    </div>
+                </Li>
 
                 <Div />
                 <Div>Сводная информация:</Div>
