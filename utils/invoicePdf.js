@@ -6,6 +6,8 @@ import { sumToWordsRuTenge } from "./sumToWordsRu.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FONT_PATH = path.join(__dirname, "../node_modules/dejavu-fonts-ttf/ttf/DejaVuSans.ttf");
+const PDF_TITLE_PNG = path.join(__dirname, "../pdfTitle.png");
+const PDF_END_PNG = path.join(__dirname, "../pdfEnd.png");
 
 const STATIC = {
     beneficiary:
@@ -18,8 +20,8 @@ const STATIC = {
     executorBlock:
         'Товарищество с ограниченной ответственностью "Verto Business (Верто Бизнес)", БИН 220340005670, 050000, Казахстан, г. Алматы, мкр. Нурлытау, ул. Г. Баязитовой, д. 12',
     contract: "На основании публичной оферты",
-    disclaimer:
-        "Настоящим подтверждаю согласие с условиями поставки и оплаты. Обязуюсь уведомить о произведённой оплате.",
+    noticeHeader:
+        "Внимание! Оплата данного счета означает согласие с условиями поставки товара. Уведомление об оплате обязательно, в противном случае не гарантируется наличие товара на складе. Товар отпускается по факту прихода денег на р/с Поставщика, самовывозом при наличии доверенности и документов удостоверающих личность.",
     code19: "000000000009",
     code12: "000000000008",
     signer: "/Арипбек Арай/",
@@ -40,6 +42,132 @@ function formatDate(d) {
     const mm = String(dt.getMonth() + 1).padStart(2, "0");
     const yyyy = dt.getFullYear();
     return `${dd}.${mm}.${yyyy}`;
+}
+
+/** Шапка: слева pdfTitle.png (50% ширины) или текст; справа уведомление */
+function drawInvoiceHeaderBanner(doc, left, y, pageW) {
+    const notice = STATIC.noticeHeader;
+    const textW = pageW * 0.48;
+    const textX = left + pageW * 0.52;
+    doc.font("main").fontSize(7).fillColor("#000000");
+
+    let leftBlockH = 0;
+    if (fs.existsSync(PDF_TITLE_PNG)) {
+        const img = doc.openImage(PDF_TITLE_PNG);
+        const imgW = pageW * 0.5;
+        leftBlockH = (img.height / img.width) * imgW;
+        doc.image(PDF_TITLE_PNG, left, y, { width: imgW });
+    } else {
+        doc.fontSize(8);
+        const fallback = "Тибетская since 1996";
+        leftBlockH = doc.heightOfString(fallback, { width: pageW * 0.45 });
+        doc.text(fallback, left, y, { width: pageW * 0.45 });
+        doc.fontSize(7);
+    }
+
+    const textH = doc.heightOfString(notice, { width: textW, align: "right" });
+    doc.text(notice, textX, y, { width: textW, align: "right" });
+
+    const rowH = Math.max(leftBlockH, textH);
+    return y + rowH;
+}
+
+const TABLE_PAD = 4;
+const STROKE = 0.45;
+
+function setThinStroke(doc) {
+    doc.lineWidth(STROKE).strokeColor("#000000");
+}
+
+/**
+ * Одна колонка, строки с рамкой и горизонтальными линиями.
+ * @returns {number} y после таблицы
+ */
+function drawSingleColumnTable(doc, x, y, width, rows, options) {
+    const { fontSize = 7, align = "left" } = options || {};
+    doc.font("main").fontSize(fontSize).fillColor("#000000");
+    const pad = TABLE_PAD;
+    const innerW = width - pad * 2;
+    const rowHeights = rows.map((text) => {
+        const h = doc.heightOfString(String(text), { width: innerW, align });
+        return Math.max(h + pad * 2, fontSize + pad * 2);
+    });
+    const totalH = rowHeights.reduce((a, b) => a + b, 0);
+    setThinStroke(doc);
+    doc.rect(x, y, width, totalH).stroke();
+    let cy = y;
+    for (let i = 0; i < rows.length - 1; i++) {
+        cy += rowHeights[i];
+        doc.moveTo(x, cy).lineTo(x + width, cy).stroke();
+    }
+    cy = y;
+    for (let i = 0; i < rows.length; i++) {
+        doc.text(String(rows[i]), x + pad, cy + pad, {
+            width: innerW,
+            align,
+        });
+        cy += rowHeights[i];
+    }
+    return y + totalH;
+}
+
+/**
+ * Таблица с сеткой: colWidths — ширины колонок, rows — массив строк (массив ячеек).
+ * columnAligns — выравнивание по колонкам для строк данных (шапка — headerAlign).
+ * @returns {{ y: number }}
+ */
+function drawGridTable(doc, x, y, colWidths, rows, options) {
+    const { fontSize = 7, headerAlign = "left", columnAligns } = options || {};
+    const pad = TABLE_PAD;
+    const tableW = colWidths.reduce((a, b) => a + b, 0);
+    doc.font("main").fontSize(fontSize).fillColor("#000000");
+
+    const rowHeights = rows.map((cells, rowIndex) => {
+        let maxInner = 0;
+        cells.forEach((text, j) => {
+            const w = colWidths[j] - pad * 2;
+            const align =
+                rowIndex === 0
+                    ? columnAligns?.[j] ?? headerAlign
+                    : columnAligns?.[j] ?? "left";
+            const h = doc.heightOfString(String(text), { width: w, align });
+            maxInner = Math.max(maxInner, h);
+        });
+        return Math.max(maxInner + pad * 2, fontSize + pad * 2);
+    });
+
+    const totalH = rowHeights.reduce((a, b) => a + b, 0);
+    setThinStroke(doc);
+    doc.rect(x, y, tableW, totalH).stroke();
+
+    let cx = x;
+    for (let c = 0; c < colWidths.length - 1; c++) {
+        cx += colWidths[c];
+        doc.moveTo(cx, y).lineTo(cx, y + totalH).stroke();
+    }
+
+    let cy = y;
+    for (let r = 0; r < rows.length - 1; r++) {
+        cy += rowHeights[r];
+        doc.moveTo(x, cy).lineTo(x + tableW, cy).stroke();
+    }
+
+    cy = y;
+    rows.forEach((cells, r) => {
+        let cx2 = x;
+        cells.forEach((text, j) => {
+            const align =
+                r === 0 ? columnAligns?.[j] ?? headerAlign : columnAligns?.[j] ?? "left";
+            doc.text(String(text), cx2 + pad, cy + pad, {
+                width: colWidths[j] - pad * 2,
+                align,
+            });
+            cx2 += colWidths[j];
+        });
+        cy += rowHeights[r];
+    });
+
+    return { y: y + totalH };
 }
 
 /**
@@ -91,35 +219,24 @@ export function buildInvoicePdfBuffer(params) {
         const left = doc.page.margins.left;
         const pageW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
-        doc.fontSize(8).fillColor("#000000");
-        doc.text("Тибетская since 1996", left, y, { width: pageW * 0.45 });
-        doc.text(STATIC.disclaimer, left + pageW * 0.48, y, {
-            width: pageW * 0.52,
-            align: "right",
-        });
-        y = doc.y + 10;
+        y = drawInvoiceHeaderBanner(doc, left, y, pageW);
+        y += 10;
 
-        doc.fontSize(7);
-        const bankY = y;
-        doc.text(`Бенефициар: ${STATIC.beneficiary}`, left, bankY, { width: pageW });
-        y = doc.y + 2;
-        doc.text(`Банк бенефициара: ${STATIC.beneficiaryBank}`, left, y, { width: pageW });
-        y = doc.y + 2;
-        doc.text(`ИИК: ${STATIC.iik}    КБе: ${STATIC.kbe}    БИК: ${STATIC.bik}`, left, y, {
-            width: pageW,
-        });
-        y = doc.y + 2;
-        doc.text(`Код назначения платежа: ${STATIC.paymentCode}`, left, y, { width: pageW });
-        y = doc.y + 14;
+        const bankRows = [
+            `Бенефициар: ${STATIC.beneficiary}`,
+            `Банк бенефициара: ${STATIC.beneficiaryBank}`,
+            `ИИК: ${STATIC.iik}    КБе: ${STATIC.kbe}    БИК: ${STATIC.bik}`,
+            `Код назначения платежа: ${STATIC.paymentCode}`,
+        ];
+        y = drawSingleColumnTable(doc, left, y, pageW, bankRows, { fontSize: 7, align: "left" });
+        y += 8;
 
-        doc.fontSize(11).font("main");
-        doc.text(
-            `Счет на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`,
-            left,
-            y,
-            { width: pageW, align: "center" }
-        );
-        y = doc.y + 12;
+        const titleText = `Счет на оплату № ${invoiceNumber} от ${formatDate(invoiceDate)}`;
+        y = drawSingleColumnTable(doc, left, y, pageW, [titleText], {
+            fontSize: 11,
+            align: "center",
+        });
+        y += 10;
 
         doc.fontSize(8);
         doc.text(`Исполнитель: ${STATIC.executorBlock}`, left, y, { width: pageW });
@@ -129,56 +246,54 @@ export function buildInvoicePdfBuffer(params) {
         doc.text(`Договор: ${STATIC.contract}`, left, y, { width: pageW });
         y = doc.y + 10;
 
-        const col = {
-            c0: left,
-            c1: left + 22,
-            c2: left + 70,
-            c3: left + 300,
-            c4: left + 330,
-            c5: left + 360,
-            c6: left + 400,
-            c7: left + 450,
-        };
-        const rowH = 36;
-
-        doc.fontSize(7).fillColor("#000000");
-        doc.text("№", col.c0, y, { width: 18 });
-        doc.text("Код", col.c1, y, { width: 44 });
-        doc.text("Наименование", col.c2, y, { width: 220 });
-        doc.text("Кол-во", col.c3, y, { width: 26 });
-        doc.text("Ед.", col.c4, y, { width: 26 });
-        doc.text("Цена", col.c5, y, { width: 38 });
-        doc.text("Сумма", col.c6, y, { width: 60 });
-        y += 12;
-
+        const colW = [
+            22,
+            48,
+            230,
+            30,
+            30,
+            40,
+            Math.max(52, pageW - 22 - 48 - 230 - 30 - 30 - 40),
+        ];
+        const colAlign = ["left", "left", "left", "right", "center", "right", "right"];
+        const tableRows = [
+            ["№", "Код", "Наименование", "Кол-во", "Ед.", "Цена", "Сумма"],
+        ];
         let n = 1;
         if (qty19 > 0) {
-            doc.text(String(n), col.c0, y, { width: 18 });
-            doc.text(STATIC.code19, col.c1, y, { width: 44 });
             const name19 =
                 'Оплата за обеспечение доступа к сервису и ресурсам экосистемы «Тибетская» (пакет «Water 19L») согласно условиям публичной оферты';
-            doc.text(name19, col.c2, y, { width: 220 });
-            doc.text(String(qty19), col.c3, y, { width: 26 });
-            doc.text("Ус/шт.", col.c4, y, { width: 26 });
-            doc.text(formatMoney(price19), col.c5, y, { width: 38 });
-            doc.text(formatMoney(line19), col.c6, y, { width: 60 });
-            y += rowH;
+            tableRows.push([
+                String(n),
+                STATIC.code19,
+                name19,
+                String(qty19),
+                "Ус/шт.",
+                formatMoney(price19),
+                formatMoney(line19),
+            ]);
             n++;
         }
         if (qty12 > 0) {
-            doc.text(String(n), col.c0, y, { width: 18 });
-            doc.text(STATIC.code12, col.c1, y, { width: 44 });
             const name12 =
                 'Оплата за обеспечение доступа к сервису и ресурсам экосистемы «Тибетская» (пакет «Water 12L») согласно условиям публичной оферты';
-            doc.text(name12, col.c2, y, { width: 220 });
-            doc.text(String(qty12), col.c3, y, { width: 26 });
-            doc.text("Ус/шт.", col.c4, y, { width: 26 });
-            doc.text(formatMoney(price12), col.c5, y, { width: 38 });
-            doc.text(formatMoney(line12), col.c6, y, { width: 60 });
-            y += rowH;
+            tableRows.push([
+                String(n),
+                STATIC.code12,
+                name12,
+                String(qty12),
+                "Ус/шт.",
+                formatMoney(price12),
+                formatMoney(line12),
+            ]);
         }
 
-        y += 6;
+        const itemsBottom = drawGridTable(doc, left, y, colW, tableRows, {
+            fontSize: 7,
+            headerAlign: "left",
+            columnAligns: colAlign,
+        });
+        y = itemsBottom.y + 8;
         doc.fontSize(9);
         doc.text(`Итого: ${formatMoney(total)}`, left, y, { width: pageW });
         y = doc.y + 6;
@@ -196,6 +311,15 @@ export function buildInvoicePdfBuffer(params) {
         doc.text("Исполнитель: _________________________", left, y, { width: pageW * 0.6 });
         y = doc.y + 4;
         doc.text(STATIC.signer, left, y, { width: pageW });
+        y = doc.y + 8;
+
+        if (fs.existsSync(PDF_END_PNG)) {
+            const endImg = doc.openImage(PDF_END_PNG);
+            const endW = pageW * 0.25;
+            const endH = (endImg.height / endImg.width) * endW;
+            doc.image(PDF_END_PNG, left, y, { width: endW });
+            y += endH;
+        }
 
         doc.end();
     });

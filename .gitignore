@@ -16,8 +16,5 @@ uploads/
 # python venv
 venv/
 
-# generated files
-*.png
-
 # WhatsApp Web.js (сессия после сканирования QR)
 .wwebjs_auth/
