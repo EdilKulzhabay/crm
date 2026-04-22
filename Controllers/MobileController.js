@@ -1264,7 +1264,7 @@ export const addOrderClientMobile = async (req, res) => {
         }
 
         let paymentMethod = "fakt";
-        if (opForm === "card") {
+        if (opForm === "credit") {
             if (client.paidBootles > 0) {
                 paymentMethod = "coupon";
             } else {
