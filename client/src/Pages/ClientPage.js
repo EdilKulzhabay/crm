@@ -64,7 +64,6 @@ export default function ClientPage() {
 
     const [needVerification, setNeedVerification] = useState(false)
 
-    const [invoiceSeq, setInvoiceSeq] = useState("")
     const [invLegal, setInvLegal] = useState("")
 
     const closeSnack = () => {
@@ -207,7 +206,6 @@ export default function ClientPage() {
                     price19Open: false,
                     price19Str: data?.price19,
                 });
-                setInvoiceSeq(data?.invoiceSequentialNumber ?? "")
                 {
                     const ild = data?.invoiceLegalData
                     if (typeof ild === "string") {
@@ -1238,18 +1236,6 @@ export default function ClientPage() {
                     />
                 </>
 
-                <Div />
-                <Div>Порядковый номер счёта (следующий):</Div>
-                <Li>
-                    <div className="flex flex-row gap-x-2">
-                        <MyInput
-                            value={invoiceSeq}
-                            change={(e) => { setInvoiceSeq(e.target.value) }}
-                            color="white"
-                        />
-                        <MyButton click={() => { updateClientData("invoiceSequentialNumber", invoiceSeq) }}>Сохранить</MyButton>
-                    </div>
-                </Li>
                 <Div />
                 <Div>
                     Юр. данные для счёта:

@@ -565,9 +565,7 @@ export default function OrderPage() {
                 <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
                         <div>Статус заказа:</div>
-                        {userData?.role === "superAdmin" && orderStatus === "delivered" && <>
-                            <Div>Время доставки: {order?.deliveredTime ? new Date(order?.deliveredTime + 5 * 60 * 1000).toLocaleString('ru-RU') : "Не доставлен"}</Div>
-                        </>}
+                        
                         <div className="flex items-center gap-x-2 flex-wrap text-red">
                             [
                             <button
@@ -621,6 +619,20 @@ export default function OrderPage() {
                         </div>
                     </div>
                 </Div>
+                {userData?.role === "superAdmin" && orderStatus === "delivered" && <>
+                    <Div>
+                        Время заказа: {order?.createdAt ? (() => {
+                            const ms = new Date(order.createdAt).getTime();
+                            return Number.isNaN(ms) ? "—" : new Date(ms + 5 * 60 * 1000).toLocaleString('ru-RU');
+                        })() : ""}
+                    </Div>
+                    <Div>
+                        Время доставки: {order?.deliveredTime ? (() => {
+                            const ms = new Date(order.deliveredTime).getTime();
+                            return Number.isNaN(ms) ? "—" : new Date(ms + 5 * 60 * 1000).toLocaleString('ru-RU');
+                        })() : "Не доставлен"}
+                    </Div>
+                </>}
                 {userData?.role === "superAdmin" && <>
                     <Div>Пустые бутылки: </Div>
                     <Li>

@@ -365,6 +365,14 @@ export const updateClientData = async (req, res) => {
             .status(404)
             .json({ success: false, message: "Client not found" });
         }
+
+        if (field === "invoiceSequentialNumber") {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Порядковый номер счёта задаётся глобально: Суперадмин → «Номер следующего счёта».",
+            });
+        }
   
         // Обновляем поле клиента
         if (field !== "status") {

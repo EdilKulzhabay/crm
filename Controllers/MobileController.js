@@ -23,6 +23,7 @@ import {
     buildInvoicePdfBuffer,
     nextInvoiceSequentialNumber,
 } from "../utils/invoicePdf.js";
+import { takeNextInvoiceNumberForPdf } from "../utils/invoiceCounter.js";
 
 /** Строка для счёта; старые документы могли хранить вложенный объект */
 function normalizeInvoiceLegalData(raw) {
@@ -808,7 +809,6 @@ export const clientLogin = async (req, res) => {
             showRepairMasterInApp: c.showRepairMasterInApp !== false,
             createdAt: c.createdAt,
             updatedAt: c.updatedAt,
-            invoiceSequentialNumber: c.invoiceSequentialNumber || "",
             invoiceLegalData: normalizeInvoiceLegalData(c.invoiceLegalData),
         };
 
@@ -853,9 +853,8 @@ export const generateInvoicePdfMobile = async (req, res) => {
             return res.status(404).json({ success: false, message: "Клиент не найден" });
         }
 
-        const inv = String(client.invoiceSequentialNumber || "").trim();
         const legalText = normalizeInvoiceLegalData(client.invoiceLegalData);
-        if (!inv || !legalText) {
+        if (!legalText) {
             return res.status(400).json({
                 success: false,
                 message:
@@ -887,6 +886,8 @@ export const generateInvoicePdfMobile = async (req, res) => {
             });
         }
 
+        const inv = await takeNextInvoiceNumberForPdf();
+
         const pdfBuffer = await buildInvoicePdfBuffer({
             invoiceNumber: inv,
             invoiceDate: new Date(),
@@ -898,9 +899,6 @@ export const generateInvoicePdfMobile = async (req, res) => {
         });
 
         const nextNum = nextInvoiceSequentialNumber(inv);
-        await Client.findByIdAndUpdate(client._id, {
-            invoiceSequentialNumber: nextNum,
-        });
 
         const safeInv = inv.replace(/[^\w\u0400-\u04FF-]+/g, "_");
         const fileName = `schet_${safeInv}_${Date.now()}.pdf`;
@@ -962,7 +960,6 @@ export const updateClientDataMobile = async (req, res) => {
             isStartedHydration: updatedClient._doc.isStartedHydration,
             showRepairMasterInApp: updatedClient._doc.showRepairMasterInApp !== false,
             createdAt: updatedClient._doc.createdAt,
-            invoiceSequentialNumber: updatedClient._doc.invoiceSequentialNumber || "",
             invoiceLegalData: normalizeInvoiceLegalData(updatedClient._doc.invoiceLegalData),
         }
 

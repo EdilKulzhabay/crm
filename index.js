@@ -22,6 +22,7 @@ import {
     AquaMarketController,
     FaqController,
     PaymentController,
+    InvoiceCounterController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -202,6 +203,8 @@ app.post("/clientAddPassword", ClientController.clientAddPassword);
 app.get("/checkClientsCoincidences", ClientController.checkClientsCoincidences)
 app.get("/addPhoneForAddress", ClientController.addPhoneForAddress)
 app.post("/transferOrders", ClientController.transferOrders)
+app.get("/getInvoiceGlobalCounter", checkAuth, InvoiceCounterController.getInvoiceGlobalCounter);
+app.post("/setInvoiceGlobalCounter", checkAuth, InvoiceCounterController.setInvoiceGlobalCounter);
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
