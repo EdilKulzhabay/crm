@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import api from "../../api";
 import Container from "../../Components/Container";
 import Div from "../../Components/Div";
-import Li from "../../Components/Li";
 import MyButton from "../../Components/MyButton";
 import MyInput from "../../Components/MyInput";
 import LinkButton from "../../Components/LinkButton";
@@ -74,19 +73,11 @@ export default function SuperAdminInvoiceCounter() {
         <Container role={userData?.role}>
             <Div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <LinkButton href="/superAdmin">← Панель</LinkButton>
                     <div>Глобальный номер следующего счёта</div>
                 </div>
             </Div>
             <Div />
-            <Li>
-                <div className="text-sm opacity-80 max-w-xl">
-                    Это значение подставляется в PDF при каждой генерации счёта в приложении и затем
-                    автоматически увеличивается на 1 (для чисто цифровых номеров — как раньше). Здесь его
-                    можно изменить вручную.
-                </div>
-            </Li>
-            <Li>
+            <Div>
                 <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
                     <MyInput
                         value={value}
@@ -94,10 +85,10 @@ export default function SuperAdminInvoiceCounter() {
                         color="white"
                     />
                     <MyButton click={save}>Сохранить</MyButton>
-                    <MyButton click={load}>{loading ? "Загрузка…" : "Обновить"}</MyButton>
                 </div>
-            </Li>
+            </Div>
             <MySnackBar open={open} status={status} text={message} close={closeSnack} />
+            <Div />
         </Container>
     );
 }
