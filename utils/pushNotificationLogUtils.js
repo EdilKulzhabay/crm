@@ -18,6 +18,7 @@ export function mapNewStatusToNotificationType(newStatus) {
     const s = String(newStatus || "").toLowerCase();
     if (s === "couriernearby") return "courierNearby";
     if (s === "newsupportmessage") return "support";
+    if (s === "balancetopupsuccess") return "other";
     if (s === "sendnotification" || s === "sendnotificationtoclients") {
         return "other";
     }

@@ -326,6 +326,105 @@ export const pushNotificationClientSupport = async (
     }
 }
 
+/**
+ * Служебный data-only FCM: без notification payload — системный баннер не показывается.
+ * Клиент по newStatus === balanceTopUpSuccess обновляет профиль / баланс.
+ *
+ * @param {string[]} notificationTokens
+ * @param {{ orderId: string, amount: string|number, balanceAfter: string|number }} payload — все значения уйдут в data как строки
+ * @param {{ clientId?: import("mongoose").Types.ObjectId|string }} [options]
+ */
+export async function pushClientBalanceTopUpData(
+    notificationTokens,
+    { orderId, amount, balanceAfter },
+    options = {}
+) {
+    const validTokens = (notificationTokens || []).filter(
+        (t) => t && typeof t === "string"
+    );
+    if (validTokens.length === 0) {
+        return { successCount: 0, errorCount: 0 };
+    }
+
+    const dedupKey = `balanceTopUp_${String(options?.clientId || "na")}_${String(orderId || "")}`;
+    const now = Date.now();
+    const BALANCE_DEDUP_MS = 20000;
+    const lastSent = sentNotifications.get(dedupKey);
+    if (lastSent && now - lastSent < BALANCE_DEDUP_MS) {
+        console.log(
+            `[Payplus] push balance refresh: пропуск дубликата (${Math.ceil((BALANCE_DEDUP_MS - (now - lastSent)) / 1000)} c)`
+        );
+        return { successCount: 0, errorCount: 0 };
+    }
+
+    const data = {
+        newStatus: "balanceTopUpSuccess",
+        orderId: String(orderId || "topup"),
+        amount: String(amount != null ? amount : ""),
+        balanceAfter: String(balanceAfter != null ? balanceAfter : ""),
+    };
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const token of validTokens) {
+        try {
+            const message = {
+                token,
+                data,
+                android: {
+                    priority: "high",
+                },
+                apns: {
+                    headers: {
+                        "apns-priority": "10",
+                    },
+                    payload: {
+                        aps: {
+                            "content-available": 1,
+                        },
+                    },
+                },
+            };
+
+            const response = await admin.app("client-app").messaging().send(message);
+            console.log("[Payplus] FCM data-only (balance) sent:", response);
+            successCount++;
+        } catch (tokenError) {
+            errorCount++;
+            const errorCode = tokenError.errorInfo?.code || "unknown";
+            const shortToken =
+                token.length > 40 ? token.substring(0, 40) + "..." : token;
+            console.error(
+                `[Payplus] FCM balance data error ${shortToken}:`,
+                errorCode,
+                tokenError.message
+            );
+        }
+    }
+
+    if (successCount > 0) {
+        sentNotifications.set(dedupKey, now);
+    }
+
+    try {
+        await persistClientNotificationLogs({
+            clientId: options?.clientId,
+            validTokens,
+            title: "(служебное) баланс",
+            messageBody: "Обновление баланса после оплаты",
+            newStatus: "balanceTopUpSuccess",
+            data: { orderId, amount, balanceAfter },
+            successCount,
+            errorCount,
+        });
+    } catch (e) {
+        console.error("[Payplus] persistClientNotificationLogs balance:", e?.message);
+    }
+
+    return { successCount, errorCount };
+}
+
 export const testPushNotificationClient = async (sendToken) => {
     try {
         const token = sendToken;

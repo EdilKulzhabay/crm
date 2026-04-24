@@ -18,6 +18,15 @@ import User from "../Models/User.js";
 import { buildPaymentFormSign, verifyCallbackSign } from "../utils/payplusUtils.js";
 import { extractPayplusCardLast4 } from "../utils/extractPayplusCardLast4.js";
 
+function collectClientFcmTokens(client) {
+    const list = [...(client?.notificationPushTokens || [])];
+    const legacy = client?.notificationPushToken;
+    if (legacy && typeof legacy === "string" && legacy.trim()) {
+        list.push(legacy.trim());
+    }
+    return [...new Set(list.filter(Boolean))];
+}
+
 const PAYPLUS_BASE_URL =
     process.env.PAYPLUS_BASE_URL || "https://ventrapay.net";
 const PAYPLUS_MERCHANT = process.env.PAYPLUS_MERCHANT || "";
@@ -203,6 +212,33 @@ export const payplusCallback = async (req, res) => {
                     balanceBefore: prevBalance,
                     balanceAfter: client.balance,
                 });
+
+                const fcmTokens = collectClientFcmTokens(client);
+                if (fcmTokens.length > 0) {
+                    try {
+                        const { pushClientBalanceTopUpData } = await import(
+                            "../pushNotificationClient.js"
+                        );
+                        await pushClientBalanceTopUpData(
+                            fcmTokens,
+                            {
+                                orderId: orderNo,
+                                amount,
+                                balanceAfter: client.balance,
+                            },
+                            { clientId: client._id }
+                        );
+                    } catch (pushErr) {
+                        console.error(
+                            "[Payplus] push balance refresh:",
+                            pushErr?.message
+                        );
+                    }
+                } else {
+                    console.log(
+                        "[Payplus] нет FCM-токенов у клиента, пропуск служебного пуша обновления баланса"
+                    );
+                }
             } else {
                 console.error("[Payplus] payplusCallback CLIENT NOT FOUND:", session.clientId);
             }
