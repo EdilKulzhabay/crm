@@ -82,15 +82,11 @@ export default function SuperAdminMobileOrderCutoff() {
         <Container role={userData?.role}>
             <Div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <div>Приём заказов «на сегодня» в мобильном приложении</div>
+                    <div>Время приема заказов на сегодня</div>
                 </div>
             </Div>
             <Div />
             <Div>
-                <div className="max-w-xl text-sm text-gray-600 mb-2">
-                    До какого часа (время Алматы, UTC+6) клиент может оформить доставку на текущий календарный день. После этого
-                    ближайшая дата — следующий день (воскресенья в календаре приложения по-прежнему пропускаются).
-                </div>
                 <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
                     <span>До</span>
                     <MyInput
@@ -98,14 +94,13 @@ export default function SuperAdminMobileOrderCutoff() {
                         change={(e) => setValue(e.target.value)}
                         color="white"
                     />
-                    <span>:00 — заказы ещё на сегодня</span>
+                    <span>:00</span>
                     <MyButton click={save} disabled={loading}>
                         Сохранить
                     </MyButton>
                 </div>
             </Div>
             <Div />
-            <LinkButton href="/superAdmin">Назад</LinkButton>
             <MySnackBar open={open} status={status} text={message} close={closeSnack} />
         </Container>
     );

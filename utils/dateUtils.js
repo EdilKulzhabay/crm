@@ -3,8 +3,8 @@
  */
 export function getTodayAlmaty() {
     const now = new Date();
-    // Добавляем 6 часов для перевода UTC в время Алматы (UTC+6)
-    const almatyTime = new Date(now.getTime() + (6 * 60 * 60 * 1000));
+    // Казахстан (Алматы): UTC+5
+    const almatyTime = new Date(now.getTime() + (5 * 60 * 60 * 1000));
     return almatyTime.toISOString().split('T')[0];
 }
 
@@ -18,13 +18,12 @@ export function getDateAlmaty(date = null) {
     } else {
         dt = new Date();
     }
-    // Алматы UTC+6
-    const almatyTime = new Date(dt.getTime() + (6 * 60 * 60 * 1000));
+    const almatyTime = new Date(dt.getTime() + (5 * 60 * 60 * 1000));
     return almatyTime.toISOString().split('T')[0];
 }
 
 /**
- * Текущий час (0–23) в логике «Алматы», согласованно с getDateAlmaty (UTC+6).
+ * Текущий час (0–23) в логике «Алматы», согласованно с getDateAlmaty (UTC+5).
  */
 export function getHourAlmaty(date = null) {
     let dt;
@@ -33,6 +32,6 @@ export function getHourAlmaty(date = null) {
     } else {
         dt = new Date();
     }
-    const almatyTime = new Date(dt.getTime() + (6 * 60 * 60 * 1000));
+    const almatyTime = new Date(dt.getTime() + (5 * 60 * 60 * 1000));
     return almatyTime.getUTCHours();
 }
