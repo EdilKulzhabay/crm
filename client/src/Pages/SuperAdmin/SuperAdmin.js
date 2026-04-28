@@ -188,6 +188,12 @@ export default function SuperAdmin() {
                         <LinkButton href="/superAdminInvoiceCounter">Перейти</LinkButton>
                     </div>
                 </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
+                        <div>Моб. приложение — приём заказов на сегодня (час, Алматы):</div>
+                        <LinkButton href="/superAdminMobileOrderCutoff">Перейти</LinkButton>
+                    </div>
+                </Li>
             </>
             <Div />
             <Div>

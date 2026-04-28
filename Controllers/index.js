@@ -14,3 +14,4 @@ export * as AquaMarketController from "./AquaMarketController.js";
 export * as FaqController from "./FaqController.js";
 export * as PaymentController from "./PaymentController.js";
 export * as InvoiceCounterController from "./InvoiceCounterController.js";
+export * as MobileAppSettingsController from "./MobileAppSettingsController.js";

@@ -21,4 +21,18 @@ export function getDateAlmaty(date = null) {
     // Алматы UTC+6
     const almatyTime = new Date(dt.getTime() + (6 * 60 * 60 * 1000));
     return almatyTime.toISOString().split('T')[0];
-} 
+}
+
+/**
+ * Текущий час (0–23) в логике «Алматы», согласованно с getDateAlmaty (UTC+6).
+ */
+export function getHourAlmaty(date = null) {
+    let dt;
+    if (date) {
+        dt = date instanceof Date ? date : new Date(date);
+    } else {
+        dt = new Date();
+    }
+    const almatyTime = new Date(dt.getTime() + (6 * 60 * 60 * 1000));
+    return almatyTime.getUTCHours();
+}

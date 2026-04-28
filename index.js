@@ -23,6 +23,7 @@ import {
     FaqController,
     PaymentController,
     InvoiceCounterController,
+    MobileAppSettingsController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -205,6 +206,8 @@ app.get("/addPhoneForAddress", ClientController.addPhoneForAddress)
 app.post("/transferOrders", ClientController.transferOrders)
 app.get("/getInvoiceGlobalCounter", checkAuth, InvoiceCounterController.getInvoiceGlobalCounter);
 app.post("/setInvoiceGlobalCounter", checkAuth, InvoiceCounterController.setInvoiceGlobalCounter);
+app.get("/getMobileOrderCutoffSettings", checkAuth, MobileAppSettingsController.getMobileOrderCutoffSettings);
+app.post("/setMobileOrderCutoffSettings", checkAuth, MobileAppSettingsController.setMobileOrderCutoffSettings);
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);

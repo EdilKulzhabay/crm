@@ -76,6 +76,7 @@ import PaymentError from "./Pages/PaymentError";
 import PaymentPage from "./Pages/PaymentPage";
 import SuperAdminPayments from "./Pages/SuperAdmin/SuperAdminPayments";
 import SuperAdminInvoiceCounter from "./Pages/SuperAdmin/SuperAdminInvoiceCounter";
+import SuperAdminMobileOrderCutoff from "./Pages/SuperAdmin/SuperAdminMobileOrderCutoff";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -139,6 +140,7 @@ export const router = createBrowserRouter([
     { path: "/superAdminNotifications", element: <SuperAdminNotifications /> },
     { path: "/superAdminPayments", element: <SuperAdminPayments /> },
     { path: "/superAdminInvoiceCounter", element: <SuperAdminInvoiceCounter /> },
+    { path: "/superAdminMobileOrderCutoff", element: <SuperAdminMobileOrderCutoff /> },
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },

@@ -9,6 +9,7 @@ import User from "../Models/User.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import SupportContacts from "../Models/SupportContacts.js";
 import { sendMasterCallTelegram } from "../telegram/sendMasterCall.js";
+import { sendSupportTelegram } from "../telegram/sendSupport.js";
 import {
     maskEmailForLog,
     maskPhoneForLog,
@@ -24,6 +25,11 @@ import {
     nextInvoiceSequentialNumber,
 } from "../utils/invoicePdf.js";
 import { takeNextInvoiceNumberForPdf } from "../utils/invoiceCounter.js";
+import { getDateAlmaty, getHourAlmaty } from "../utils/dateUtils.js";
+import {
+    getOrderSameDayUntilHourValue,
+    withOrderSameDayUntilHour,
+} from "../utils/mobileOrderCutoff.js";
 
 /** Строка для счёта; старые документы могли хранить вложенный объект */
 function normalizeInvoiceLegalData(raw) {
@@ -579,7 +585,7 @@ export const createTestAccount = async (req, res) => {
             refreshToken: refreshToken,
         });
 
-        const clientData = {
+        const clientData = await withOrderSameDayUntilHour({
             fullName: client._doc.fullName,
             phone: client._doc.phone,
             mail: client._doc.mail,
@@ -599,7 +605,7 @@ export const createTestAccount = async (req, res) => {
             haveCompletedOrder: client._doc.haveCompletedOrder,
             createdAt: client._doc.createdAt,
             updatedAt: client._doc.updatedAt,
-        }
+        });
 
         res.json({ success: true, accessToken, refreshToken: refreshToken, clientData });
     } catch (error) {
@@ -697,7 +703,7 @@ export const clientRegister = async (req, res) => {
             refreshToken: refreshToken,
         });
 
-        const clientData = {
+        const clientData = await withOrderSameDayUntilHour({
             _id: client._id,
             fullName: client._doc.fullName,
             userName: client._doc.userName,
@@ -722,7 +728,7 @@ export const clientRegister = async (req, res) => {
             haveCompletedOrder: client._doc.haveCompletedOrder,
             createdAt: client._doc.createdAt,
             updatedAt: client._doc.updatedAt,
-        };
+        });
 
         res.json({ success: true, accessToken, refreshToken: refreshToken, clientData });
     } catch (error) {
@@ -773,7 +779,7 @@ export const clientLogin = async (req, res) => {
         await ensureReferralCodeForClient(candidate);
         const c = await Client.findById(candidate._id);
 
-        const clientData = {
+        const clientData = await withOrderSameDayUntilHour({
             _id: c._id,
             fullName: c.fullName,
             userName: c.userName,
@@ -810,7 +816,7 @@ export const clientLogin = async (req, res) => {
             createdAt: c.createdAt,
             updatedAt: c.updatedAt,
             invoiceLegalData: normalizeInvoiceLegalData(c.invoiceLegalData),
-        };
+        });
 
         const accessToken = jwt.sign(
             { client: candidate._id },
@@ -935,7 +941,7 @@ export const updateClientDataMobile = async (req, res) => {
             [field]: value
         }, { new: true });
 
-        const clientData = {
+        const clientData = await withOrderSameDayUntilHour({
             _id: updatedClient._doc._id,
             fullName: updatedClient._doc.fullName,
             userName: updatedClient._doc.userName,
@@ -961,7 +967,7 @@ export const updateClientDataMobile = async (req, res) => {
             showRepairMasterInApp: updatedClient._doc.showRepairMasterInApp !== false,
             createdAt: updatedClient._doc.createdAt,
             invoiceLegalData: normalizeInvoiceLegalData(updatedClient._doc.invoiceLegalData),
-        }
+        });
 
         res.json({ success: true, message: "Данные успешно изменены", clientData });
     } catch (error) {
@@ -1219,8 +1225,6 @@ export const addOrderClientMobile = async (req, res) => {
     try {
         const {mail, address, products, clientNotes, date, opForm, needCall, comment, notificationToken} = req.body
 
-        console.log("addOrderClientMobile req.body: ", req.body);
-
         const client = await Client.findOne({ mail: mail?.toLowerCase() });
 
         if (!client) {
@@ -1240,15 +1244,11 @@ export const addOrderClientMobile = async (req, res) => {
             Number(products.b12) * Number(client.price12) +
             Number(products.b19) * Number(client.price19);
 
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`; 
+        const todayStr = getDateAlmaty();
 
         const findOrder = await Order.findOne({
             client: client._id,
-            "date.d": date.d,
+            "date.d": date?.d,
             "address.actual": address.actual,
             status: { $ne: "cancelled" }
         })
@@ -1258,6 +1258,21 @@ export const addOrderClientMobile = async (req, res) => {
                 success: false,
                 message: "Заказ на эту дату уже существует"
             })
+        }
+
+        const resolvedD =
+            typeof date?.d === "string" && String(date.d).trim().length >= 10
+                ? String(date.d).trim().slice(0, 10)
+                : todayStr;
+
+        if (resolvedD === todayStr) {
+            const cutoff = await getOrderSameDayUntilHourValue();
+            if (getHourAlmaty() >= cutoff) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Приём заказов на сегодня завершён. На сегодня принимаются заказы до ${cutoff}:00 по времени Алматы. Выберите другую дату доставки.`,
+                });
+            }
         }
 
         let paymentMethod = "fakt";
@@ -1289,24 +1304,6 @@ export const addOrderClientMobile = async (req, res) => {
         });
 
         await order.save();
-
-        // const text = `Адрес: ${address?.actual}\nТелефон: ${client?.phone}\nКол. 12,5л: ${products?.b12}\nКол. 18,9л: ${products?.b19}`
-        // const mailOptions = {
-        //     from: "info@tibetskaya.kz",
-        //     to: "araiuwa_89@mail.ru",
-        //     subject: "Клиент добавил заказ через приложение",
-        //     text,
-        // };
-    
-        // transporter.sendMail(mailOptions, function (error, info) {
-        //     if (error) {
-        //         console.log(error);
-        //         res.status(500).send("Ошибка при отправке письма");
-        //     } else {
-        //         console.log("Email sent: " + info.response);
-        //         res.status(200).send("Письмо успешно отправлено");
-        //     }
-        // });
 
         client.bonus = client.bonus + 50
         if (opForm === "credit" && client.paymentMethod === "balance") {
@@ -1440,7 +1437,18 @@ export const getClientDataMobile = async (req, res) => {
             await ensureReferralCodeForClient(client);
             client = await Client.findOne({ mail: mail?.toLowerCase() });
         }
-        res.json({ client });
+        if (!client) {
+            return res.json({ client: null });
+        }
+        const plain = client.toObject ? client.toObject({ flattenMaps: true }) : { ...client._doc };
+        const orderSameDayUntilHour = await getOrderSameDayUntilHourValue();
+        res.json({
+            client: {
+                ...plain,
+                invoiceLegalData: normalizeInvoiceLegalData(client.invoiceLegalData),
+                orderSameDayUntilHour,
+            },
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -1486,40 +1494,33 @@ export const sendSupportMessage = async (req, res) => {
 
         const messages = updatedClient.supportMessages;
 
+        const supportContact = await SupportContacts.findOne({ client: client._id });
+        if (!supportContact) {
+            await SupportContacts.create({
+                client: client._id,
+                lastMessage: message.text,
+                lastMessageTime: new Date().toISOString(),
+            });
+        } else {
+            await SupportContacts.findByIdAndUpdate(supportContact._id, {
+                lastMessage: message.text,
+                lastMessageTime: new Date().toISOString(),
+            });
+        }
+
+        void sendSupportTelegram({
+            fullName: client.fullName,
+            mail: client.mail,
+            text: message.text,
+        }).catch((e) =>
+            console.error("[sendSupportMessage] telegram:", e?.message || e)
+        );
+
         res.json({
             success: true,
             message: "Сообщение успешно отправлено",
             messages,
         });
-
-        const supportContact = await SupportContacts.findOne({ client: client._id });
-        if (!supportContact) {
-            await SupportContacts.create({ client: client._id, lastMessage: message.text, lastMessageTime: new Date().toISOString() });
-        } else {
-            await SupportContacts.findByIdAndUpdate(supportContact._id, { lastMessage: message.text, lastMessageTime: new Date().toISOString() });
-            const mailOptions = {
-                from: "info@tibetskaya.kz",
-                to: process.env.SENDINFOTOEMAIL,
-                subject: `Новое сообщение от клиента ${client.fullName}`,
-                text: `Новое сообщение от клиента ${client.fullName}: ${message.text}`,
-            };
-        
-            transporter.sendMail(mailOptions, function (error, info) {
-                if (error) {
-                    console.log(error);
-                    res.status(500).json({
-                        success: false,
-                        message: "Ошибка при отправке письма"
-                    })
-                } else {
-                    console.log("Email sent: " + info.response);
-                    res.status(200).json({
-                        success: true,
-                        message: "Письмо успешно отправлено"
-                    })
-                }
-            });
-        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
