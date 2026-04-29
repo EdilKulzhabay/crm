@@ -1239,6 +1239,7 @@ export const addOrderClientMobile = async (req, res) => {
         }
 
         const franchisee = await User.findOne({role: "superAdmin"})
+        const naturalFranchisee = await User.findOne({_id: client.franchisee})
 
         const sum =
             Number(products.b12) * Number(client.price12) +
@@ -1287,7 +1288,7 @@ export const addOrderClientMobile = async (req, res) => {
         const clientPhone = address.phone !== "" ? address.phone : client.phone
 
         const order = new Order({
-            franchisee: franchisee._id,
+            franchisee: naturalFranchisee.isBussinessCenter ? naturalFranchisee._id : franchisee._id,
             client: client._id,
             address,
             products,
@@ -1335,6 +1336,38 @@ export const addOrderClientMobile = async (req, res) => {
                 to: normalizedMail,
                 subject: "Заказ без координат созданный через приложение",
                 text: `Заказ без координат созданный через приложение: ${address.actual}`,
+            };
+    
+            transporter.sendMail(mailOptions, function (error, info) {
+                // Убираем из процесса отправки
+                sendingInProgress.delete(normalizedMail);
+                
+                if (error) {
+                    console.log("Ошибка отправки email:", error);
+                    // Удаляем сохраненный код при ошибке
+                    delete codes[normalizedMail];
+                    delete lastSentTime[normalizedMail];
+                    
+                    res.status(500).json({
+                        success: false,
+                        message: "Ошибка при отправке письма"
+                    });
+                } else {
+                    console.log("Email sent successfully:", info.response);
+                    res.status(200).json({
+                        success: true,
+                        message: "Письмо успешно отправлено"
+                    });
+                }
+            });
+        }
+
+        if (naturalFranchisee.isBussinessCenter) {
+            const mailOptions = {
+                from: "info@tibetskaya.kz",
+                to: naturalFranchisee.mail,
+                subject: "Новый заказ",
+                text: `Новый заказ с приложения`,
             };
     
             transporter.sendMail(mailOptions, function (error, info) {
