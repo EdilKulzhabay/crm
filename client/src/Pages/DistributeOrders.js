@@ -6,8 +6,12 @@ import MyButton from "../Components/MyButton";
 import api from "../api";
 import LinkButton from "../Components/LinkButton";
 import useFetchUserData from "../customHooks/useFetchUserData"
+import ChooseCourierAggregatorModal from "../Components/ChooseCourierAggregatorModal";
+import useScrollPosition from "../customHooks/useScrollPosition";
+import MySnackBar from "../Components/MySnackBar";
 
 export default function DistributeOrders() {
+    const scrollPosition = useScrollPosition();
     const userData = useFetchUserData();
     const [couriers, setCouriers] = useState([]);
     const [orders, setOrders] = useState([]);
@@ -18,9 +22,17 @@ export default function DistributeOrders() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showAssignOrderModal, setShowAssignOrderModal] = useState(false);
 
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [status, setStatus] = useState("");
+
     const openAssignOrderModal = (orderId) => {
         setSelectedOrder(orderId);
         setShowAssignOrderModal(true);
+    }
+
+    const closeAssignOrderModal = () => {
+        setShowAssignOrderModal(false);
     }
 
     const getActiveCourierAggregatorsForBussinessCenter = () => {
@@ -71,18 +83,39 @@ export default function DistributeOrders() {
         }
     }, [userData?._id])
 
+    const chooseCourierAggregator = async (courierAggregator) => {
+        const response = await api.post("/assignOrderToCourier", {
+            orderId: selectedOrder._id,
+            courierId: courierAggregator?._id
+        });
+        if (response.data.success) {
+            getOrdersForBussinessCenter();
+            setOpen(true);
+            setStatus("success");
+            setMessage("Заказ успешно назначен");
+        } else {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Что то пошло не так");
+        }
+        setShowAssignOrderModal(false);
+    }
+
+    const closeSnack = () => {
+        setOpen(false);
+    }
+
     return <Container role={userData?.role}>
+        {showAssignOrderModal && (
+            <ChooseCourierAggregatorModal
+                closeCourierAggregatorsModal={closeAssignOrderModal}
+                chooseCourierAggregator={chooseCourierAggregator}
+                franchisee={userData?._id}
+                scrollPosition={scrollPosition}
+            />
+        )}
         <Div>Распределить заказы</Div>
         <Div />
-        {showAssignOrderModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white text-black p-6 rounded-lg max-w-md w-full mx-4">
-                    <h3 className="text-lg font-bold mb-4">
-                        Назначить заказ курьеру
-                    </h3>
-                </div>
-            </div>
-        )}
         <Div>Список активных курьеров:</Div>
         {couriers && couriers.length > 0 && couriers.map((item) => {
             return <div key={item?._id}>
@@ -99,11 +132,12 @@ export default function DistributeOrders() {
             return <div key={item?._id}>
                 <Li>
                     <div>{item?.client?.fullName}</div>
+                    <div>{item?.client?.userName}</div>
                     <div>{item?.client?.address?.actual}</div>
                     {item.products.b12 > 0 && <div>12.5л: {item.products.b12}</div>}
                     {item.products.b19 > 0 && <div>18.9л: {item.products.b19}</div>}
                     <LinkButton color="green" href={`/orderPage/${item?._id}`}>Перейти</LinkButton>
-                    <MyButton color="green" onClick={() => {
+                    <MyButton color="green" click={() => {
                         setSelectedOrder(item);
                         setShowAssignOrderModal(true);
                     }}>Назначить</MyButton>
@@ -113,5 +147,41 @@ export default function DistributeOrders() {
         })}
 
         <Div />
+        <Div>Завершенные заказы:</Div>
+        {completedOrders && completedOrders.length > 0 && completedOrders.map((item) => {
+            return <div key={item?._id}>
+                <Li>
+                    <div>{item?.client?.fullName}</div>
+                    <div>{item?.client?.userName}</div>
+                    <div>{item?.client?.address?.actual}</div>
+                    {item.products.b12 > 0 && <div>12.5л: {item.products.b12}</div>}
+                    {item.products.b19 > 0 && <div>18.9л: {item.products.b19}</div>}
+                    <LinkButton color="green" href={`/orderPage/${item?._id}`}>Перейти</LinkButton>
+                </Li>
+            </div>
+        })}
+
+        <Div />
+        <Div>Отмененные заказы:</Div>
+        {cancelledOrders && cancelledOrders.length > 0 && cancelledOrders.map((item) => {
+            return <div key={item?._id}>
+                <Li>
+                    <div>{item?.client?.fullName}</div>
+                    <div>{item?.client?.userName}</div>
+                    <div>{item?.client?.address?.actual}</div>
+                    {item.products.b12 > 0 && <div>12.5л: {item.products.b12}</div>}
+                    {item.products.b19 > 0 && <div>18.9л: {item.products.b19}</div>}
+                    <LinkButton color="green" href={`/orderPage/${item?._id}`}>Перейти</LinkButton>
+                </Li>
+            </div>
+        })}
+
+        <Div />
+        <MySnackBar
+            open={open}
+            text={message}
+            status={status}
+            close={closeSnack}
+        />
     </Container>
 }
