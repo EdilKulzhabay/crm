@@ -52,6 +52,10 @@ function drawInvoiceHeaderBanner(doc, left, y, pageW) {
     const leftW = pageW * 0.5;
     const rightX = left + pageW * 0.5;
     const rightW = pageW * 0.5;
+    /** текст левее — ниже на 28 pt; блок справа (лого) — выше на 28 pt */
+    const shiftPt = 28;
+    const yText = y + shiftPt - 20;
+    const yRight = y - shiftPt;
     doc.font("main").fontSize(7).fillColor("#000000");
 
     let rightBlockH = 0;
@@ -59,20 +63,20 @@ function drawInvoiceHeaderBanner(doc, left, y, pageW) {
         const img = doc.openImage(PDF_TITLE_PNG);
         const imgW = pageW * 0.5;
         rightBlockH = (img.height / img.width) * imgW;
-        doc.image(PDF_TITLE_PNG, rightX, y, { width: imgW });
+        doc.image(PDF_TITLE_PNG, rightX, yRight, { width: imgW });
     } else {
         doc.fontSize(8);
         const fallback = "Тибетская since 1996";
         rightBlockH = doc.heightOfString(fallback, { width: rightW });
-        doc.text(fallback, rightX, y, { width: rightW, align: "right" });
+        doc.text(fallback, rightX, yRight, { width: rightW, align: "right" });
         doc.fontSize(7);
     }
 
     const textH = doc.heightOfString(notice, { width: leftW, align: "left" });
-    doc.text(notice, left, y, { width: leftW, align: "left" });
+    doc.text(notice, left, yText, { width: leftW - 30, align: "left" });
 
-    const rowH = Math.max(textH, rightBlockH);
-    return y + rowH;
+    const rowBottom = Math.max(yText + textH, yRight + rightBlockH);
+    return rowBottom;
 }
 
 const TABLE_PAD = 4;
@@ -275,6 +279,35 @@ function drawBankBeneficiaryGrid(doc, left, y, pageW) {
 }
 
 /**
+ * Исполнитель / Покупатель / Договор: колонка подписей слева (~20%), значение справа полужирным.
+ */
+function drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer) {
+    const labelW = Math.floor(pageW * 0.15);
+    const gap = 8; // горизонтальный зазор подпись/значение (в 2 раза меньше базовых 16)
+    const valueX = left + labelW + gap;
+    const valueW = pageW - labelW - gap;
+    const rowGap = 10;
+
+    const rows = [
+        { label: "Исполнитель:", value: STATIC.executorBlock },
+        { label: "Покупатель:", value: buyer },
+        { label: "Договор:", value: STATIC.contract },
+    ];
+
+    for (const { label, value } of rows) {
+        const y0 = y;
+        doc.font("main").fillColor("#000000");
+        doc.text(label, left, y0, { width: labelW });
+        const bottomL = doc.y;
+        doc.font("mainBold");
+        doc.text(String(value ?? ""), valueX, y0, { width: valueW });
+        const bottomV = doc.y;
+        y = Math.max(bottomL, bottomV) + rowGap;
+    }
+    return y;
+}
+
+/**
  * @param {object} params
  * @param {string} params.invoiceNumber — номер счёта (динам.)
  * @param {Date} [params.invoiceDate]
@@ -337,13 +370,17 @@ export function buildInvoicePdfBuffer(params) {
         doc.font("mainBold").fontSize(11).fillColor("#000000");
         doc.text(titleText, left, y, { width: pageW});
         y = doc.y + 10;
-        doc.font("main").fontSize(8);
-        doc.text(`Исполнитель: ${STATIC.executorBlock}`, left, y, { width: pageW });
-        y = doc.y + 6;
-        doc.text(`Покупатель: ${buyer}`, left, y, { width: pageW });
-        y = doc.y + 6;
-        doc.text(`Договор: ${STATIC.contract}`, left, y, { width: pageW });
-        y = doc.y + 10;
+        // Нарисовать разделитель — тонкая линия через всю ширину страницы
+        // Можно задать толщину через lineWidth, а координаты — заданной высотой (например, 1pt)
+        doc.save();
+        doc.lineWidth(1); // Высота/толщина линии
+        doc.moveTo(left, y + 1) // y + 8 — отступ сверху после заголовка
+           .lineTo(left + pageW, y + 1) // полная ширина
+           .stroke();
+        doc.restore();
+        y = y + 14; // сместить "y" ниже линии (высота линии + отступ 6)
+        doc.font("main").fontSize(8).fillColor("#000000");
+        y = drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer);
 
         const colW = [
             22,
@@ -393,10 +430,10 @@ export function buildInvoicePdfBuffer(params) {
             columnAligns: colAlign,
         });
         y = itemsBottom.y + 8;
-        doc.fontSize(9);
-        doc.text(`Итого: ${formatMoney(total)}`, left, y, { width: pageW });
+        doc.fontSize(9).font("mainBold");
+        doc.text(`Итого: ${formatMoney(total)}`, left, y, { width: pageW, align: "right" });
         y = doc.y + 6;
-        doc.fontSize(8);
+        doc.fontSize(8).font("main");
         doc.text(
             `Всего наименований ${rowCount}, на сумму ${formatMoney(total)} KZT`,
             left,
@@ -404,10 +441,23 @@ export function buildInvoicePdfBuffer(params) {
             { width: pageW }
         );
         y = doc.y + 6;
+        doc.font("mainBold").fillColor("#000000");
         doc.text(`Всего к оплате: ${words} 00 тиын`, left, y, { width: pageW });
-        y = doc.y + 20;
+        y = doc.y + 10;
 
-        doc.text(`Исполнитель: _________________________ ${STATIC.signer}`, left, y, { width: pageW });
+        // Нарисовать разделитель — тонкая линия через всю ширину страницы
+        // Можно задать толщину через lineWidth, а координаты — заданной высотой (например, 1pt)
+        doc.save();
+        doc.lineWidth(1); // Высота/толщина линии
+        doc.moveTo(left, y + 1) // y + 8 — отступ сверху после заголовка
+           .lineTo(left + pageW, y + 1) // полная ширина
+           .stroke();
+        doc.restore();
+        y = y + 14; // сместить "y" ниже линии (высота линии + отступ 6)
+
+        doc.font("mainBold").fontSize(8).fillColor("#000000");
+        doc.text("Исполнитель: ", left, y, { continued: true });
+        doc.font("main").text(`__________________________________ ${STATIC.signer}`, { width: pageW });
         y = doc.y + 8;
 
         if (fs.existsSync(PDF_END_PNG)) {
