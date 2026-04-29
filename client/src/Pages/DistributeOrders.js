@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Container from "../Components/Container";
 import Div from "../Components/Div";
+import Li from "../Components/Li";
+import MyButton from "../Components/MyButton";
 import api from "../api";
 import LinkButton from "../Components/LinkButton";
 import useFetchUserData from "../customHooks/useFetchUserData"
@@ -22,9 +24,7 @@ export default function DistributeOrders() {
     }
 
     const getActiveCourierAggregatorsForBussinessCenter = () => {
-        api.post('/getActiveCourierAggregatorsForBussinessCenter', {
-            franchisee: userData?._id,
-        }, {
+        api.post('/getActiveCourierAggregatorsForBussinessCenter', { franchisee: userData?._id || "asdasd"}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setCouriers(data.couriers)
@@ -34,7 +34,7 @@ export default function DistributeOrders() {
     }
 
     const getOrdersForBussinessCenter = () => {
-        api.get('/getOrdersForBussinessCenter', {
+        api.post('/getActiveOrdersForBussinessCenter', { franchisee: userData?._id || "asdasd"}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setOrders(data.orders)
@@ -44,7 +44,7 @@ export default function DistributeOrders() {
     }
 
     const getCompletedOrdersForBussinessCenter = () => {
-        api.get('/getCompletedOrdersForBussinessCenter', {
+        api.post('/getCompletedOrdersForBussinessCenter', { franchisee: userData?._id || "asdasd"}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setCompletedOrders(data.orders)
@@ -54,7 +54,7 @@ export default function DistributeOrders() {
     }
 
     const getCancelledOrdersForBussinessCenter = () => {
-        api.get('/getCancelledOrdersForBussinessCenter', {
+        api.post('/getCancelledOrdersForBussinessCenter', { franchisee: userData?._id || "asdasd"}, {
             headers: { "Content-Type": "application/json" },
         }).then(({data}) => {
             setCancelledOrders(data.orders)
@@ -63,11 +63,13 @@ export default function DistributeOrders() {
         })
     }
     useEffect(() => {
-        getActiveCourierAggregatorsForBussinessCenter()
-        getOrdersForBussinessCenter()
-        getCompletedOrdersForBussinessCenter()
-        getCancelledOrdersForBussinessCenter()
-    }, [])
+        if (userData?._id) {
+            getActiveCourierAggregatorsForBussinessCenter()
+            getOrdersForBussinessCenter()
+            getCompletedOrdersForBussinessCenter()
+            getCancelledOrdersForBussinessCenter()
+        }
+    }, [userData?._id])
 
     return <Container role={userData?.role}>
         <Div>Распределить заказы</Div>
@@ -82,15 +84,14 @@ export default function DistributeOrders() {
             </div>
         )}
         <Div>Список активных курьеров:</Div>
-            {couriers && couriers.length > 0 && couriers.map((item) => {
-                return <div key={item?._id}>
-                    <Div>
-                        <div>{item?.fullName}</div>
-                        <LinkButton color="green" href={`/BusinessCenterCourierAggregatorPage/${item?._id}`}>Перейти</LinkButton>
-                    </Div>
-                </div>
-            })}
-        <Div/>
+        {couriers && couriers.length > 0 && couriers.map((item) => {
+            return <div key={item?._id}>
+                <Li>
+                    <div>{item?.fullName}</div>
+                    <LinkButton color="green" href={`/BusinessCenterCourierAggregatorPage/${item?._id}`}>Перейти</LinkButton>
+                </Li>
+            </div>
+        })}
 
         <Div />
         <Div>Активные заказы:</Div>

@@ -77,6 +77,7 @@ import PaymentPage from "./Pages/PaymentPage";
 import SuperAdminPayments from "./Pages/SuperAdmin/SuperAdminPayments";
 import SuperAdminInvoiceCounter from "./Pages/SuperAdmin/SuperAdminInvoiceCounter";
 import SuperAdminMobileOrderCutoff from "./Pages/SuperAdmin/SuperAdminMobileOrderCutoff";
+import DistributeOrders from "./Pages/DistributeOrders";
 
 export const router = createBrowserRouter([
     { path: "/login", element: <Login /> },
@@ -146,6 +147,7 @@ export const router = createBrowserRouter([
     { path: "/adminSettings", element: <AdminSettings /> },
     { path: "/adminDenyVerificationClients", element: <AdminDenyVerificationClients /> },
     { path: "/adminCoincidence", element: <AdminCoincidence /> },
+    { path: "/distributeOrders", element: <DistributeOrders /> },
 
     ////COURIERLINKS
     { path: "/courier", element: <CourierMain /> },

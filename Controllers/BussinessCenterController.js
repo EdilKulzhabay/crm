@@ -1,5 +1,6 @@
 import CourierAggregator from "../Models/CourierAggregator.js";
 import Order from "../Models/Order.js";
+import { getDateAlmaty } from "../utils/dateUtils.js";
 
 export const getActiveCourierAggregatorsForBussinessCenter = async (req, res) => {
     try {
@@ -24,9 +25,8 @@ export const getActiveCourierAggregatorsForBussinessCenter = async (req, res) =>
 export const getActiveOrdersForBussinessCenter = async (req, res) => {
     try {
         const franchiseeId = req.body.franchisee;
-        const today = new Date();
-        const todayString = getDateAlmaty(today);
-        const orders = await Order.find({ franchisee: franchiseeId, "date.d": todayString, status: { $nin: ["delivered", "cancelled"] } })
+        const today = getDateAlmaty();
+        const orders = await Order.find({ franchisee: franchiseeId, "date.d": today, status: { $nin: ["delivered", "cancelled"] } })
             .populate("client")
             .populate("courierAggregator", "fullName _id");
 
@@ -40,7 +40,8 @@ export const getActiveOrdersForBussinessCenter = async (req, res) => {
 export const getCompletedOrdersForBussinessCenter = async (req, res) => {
     try {
         const franchiseeId = req.body.franchisee;
-        const orders = await Order.find({ franchisee: franchiseeId, status: "delivered" })
+        const today = getDateAlmaty();
+        const orders = await Order.find({ franchisee: franchiseeId, "date.d": today, status: "delivered" })
             .populate("client")
             .populate("courierAggregator", "fullName _id");
         res.json({ orders })
@@ -53,7 +54,8 @@ export const getCompletedOrdersForBussinessCenter = async (req, res) => {
 export const getCancelledOrdersForBussinessCenter = async (req, res) => {
     try {
         const franchiseeId = req.body.franchisee;
-        const orders = await Order.find({ franchisee: franchiseeId, status: "cancelled" })
+        const today = getDateAlmaty();
+        const orders = await Order.find({ franchisee: franchiseeId, "date.d": today, status: "cancelled" })
             .populate("client")
             .populate("courierAggregator", "fullName _id");
         res.json({ orders })

@@ -138,9 +138,11 @@ export default function SuperAdmin() {
                         </LinkButton>
                     </Li>
                     {userData?.isBussinessCenter && 
-                        <LinkButton color="green" href="/distributeOrders">
-                            Распределить
-                        </LinkButton>
+                        <Li>    
+                            <LinkButton color="green" href="/distributeOrders">
+                                Распределить
+                            </LinkButton>
+                        </Li>
                     }
                     <Li>
                         <LinkButton color="green" href="/addPromoCode">
