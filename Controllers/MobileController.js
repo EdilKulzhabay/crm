@@ -1512,6 +1512,7 @@ export const sendSupportMessage = async (req, res) => {
             fullName: client.fullName,
             mail: client.mail,
             text: message.text,
+            id: client._id,
         }).catch((e) =>
             console.error("[sendSupportMessage] telegram:", e?.message || e)
         );

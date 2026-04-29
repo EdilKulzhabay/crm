@@ -4,8 +4,8 @@ import axios from "axios";
  * Уведомление в Telegram о новом сообщении в техподдержку из приложения.
  * Переменные окружения: TELEGRAM_BOT_TOKEN, TELEGRAM_SUPPORT_CHAT_ID (id группы или супергруппы).
  */
-export async function sendSupportTelegram({ fullName, mail, text }) {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
+export async function sendSupportTelegram({ fullName, mail, text, id }) {
+    const token = process.env.TELEGRAM_BOT_TOKEN_SUPPORT;
     const chatId = process.env.TELEGRAM_SUPPORT_CHAT_ID;
 
     if (!token || !chatId) {
@@ -23,6 +23,7 @@ export async function sendSupportTelegram({ fullName, mail, text }) {
         `Email: ${mail || "—"}`,
         "",
         body,
+        `Ссылка на чат: https://tibetskayacrm.kz/SupportChat/${id}`,
     ].join("\n");
 
     try {
