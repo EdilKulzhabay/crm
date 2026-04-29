@@ -541,13 +541,15 @@ export const updateFranchiseeDataB = async (req, res) => {
             user.b121kol = changeData.b121kol
             user.b191kol = changeData.b191kol
             user.b197kol = changeData.b197kol
+        } else if (change === "isBussinessCenter") {
+            user.isBussinessCenter = changeData
         }
 
         await user.save()
 
         res.json({
             success: true,
-            message: "Заказ успешно изменен",
+            message: "Франчайзи успешно изменен",
         });
     } catch (error) {
         console.log(error);
