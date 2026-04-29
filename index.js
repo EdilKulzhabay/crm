@@ -24,6 +24,7 @@ import {
     PaymentController,
     InvoiceCounterController,
     MobileAppSettingsController,
+    BussinessCenterController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -377,125 +378,12 @@ app.post(
     PaymentController.getClientPaymentsForSuperAdmin
 );
 
-// app.get("/testOrTools", async (req, res) => {
-//     try {
-//         // Сначала отправляем ответ клиенту
-//         res.json({ success: true, message: "orTools запущен в фоновом режиме" }); 
-        
-//         // Затем запускаем orTools в фоне
-//         try {
-//             await testOrTools();
-//         } catch (queueError) {
-//             console.error("Ошибка в очереди orTools:", queueError);
-//         }
-//     } catch (error) {
-//         // Если ответ еще не отправлен, отправляем ошибку
-//         if (!res.headersSent) {
-//             res.status(500).json({
-//                 success: false,
-//                 message: "Error executing Python script",
-//                 error: error.message
-//             });
-//         } else {
-//             console.error("Ошибка в orTools:", error);
-//         }
-//     }
-// });
 
-/////////////ORTOOLS
-// app.get("/orTools", async (req, res) => {
-//     try {
-//         // Сначала отправляем ответ клиенту
-//         res.json({ success: true, message: "orTools запущен в фоновом режиме" }); 
-        
-//         // Затем запускаем orTools в фоне
-//         try {
-//             await queueOrTools('api_request');
-//         } catch (queueError) {
-//             console.error("Ошибка в очереди orTools:", queueError);
-//         }
-//     } catch (error) {
-//         // Если ответ еще не отправлен, отправляем ошибку
-//         if (!res.headersSent) {
-//             res.status(500).json({
-//                 success: false,
-//                 message: "Error executing Python script",
-//                 error: error.message
-//             });
-//         } else {
-//             console.error("Ошибка в orTools:", error);
-//         }
-//     }
-// });
-
-// app.get("/orTools/status", async (req, res) => {
-//     try {
-//         const status = getQueueStatus();
-//         res.json({ success: true, status });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: "Error getting queue status",
-//             error: error.message
-//         });
-//     }
-// });
-
-// app.get("/orTools/clear", async (req, res) => {
-//     try {
-//         clearQueue();
-//         res.json({ success: true, message: "Queue cleared" });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: "Error clearing queue",
-//             error: error.message
-//         });
-//     }
-// });
-
-/////////////ROUTE OPTIMIZATION - TSP
-// Endpoint для запуска оптимизации маршрутов
-// app.get("/optimizeRoutes", async (req, res) => {
-//     try {
-//         console.log("🚀 Запуск оптимизации маршрутов через API");
-        
-//         const result = await optimizedZoneBasedDistribution("2025-07-01", false);
-        
-//         res.json({
-//             success: true,
-//             message: "Оптимизация маршрутов завершена",
-//             data: result
-//         });
-//     } catch (error) {
-//         console.error("❌ Ошибка при оптимизации маршрутов:", error);
-//         res.status(500).json({
-//             success: false,
-//             message: "Ошибка при оптимизации маршрутов",
-//             error: error.message
-//         });
-//     }
-// });
-
-// // Endpoint для получения статуса оптимизации (без авторизации для тестирования)
-// app.get("/optimizeRoutes/status", async (req, res) => {
-//     try {
-//         const { date } = req.query;
-        
-//         // Здесь можно добавить логику проверки статуса оптимизации
-//         res.json({
-//             success: true,
-//             message: "Сервис оптимизации маршрутов доступен",
-//             currentDate: date || new Date().toISOString().split('T')[0]
-//         });
-//     } catch (error) {
-//         res.status(500).json({
-//             success: false,
-//             message: "Ошибка сервиса оптимизации",
-//             error: error.message
-//         });
-//     }
-// });
+///////BUSSINESSCENTER
+app.post("/getActiveCourierAggregatorsForBussinessCenter", BussinessCenterController.getActiveCourierAggregatorsForBussinessCenter)
+app.post("/getActiveOrdersForBussinessCenter", BussinessCenterController.getActiveOrdersForBussinessCenter)
+app.post("/getCompletedOrdersForBussinessCenter", BussinessCenterController.getCompletedOrdersForBussinessCenter)
+app.post("/getCancelledOrdersForBussinessCenter", BussinessCenterController.getCancelledOrdersForBussinessCenter)
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
