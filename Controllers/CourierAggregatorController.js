@@ -231,7 +231,7 @@ export const getCourierAggregatorDataForAdmin = async(req, res) => {
     try {
         const { id } = req.body
 
-        const courier = await CourierAggregator.findById(id)
+        const courier = await CourierAggregator.findById(id).populate("franchisee", "fullName")
 
         if (!courier) {
             return res.json({

@@ -10,8 +10,11 @@ import Info from "../Components/Info";
 import clsx from "clsx";
 import useFetchUserData from "../customHooks/useFetchUserData";
 import MyInput from "../Components/MyInput";
+import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
+import useScrollPosition from "../customHooks/useScrollPosition";
 
 export default function CourierAggregatorPage() {
+    const scrollPosition = useScrollPosition();
     const userData = useFetchUserData()
     const { id } = useParams();
     const [courier, setCourier] = useState(null);
@@ -22,6 +25,19 @@ export default function CourierAggregatorPage() {
     const [capacity19, setCapacity19] = useState(0);
     const [price12, setPrice12] = useState(0);
     const [price19, setPrice19] = useState(0);
+    const [franchiseesModal, setFranchiseesModal] = useState(false);
+    const [franchisee, setFranchisee] = useState(null);
+
+    const closeFranchiseeModal = () => {
+        setFranchiseesModal(false);
+    };
+
+    const chooseFranchisee = (chFranchisee) => {
+        setFranchisee(chFranchisee);
+        setFranchiseesModal(false);
+        updateCourierAggregatorData(id, "franchisee", chFranchisee._id)
+    };
+
     const loadCourierData = async () => {
         try {
             const { data } = await api.post(
@@ -102,6 +118,13 @@ export default function CourierAggregatorPage() {
 
     return (
         <Container role={userData?.role}>
+            {franchiseesModal && (
+                <ChooseFranchiseeModal
+                    closeFranchiseeModal={closeFranchiseeModal}
+                    chooseFranchisee={chooseFranchisee}
+                    scrollPosition={scrollPosition}
+                />
+            )}
             <Div className="text-2xl font-bold">Информация о курьере</Div>
             <Div />
             <Li>
@@ -141,6 +164,31 @@ export default function CourierAggregatorPage() {
                     </MyButton>
                 </div>
             </Li>
+            
+            <Div />
+            <Div>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <div>Верифицирован?:</div>
+                    <Info>{courier.status === "active" ? "Да" : "Нет"}</Info>
+                    <MyButton click={() => {
+                        if (courier.status === "active") {
+                            updateCourierAggregatorData(id, "status", "awaitingVerfication")
+                        } else {
+                            updateCourierAggregatorData(id, "status", "active")
+                        }
+                    }}>{courier.status === "active" ? "Убрать" : "Верифицировать"}</MyButton>
+                </div>
+            </Div>
+
+            <Div />
+            <Div>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <div>Закрепить за франчайзием: {courier.franchisee ? courier.franchisee.fullName : "Нет"}</div>
+                    <MyButton click={() => {
+                        setFranchiseesModal(true)
+                    }}>Закрепить</MyButton>
+                </div>
+            </Div>
 
             <Div/>
             <Div>

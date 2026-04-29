@@ -51,6 +51,10 @@ const UserSchema = new mongoose.Schema(
         notificationPushTokens: {
             type: [String],
             default: []
+        },
+        isBussinessCenter: {
+            type: Boolean,
+            default: false
         }
     },
     {

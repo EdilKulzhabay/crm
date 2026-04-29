@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const CourierAggregatorSchema = new mongoose.Schema(
     {
+        franchisee: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
         fullName: {
             type: String,
             default: ""

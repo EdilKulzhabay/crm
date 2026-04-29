@@ -247,6 +247,19 @@ export default function SuperAdminUpdateFranchisee() {
                     property="mail"
                     getFranchiseeById={getFranchiseeById}
                 />
+                <Li>
+                    <div className="flex items-center flex-wrap">
+                        <div>Бизнес центр?</div>
+                        <Info>
+                            {franchisee.isBussinessCenter ? "Да" : "Нет"}
+                        </Info>
+                        <div className="ml-3">
+                            <MyButton click={() => {
+                                updateFranchiseeDataB("isBussinessCenter", !franchisee.isBussinessCenter)
+                            }}>Изменить</MyButton>
+                        </div>
+                    </div>
+                </Li>
 
                 <Div />
 

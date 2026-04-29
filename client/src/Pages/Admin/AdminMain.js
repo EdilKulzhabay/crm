@@ -137,6 +137,11 @@ export default function SuperAdmin() {
                             Добавить клиента
                         </LinkButton>
                     </Li>
+                    {userData?.isBussinessCenter && 
+                        <LinkButton color="green" href="/distributeOrders">
+                            Распределить
+                        </LinkButton>
+                    }
                     <Li>
                         <LinkButton color="green" href="/addPromoCode">
                             Создать промокод
@@ -153,6 +158,7 @@ export default function SuperAdmin() {
                 <div className="flex items-center gap-x-3">
                     <LinkButton color="green" href="/addOrder">Добавить заказ</LinkButton>
                     <LinkButton color="green" href="/addClinet">Добавить клиента</LinkButton>
+                    {userData?.isBussinessCenter && <LinkButton color="green" href="/distributeOrders">Распределить</LinkButton>}
                     <LinkButton color="green" href="/addPromoCode">
                         Создать промокод
                     </LinkButton>
