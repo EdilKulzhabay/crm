@@ -26,7 +26,7 @@ export const getActiveOrdersForBussinessCenter = async (req, res) => {
     try {
         const franchiseeId = req.body.franchisee;
         const today = getDateAlmaty();
-        const orders = await Order.find({ franchisee: franchiseeId, "date.d": today, status: { $nin: ["delivered", "cancelled"] } })
+        const orders = await Order.find({ "client.franchisee": franchiseeId, "date.d": today, status: { $nin: ["delivered", "cancelled"] } })
             .populate("client")
             .populate("courierAggregator", "fullName _id");
 
@@ -41,7 +41,7 @@ export const getCompletedOrdersForBussinessCenter = async (req, res) => {
     try {
         const franchiseeId = req.body.franchisee;
         const today = getDateAlmaty();
-        const orders = await Order.find({ franchisee: franchiseeId, "date.d": today, status: "delivered" })
+        const orders = await Order.find({ "client.franchisee": franchiseeId, "date.d": today, status: "delivered" })
             .populate("client")
             .populate("courierAggregator", "fullName _id");
         res.json({ orders })
@@ -55,7 +55,7 @@ export const getCancelledOrdersForBussinessCenter = async (req, res) => {
     try {
         const franchiseeId = req.body.franchisee;
         const today = getDateAlmaty();
-        const orders = await Order.find({ franchisee: franchiseeId, "date.d": today, status: "cancelled" })
+        const orders = await Order.find({ "client.franchisee": franchiseeId, "date.d": today, status: "cancelled" })
             .populate("client")
             .populate("courierAggregator", "fullName _id");
         res.json({ orders })
