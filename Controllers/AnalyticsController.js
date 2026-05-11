@@ -4,6 +4,7 @@ import User from "../Models/User.js";
 import Client from "../Models/Client.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
+import Courier from "../Models/Courier.js";
 
 // export const getAnalyticsData = async (req, res) => {
 //     try {
