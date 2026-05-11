@@ -78,7 +78,7 @@ export default function Analytics() {
         api.post("/getAnalyticsData", {id, ...dates}, {
             headers: {"Content-Type": "application/json"}
         }).then(({data}) => {
-            setStats(data.stats)
+            setStats(data)
         }).catch((e) => {
             console.log(e);
         })
@@ -98,6 +98,15 @@ export default function Analytics() {
         // Преобразуем число в строку и форматируем его
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
     };
+
+    const ruOpForm = (opForm) => {
+        if (opForm === "fakt") return "Нал_QR";
+        if (opForm === "coupon") return "Талоны";
+        if (opForm === "postpay") return "Постоплата";
+        if (opForm === "credit") return "Карта";
+        if (opForm === "mixed") return "Смешанная";
+        return opForm;
+    }
 
     return (
         <Container role={userData?.role}>
@@ -154,34 +163,34 @@ export default function Analytics() {
 
             {stats === null ? <Div>Загрузка данных...</Div> : (
                 <>
-                    {stats.ordersStats.byOpForm.length > 0 && (<>
+                    {stats.ordersStats && stats.ordersStats.byOpForm.length > 0 && (<>
                         <Div>
-                            <div className="w-[100px]">Форма оплаты</div>
-                            <div className="ml-4 w-[100px]">Кол12</div>
-                            <div className="ml-4 w-[100px]">Кол19</div>
-                            <div className="ml-4 w-[100px] text-right">Сумма</div>
+                            <div className="w-[150px]">Форма оплаты</div>
+                            <div className="ml-4 w-[100px] text-center">Кол12</div>
+                            <div className="ml-4 w-[100px] text-center">Кол19</div>
+                            <div className="ml-4 w-[150px] text-right">Сумма</div>
                         </Div>
-                        <Div />
                     </>)}
-                    {stats.ordersStats.byOpForm.length > 0 && stats.ordersStats.byOpForm.map((item) => (
-                        <>
-                            <Div key={item.opForm}>
-                                <div className="w-[100px]">{item.opForm}</div>
-                                <div className="ml-4 w-[100px]">{item.totalB12}</div>
-                                <div className="ml-4 w-[100px]">{item.totalB19}</div>
-                                <div className="ml-4 w-[100px] text-right">{formatCurrency(item.totalSum)}</div>
+                    {stats.ordersStats && stats.ordersStats.byOpForm.length > 0 && stats.ordersStats.byOpForm.map((item) => (
+                        <Div key={item.opForm}>
+                            <div className="w-[150px]">{ruOpForm(item.opForm)}</div>
+                            <div className="ml-4 w-[100px] text-center">{item.totalB12}</div>
+                            <div className="ml-4 w-[100px] text-center">{item.totalB19}</div>
+                            <div className="ml-4 w-[150px] text-right">{formatCurrency(item.totalSum)}</div>
+                        </Div>
+                    ))}
+                    {stats.ordersStats && stats.ordersStats.byOpForm.length > 0 && <>
+                            <Div>
+                                <div className="w-[150px] font-medium">Общий итог</div>
+                                <div className="ml-4 w-[100px] font-medium text-center">{stats.ordersStats.totalB12}</div>
+                                <div className="ml-4 w-[100px] font-medium text-center">{stats.ordersStats.totalB19}</div>
+                                <div className="ml-4 w-[150px] text-right font-medium">{formatCurrency(stats.ordersStats.totalSum)}</div>
                             </Div>
                             <Div />
                         </>
-                    ))}
-                    {stats.ordersStats.byOpForm.length > 0 && <Div>
-                        <div className="w-[100px] font-medium">Общий итог</div>
-                        <div className="ml-4 w-[100px] font-medium">{stats.ordersStats.totalB12}</div>
-                        <div className="ml-4 w-[100px] font-medium">{stats.ordersStats.totalB19}</div>
-                        <div className="ml-4 w-[100px] text-right font-medium">{formatCurrency(stats.ordersStats.totalSum)}</div>
-                    </Div>}
-                    <Div />
-                    {stats.departmentHistoryStats && (
+                    }
+                    
+                    {stats.departmentHistoryStats && stats.departmentHistoryStats.totalTookAwayB121 > 0 && (
                         <>
                             <Div>
                                 Отпущено бутылей:
@@ -194,6 +203,7 @@ export default function Analytics() {
                                 <div className="w-[100px]">Кол19</div>
                                 <div className="ml-4">{stats.departmentHistoryStats.totalTookAwayB191 + stats.departmentHistoryStats.totalTookAwayB197}</div>
                             </Div>
+                            <Div />
                         </>
                     )}
                 </>
