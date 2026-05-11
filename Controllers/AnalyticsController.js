@@ -169,13 +169,21 @@ export const getAnalyticsData = async (req, res) => {
         ])
 
         const franchiseesCourierAggregators = await CourierAggregator.find({franchisee: new mongoose.Types.ObjectId(id)})
+        const franchiseesCouriers= await Courier.find({franchisee: new mongoose.Types.ObjectId(id)})
+
+        const filter = {
+            status: { $in: ["delivered", "cancelled"] },
+            "date.d": { $gte: startDate, $lte: endDate },
+        }
+        if (franchiseesCourierAggregators.length > 0) {
+            filter.courierAggregator = { $in: franchiseesCourierAggregators.map(aggregator => aggregator._id) }
+        }
+        if (franchiseesCouriers.length > 0) {
+            filter.courier = { $in: franchiseesCouriers.map(courier => courier._id) }
+        }
 
         const ordersStats = await Order.aggregate([
-            { $match: {
-                status: { $in: ["delivered", "cancelled"] },
-                "date.d": { $gte: startDate, $lte: endDate },
-                courierAggregator: { $in: franchiseesCourierAggregators.map(aggregator => aggregator._id) }
-            } },
+            { $match: filter },
             {
                 $group: {
                     _id: { $ifNull: ["$opForm", "unknown"] },
