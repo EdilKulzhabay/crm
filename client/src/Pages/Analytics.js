@@ -101,56 +101,108 @@ export default function Analytics() {
 
     return (
         <Container role={userData?.role}>
+            <Div>Аналитика</Div>
+            <Div />
+            <Div>
+                <div>Фильтры:</div>
+                <MyButton click={() => {
+                    const { start, end } = getPreviousMonthRange();
+                    setDates({ startDate: start, endDate: end });
+                }}>Предыдущий месяц</MyButton>
+                <MyButton click={() => {
+                    setDates({
+                        startDate: getStartOfMonth(), // Начало месяца
+                        endDate: getCurrentDate()
+                    })
+                }}>Текущий месяц</MyButton>
+            </Div>
+            <>
+                <Li>
+                    <div className="flex items-center gap-x-3 flex-wrap">
+                        <div>Дата:</div>
+                        <div className="text-red">
+                            [
+                            <DataInput
+                                color="red"
+                                value={dates.startDate}
+                                name="startDate"
+                                change={handleDateChange}
+                            />
+                            ]
+                        </div>
+                        <div> - </div>
+                        <div className="text-red">
+                            [
+                            <DataInput
+                                color="red"
+                                value={dates.endDate}
+                                name="endDate"
+                                change={handleDateChange}
+                            />
+                            ]
+                        </div>
+                        <MyButton click={getAnalytics}>
+                            <span className="text-green-400">
+                                Применить
+                            </span>
+                        </MyButton>
+                    </div>
+                </Li>
+            </>
+
+            <Div />
+
             {stats === null ? <Div>Загрузка данных...</Div> : (
                 <>
-                    <Div>Аналитика</Div>
+                    {stats.ordersStats.byOpForm.length > 0 && (<>
+                        <Div>
+                            <div className="w-[100px]">Форма оплаты</div>
+                            <div className="ml-4 w-[100px]">Кол12</div>
+                            <div className="ml-4 w-[100px]">Кол19</div>
+                            <div className="ml-4 w-[100px] text-right">Сумма</div>
+                        </Div>
+                        <Div />
+                    </>)}
+                    {stats.ordersStats.byOpForm.length > 0 && stats.ordersStats.byOpForm.map((item) => (
+                        <>
+                            <Div key={item.opForm}>
+                                <div className="w-[100px]">{item.opForm}</div>
+                                <div className="ml-4 w-[100px]">{item.totalB12}</div>
+                                <div className="ml-4 w-[100px]">{item.totalB19}</div>
+                                <div className="ml-4 w-[100px] text-right">{formatCurrency(item.totalSum)}</div>
+                            </Div>
+                            <Div />
+                        </>
+                    ))}
+                    {stats.ordersStats.byOpForm.length > 0 && <Div>
+                        <div className="w-[100px] font-medium">Общий итог</div>
+                        <div className="ml-4 w-[100px] font-medium">{stats.ordersStats.totalB12}</div>
+                        <div className="ml-4 w-[100px] font-medium">{stats.ordersStats.totalB19}</div>
+                        <div className="ml-4 w-[100px] text-right font-medium">{formatCurrency(stats.ordersStats.totalSum)}</div>
+                    </Div>}
                     <Div />
-                    <Div>
-                        <div>Фильтры:</div>
-                        <MyButton click={() => {
-                            const { start, end } = getPreviousMonthRange();
-                            setDates({ startDate: start, endDate: end });
-                        }}>Предыдущий месяц</MyButton>
-                        <MyButton click={() => {
-                            setDates({
-                                startDate: getStartOfMonth(), // Начало месяца
-                                endDate: getCurrentDate()
-                            })
-                        }}>Текущий месяц</MyButton>
-                    </Div>
-                    <>
-                        <Li>
-                            <div className="flex items-center gap-x-3 flex-wrap">
-                                <div>Дата:</div>
-                                <div className="text-red">
-                                    [
-                                    <DataInput
-                                        color="red"
-                                        value={dates.startDate}
-                                        name="startDate"
-                                        change={handleDateChange}
-                                    />
-                                    ]
-                                </div>
-                                <div> - </div>
-                                <div className="text-red">
-                                    [
-                                    <DataInput
-                                        color="red"
-                                        value={dates.endDate}
-                                        name="endDate"
-                                        change={handleDateChange}
-                                    />
-                                    ]
-                                </div>
-                                <MyButton click={getAnalytics}>
-                                    <span className="text-green-400">
-                                        Применить
-                                    </span>
-                                </MyButton>
-                            </div>
-                        </Li>
-                    </>
+                    {stats.departmentHistoryStats && (
+                        <>
+                            <Div>
+                                Отпущено бутылей:
+                            </Div>
+                            <Div>
+                                <div className="w-[100px]">Кол12</div>
+                                <div className="ml-4">{stats.departmentHistoryStats.totalTookAwayB121}</div>
+                            </Div>
+                            <Div>
+                                <div className="w-[100px]">Кол19</div>
+                                <div className="ml-4">{stats.departmentHistoryStats.totalTookAwayB191 + stats.departmentHistoryStats.totalTookAwayB197}</div>
+                            </Div>
+                        </>
+                    )}
+                </>
+            )}
+
+
+            {/* {stats === null ? <Div>Загрузка данных...</Div> : (
+                <>
+                    
                     <Div />
                     <Div>Дополнительные заказы:</Div>
                     <Div>---------------------</Div>
@@ -200,7 +252,7 @@ export default function Analytics() {
                     <Div />
                 </>
                 )
-            }
+            } */}
             <MySnackBar
                 open={open}
                 text={message}

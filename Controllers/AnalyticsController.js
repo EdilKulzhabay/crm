@@ -3,135 +3,228 @@ import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 import Client from "../Models/Client.js";
 import DepartmentHistory from "../Models/DepartmentHistory.js";
+import CourierAggregator from "../Models/CourierAggregator.js";
+
+// export const getAnalyticsData = async (req, res) => {
+//     try {
+//         const {id, startDate, endDate} = req.body;
+
+//         const user = await User.findById(id);
+
+//         if (!user) {
+//             return res.json({
+//                 success: false,
+//                 message: "User not found"
+//             });
+//         }
+
+//         const filter = {
+//             status: { $in: ["delivered", "cancelled"] },
+//             "date.d": { $gte: startDate, $lte: endDate }
+//         };
+
+//         if (user.role === "admin") {
+//             filter.$or = [
+//                 {franchisee: new mongoose.Types.ObjectId(id)},
+//                 {transferredFranchise: user.fullName}
+//             ];
+//         }
+
+//         const stats = await Order.aggregate([
+//             { $match: filter },
+
+//             // Популяция данных клиента
+//             { 
+//                 $lookup: {
+//                     from: "clients",
+//                     localField: "client",
+//                     foreignField: "_id",
+//                     as: "clientData"
+//                 }
+//             },
+//             { $unwind: "$clientData" }, // Разворачиваем массив клиента
+            
+//             // Добавляем флаги для регулярных и дополнительных заказов
+//             { 
+//                 $addFields: {
+//                     isRegular: { $eq: ["$franchisee", new mongoose.Types.ObjectId(id)] },
+//                     isAdditional: { $eq: ["$transferredFranchise", user.fullName] }
+//                 }
+//             },
+
+//             // Группировка всех данных
+//             { 
+//                 $group: {
+//                     _id: null,
+//                     totalRegularOrders: { $sum: { $cond: ["$isRegular", 1, 0] } },
+//                     totalRegularB12Bottles: { $sum: { $cond: ["$isRegular", "$products.b12", 0] } },
+//                     regularB12Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 300] }] }, 0] } },
+//                     regularB12Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", 300] }, 0] } },
+//                     regularB12Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
+//                     totalRegularB19Bottles: { $sum: { $cond: ["$isRegular", "$products.b19", 0] } },
+//                     regularB19Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] }, 0] } },
+//                     regularB19Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", 400] }, 0] } },
+//                     regularB19Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
+
+//                     totalAdditionalOrders: { $sum: { $cond: ["$isAdditional", 1, 0] } },
+//                     totalAdditionalB12Bottles: { $sum: { $cond: ["$isAdditional", "$products.b12", 0] } },
+//                     additionalB12Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 300] }] }, 0] } },
+//                     additionalB12Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", 300] }, 0] } },
+//                     additionalB12Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
+//                     totalAdditionalB19Bottles: { $sum: { $cond: ["$isAdditional", "$products.b19", 0] } },
+//                     additionalB19Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] }, 0] } },
+//                     additionalB19Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", 400] }, 0] } },
+//                     additionalB19Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
+//                 }
+//             },
+
+//             // Вычисление средних затрат
+//             { 
+//                 $project: {
+//                     totalRegularOrders: 1,
+//                     totalRegularB12Bottles: 1,
+//                     regularB12Revenue: 1,
+//                     regularB12Expense: 1,
+//                     regularB12Amount: 1,
+//                     regularAverageCostB12: {
+//                         $cond: {
+//                             if: { $gt: ["$totalRegularB12Bottles", 0] },
+//                             then: { $round: [{ $divide: ["$regularB12Amount", "$totalRegularB12Bottles"] }, 0] },
+//                             else: 0
+//                         }
+//                     },
+//                     totalRegularB19Bottles: 1,
+//                     regularB19Revenue: 1,
+//                     regularB19Expense: 1,
+//                     regularB19Amount: 1,
+//                     regularAverageCostB19: {
+//                         $cond: {
+//                             if: { $gt: ["$totalRegularB19Bottles", 0] },
+//                             then: { $round: [{ $divide: ["$regularB19Amount", "$totalRegularB19Bottles"] }, 0] },
+//                             else: 0
+//                         }
+//                     },
+
+//                     totalAdditionalOrders: 1,
+//                     totalAdditionalB12Bottles: 1,
+//                     additionalB12Revenue: 1,
+//                     additionalB12Expense: 1,
+//                     additionalB12Amount: 1,
+//                     additionalAverageCostB12: {
+//                         $cond: {
+//                             if: { $gt: ["$totalAdditionalB12Bottles", 0] },
+//                             then: { $round: [{ $divide: ["$additionalB12Amount", "$totalAdditionalB12Bottles"] }, 0] },
+//                             else: 0
+//                         }
+//                     },
+//                     totalAdditionalB19Bottles: 1,
+//                     additionalB19Revenue: 1,
+//                     additionalB19Expense: 1,
+//                     additionalB19Amount: 1,
+//                     additionalAverageCostB19: {
+//                         $cond: {
+//                             if: { $gt: ["$totalAdditionalB19Bottles", 0] },
+//                             then: { $round: [{ $divide: ["$additionalB19Amount", "$totalAdditionalB19Bottles"] }, 0] },
+//                             else: 0
+//                         }
+//                     }
+//                 }
+//             }
+//         ]);
+
+//         res.json({ stats: stats[0] || {} });
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({
+//             message: "Что-то пошло не так",
+//         });
+//     }
+// }
 
 export const getAnalyticsData = async (req, res) => {
     try {
         const {id, startDate, endDate} = req.body;
 
-        const user = await User.findById(id);
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
 
-        if (!user) {
-            return res.json({
-                success: false,
-                message: "User not found"
-            });
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+
+        const filterDH = {
+            createdAt: {$gte: sDate, $lte: eDate},
+            franchisee: new mongoose.Types.ObjectId(id)
         }
 
-        const filter = {
-            status: { $in: ["delivered", "cancelled"] },
-            "date.d": { $gte: startDate, $lte: endDate }
-        };
-
-        if (user.role === "admin") {
-            filter.$or = [
-                {franchisee: new mongoose.Types.ObjectId(id)},
-                {transferredFranchise: user.fullName}
-            ];
-        }
-
-        const stats = await Order.aggregate([
-            { $match: filter },
-
-            // Популяция данных клиента
-            { 
-                $lookup: {
-                    from: "clients",
-                    localField: "client",
-                    foreignField: "_id",
-                    as: "clientData"
-                }
-            },
-            { $unwind: "$clientData" }, // Разворачиваем массив клиента
-            
-            // Добавляем флаги для регулярных и дополнительных заказов
-            { 
-                $addFields: {
-                    isRegular: { $eq: ["$franchisee", new mongoose.Types.ObjectId(id)] },
-                    isAdditional: { $eq: ["$transferredFranchise", user.fullName] }
-                }
-            },
-
-            // Группировка всех данных
-            { 
+        const departmentHistoryStats = await DepartmentHistory.aggregate([
+            { $match: filterDH },
+            {
                 $group: {
                     _id: null,
-                    totalRegularOrders: { $sum: { $cond: ["$isRegular", 1, 0] } },
-                    totalRegularB12Bottles: { $sum: { $cond: ["$isRegular", "$products.b12", 0] } },
-                    regularB12Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 300] }] }, 0] } },
-                    regularB12Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", 300] }, 0] } },
-                    regularB12Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
-                    totalRegularB19Bottles: { $sum: { $cond: ["$isRegular", "$products.b19", 0] } },
-                    regularB19Revenue: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] }, 0] } },
-                    regularB19Expense: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", 400] }, 0] } },
-                    regularB19Amount: { $sum: { $cond: ["$isRegular", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
+                    totalTookAwayB121: { $sum: { $cond: ["$type", 0, "$data.b121kol"] } },
+                    totalTookAwayB191: { $sum: { $cond: ["$type", 0, "$data.b191kol"] } },
+                    totalTookAwayB197: { $sum: { $cond: ["$type", 0, "$data.b197kol"] } }
+                }
+            }  
+        ])
 
-                    totalAdditionalOrders: { $sum: { $cond: ["$isAdditional", 1, 0] } },
-                    totalAdditionalB12Bottles: { $sum: { $cond: ["$isAdditional", "$products.b12", 0] } },
-                    additionalB12Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $subtract: [{ $ifNull: ["$clientData.price12", 0] }, 300] }] }, 0] } },
-                    additionalB12Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", 300] }, 0] } },
-                    additionalB12Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b12", { $ifNull: ["$clientData.price12", 0] }] }, 0] } },
-                    totalAdditionalB19Bottles: { $sum: { $cond: ["$isAdditional", "$products.b19", 0] } },
-                    additionalB19Revenue: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $subtract: [{ $ifNull: ["$clientData.price19", 0] }, 400] }] }, 0] } },
-                    additionalB19Expense: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", 400] }, 0] } },
-                    additionalB19Amount: { $sum: { $cond: ["$isAdditional", { $multiply: ["$products.b19", { $ifNull: ["$clientData.price19", 0] }] }, 0] } },
+        const franchiseesCourierAggregators = await CourierAggregator.find({franchisee: new mongoose.Types.ObjectId(id)})
+
+        const ordersStats = await Order.aggregate([
+            { $match: {
+                status: { $in: ["delivered", "cancelled"] },
+                "date.d": { $gte: startDate, $lte: endDate },
+                courierAggregator: { $in: franchiseesCourierAggregators.map(aggregator => aggregator._id) }
+            } },
+            {
+                $group: {
+                    _id: { $ifNull: ["$opForm", "unknown"] },
+                    count: { $sum: 1 },
+                    totalB12: { $sum: { $ifNull: ["$products.b12", 0] } },
+                    totalB19: { $sum: { $ifNull: ["$products.b19", 0] } },
+                    totalSum: { $sum: { $ifNull: ["$sum", 0] } }
                 }
             },
-
-            // Вычисление средних затрат
-            { 
-                $project: {
-                    totalRegularOrders: 1,
-                    totalRegularB12Bottles: 1,
-                    regularB12Revenue: 1,
-                    regularB12Expense: 1,
-                    regularB12Amount: 1,
-                    regularAverageCostB12: {
-                        $cond: {
-                            if: { $gt: ["$totalRegularB12Bottles", 0] },
-                            then: { $round: [{ $divide: ["$regularB12Amount", "$totalRegularB12Bottles"] }, 0] },
-                            else: 0
-                        }
-                    },
-                    totalRegularB19Bottles: 1,
-                    regularB19Revenue: 1,
-                    regularB19Expense: 1,
-                    regularB19Amount: 1,
-                    regularAverageCostB19: {
-                        $cond: {
-                            if: { $gt: ["$totalRegularB19Bottles", 0] },
-                            then: { $round: [{ $divide: ["$regularB19Amount", "$totalRegularB19Bottles"] }, 0] },
-                            else: 0
-                        }
-                    },
-
-                    totalAdditionalOrders: 1,
-                    totalAdditionalB12Bottles: 1,
-                    additionalB12Revenue: 1,
-                    additionalB12Expense: 1,
-                    additionalB12Amount: 1,
-                    additionalAverageCostB12: {
-                        $cond: {
-                            if: { $gt: ["$totalAdditionalB12Bottles", 0] },
-                            then: { $round: [{ $divide: ["$additionalB12Amount", "$totalAdditionalB12Bottles"] }, 0] },
-                            else: 0
-                        }
-                    },
-                    totalAdditionalB19Bottles: 1,
-                    additionalB19Revenue: 1,
-                    additionalB19Expense: 1,
-                    additionalB19Amount: 1,
-                    additionalAverageCostB19: {
-                        $cond: {
-                            if: { $gt: ["$totalAdditionalB19Bottles", 0] },
-                            then: { $round: [{ $divide: ["$additionalB19Amount", "$totalAdditionalB19Bottles"] }, 0] },
-                            else: 0
+            {
+                $group: {
+                    _id: null,
+                    totalOrders: { $sum: "$count" },
+                    totalB12: { $sum: "$totalB12" },
+                    totalB19: { $sum: "$totalB19" },
+                    totalSum: { $sum: "$totalSum" },
+                    byOpForm: {
+                        $push: {
+                            opForm: "$_id",
+                            count: "$count",
+                            totalB12: "$totalB12",
+                            totalB19: "$totalB19",
+                            totalSum: "$totalSum"
                         }
                     }
                 }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    totalOrders: 1,
+                    totalB12: 1,
+                    totalB19: 1,
+                    totalSum: 1,
+                    byOpForm: 1
+                }
             }
-        ]);
+        ])
 
-        res.json({ stats: stats[0] || {} });
+        res.json({
+            departmentHistoryStats: departmentHistoryStats[0] || {},
+            ordersStats: ordersStats[0] || {
+                totalOrders: 0,
+                totalB12: 0,
+                totalB19: 0,
+                totalSum: 0,
+                byOpForm: []
+            }
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({
