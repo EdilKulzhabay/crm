@@ -183,7 +183,11 @@ export const getAnalyticsData = async (req, res) => {
             filter.courier = { $in: franchiseesCouriers.map(courier => courier._id) }
         }
 
-        console.log("filter in Analytics = ", filter)
+        if (franchiseesCourierAggregators.length === 0 && franchiseesCouriers.length === 0) {
+            return res.json({
+                departmentHistoryStats: departmentHistoryStats[0] || {},
+            });
+        }
 
         const ordersStats = await Order.aggregate([
             { $match: filter },
