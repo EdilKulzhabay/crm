@@ -170,7 +170,7 @@ export const getAnalyticsData = async (req, res) => {
         ])
 
         const franchiseesCourierAggregators = await CourierAggregator.find({franchisee: new mongoose.Types.ObjectId(id)})
-        const franchiseesCouriers= await Courier.find({franchisee: new mongoose.Types.ObjectId(id)})
+        const franchiseesCouriers = await Courier.find({franchisee: new mongoose.Types.ObjectId(id)})
 
         const filter = {
             status: { $in: ["delivered", "cancelled"] },
@@ -182,6 +182,8 @@ export const getAnalyticsData = async (req, res) => {
         if (franchiseesCouriers.length > 0) {
             filter.courier = { $in: franchiseesCouriers.map(courier => courier._id) }
         }
+
+        console.log("filter in Analytics = ", filter)
 
         const ordersStats = await Order.aggregate([
             { $match: filter },
