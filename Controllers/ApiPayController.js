@@ -40,50 +40,31 @@ function isOk(status) {
 /**
  * POST /api/apipay/qr/create
  * Body:
- *  - amount?: number              — сумма (KZT). Обязательна, если нет cart_items.
- *  - description?: string         — описание счёта.
- *  - externalOrderId?: string     — наш ID заказа (запишется в external_order_id и сохранится локально).
- *  - cartItems?: array            — для каталога ApiPay (см. документацию).
- *  - discountPercentage?: number  — 1..99 (только с cartItems).
- *  - clientId?: ObjectId          — связать с клиентом CRM.
- *  - orderId?: ObjectId           — связать с заказом CRM.
- *  - simulate?: "paid"|"cancelled"|"expired" — для sandbox-организаций.
+ *  - amount:   number   — сумма в KZT (обязательно).
+ *  - clientId: ObjectId — id клиента CRM, которому при оплате пополнится balance (обязательно).
  */
 export const createQrInvoice = async (req, res) => {
     try {
-        const {
-            amount,
-            description,
-            externalOrderId,
-            cartItems,
-            discountPercentage,
-            clientId,
-            orderId,
-            simulate,
-        } = req.body || {};
+        const { amount, clientId } = req.body || {};
 
-        if (!amount && !(Array.isArray(cartItems) && cartItems.length > 0)) {
+        if (!amount || Number(amount) <= 0) {
             return res.status(400).json({
                 success: false,
-                message: "Укажите amount или cart_items",
+                message: "Укажите amount (> 0)",
+            });
+        }
+        if (!clientId) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите clientId",
             });
         }
 
-        const payload = {};
-        if (amount != null) payload.amount = Number(amount);
-        if (description) payload.description = String(description);
-        if (externalOrderId) payload.external_order_id = String(externalOrderId);
-        if (Array.isArray(cartItems) && cartItems.length > 0)
-            payload.cart_items = cartItems;
-        if (discountPercentage != null)
-            payload.discount_percentage = Number(discountPercentage);
-        if (simulate) payload.simulate = simulate;
+        const payload = { amount: Number(amount) };
 
         console.log("[ApiPay] createQrInvoice REQUEST:", {
             amount: payload.amount,
-            externalOrderId: payload.external_order_id,
-            hasCart: !!payload.cart_items,
-            simulate: payload.simulate || null,
+            clientId,
         });
 
         const { status, data } = await apipayCreateQrInvoice(payload);
@@ -99,11 +80,8 @@ export const createQrInvoice = async (req, res) => {
 
         const localDoc = await ApiPayInvoice.create({
             apipayInvoiceId: data.id,
-            externalOrderId: externalOrderId || data.external_order_id || null,
-            client: clientId || null,
-            order: orderId || null,
+            client: clientId,
             amount: Number(data.amount ?? amount ?? 0),
-            description: description || data.description || "",
             status: data.status || "pending",
             kaspiInvoiceId: data.kaspi_invoice_id || null,
             qrImageUrl: data.qr_image_url || null,
@@ -116,7 +94,7 @@ export const createQrInvoice = async (req, res) => {
         console.log("[ApiPay] createQrInvoice SUCCESS:", {
             apipayInvoiceId: data.id,
             status: data.status,
-            externalOrderId: externalOrderId || null,
+            clientId,
         });
 
         return res.status(201).json({
@@ -124,7 +102,6 @@ export const createQrInvoice = async (req, res) => {
             invoice: {
                 id: localDoc._id,
                 apipayInvoiceId: localDoc.apipayInvoiceId,
-                externalOrderId: localDoc.externalOrderId,
                 amount: localDoc.amount,
                 status: localDoc.status,
                 qrImageUrl: localDoc.qrImageUrl,
