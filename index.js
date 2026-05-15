@@ -25,6 +25,7 @@ import {
     InvoiceCounterController,
     MobileAppSettingsController,
     BussinessCenterController,
+    ApiPayController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -52,6 +53,15 @@ mongoose
     });
 
 const app = express();
+
+// ВАЖНО: ApiPay webhook должен принять СЫРОЙ body, чтобы HMAC-SHA256 верно посчитался.
+// Регистрируем до глобального express.json().
+app.post(
+    "/api/apipay/webhook",
+    express.raw({ type: "*/*", limit: "1mb" }),
+    ApiPayController.apipayWebhook
+);
+
 app.use(express.json());
 app.use(express.text());
 app.use(express.urlencoded({ extended: true })); // Для поддержки URL-encoded данных
@@ -378,6 +388,13 @@ app.post(
     PaymentController.getClientPaymentsForSuperAdmin
 );
 
+
+///////APIPAY (Kaspi Pay через QR — https://apipay.kz/docs)
+app.post("/api/apipay/qr/create", ApiPayController.createQrInvoice);
+app.get("/api/apipay/qr/:id", ApiPayController.getQrInvoice);
+app.post("/api/apipay/qr/:id/cancel", ApiPayController.cancelQrInvoice);
+app.post("/api/apipay/qr/check", ApiPayController.checkQrInvoicesStatus);
+// /api/apipay/webhook зарегистрирован выше с express.raw()
 
 ///////BUSSINESSCENTER
 app.post("/getActiveCourierAggregatorsForBussinessCenter", BussinessCenterController.getActiveCourierAggregatorsForBussinessCenter)
