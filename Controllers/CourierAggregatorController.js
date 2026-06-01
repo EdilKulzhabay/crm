@@ -780,6 +780,8 @@ export const getCourierAggregatorOrdersHistory = async (req, res) => {
 
         const courier = await CourierAggregator.findById(id)
 
+        console.log("courier in getCourierAggregatorOrdersHistory = ", courier);
+
         if (!courier) {
             return res.status(404).json({
                 message: "Не получилось найти курьера",

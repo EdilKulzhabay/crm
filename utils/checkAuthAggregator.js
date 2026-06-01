@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 
 export default async (req, res, next) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+    console.log("token in checkAuthAggregator = ", token);
 
     if (token) {
         try {
