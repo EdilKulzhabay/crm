@@ -780,8 +780,6 @@ export const getCourierAggregatorOrdersHistory = async (req, res) => {
 
         const courier = await CourierAggregator.findById(id)
 
-        console.log("courier in getCourierAggregatorOrdersHistory = ", courier);
-
         if (!courier) {
             return res.status(404).json({
                 message: "Не получилось найти курьера",
@@ -795,7 +793,7 @@ export const getCourierAggregatorOrdersHistory = async (req, res) => {
         console.log("endDate = ", endDate);
 
         const orders = await Order.find({
-            courier: courier._id,
+            courierAggregator: courier._id,
             "date.d": {
                 $gte: startDate?.split('-').reverse().join('-'),
                 $lte: endDate?.split('-').reverse().join('-')
