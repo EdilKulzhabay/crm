@@ -7,6 +7,8 @@ import nodemailer from "nodemailer";
 import { getDateAlmaty } from "../utils/dateUtils.js";
 import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
 import Client from "../Models/Client.js";
+import ApiPayInvoice from "../Models/ApiPayInvoice.js";
+import { createQrInvoice as apipayCreateQrInvoice } from "../utils/apipay.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -1971,7 +1973,101 @@ export const needToGiveTheOrderToCourier = async (req, res) => {
             message: "Ошибка на стороне сервера"
         });
     }
-}
+};
+
+export const createOrderKaspiQrCourierAggregator = async (req, res) => {
+    try {
+        const courierId = req.userId;
+        const { orderId } = req.body || {};
+
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите orderId",
+            });
+        }
+
+        const courier = await CourierAggregator.findById(courierId);
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const activeOrder =
+            courier.orders?.find((item) => String(item.orderId) === String(orderId)) ||
+            (String(courier.order?.orderId) === String(orderId) ? courier.order : null);
+
+        if (!activeOrder) {
+            return res.status(400).json({
+                success: false,
+                message: "Заказ не найден у курьера",
+            });
+        }
+
+        const order = await Order.findById(orderId).populate("client", "_id");
+        if (!order?.client?._id) {
+            return res.status(404).json({
+                success: false,
+                message: "Клиент заказа не найден",
+            });
+        }
+
+        const amount = Number(activeOrder.sum ?? 0);
+        if (!amount || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Некорректная сумма заказа",
+            });
+        }
+
+        const { status, data } = await apipayCreateQrInvoice({ amount });
+
+        if (status < 200 || status >= 300) {
+            return res.status(status >= 400 && status < 600 ? status : 502).json({
+                success: false,
+                message: data?.message || "Ошибка ApiPay при создании QR-счёта",
+                errors: data?.errors || null,
+            });
+        }
+
+        const localDoc = await ApiPayInvoice.create({
+            apipayInvoiceId: data.id,
+            client: order.client._id,
+            order: order._id,
+            externalOrderId: String(orderId),
+            amount: Number(data.amount ?? amount),
+            status: data.status || "pending",
+            kaspiInvoiceId: data.kaspi_invoice_id || null,
+            qrImageUrl: data.qr_image_url || null,
+            qrTokenUrl: data.qr_token_url || null,
+            qrExpiresAt: data.qr_expires_at ? new Date(data.qr_expires_at) : null,
+            isSandbox: !!data.is_sandbox,
+            lastResponse: data,
+        });
+
+        return res.status(201).json({
+            success: true,
+            invoice: {
+                id: localDoc._id,
+                apipayInvoiceId: localDoc.apipayInvoiceId,
+                amount: localDoc.amount,
+                status: localDoc.status,
+                qrImageUrl: localDoc.qrImageUrl,
+                qrTokenUrl: localDoc.qrTokenUrl,
+                qrExpiresAt: localDoc.qrExpiresAt,
+                isSandbox: localDoc.isSandbox,
+            },
+        });
+    } catch (error) {
+        console.error("[CourierAggregator] createOrderKaspiQr ERROR:", error?.message);
+        return res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка при создании QR-счёта",
+        });
+    }
+};
 
 export const testPushNotificationClient = async (req, res) => {
     try {

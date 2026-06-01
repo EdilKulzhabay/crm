@@ -196,6 +196,9 @@ export const getFreeInfo = async (req, res) => {
     }
 };
 
+const escapeRegExp = (str) =>
+    String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export const searchClient = async (req, res) => {
     try {
         const id = req.userId;
@@ -204,7 +207,11 @@ export const searchClient = async (req, res) => {
 
         const { search } = req.body;
 
-        const regex = new RegExp(search, "i"); // 'i' делает поиск регистронезависимым
+        if (!search?.trim()) {
+            return res.json([]);
+        }
+
+        const regex = new RegExp(escapeRegExp(search.trim()), "i");
 
         const filter = [
             { fullName: { $regex: regex } },

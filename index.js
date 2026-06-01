@@ -350,6 +350,7 @@ app.post("/updateCourierAggregatorDataFull", CourierAggregatorController.updateC
 app.post("/completeOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.completeOrderCourierAggregator)
 app.post("/getCourierAggregatorOrdersHistory", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorOrdersHistory)
 app.post("/cancelOrderCourierAggregator", checkAuthAggregator, CourierAggregatorController.cancelOrderCourierAggregator)
+app.post("/createOrderKaspiQrCourierAggregator", checkAuthAggregator, CourierAggregatorController.createOrderKaspiQrCourierAggregator)
 app.post("/getCourierAggregators", CourierAggregatorController.getCourierAggregators)
 app.post("/getOrdersWithCourierAggregator", CourierAggregatorController.getOrdersWithCourierAggregator)
 app.post("/getCompletedOrCancelledOrdersFromCourierAggregator", CourierAggregatorController.getCompletedOrCancelledOrdersFromCourierAggregator)
