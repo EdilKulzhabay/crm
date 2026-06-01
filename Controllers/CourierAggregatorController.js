@@ -1975,6 +1975,51 @@ export const needToGiveTheOrderToCourier = async (req, res) => {
     }
 };
 
+export const requestWithdrawalCourierAggregator = async (req, res) => {
+    try {
+        const courierId = req.userId;
+        const { amount } = req.body || {};
+
+        const sum = Number(amount);
+        if (!sum || sum <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите корректную сумму",
+            });
+        }
+
+        const courier = await CourierAggregator.findById(courierId);
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const fullName = courier.fullName || `${courier.firstName || ""} ${courier.lastName || ""}`.trim();
+
+        const mailOptions = {
+            from: "info@tibetskaya.kz",
+            to: process.env.SENDINFOTOEMAIL,
+            subject: `Запрос на вывод средств — ${fullName}`,
+            text: `Курьер ${fullName} хочет вывести деньги на карту.\n\nСумма: ${sum} ₸`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        return res.status(200).json({
+            success: true,
+            message: "Запрос на вывод отправлен",
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка при отправке запроса",
+        });
+    }
+};
+
 export const createOrderKaspiQrCourierAggregator = async (req, res) => {
     try {
         const courierId = req.userId;
