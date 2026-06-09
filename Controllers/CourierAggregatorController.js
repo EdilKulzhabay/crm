@@ -20,6 +20,33 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+const getCourierPayoutRates = (courier) => ({
+    price12: courier?.price12 || 300,
+    price19: courier?.price19 || 500,
+});
+
+const calculateAvailablePayout = (orders, courier) => {
+    const { price12, price19 } = getCourierPayoutRates(courier);
+
+    let bottleEarnings = 0;
+    let faktSum = 0;
+
+    for (const order of orders) {
+        const opForm = order.opForm || "fakt";
+        const b12 = Number(order.products?.b12) || 0;
+        const b19 = Number(order.products?.b19) || 0;
+
+        if (opForm === "fakt") {
+            faktSum += Number(order.sum) || 0;
+            continue;
+        }
+
+        bottleEarnings += b12 * price12 + b19 * price19;
+    }
+
+    return Math.max(0, bottleEarnings - faktSum);
+};
+
 const generateCode = () => {
     const characters = "0123456789";
     let randomPart = "";
@@ -216,9 +243,19 @@ export const getCourierAggregatorData = async(req, res) => {
             })
         }
 
+        const deliveredOrders = await Order.find({
+            courierAggregator: courier._id,
+            status: "delivered",
+        }).select("products opForm sum");
+
+        const availableIncome = calculateAvailablePayout(deliveredOrders, courier);
+
         return res.json({
             success: true,
-            userData: courier._doc,
+            userData: {
+                ...courier._doc,
+                availableIncome,
+            },
         })
     } catch (error) {
         console.log(error);
@@ -1994,6 +2031,20 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Курьер не найден",
+            });
+        }
+
+        const deliveredOrders = await Order.find({
+            courierAggregator: courier._id,
+            status: "delivered",
+        }).select("products opForm sum");
+
+        const availableIncome = calculateAvailablePayout(deliveredOrders, courier);
+
+        if (sum > availableIncome) {
+            return res.status(400).json({
+                success: false,
+                message: "Сумма не может превышать доступный баланс",
             });
         }
 
