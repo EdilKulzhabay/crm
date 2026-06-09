@@ -8,7 +8,7 @@ import { getDateAlmaty } from "../utils/dateUtils.js";
 import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
 import Client from "../Models/Client.js";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
-import { createQrInvoice as apipayCreateQrInvoice } from "../utils/apipay.js";
+import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoice } from "../utils/apipay.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -549,7 +549,7 @@ export const updateCourierAggregatorDataFull = async (req, res) => {
 
 export const completeOrderCourierAggregator = async (req, res) => {
     try {
-        const {orderId, courierId, b12, b19, emptyb12, emptyb19} = req.body
+        const {orderId, courierId, b12, b19, emptyb12, emptyb19, opForm} = req.body
 
         const products = {
             b12: b12 || 0,
@@ -666,7 +666,8 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 emptyBottles: {
                     b12: emptyb12 || 0,
                     b19: emptyb19 || 0
-                }
+                },
+                ...(opForm ? { opForm } : {})
             } 
         })
 
@@ -2020,10 +2021,82 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
     }
 };
 
-export const createOrderKaspiQrCourierAggregator = async (req, res) => {
+export const checkOrderKaspiQrCourierAggregator = async (req, res) => {
     try {
         const courierId = req.userId;
         const { orderId } = req.body || {};
+
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите orderId",
+            });
+        }
+
+        const courier = await CourierAggregator.findById(courierId);
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const activeOrder =
+            courier.orders?.find((item) => String(item.orderId) === String(orderId)) ||
+            (String(courier.order?.orderId) === String(orderId) ? courier.order : null);
+
+        if (!activeOrder) {
+            return res.status(400).json({
+                success: false,
+                message: "Заказ не найден у курьера",
+            });
+        }
+
+        const doc = await ApiPayInvoice.findOne({ externalOrderId: String(orderId) })
+            .sort({ createdAt: -1 });
+
+        if (!doc) {
+            return res.status(404).json({
+                success: false,
+                message: "Счёт для оплаты не найден",
+            });
+        }
+
+        try {
+            const { status, data } = await apipayGetInvoice(doc.apipayInvoiceId);
+            if (status >= 200 && status < 300 && data?.status) {
+                doc.status = data.status;
+                if (data.qr_expires_at) {
+                    doc.qrExpiresAt = new Date(data.qr_expires_at);
+                }
+                doc.lastResponse = data;
+                await doc.save();
+            }
+        } catch (syncErr) {
+            console.warn("[CourierAggregator] checkOrderKaspiQr sync:", syncErr?.message);
+        }
+
+        return res.json({
+            success: true,
+            invoice: {
+                id: doc._id,
+                status: doc.status,
+                amount: doc.amount,
+            },
+        });
+    } catch (error) {
+        console.error("[CourierAggregator] checkOrderKaspiQr ERROR:", error?.message);
+        return res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка при проверке оплаты",
+        });
+    }
+};
+
+export const createOrderKaspiQrCourierAggregator = async (req, res) => {
+    try {
+        const courierId = req.userId;
+        const { orderId, amount: requestedAmount } = req.body || {};
 
         if (!orderId) {
             return res.status(400).json({
@@ -2059,7 +2132,9 @@ export const createOrderKaspiQrCourierAggregator = async (req, res) => {
             });
         }
 
-        const amount = Number(activeOrder.sum ?? 0);
+        const amount = Number(requestedAmount) > 0
+            ? Number(requestedAmount)
+            : Number(activeOrder.sum ?? 0);
         if (!amount || amount <= 0) {
             return res.status(400).json({
                 success: false,
@@ -2125,6 +2200,24 @@ export const testPushNotificationClient = async (req, res) => {
         });
     }
     catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+}
+
+export const sendNotificationToClient = async (req, res) => {
+    try {
+        const { notificationToken, message } = req.body;
+        const { pushNotificationClient } = await import("../pushNotificationClient.js");
+        await pushNotificationClient("Сообщение от курьера", message, [notificationToken], "onTheWay", { message });
+        res.status(200).json({
+            success: true,
+            message: "Уведомление успешно отправлено"
+        });
+    } catch (error) {
         console.log(error);
         res.status(500).json({
             success: false,
