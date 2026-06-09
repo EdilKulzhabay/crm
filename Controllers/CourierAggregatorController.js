@@ -32,11 +32,10 @@ const calculateAvailablePayout = (orders, courier) => {
     let faktSum = 0;
 
     for (const order of orders) {
-        const opForm = order.opForm || "fakt";
         const b12 = Number(order.products?.b12) || 0;
         const b19 = Number(order.products?.b19) || 0;
 
-        if (opForm === "fakt") {
+        if (order.opForm === "fakt") {
             faktSum += Number(order.sum) || 0;
             continue;
         }
@@ -1089,35 +1088,54 @@ export const getCourierAggregatorIncome = async (req, res) => {
             "date.d": today,
             status: "delivered",
             courierAggregator: courier._id
-        }).populate("client")
+        }).select("products opForm sum")
 
-        const income = orders.reduce((acc, order) => {
-            let sum = 0
-            if (order.products.b12 > 0) {
-                if (courier.isExternal) {
-                    sum += order.products.b12 * (courier.price12 ? courier.price12 : 300);
-                } else {
-                    sum += order.products.b12 * order.client.price12;
-                }
-            }
-            if (order.products.b19 > 0) {
-                if (courier.isExternal) {
-                    sum += order.products.b19 * (courier.price19 ? courier.price19 : 500);
-                } else {
-                    sum += order.products.b19 * order.client.price19;
-                }
-            }
-            return acc + sum
-        }, 0)
+        const availableIncome = calculateAvailablePayout(orders, courier)
         
         res.json({
             success: true,
-            income
+            income: availableIncome,
+            availableIncome,
         })
         
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Ошибка сервера" });
+    }
+}
+
+export const getCourierAggregatorAvailableIncome = async (req, res) => {
+    try {
+        const id = req.userId;
+
+        const courier = await CourierAggregator.findById(id);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const deliveredOrders = await Order.find({
+            courierAggregator: courier._id,
+            status: "delivered",
+        }).select("products opForm sum");
+
+        const availableIncome = calculateAvailablePayout(deliveredOrders, courier);
+
+        return res.json({
+            success: true,
+            availableIncome,
+            price12: getCourierPayoutRates(courier).price12,
+            price19: getCourierPayoutRates(courier).price19,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
     }
 }
 
