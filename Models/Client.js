@@ -75,6 +75,9 @@ const ClientSchema = new mongoose.Schema(
                     type: Boolean,
                     default: false,
                 },
+                images: [{
+                    type: String,
+                }],
             },
         ],
         price19: {

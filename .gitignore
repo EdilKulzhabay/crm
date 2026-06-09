@@ -12,6 +12,7 @@ client/build/
 
 # uploads
 uploads/
+addressImages/
 
 # python venv
 venv/

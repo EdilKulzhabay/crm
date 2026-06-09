@@ -29,6 +29,16 @@ import {
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const addressImagesDir = path.join(__dirname, "addressImages");
+if (!fs.existsSync(addressImagesDir)) {
+    fs.mkdirSync(addressImagesDir, { recursive: true });
+}
 import paymentRoutes from "./paymentRoutes.js";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
@@ -75,6 +85,47 @@ app.use("/static", express.static("/home/ubuntu/crm"));
 
 const upload = multer({ dest: "uploads/" });
 const uploadAccessoriseImages = multer({ dest: "accessoriesImages/" });
+const uploadAddressImage = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, addressImagesDir),
+        filename: (req, file, cb) => {
+            const ext = path.extname(file.originalname) || ".jpg";
+            cb(null, `addr-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+        },
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype?.startsWith("image/")) {
+            cb(null, true);
+        } else {
+            cb(new Error("Допустимы только изображения"));
+        }
+    },
+});
+
+app.post("/api/upload-address-image", checkAuth, uploadAddressImage.single("file"), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Файл не передан",
+            });
+        }
+
+        const url = `/static/addressImages/${req.file.filename}`;
+        return res.json({
+            success: true,
+            url,
+            message: "Изображение загружено",
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка при загрузке изображения",
+        });
+    }
+});
 
 app.post("/api/upload-excel", upload.single("file"), checkAuth, async (req, res) => {
     try {

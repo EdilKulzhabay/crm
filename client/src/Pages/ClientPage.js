@@ -93,11 +93,108 @@ export default function ClientPage() {
         house: "",
         exactLink: "",
         phone: "",
+        images: [],
         point: {
             lat: "",
             lon: ""
         }
     });
+    const [imageUploading, setImageUploading] = useState(false);
+
+    const apiOrigin = (process.env.REACT_APP_PORT || "").replace(/\/$/, "");
+
+    const getImageSrc = (url) => {
+        if (!url) return "";
+        if (url.startsWith("http")) return url;
+        return `${apiOrigin}${url.startsWith("/") ? url : `/${url}`}`;
+    };
+
+    const handleAddressImageUpload = async (event, target) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setImageUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const { data } = await api.post("/api/upload-address-image", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            if (data?.success && data?.url) {
+                if (target === "edit") {
+                    setSelectAddress((prev) => ({
+                        ...prev,
+                        images: [...(prev?.images || []), data.url],
+                    }));
+                } else {
+                    setNewAdress((prev) => ({
+                        ...prev,
+                        images: [...(prev?.images || []), data.url],
+                    }));
+                }
+            } else {
+                setOpen(true);
+                setStatus("error");
+                setMessage(data?.message || "Не удалось загрузить изображение");
+            }
+        } catch (e) {
+            console.log(e);
+            setOpen(true);
+            setStatus("error");
+            setMessage("Не удалось загрузить изображение");
+        } finally {
+            setImageUploading(false);
+            event.target.value = "";
+        }
+    };
+
+    const removeAddressImage = (url, target) => {
+        if (target === "edit") {
+            setSelectAddress((prev) => ({
+                ...prev,
+                images: (prev?.images || []).filter((img) => img !== url),
+            }));
+        } else {
+            setNewAdress((prev) => ({
+                ...prev,
+                images: (prev?.images || []).filter((img) => img !== url),
+            }));
+        }
+    };
+
+    const renderAddressImagesBlock = (images, target) => (
+        <div className="flex flex-col gap-2 w-full mt-2">
+            <div>Фото адреса:</div>
+            {(images || []).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                    {(images || []).map((url, imageIndex) => (
+                        <div key={`${url}-${imageIndex}`} className="relative">
+                            <img
+                                src={getImageSrc(url)}
+                                alt={`address-${imageIndex}`}
+                                className="w-20 h-20 object-cover rounded border border-gray-200"
+                            />
+                            <button
+                                type="button"
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6"
+                                onClick={() => removeAddressImage(url, target)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+            <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => handleAddressImageUpload(event, target)}
+                disabled={imageUploading}
+            />
+            {imageUploading && <div className="text-sm text-gray-500">Загрузка...</div>}
+        </div>
+    );
 
     const handleDateChange = (e) => {
         let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
@@ -284,6 +381,7 @@ export default function ClientPage() {
                 house: value?.house || "",
                 link: value?.exactLink || "",
                 phone: value?.phone || "",
+                images: value?.images || [],
                 point: {
                     lat: value?.point?.lat || "",
                     lon: value?.point?.lon || ""
@@ -830,9 +928,21 @@ export default function ClientPage() {
                                             {adress?.link?.includes("/search") ? <>link%%{adress?.street || ""}</> : <>{adress?.link}</>}
                                         </a>
                                         {selectAddress?._id !== adress?._id && <>
+                                            {adress?.images?.length > 0 && (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {adress.images.map((url, imageIndex) => (
+                                                        <img
+                                                            key={`${adress?._id}-img-${imageIndex}`}
+                                                            src={getImageSrc(url)}
+                                                            alt={`address-preview-${imageIndex}`}
+                                                            className="w-12 h-12 object-cover rounded border border-gray-200"
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                             <MyButton
                                                 click={() => {
-                                                    setSelectAddress({ ...adress })
+                                                    setSelectAddress({ ...adress, images: adress?.images || [] })
                                                 }}
                                             >
                                                 Редактировать
@@ -946,6 +1056,9 @@ export default function ClientPage() {
                                     </div>
                                 </Li2>
                                 <Li2>
+                                    {renderAddressImagesBlock(selectAddress?.images, "edit")}
+                                </Li2>
+                                <Li2>
                                     <div className="text-green-400">
                                         [
                                     </div>
@@ -953,7 +1066,7 @@ export default function ClientPage() {
                                         className="text-green-400 hover:text-blue-500" 
                                         onClick={() => {
                                             const updatedAddresses = (client.addresses || []).map((address) =>
-                                                address?._id === selectAddress?._id ? { ...selectAddress } : address
+                                                address?._id === selectAddress?._id ? { ...selectAddress, images: selectAddress?.images || [] } : address
                                             );
                                             updateClientData("addresses2", updatedAddresses);
                                         }}
@@ -1067,6 +1180,9 @@ export default function ClientPage() {
                                 </div>
                             </Li>
                             <Li>
+                                {renderAddressImagesBlock(newAdress.images, "new")}
+                            </Li>
+                            <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
                                     <MyButton
                                         click={() => {
@@ -1076,6 +1192,7 @@ export default function ClientPage() {
                                                 house: "",
                                                 exactLink: "",
                                                 phone: "",
+                                                images: [],
                                                 point: {
                                                     lat: "",
                                                     lon: ""
@@ -1095,6 +1212,7 @@ export default function ClientPage() {
                                                 house: "",
                                                 exactLink: "",
                                                 phone: "",
+                                                images: [],
                                                 point: {
                                                     lat: "",
                                                     lon: ""
