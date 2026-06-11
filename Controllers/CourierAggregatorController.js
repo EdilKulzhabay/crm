@@ -485,7 +485,9 @@ export const updateCourierAggregatorData = async (req, res) => {
         if (changeField === "capacities") {
             await CourierAggregator.updateOne({_id: id}, { $set: {
                 capacity12: changeData.capacity12 || 0,
-                capacity19: changeData.capacity19 || 0
+                capacity19: changeData.capacity19 || 0,
+                emptyBottles12: 0,
+                emptyBottles19: 0,
             } })
         } else if (changeField === "order.products") {
             if (!courier.order || !courier.order.orderId) {
@@ -819,7 +821,9 @@ export const completeOrderCourierAggregator = async (req, res) => {
             $inc: {
                 income: incomeDelta,
                 capacity12: -(products.b12 || 0),
-                capacity19: -(products.b19 || 0)
+                capacity19: -(products.b19 || 0),
+                emptyBottles12: +(emptyb12 || 0),
+                emptyBottles19: +(emptyb19 || 0),
             }
         })
 

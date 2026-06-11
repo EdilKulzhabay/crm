@@ -305,6 +305,14 @@ const CourierAggregatorSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        emptyBottles12: {
+            type: Number,
+            default: 0,
+        },
+        emptyBottles19: {
+            type: Number,
+            default: 0,
+        },
         capacity: {
             type: Number,
             default: 0,
