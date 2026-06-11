@@ -391,6 +391,8 @@ app.get("/getCourierAggregatorData", checkAuthAggregator, CourierAggregatorContr
 app.get("/appointmentFranchisee", CourierAggregatorController.appointmentFranchisee)
 app.get("/getCourierAggregatorIncome", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorIncome)
 app.get("/getCourierAggregatorAvailableIncome", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorAvailableIncome)
+app.get("/getCourierAggregatorDeliveredBottlesToday", checkAuthAggregator, CourierAggregatorController.getCourierAggregatorDeliveredBottlesToday)
+app.post("/getCourierAggregatorIncomeLogs", CourierAggregatorController.getCourierAggregatorIncomeLogs)
 app.post("/createCourierAggregator", CourierAggregatorController.createCourierAggregator)
 app.post("/courierAggregatorSendCode", CourierAggregatorController.courierAggregatorSendCode)
 app.post("/getCourierAggregatorDataForAdmin", CourierAggregatorController.getCourierAggregatorDataForAdmin)

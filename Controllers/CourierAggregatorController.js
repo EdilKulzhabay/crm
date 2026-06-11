@@ -8,6 +8,7 @@ import { getDateAlmaty } from "../utils/dateUtils.js";
 import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
 import Client from "../Models/Client.js";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
+import CourierAggregatorIncomeLog from "../Models/CourierAggregatorIncomeLog.js";
 import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoice } from "../utils/apipay.js";
 
 const transporter = nodemailer.createTransport({
@@ -44,6 +45,53 @@ const calculateAvailablePayout = (orders, courier) => {
     }
 
     return Math.max(0, bottleEarnings - faktSum);
+};
+
+const getOrderIncomeDelta = (courier, products, orderSum, opForm) => {
+    if (opForm === "fakt") {
+        return -(Number(orderSum) || 0);
+    }
+
+    const { price12, price19 } = getCourierPayoutRates(courier);
+    const b12 = Number(products?.b12) || 0;
+    const b19 = Number(products?.b19) || 0;
+    return b12 * price12 + b19 * price19;
+};
+
+const logCourierIncomeChange = async ({
+    courierId,
+    type,
+    amount,
+    incomeBefore,
+    incomeAfter,
+    orderId = null,
+    opForm = null,
+    comment = null,
+}) => {
+    await CourierAggregatorIncomeLog.create({
+        courier: courierId,
+        type,
+        amount,
+        incomeBefore,
+        incomeAfter,
+        order: orderId,
+        opForm,
+        comment,
+    });
+};
+
+const calculateTodayEarnings = (orders, courier) => {
+    const { price12, price19 } = getCourierPayoutRates(courier);
+
+    return orders.reduce((acc, order) => {
+        if (order.opForm === "fakt") {
+            return acc + (Number(order.sum) || 0);
+        }
+
+        const b12 = Number(order.products?.b12) || 0;
+        const b19 = Number(order.products?.b19) || 0;
+        return acc + b12 * price12 + b19 * price19;
+    }, 0);
 };
 
 const generateCode = () => {
@@ -242,19 +290,9 @@ export const getCourierAggregatorData = async(req, res) => {
             })
         }
 
-        const deliveredOrders = await Order.find({
-            courierAggregator: courier._id,
-            status: "delivered",
-        }).select("products opForm sum");
-
-        const availableIncome = calculateAvailablePayout(deliveredOrders, courier);
-
         return res.json({
             success: true,
-            userData: {
-                ...courier._doc,
-                availableIncome,
-            },
+            userData: courier._doc,
         })
     } catch (error) {
         console.log(error);
@@ -492,6 +530,28 @@ export const updateCourierAggregatorData = async (req, res) => {
                 courier.orders[0].step = changeData;
             }
             await courier.save();
+        } else if (changeField === "income") {
+            const newIncome = Number(changeData);
+            if (isNaN(newIncome)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Некорректная сумма income",
+                });
+            }
+
+            const incomeBefore = Number(courier.income) || 0;
+            const amount = newIncome - incomeBefore;
+
+            await CourierAggregator.updateOne({ _id: id }, { $set: { income: newIncome } });
+
+            await logCourierIncomeChange({
+                courierId: id,
+                type: "admin_adjustment",
+                amount,
+                incomeBefore,
+                incomeAfter: newIncome,
+                comment: "Изменение администратором",
+            });
         } else {
             await CourierAggregator.updateOne({_id: id}, { $set: {
                 [changeField]: changeData
@@ -739,6 +799,11 @@ export const completeOrderCourierAggregator = async (req, res) => {
             await Order.updateOne({_id: nextOrder.orderId}, { $set: { status: "onTheWay" } });
         }
 
+        const effectiveOpForm = opForm || order.opForm || "fakt";
+        const incomeBefore = Number(courier1.income) || 0;
+        const incomeDelta = getOrderIncomeDelta(courier1, products, sum, effectiveOpForm);
+        const incomeAfter = incomeBefore + incomeDelta;
+
         await CourierAggregator.updateOne({_id: courierId}, {
             $pull: {
                 orders: { orderId }
@@ -752,17 +817,26 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 completeFirstOrder: true
             },
             $inc: {
-                income: sum, // прибавит значение order.sum
+                income: incomeDelta,
                 capacity12: -(products.b12 || 0),
                 capacity19: -(products.b19 || 0)
             }
         })
 
+        await logCourierIncomeChange({
+            courierId,
+            type: "order_complete",
+            amount: incomeDelta,
+            incomeBefore,
+            incomeAfter,
+            orderId,
+            opForm: effectiveOpForm,
+        });
+
         res.json({
             success: true,
             message: "Заказ завершен",
-            // income: b12 * process.env.Reward12 + b19 * process.env.Reward19
-            income: sum
+            income: incomeAfter,
         })
 
         try {
@@ -833,6 +907,7 @@ export const getCourierAggregatorOrdersHistory = async (req, res) => {
 
         const orders = await Order.find({
             courierAggregator: courier._id,
+            status: { $in: ["delivered", "cancelled"] },
             "date.d": {
                 $gte: startDate?.split('-').reverse().join('-'),
                 $lte: endDate?.split('-').reverse().join('-')
@@ -1092,12 +1167,11 @@ export const getCourierAggregatorIncome = async (req, res) => {
             courierAggregator: courier._id
         }).select("products opForm sum")
 
-        const availableIncome = calculateAvailablePayout(orders, courier)
+        const income = calculateTodayEarnings(orders, courier);
         
         res.json({
             success: true,
-            income: availableIncome,
-            availableIncome,
+            income,
         })
         
     } catch (error) {
@@ -1105,6 +1179,46 @@ export const getCourierAggregatorIncome = async (req, res) => {
         res.status(500).json({ message: "Ошибка сервера" });
     }
 }
+
+export const getCourierAggregatorDeliveredBottlesToday = async (req, res) => {
+    try {
+        const id = req.userId;
+
+        const courier = await CourierAggregator.findById(id);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const today = getDateAlmaty();
+
+        const orders = await Order.find({
+            "date.d": today,
+            status: "delivered",
+            courierAggregator: courier._id,
+        }).select("products");
+
+        const deliveredBottles = orders.reduce((acc, order) => {
+            const b12 = Number(order.products?.b12) || 0;
+            const b19 = Number(order.products?.b19) || 0;
+            return acc + b12 + b19;
+        }, 0);
+
+        return res.json({
+            success: true,
+            deliveredBottles,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
+    }
+};
 
 export const getCourierAggregatorAvailableIncome = async (req, res) => {
     try {
@@ -1119,16 +1233,9 @@ export const getCourierAggregatorAvailableIncome = async (req, res) => {
             });
         }
 
-        const deliveredOrders = await Order.find({
-            courierAggregator: courier._id,
-            status: "delivered",
-        }).select("products opForm sum");
-
-        const availableIncome = calculateAvailablePayout(deliveredOrders, courier);
-
         return res.json({
             success: true,
-            availableIncome,
+            availableIncome: Number(courier.income) || 0,
             price12: getCourierPayoutRates(courier).price12,
             price19: getCourierPayoutRates(courier).price19,
         });
@@ -1139,7 +1246,37 @@ export const getCourierAggregatorAvailableIncome = async (req, res) => {
             message: "Ошибка сервера",
         });
     }
-}
+};
+
+export const getCourierAggregatorIncomeLogs = async (req, res) => {
+    try {
+        const { courierId, limit = 50 } = req.body || {};
+
+        if (!courierId) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите courierId",
+            });
+        }
+
+        const logs = await CourierAggregatorIncomeLog.find({ courier: courierId })
+            .sort({ createdAt: -1 })
+            .limit(Math.min(Number(limit) || 50, 200))
+            .populate("order", "address sum opForm")
+            .lean();
+
+        return res.json({
+            success: true,
+            logs,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
+    }
+};
 
 export const clearCourierAggregatorOrders = async (req, res) => {
     try {
@@ -2054,12 +2191,7 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
             });
         }
 
-        const deliveredOrders = await Order.find({
-            courierAggregator: courier._id,
-            status: "delivered",
-        }).select("products opForm sum");
-
-        const availableIncome = calculateAvailablePayout(deliveredOrders, courier);
+        const availableIncome = Number(courier.income) || 0;
 
         if (sum > availableIncome) {
             return res.status(400).json({
@@ -2067,6 +2199,15 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
                 message: "Сумма не может превышать доступный баланс",
             });
         }
+
+        await logCourierIncomeChange({
+            courierId,
+            type: "withdrawal_request",
+            amount: 0,
+            incomeBefore: availableIncome,
+            incomeAfter: availableIncome,
+            comment: `Запрос на вывод ${sum} ₸`,
+        });
 
         const fullName = courier.fullName || `${courier.firstName || ""} ${courier.lastName || ""}`.trim();
 

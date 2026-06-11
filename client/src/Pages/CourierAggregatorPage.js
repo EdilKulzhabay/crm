@@ -25,6 +25,8 @@ export default function CourierAggregatorPage() {
     const [capacity19, setCapacity19] = useState(0);
     const [price12, setPrice12] = useState(0);
     const [price19, setPrice19] = useState(0);
+    const [income, setIncome] = useState(0);
+    const [incomeLogs, setIncomeLogs] = useState([]);
     const [franchiseesModal, setFranchiseesModal] = useState(false);
     const [franchisee, setFranchisee] = useState(null);
 
@@ -53,8 +55,26 @@ export default function CourierAggregatorPage() {
             setCapacity19(data.userData.capacity19);
             setPrice12(data.userData.price12);
             setPrice19(data.userData.price19);
+            setIncome(data.userData.income || 0);
         } catch (error) {
             console.error("Ошибка при загрузке данных курьера:", error);
+        }
+    };
+
+    const loadIncomeLogs = async () => {
+        try {
+            const { data } = await api.post(
+                "/getCourierAggregatorIncomeLogs",
+                { courierId: id, limit: 30 },
+                {
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+            if (data.success) {
+                setIncomeLogs(data.logs || []);
+            }
+        } catch (error) {
+            console.error("Ошибка при загрузке истории income:", error);
         }
     };
 
@@ -84,7 +104,8 @@ export default function CourierAggregatorPage() {
 
     useEffect(() => {
         loadCourierData();
-        getCompletedOrCancelledOrdersFromCourierAggregator()
+        getCompletedOrCancelledOrdersFromCourierAggregator();
+        loadIncomeLogs();
         setLoading(false)
     }, [id]);
 
@@ -242,6 +263,55 @@ export default function CourierAggregatorPage() {
                     </Div>
                 )}
             </Div>
+
+            <Div />
+            <Div className="text-xl font-bold">Баланс курьера (income)</Div>
+            <Li>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <div>Текущий баланс: {courier.income ?? 0} ₸</div>
+                    <MyInput
+                        value={income}
+                        change={(e) => setIncome(e.target.value)}
+                        color="white"
+                    />
+                    <MyButton
+                        click={async () => {
+                            await updateCourierAggregatorData(id, "income", Number(income));
+                            await loadIncomeLogs();
+                        }}
+                    >
+                        Обновить баланс
+                    </MyButton>
+                </div>
+            </Li>
+            {incomeLogs.length > 0 && (
+                <>
+                    <Div>История изменений баланса:</Div>
+                    {incomeLogs.map((log) => (
+                        <Li key={log._id}>
+                            <div className="flex flex-col gap-y-1">
+                                <div>
+                                    {new Date(log.createdAt).toLocaleString("ru-RU")}
+                                    {" | "}
+                                    {log.type === "order_complete" && "Завершение заказа"}
+                                    {log.type === "admin_adjustment" && "Изменение администратором"}
+                                    {log.type === "withdrawal_request" && "Запрос на вывод"}
+                                </div>
+                                <div>
+                                    Изменение: {log.amount > 0 ? "+" : ""}{log.amount} ₸
+                                    {" | "}
+                                    Было: {log.incomeBefore} ₸ → Стало: {log.incomeAfter} ₸
+                                </div>
+                                {log.opForm && <div>Форма оплаты: {log.opForm}</div>}
+                                {log.comment && <div>{log.comment}</div>}
+                                {log.order?.address?.actual && (
+                                    <div>Заказ: {log.order.address.actual}</div>
+                                )}
+                            </div>
+                        </Li>
+                    ))}
+                </>
+            )}
 
             <Div />
             <Div className="text-xl font-bold">Активный заказ</Div>
