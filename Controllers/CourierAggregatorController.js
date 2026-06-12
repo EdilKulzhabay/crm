@@ -2268,8 +2268,19 @@ export const checkOrderKaspiQrCourierAggregator = async (req, res) => {
             });
         }
 
-        const doc = await ApiPayInvoice.findOne({ externalOrderId: String(orderId) })
-            .sort({ createdAt: -1 });
+        const order = await Order.findById(orderId);
+        let doc = null;
+
+        if (order?.qrCodeData?.apipayInvoiceId) {
+            doc = await ApiPayInvoice.findOne({
+                apipayInvoiceId: order.qrCodeData.apipayInvoiceId,
+            });
+        }
+
+        if (!doc) {
+            doc = await ApiPayInvoice.findOne({ externalOrderId: String(orderId) })
+                .sort({ createdAt: -1 });
+        }
 
         if (!doc) {
             return res.status(404).json({
@@ -2287,6 +2298,20 @@ export const checkOrderKaspiQrCourierAggregator = async (req, res) => {
                 }
                 doc.lastResponse = data;
                 await doc.save();
+
+                if (order) {
+                    await Order.updateOne(
+                        { _id: order._id },
+                        {
+                            $set: {
+                                "qrCodeData.status": data.status,
+                                ...(data.qr_expires_at
+                                    ? { "qrCodeData.qrExpiresAt": new Date(data.qr_expires_at) }
+                                    : {}),
+                            },
+                        }
+                    );
+                }
             }
         } catch (syncErr) {
             console.warn("[CourierAggregator] checkOrderKaspiQr sync:", syncErr?.message);
@@ -2309,10 +2334,20 @@ export const checkOrderKaspiQrCourierAggregator = async (req, res) => {
     }
 };
 
+const buildKaspiQrInvoiceResponse = (invoiceData) => ({
+    apipayInvoiceId: invoiceData.apipayInvoiceId,
+    amount: invoiceData.amount,
+    status: invoiceData.status,
+    qrImageUrl: invoiceData.qrImageUrl,
+    qrTokenUrl: invoiceData.qrTokenUrl,
+    qrExpiresAt: invoiceData.qrExpiresAt,
+    isSandbox: invoiceData.isSandbox,
+});
+
 export const createOrderKaspiQrCourierAggregator = async (req, res) => {
     try {
         const courierId = req.userId;
-        const { orderId, amount: requestedAmount } = req.body || {};
+        const { orderId, amount: requestedAmount, forceRefresh } = req.body || {};
 
         if (!orderId) {
             return res.status(400).json({
@@ -2345,6 +2380,18 @@ export const createOrderKaspiQrCourierAggregator = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Клиент заказа не найден",
+            });
+        }
+
+        const existingQrImageUrl = typeof order.qrCodeData?.qrImageUrl === "string"
+            ? order.qrCodeData.qrImageUrl.trim()
+            : "";
+
+        if (!forceRefresh && existingQrImageUrl) {
+            return res.json({
+                success: true,
+                invoice: buildKaspiQrInvoiceResponse(order.qrCodeData),
+                reused: true,
             });
         }
 
@@ -2383,18 +2430,22 @@ export const createOrderKaspiQrCourierAggregator = async (req, res) => {
             lastResponse: data,
         });
 
-        return res.status(201).json({
+        const qrCodeData = {
+            apipayInvoiceId: localDoc.apipayInvoiceId,
+            amount: localDoc.amount,
+            status: localDoc.status,
+            qrImageUrl: localDoc.qrImageUrl,
+            qrTokenUrl: localDoc.qrTokenUrl,
+            qrExpiresAt: localDoc.qrExpiresAt,
+            isSandbox: localDoc.isSandbox,
+        };
+
+        await Order.updateOne({ _id: order._id }, { $set: { qrCodeData } });
+
+        return res.status(forceRefresh ? 200 : 201).json({
             success: true,
-            invoice: {
-                id: localDoc._id,
-                apipayInvoiceId: localDoc.apipayInvoiceId,
-                amount: localDoc.amount,
-                status: localDoc.status,
-                qrImageUrl: localDoc.qrImageUrl,
-                qrTokenUrl: localDoc.qrTokenUrl,
-                qrExpiresAt: localDoc.qrExpiresAt,
-                isSandbox: localDoc.isSandbox,
-            },
+            invoice: buildKaspiQrInvoiceResponse(qrCodeData),
+            reused: false,
         });
     } catch (error) {
         console.error("[CourierAggregator] createOrderKaspiQr ERROR:", error?.message);

@@ -144,7 +144,37 @@ const OrderSchema = new mongoose.Schema(
         deliveredTime: {
             type: Date,
             default: null
-        }
+        },
+        qrCodeData: {
+            apipayInvoiceId: {
+                type: Number,
+                default: null,
+            },
+            amount: {
+                type: Number,
+                default: null,
+            },
+            status: {
+                type: String,
+                default: null,
+            },
+            qrImageUrl: {
+                type: String,
+                default: null,
+            },
+            qrTokenUrl: {
+                type: String,
+                default: null,
+            },
+            qrExpiresAt: {
+                type: Date,
+                default: null,
+            },
+            isSandbox: {
+                type: Boolean,
+                default: false,
+            },
+        },
     },
     {
         timestamps: true,
