@@ -1254,7 +1254,7 @@ export const getCourierAggregatorAvailableIncome = async (req, res) => {
 
 export const getCourierAggregatorIncomeLogs = async (req, res) => {
     try {
-        const { courierId, limit = 50 } = req.body || {};
+        const { courierId, limit = 50, dateFrom, dateTo } = req.body || {};
 
         if (!courierId) {
             return res.status(400).json({
@@ -1263,9 +1263,9 @@ export const getCourierAggregatorIncomeLogs = async (req, res) => {
             });
         }
 
-        const logs = await CourierAggregatorIncomeLog.find({ courier: courierId })
-            .sort({ createdAt: -1 })
-            .limit(Math.min(Number(limit) || 50, 200))
+        const logs = await CourierAggregatorIncomeLog.find({ courier: courierId, createdAt: { $gte: dateFrom, $lte: dateTo } })
+            .sort({ createdAt: 1 })
+            .limit(100)
             .populate("order", "address sum opForm")
             .lean();
 

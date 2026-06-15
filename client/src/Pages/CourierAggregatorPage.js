@@ -12,6 +12,7 @@ import useFetchUserData from "../customHooks/useFetchUserData";
 import MyInput from "../Components/MyInput";
 import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
 import useScrollPosition from "../customHooks/useScrollPosition";
+import DataInput from "../Components/DataInput";
 
 export default function CourierAggregatorPage() {
     const scrollPosition = useScrollPosition();
@@ -27,6 +28,8 @@ export default function CourierAggregatorPage() {
     const [price19, setPrice19] = useState(0);
     const [income, setIncome] = useState(0);
     const [incomeLogs, setIncomeLogs] = useState([]);
+    const [incomeLogDateFrom, setIncomeLogDateFrom] = useState("");
+    const [incomeLogDateTo, setIncomeLogDateTo] = useState("");
     const [franchiseesModal, setFranchiseesModal] = useState(false);
     const [franchisee, setFranchisee] = useState(null);
 
@@ -65,7 +68,7 @@ export default function CourierAggregatorPage() {
         try {
             const { data } = await api.post(
                 "/getCourierAggregatorIncomeLogs",
-                { courierId: id, limit: 30 },
+                { courierId: id, limit: 200, dateFrom: incomeLogDateFrom, dateTo: incomeLogDateTo },
                 {
                     headers: { "Content-Type": "application/json" },
                 }
@@ -136,6 +139,30 @@ export default function CourierAggregatorPage() {
     const handleCapacity19 = (e) => {
         setCapacity19(e.target.value)
     }
+
+    const handleIncomeLogDateChange = (e) => {
+        const { name, value } = e.target;
+        let input = e.target.value.replace(/\D/g, ""); // Remove all non-digit characters
+        if (input.length > 8) input = input.substring(0, 8); // Limit input to 8 digits
+
+        const year = input.substring(0, 4);
+        const month = input.substring(4, 6);
+        const day = input.substring(6, 8);
+
+        let formattedValue = year;
+        if (input.length >= 5) {
+            formattedValue += "-" + month;
+        }
+        if (input.length >= 7) {
+            formattedValue += "-" + day;
+        }
+        if (name === "incomeLogDateFrom") {
+            setIncomeLogDateFrom(formattedValue);
+        }
+        if (name === "incomeLogDateTo") {
+            setIncomeLogDateTo(formattedValue);
+        }
+    };
 
     return (
         <Container role={userData?.role}>
@@ -287,35 +314,86 @@ export default function CourierAggregatorPage() {
             {incomeLogs.length > 0 && (
                 <>
                     <Div>История изменений баланса:</Div>
-                    {incomeLogs.map((log) => (
-                        <Li key={log._id}>
-                            <div className="flex flex-col gap-y-1">
-                                <div>
-                                    {new Date(log.createdAt).toLocaleString("ru-RU")}
-                                    {" | "}
-                                    {log.type === "order_complete" && "Завершение заказа"}
-                                    {log.type === "admin_adjustment" && "Изменение администратором"}
-                                    {log.type === "withdrawal_request" && "Запрос на вывод"}
-                                </div>
-                                <div>
-                                    Изменение: {log.amount > 0 ? "+" : ""}{log.amount} ₸
-                                    {" | "}
-                                    Было: {log.incomeBefore} ₸ → Стало: {log.incomeAfter} ₸
-                                </div>
-                                {log.opForm && <div>Форма оплаты: {log.opForm}</div>}
-                                {log.comment && <div>{log.comment}</div>}
-                                {log.order?.address?.actual && (
-                                    <div>Заказ: {log.order.address.actual}</div>
-                                )}
-                                {log.order?._id && (
-                                    <LinkButton
-                                        color="green"
-                                        href={`/OrderPage/${log.order._id}`}
-                                    >Перейти на заказ</LinkButton>
-                                )}
+                    <Div>
+                        <div className="flex items-center gap-x-2 flex-wrap">
+                            <div>Дата:</div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    name="incomeLogDateFrom"
+                                    value={incomeLogDateFrom}
+                                    change={handleIncomeLogDateChange}
+                                />
+                                ]
                             </div>
-                        </Li>
-                    ))}
+                            <div> - </div>
+                            <div className="text-red">
+                                [
+                                <DataInput
+                                    color="red"
+                                    name="incomeLogDateTo"
+                                    value={incomeLogDateTo}
+                                    change={handleIncomeLogDateChange}
+                                />
+                                ]
+                            </div>
+                            <MyButton click={() => {
+                                loadIncomeLogs()
+                            }}>
+                                Применить
+                            </MyButton>
+                            {(incomeLogDateFrom || incomeLogDateTo) && (
+                                <MyButton
+                                    click={() => {
+                                        setIncomeLogDateFrom("");
+                                        setIncomeLogDateTo("");
+                                    }}
+                                >
+                                    Сбросить
+                                </MyButton>
+                            )}
+                        </div>
+                    </Div>
+                    <Div />
+                    {incomeLogs.length === 0 ? (
+                        <Div>Нет записей за выбранный период</Div>
+                    ) : (
+                        <div className="max-h-[600px] overflow-y-auto">
+                            {incomeLogs.map((log) => (
+                                <div key={log._id}>
+                                    <Li>
+                                        <div className="flex flex-col gap-y-1">
+                                            <div>
+                                                {new Date(log.createdAt).toLocaleString("ru-RU")}
+                                                {" | "}
+                                                {log.type === "order_complete" && "Завершение заказа"}
+                                                {log.type === "admin_adjustment" && "Изменение администратором"}
+                                                {log.type === "withdrawal_request" && "Запрос на вывод"}
+                                            </div>
+                                            <div>
+                                                Изменение: {log.amount > 0 ? "+" : ""}{log.amount} ₸
+                                                {" | "}
+                                                Было: {log.incomeBefore} ₸ → Стало: {log.incomeAfter} ₸
+                                            </div>
+                                            {log.opForm && <div>Форма оплаты: {log.opForm}</div>}
+                                            {log.comment && <div>{log.comment}</div>}
+                                            {log.order?.address?.actual && (
+                                                <div>Заказ: {log.order.address.actual}</div>
+                                            )}
+                                            {log.order?._id && (
+                                                <LinkButton
+                                                    color="green"
+                                                    href={`/OrderPage/${log.order._id}`}
+                                                >Перейти на заказ</LinkButton>
+                                            )}
+                                        </div>
+                                    </Li>
+                                    <Div />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </>
             )}
 

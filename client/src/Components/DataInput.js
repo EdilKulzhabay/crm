@@ -25,6 +25,7 @@ export default function DataInput(props) {
     return (
         <input
             name={name}
+            type={props.type}
             className={`bg-black outline-none border-b border-${props.color} border-dashed text-sm lg:text-base placeholder:text-xs placeholder:lg:text-sm`}
             value={props.value}
             size={13}
