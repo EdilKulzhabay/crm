@@ -14,6 +14,23 @@ import ChooseFranchiseeModal from "../Components/ChooseFranchiseeModal";
 import useScrollPosition from "../customHooks/useScrollPosition";
 import DataInput from "../Components/DataInput";
 
+const getCurrentDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const getTomorrowDate = () => {
+    const today = new Date();
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const day = String(tomorrow.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export default function CourierAggregatorPage() {
     const scrollPosition = useScrollPosition();
     const userData = useFetchUserData()
@@ -28,8 +45,8 @@ export default function CourierAggregatorPage() {
     const [price19, setPrice19] = useState(0);
     const [income, setIncome] = useState(0);
     const [incomeLogs, setIncomeLogs] = useState([]);
-    const [incomeLogDateFrom, setIncomeLogDateFrom] = useState("");
-    const [incomeLogDateTo, setIncomeLogDateTo] = useState("");
+    const [incomeLogDateFrom, setIncomeLogDateFrom] = useState(getCurrentDate());
+    const [incomeLogDateTo, setIncomeLogDateTo] = useState(getTomorrowDate());
     const [franchiseesModal, setFranchiseesModal] = useState(false);
     const [franchisee, setFranchisee] = useState(null);
 
