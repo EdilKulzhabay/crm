@@ -307,6 +307,12 @@ export default function CourierAggregatorPage() {
                                 {log.order?.address?.actual && (
                                     <div>Заказ: {log.order.address.actual}</div>
                                 )}
+                                {log.order?._id && (
+                                    <LinkButton
+                                        color="green"
+                                        href={`/OrderPage/${log.order._id}`}
+                                    >Перейти на заказ</LinkButton>
+                                )}
                             </div>
                         </Li>
                     ))}
