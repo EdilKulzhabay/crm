@@ -1179,6 +1179,38 @@ export const getCourierAggregatorIncome = async (req, res) => {
     }
 }
 
+export const getCourierAggregatorCashIncome = async (req, res) => {
+    try {
+        const id = req.userId
+        const courier = await CourierAggregator.findById(id)
+
+        if (!courier) {
+            return res.status(404).json({ message: "Курьер не найден", success: false })
+        }
+
+        const today = getDateAlmaty()
+
+        const orders = await Order.find({
+            "date.d": today,
+            status: "delivered",
+            opForm: "fakt",
+            courierAggregator: courier._id
+        }).select("products opForm sum")
+
+        const income = orders.reduce((acc, order) => {
+            return acc + Number(order.sum) || 0;
+        }, 0);
+        
+        res.json({
+            success: true,
+            cashIncome: income,
+        })
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Ошибка сервера" });
+    }
+}
+
 export const getCourierAggregatorDeliveredBottlesToday = async (req, res) => {
     try {
         const id = req.userId;
