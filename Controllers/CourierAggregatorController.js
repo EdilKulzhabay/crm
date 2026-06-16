@@ -83,10 +83,6 @@ const calculateTodayEarnings = (orders, courier) => {
     const { price12, price19 } = getCourierPayoutRates(courier);
 
     return orders.reduce((acc, order) => {
-        if (order.opForm === "fakt") {
-            return acc + (Number(order.sum) || 0);
-        }
-
         const b12 = Number(order.products?.b12) || 0;
         const b19 = Number(order.products?.b19) || 0;
         return acc + b12 * price12 + b19 * price19;
