@@ -421,6 +421,8 @@ app.post("/resetCourierOrders", CourierAggregatorController.resetCourierOrders)
 app.post("/needToGiveTheOrderToCourier", CourierAggregatorController.needToGiveTheOrderToCourier)
 app.post("/testPushNotificationClient", CourierAggregatorController.testPushNotificationClient)
 app.post("/sendNotificationToClient", checkAuthAggregator, CourierAggregatorController.sendNotificationToClient)
+app.post("/deleteCourierAggregator", CourierAggregatorController.deleteCourierAggregator)
+
 /////////////AQUAMARKET
 app.post("/addAquaMarket", AquaMarketController.addAquaMarket)
 app.post("/getAquaMarkets", AquaMarketController.getAquaMarkets)

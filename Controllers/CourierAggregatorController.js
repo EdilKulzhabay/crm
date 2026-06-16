@@ -2491,3 +2491,33 @@ export const sendNotificationToClient = async (req, res) => {
         });
     }
 }
+
+export const deleteCourierAggregator = async (req, res) => {
+    try {
+        const { courierId } = req.body;
+        const courier = await CourierAggregator.findById(courierId);
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const password = "123";
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        await CourierAggregator.updateOne({ _id: courierId }, { $set: { status: "deleted", password: hash } });
+
+        return res.status(200).json({
+            success: true,
+            message: "Курьер успешно удален"
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
