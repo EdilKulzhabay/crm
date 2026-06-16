@@ -48,13 +48,12 @@ const calculateAvailablePayout = (orders, courier) => {
 };
 
 const getOrderIncomeDelta = (courier, products, orderSum, opForm) => {
-    if (opForm === "fakt") {
-        return -(Number(orderSum) || 0);
-    }
-
     const { price12, price19 } = getCourierPayoutRates(courier);
     const b12 = Number(products?.b12) || 0;
     const b19 = Number(products?.b19) || 0;
+    if (opForm === "fakt") {
+        return -(Number(orderSum) || 0) + b12 * price12 + b19 * price19;
+    }
     return b12 * price12 + b19 * price19;
 };
 
