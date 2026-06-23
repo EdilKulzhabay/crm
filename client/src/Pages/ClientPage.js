@@ -88,9 +88,12 @@ export default function ClientPage() {
     const [addAdress, setAddAdress] = useState(false);
 
     const [newAdress, setNewAdress] = useState({
+        name: "",
+        city: "",
         street: "",
         link: "",
-        house: "",
+        apartment: "",
+        floor: "",
         exactLink: "",
         phone: "",
         images: [],
@@ -233,9 +236,6 @@ export default function ClientPage() {
         setModal(false)
     }
 
-    const addressChangeHandlerHouse = (event) => {
-        setNewAdress({ ...newAdress, ["house"]: event.target.value });
-    };
 
     const generate2GISLink = (address) => {
         const encodedAddress = encodeURIComponent(address);
@@ -377,8 +377,11 @@ export default function ClientPage() {
         let field2 = field
         if (field === "addresses") {
             const sendAddress = {
+                name: value?.name || "",
+                city: value?.city || "",
                 street: value?.street || "",
-                house: value?.house || "",
+                apartment: value?.apartment || "",
+                floor: value?.floor || "",
                 link: value?.exactLink || "",
                 phone: value?.phone || "",
                 images: value?.images || [],
@@ -1092,7 +1095,31 @@ export default function ClientPage() {
                         <>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap gap-y-2">
-                                    <div>Улица, дом, под:</div>
+                                    <div>Название: (Дом, Работа, Дача)</div>
+                                    <MyInput
+                                        value={newAdress.name}
+                                        change={(event) =>
+                                            setNewAdress({ ...newAdress, name: event.target.value })
+                                        }
+                                        color="white"
+                                    />
+                                </div>
+                            </Li>
+                            <Li>
+                                <div className="flex items-center gap-x-3 flex-wrap gap-y-2">
+                                    <div>Город:</div>
+                                    <MyInput
+                                        value={newAdress.city}
+                                        change={(event) =>
+                                            setNewAdress({ ...newAdress, city: event.target.value })
+                                        }
+                                        color="white"
+                                    />
+                                </div>
+                            </Li>
+                            <Li>
+                                <div className="flex items-center gap-x-3 flex-wrap gap-y-2">
+                                    <div>Улица и дом:</div>
                                     <MyInput
                                         value={newAdress?.street}
                                         change={(event) =>
@@ -1114,11 +1141,11 @@ export default function ClientPage() {
                             </Li>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>{client?.clientType ? "Кв." : "Офис"} этаж:</div>
+                                    <div>Квартира/Офис/Кабинет:</div>
                                     <MyInput
-                                        value={newAdress.house}
+                                        value={newAdress.apartment}
                                         change={(event) =>
-                                            addressChangeHandlerHouse(event)
+                                            setNewAdress({ ...newAdress, apartment: event.target.value })
                                         }
                                         color="white"
                                     />
@@ -1126,11 +1153,11 @@ export default function ClientPage() {
                             </Li>
                             <Li>
                                 <div className="flex items-center gap-x-3 flex-wrap">
-                                    <div>Точная ссылка:</div>
+                                    <div>Этаж:</div>
                                     <MyInput
-                                        value={newAdress.exactLink}
+                                        value={newAdress.floor}
                                         change={(event) =>
-                                            setNewAdress({ ...newAdress, ["exactLink"]: event.target.value })
+                                            setNewAdress({ ...newAdress, floor: event.target.value })
                                         }
                                         color="white"
                                     />
@@ -1142,7 +1169,19 @@ export default function ClientPage() {
                                     <MyInput
                                         value={newAdress.phone}
                                         change={(event) =>
-                                            setNewAdress({ ...newAdress, ["phone"]: event.target.value })
+                                            setNewAdress({ ...newAdress, phone: event.target.value })
+                                        }
+                                        color="white"
+                                    />
+                                </div>
+                            </Li>
+                            <Li>
+                                <div className="flex items-center gap-x-3 flex-wrap">
+                                    <div>Точная ссылка:</div>
+                                    <MyInput
+                                        value={newAdress.exactLink}
+                                        change={(event) =>
+                                            setNewAdress({ ...newAdress, exactLink: event.target.value })
                                         }
                                         color="white"
                                     />
@@ -1188,8 +1227,11 @@ export default function ClientPage() {
                                         click={() => {
                                             updateClientData("addresses", newAdress);
                                             setNewAdress({
+                                                name: "",
+                                                city: "",
                                                 street: "",
-                                                house: "",
+                                                apartment: "",
+                                                floor: "",
                                                 exactLink: "",
                                                 phone: "",
                                                 images: [],
@@ -1208,8 +1250,11 @@ export default function ClientPage() {
                                         click={() => {
                                             setAddAdress(false);
                                             setNewAdress({
+                                                name: "",
+                                                city: "",
                                                 street: "",
-                                                house: "",
+                                                apartment: "",
+                                                floor: "",
                                                 exactLink: "",
                                                 phone: "",
                                                 images: [],

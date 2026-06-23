@@ -5,7 +5,7 @@ import Div from "../../Components/Div"
 import useFetchUserData from "../../customHooks/useFetchUserData"
 import clsx from "clsx"
 import MyButton from "../../Components/MyButton"
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, Rectangle } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import img1 from '../../images/aggregatorStatus/1.png'
@@ -58,6 +58,21 @@ const getOrderAgeIndex = (order) => {
     if (hours < 5) return 2;
     if (hours < 7) return 3;
     return 4;
+};
+
+const getOrderColor = (status, isAssigned, hasDeliveryTime, hasCourier) => {
+    if (hasCourier && status === "awaitingOrder") return "purple";
+    if (hasCourier && status === "onTheWay") return "pink";
+    if (isAssigned && status === "onTheWay") return "blue";
+    if (isAssigned && status === "awaitingOrder") return "yellow";
+    if (hasDeliveryTime && status === "awaitingOrder") return "orange";
+    switch (status) {
+        case "awaitingOrder": return "green";
+        case "onTheWay": return "blue";
+        case "delivered": return "red";
+        case "cancelled": return "black";
+        default: return "gray";
+    }
 };
 
 const createOrderIcon = (order) => {
@@ -137,6 +152,7 @@ export default function SuperAdminAggregatorAction() {
     const [reorderedCourierOrders, setReorderedCourierOrders] = useState([])
     const [reorderLoading, setReorderLoading] = useState(false)
     const [draggedOrderIndex, setDraggedOrderIndex] = useState(null)
+    const [viewMode, setViewMode] = useState('icons')
     useEffect(() => {
         setLoading(true)
 
@@ -667,6 +683,29 @@ export default function SuperAdminAggregatorAction() {
             </div>
         </div>
 
+        {/* Переключатель вида */}
+        <div className="mb-4 flex items-center gap-3">
+            <span className="text-sm text-gray-400">Вид карты:</span>
+            <button
+                onClick={() => setViewMode('icons')}
+                className={clsx("px-4 py-2 rounded font-semibold text-sm transition", {
+                    "bg-purple-600 text-white": viewMode === 'icons',
+                    "bg-gray-700 text-gray-300 hover:bg-gray-600": viewMode !== 'icons'
+                })}
+            >
+                Иконки
+            </button>
+            <button
+                onClick={() => setViewMode('shapes')}
+                className={clsx("px-4 py-2 rounded font-semibold text-sm transition", {
+                    "bg-purple-600 text-white": viewMode === 'shapes',
+                    "bg-gray-700 text-gray-300 hover:bg-gray-600": viewMode !== 'shapes'
+                })}
+            >
+                Фигуры
+            </button>
+        </div>
+
         {loading ? (
             <Div>Загрузка данных...</Div>
         ) : (
@@ -720,66 +759,121 @@ export default function SuperAdminAggregatorAction() {
 
                     {/* Заказы */}
                     {processedOrders.map((order, index) => {
+                        const hasCourier = order?.courier && order?.courier !== null;
                         const isAssigned = order.courierAggregator && (order.courierAggregator._id || order.courierAggregator);
+                        const hasDeliveryTime = order.date?.time && order.date.time !== "";
                         const bottles12 = order.products?.b12 || 0;
                         const bottles19 = order.products?.b19 || 0;
                         const opForm = getOpForm(order.opForm);
                         const clientType = order.client?.clientType;
+                        const isFakt = order.opForm === "fakt";
 
-                        return (
-                            <Marker
-                                key={`order-${order.originalIndex}`}
-                                position={[order.offsetLat, order.offsetLon]}
-                                icon={createOrderIcon(order)}
-                            >
-                                <Popup>
-                                    <div className="min-w-[300px]">
-                                        <strong>Заказ: {order.client?.fullName}</strong><br />
-                                        Адрес: {order.address?.actual}<br />
-                                        Статус: {order.status}<br />
-                                        Форма оплаты: {opForm}<br />
-                                        Тип клиента: {clientType ? 'Физ лицо' : 'Юр лицо'}<br />
-                                        {order.date?.time && order.date.time !== "" && (
-                                            <><strong>Время доставки: {order.date.time}</strong><br /></>
-                                        )}
-                                        {bottles12 > 0 && `${bottles12} 12л бутылей, `}
-                                        {bottles19 > 0 && `${bottles19} 19л бутылей`}
-                                        {isAssigned && (
-                                            <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
-                                        )}
-                                        <br /><br />
+                        const popupContent = (
+                            <Popup>
+                                <div className="min-w-[300px]">
+                                    <strong>Заказ: {order.client?.fullName}</strong><br />
+                                    Адрес: {order.address?.actual}<br />
+                                    Статус: {order.status}<br />
+                                    Форма оплаты: {opForm}<br />
+                                    Тип клиента: {clientType ? 'Физ лицо' : 'Юр лицо'}<br />
+                                    {order.date?.time && order.date.time !== "" && (
+                                        <><strong>Время доставки: {order.date.time}</strong><br /></>
+                                    )}
+                                    {bottles12 > 0 && `${bottles12} 12л бутылей, `}
+                                    {bottles19 > 0 && `${bottles19} 19л бутылей`}
+                                    {isAssigned && (
+                                        <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
+                                    )}
+                                    <br /><br />
+                                    <button
+                                        onClick={() => {
+                                            window.open(`/clientPage/${order.client._id}`, '_blank');
+                                        }}
+                                        className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
+                                    >
+                                        Профиль клиента
+                                    </button>
+                                    {order.status === "awaitingOrder" && !secret && !isAssigned && (
                                         <button
-                                            onClick={() => {
-                                                window.open(`/clientPage/${order.client._id}`, '_blank');
-                                            }}
-                                            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
+                                            onClick={() => openAssignModal(order)}
+                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
                                         >
-                                            Профиль клиента
+                                            Назначить курьеру
                                         </button>
-                                        {order.status === "awaitingOrder" && !secret && !isAssigned && (
-                                            <button
-                                                onClick={() => openAssignModal(order)}
-                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
-                                            >
-                                                Назначить курьеру
-                                            </button>
-                                        )}
-                                        {isAssigned && !secret && (
-                                            <button
-                                                onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
-                                                disabled={removeLoading}
-                                                className="bg-red text-white font-bold py-2 px-4 rounded w-full"
-                                            >
-                                                {removeLoading ? "Убирается..." : "Убрать у курьера"}
-                                            </button>
-                                        )}
-                                        {!isAssigned && order.status !== "awaitingOrder" && (
-                                            <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
-                                        )}
-                                    </div>
-                                </Popup>
-                            </Marker>
+                                    )}
+                                    {isAssigned && !secret && (
+                                        <button
+                                            onClick={() => handleRemoveOrder(order._id, order.courierAggregator._id || order.courierAggregator)}
+                                            disabled={removeLoading}
+                                            className="bg-red text-white font-bold py-2 px-4 rounded w-full"
+                                        >
+                                            {removeLoading ? "Убирается..." : "Убрать у курьера"}
+                                        </button>
+                                    )}
+                                    {!isAssigned && order.status !== "awaitingOrder" && (
+                                        <div className="text-gray-500 text-sm">Заказ не может быть назначен</div>
+                                    )}
+                                </div>
+                            </Popup>
                         );
+
+                        if (viewMode === 'icons') {
+                            return (
+                                <Marker
+                                    key={`order-${order.originalIndex}`}
+                                    position={[order.offsetLat, order.offsetLon]}
+                                    icon={createOrderIcon(order)}
+                                >
+                                    {popupContent}
+                                </Marker>
+                            );
+                        }
+
+                        // viewMode === 'shapes'
+                        const color = getOrderColor(order.status, isAssigned, hasDeliveryTime, hasCourier);
+                        const isCircle = clientType === true;
+
+                        if (isCircle) {
+                            return (
+                                <React.Fragment key={`order-${order.originalIndex}`}>
+                                    <Circle
+                                        center={[order.offsetLat, order.offsetLon]}
+                                        radius={80}
+                                        pathOptions={{ color, fillColor: color, fillOpacity: 0.7 }}
+                                    >
+                                        {popupContent}
+                                    </Circle>
+                                    {isFakt && (
+                                        <Circle
+                                            center={[order.offsetLat, order.offsetLon]}
+                                            radius={25}
+                                            pathOptions={{ color: "black", fillColor: "black", fillOpacity: 1, weight: 1 }}
+                                        />
+                                    )}
+                                </React.Fragment>
+                            );
+                        } else {
+                            return (
+                                <React.Fragment key={`order-${order.originalIndex}`}>
+                                    <Rectangle
+                                        bounds={[
+                                            [order.offsetLat - 0.0007, order.offsetLon - 0.0007],
+                                            [order.offsetLat + 0.0007, order.offsetLon + 0.0007]
+                                        ]}
+                                        pathOptions={{ color, fillColor: color, fillOpacity: 0.7, weight: 2 }}
+                                    >
+                                        {popupContent}
+                                    </Rectangle>
+                                    {isFakt && (
+                                        <Circle
+                                            center={[order.offsetLat, order.offsetLon]}
+                                            radius={25}
+                                            pathOptions={{ color: "black", fillColor: "black", fillOpacity: 1, weight: 1 }}
+                                        />
+                                    )}
+                                </React.Fragment>
+                            );
+                        }
                     })}
 
                     {/* Курьеры */}
@@ -909,6 +1003,21 @@ export default function SuperAdminAggregatorAction() {
                 <div className="hidden lg:block absolute top-4 right-4 bg-white bg-opacity-90 p-4 rounded-lg shadow-lg z-10 text-black max-h-[90vh] overflow-y-auto">
                     <h4 className="font-bold mb-2">Легенда:</h4>
                     <div className="space-y-1.5">
+                    {viewMode === 'shapes' ? (<>
+                        <div className="text-xs font-semibold text-gray-600 mt-2 mb-1">Статусы заказов:</div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded-full"></div><span className="text-sm">Ожидают заказа</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-full"></div><span className="text-sm">С временем доставки</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-yellow-500 rounded-full"></div><span className="text-sm">Назначены курьеру</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-purple-500 rounded-full"></div><span className="text-sm">С курьером (ожидают)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-500 rounded-full"></div><span className="text-sm">В пути</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-pink-500 rounded-full"></div><span className="text-sm">С курьером (в пути)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded-full"></div><span className="text-sm">Доставлены</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-black rounded-full"></div><span className="text-sm">Отменены</span></div>
+                        <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Типы клиентов:</div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-gray-400 rounded-full"></div><span className="text-sm">Физ лица (круг)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-gray-400"></div><span className="text-sm">Юр лица (квадрат)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-black rounded-full"></div><span className="text-sm">Нал_QR (чёрная точка)</span></div>
+                    </>) : (<>
                         <div className="text-xs font-semibold text-gray-600 mt-2 mb-1">Полоска сверху иконки:</div>
                         <div className="flex items-center gap-2">
                             <div style={{width:20,height:4,background:'#22c55e',borderRadius:'2px 2px 0 0'}}></div>
@@ -1003,6 +1112,7 @@ export default function SuperAdminAggregatorAction() {
                             <div className="w-8 h-0.5" style={{borderTop: '2px dashed purple'}}></div>
                             <span className="text-sm">Маршрут курьера</span>
                         </div>
+                    </>)}
                     </div>
                 </div>
             </div>
