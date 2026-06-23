@@ -1044,28 +1044,7 @@ export default function SuperAdminAggregatorAction() {
                             <div style={{width:16,height:16,background:'#111827'}}></div>
                             <span className="text-sm">Юр лицо (чёрный квадрат)</span>
                         </div>
-                        <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Иконки — физ лица:</div>
-                        <div className="flex items-center gap-2">
-                            <img src={img1} style={{width:20,height:20}} alt="" />
-                            <span className="text-sm">Менее 1 часа</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <img src={img2} style={{width:20,height:20}} alt="" />
-                            <span className="text-sm">1–3 часа</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <img src={img3} style={{width:20,height:20}} alt="" />
-                            <span className="text-sm">3–5 часов</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <img src={img4} style={{width:20,height:20}} alt="" />
-                            <span className="text-sm">5–7 часов</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <img src={img5} style={{width:20,height:20}} alt="" />
-                            <span className="text-sm">7+ часов</span>
-                        </div>
-                        <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Иконки — юр лица:</div>
+                        <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Иконки:</div>
                         <div className="flex items-center gap-2">
                             <img src={img1Legal} style={{width:20,height:20}} alt="" />
                             <span className="text-sm">Менее 1 часа</span>
