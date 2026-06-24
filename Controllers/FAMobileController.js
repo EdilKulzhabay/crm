@@ -126,6 +126,7 @@ export const aquaMarketLogin = async (req, res) => {
 export const getAquaMarketData = async (req, res) => {
     try {
         const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+        console.log("req.authorization in getAquaMarketData = ", req.authorization)
 
         if (!token) {
             return res.status(403).json({ success: false, message: "Нет доступа" });
