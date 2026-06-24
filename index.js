@@ -26,6 +26,7 @@ import {
     MobileAppSettingsController,
     BussinessCenterController,
     ApiPayController,
+    FAMobileController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -434,6 +435,12 @@ app.post("/getAquaMarketHistory", AquaMarketController.getAquaMarketHistory)
 app.post("/aquaMarketAction", AquaMarketController.aquaMarketAction)
 app.post("/aquaMarketFill", AquaMarketController.aquaMarketFill)
 app.post("/aquaMarketLogin", AquaMarketController.aquaMarketLogin)
+
+///////FA MOBILE
+app.post("/franchiseeLogin", FAMobileController.franchiseeLogin)
+app.get("/getFranchiseeData", FAMobileController.getFranchiseeData)
+app.post("/mobileAquaMarketLogin", FAMobileController.aquaMarketLogin)
+app.get("/getAquaMarketDataMobile", FAMobileController.getAquaMarketData)
 
 ///////FAQ
 app.post("/addFaq", FaqController.addFaq);

@@ -17,3 +17,4 @@ export * as InvoiceCounterController from "./InvoiceCounterController.js";
 export * as MobileAppSettingsController from "./MobileAppSettingsController.js";
 export * as BussinessCenterController from "./BussinessCenterController.js";
 export * as ApiPayController from "./ApiPayController.js";
+export * as FAMobileController from "./FAMobileController.js";
