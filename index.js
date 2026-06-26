@@ -441,6 +441,14 @@ app.post("/franchiseeLogin", FAMobileController.franchiseeLogin)
 app.get("/getFranchiseeData", FAMobileController.getFranchiseeData)
 app.post("/mobileAquaMarketLogin", FAMobileController.aquaMarketLogin)
 app.get("/getAquaMarketDataMobile", FAMobileController.getAquaMarketData)
+app.get("/getAquaMarketCouriers", FAMobileController.getAquaMarketCouriers)
+app.post("/releaseBottlesAquaMarket", FAMobileController.releaseBottles)
+app.post("/acceptBottlesAquaMarket", FAMobileController.acceptBottles)
+app.post("/createAquaMarketPickupQr", FAMobileController.createPickupQr)
+app.post("/checkAquaMarketPickupQr", FAMobileController.checkPickupQr)
+app.post("/completeAquaMarketPickup", FAMobileController.completePickup)
+app.get("/getAquaMarketAnalytics", FAMobileController.getAquaMarketAnalytics)
+app.get("/getAquaMarketBottleHistory", FAMobileController.getAquaMarketBottleHistory)
 
 ///////FAQ
 app.post("/addFaq", FaqController.addFaq);

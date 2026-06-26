@@ -8,22 +8,22 @@ const AquaMarketHistoryScheme = new mongoose.Schema(
         },
         actionType: {
             type: String,
-            enum: ["giving", "receiving", "fill"]
+            enum: ["giving", "receiving", "fill", "pickup"]
         },
         bottles: {
-            b12: {
-                type: Number,
-                default: 0
-            },
-            b19: {
-                type: Number,
-                default: 0
-            }
+            b12: { type: Number, default: 0 },
+            b19: { type: Number, default: 0 }
+        },
+        emptyBottles: {
+            b12: { type: Number, default: 0 },
+            b19: { type: Number, default: 0 }
         },
         courierAggregator: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "CourierAggregator"
-        }
+        },
+        amount: { type: Number, default: 0 },
+        paymentType: { type: String, enum: ["kaspi", "cash", null], default: null }
     },
     {
         timestamps: true
