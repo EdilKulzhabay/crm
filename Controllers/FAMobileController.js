@@ -9,6 +9,15 @@ import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoic
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+const verifyFranchiseeToken = async (req) => {
+    const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
+    if (!token) throw Object.assign(new Error("Нет токена"), { statusCode: 403 });
+    const decoded = jwt.verify(token, process.env.SecretKey);
+    const user = await User.findById(decoded._id).select("-password");
+    if (!user) throw Object.assign(new Error("Пользователь не найден"), { statusCode: 404 });
+    return user;
+};
+
 const verifyAquaMarketToken = async (req) => {
     const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
     if (!token) throw Object.assign(new Error("Нет токена"), { statusCode: 403 });
@@ -363,6 +372,111 @@ export const getAquaMarketBottleHistory = async (req, res) => {
     } catch (error) {
         const code = error.statusCode || 500;
         console.error("[getAquaMarketBottleHistory]", error.message);
+        return res.status(code).json({ success: false, message: error.message || "Что-то пошло не так" });
+    }
+};
+
+// ─── Franchisee — Main Data ──────────────────────────────────────────────────
+
+export const getFranchiseeMainData = async (req, res) => {
+    try {
+        const user = await verifyFranchiseeToken(req);
+
+        const aquaMarkets = await AquaMarket.find({ franchisee: user._id }).select("-password").lean();
+
+        const totals = aquaMarkets.reduce((acc, am) => ({
+            fullB12: acc.fullB12 + (am.full?.b12 || 0),
+            fullB19: acc.fullB19 + (am.full?.b19 || 0),
+            emptyB12: acc.emptyB12 + (am.empty?.b12 || 0),
+            emptyB19: acc.emptyB19 + (am.empty?.b19 || 0),
+        }), { fullB12: 0, fullB19: 0, emptyB12: 0, emptyB19: 0 });
+
+        const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(); endOfDay.setHours(23, 59, 59, 999);
+
+        const todayHistory = await AquaMarketHistory.find({
+            aquaMarket: { $in: aquaMarkets.map(am => am._id) },
+            createdAt: { $gte: startOfDay, $lte: endOfDay },
+        }).lean();
+
+        const todayEarnings = todayHistory
+            .filter(h => h.actionType === "pickup")
+            .reduce((s, h) => s + (h.amount || 0), 0);
+
+        const bottlesDispensedToday = todayHistory
+            .filter(h => h.actionType === "giving" || h.actionType === "pickup")
+            .reduce((s, h) => s + (h.bottles?.b12 || 0) + (h.bottles?.b19 || 0), 0);
+
+        return res.json({
+            success: true,
+            aquaMarkets,
+            totals,
+            todayEarnings,
+            bottlesDispensedToday,
+        });
+    } catch (error) {
+        const code = error.statusCode || 500;
+        console.error("[getFranchiseeMainData]", error.message);
+        return res.status(code).json({ success: false, message: error.message || "Что-то пошло не так" });
+    }
+};
+
+export const getFranchiseeAnalytics = async (req, res) => {
+    try {
+        const user = await verifyFranchiseeToken(req);
+        const aquaMarkets = await AquaMarket.find({ franchisee: user._id }).select("_id").lean();
+        const ids = aquaMarkets.map(am => am._id);
+
+        const { from, to } = req.query;
+        const query = { aquaMarket: { $in: ids } };
+        if (from || to) {
+            query.createdAt = {};
+            if (from) query.createdAt.$gte = new Date(from);
+            if (to) { const d = new Date(to); d.setHours(23,59,59,999); query.createdAt.$lte = d; }
+        } else {
+            const s = new Date(); s.setHours(0,0,0,0);
+            const e = new Date(); e.setHours(23,59,59,999);
+            query.createdAt = { $gte: s, $lte: e };
+        }
+
+        const history = await AquaMarketHistory.find(query).lean();
+
+        const pickups = history.filter(h => h.actionType === "pickup");
+        const todayEarnings = pickups.reduce((s, h) => s + (h.amount || 0), 0);
+        const todayCash = pickups.filter(h => h.paymentType === "cash").reduce((s, h) => s + (h.amount || 0), 0);
+        const bottlesDispensed = history
+            .filter(h => h.actionType === "giving" || h.actionType === "pickup")
+            .reduce((s, h) => s + (h.bottles?.b12 || 0) + (h.bottles?.b19 || 0), 0);
+
+        const byDay = {};
+        history.forEach(h => {
+            const day = new Date(h.createdAt).toISOString().slice(0, 10);
+            if (!byDay[day]) byDay[day] = 0;
+            byDay[day] += (h.bottles?.b12 || 0) + (h.bottles?.b19 || 0);
+        });
+        const chartData = Object.entries(byDay).map(([date, count]) => ({ date, count })).sort((a, b) => a.date.localeCompare(b.date));
+
+        return res.json({ success: true, todayEarnings, todayCash, bottlesDispensed, chartData });
+    } catch (error) {
+        const code = error.statusCode || 500;
+        console.error("[getFranchiseeAnalytics]", error.message);
+        return res.status(code).json({ success: false, message: error.message || "Что-то пошло не так" });
+    }
+};
+
+// ─── AquaMarket — Toggle Online ──────────────────────────────────────────────
+
+export const toggleAquaMarketOnline = async (req, res) => {
+    try {
+        const aquaMarket = await verifyAquaMarketToken(req);
+        const updated = await AquaMarket.findByIdAndUpdate(
+            aquaMarket._id,
+            { $set: { onTheLine: !aquaMarket.onTheLine } },
+            { new: true }
+        ).select("-password");
+        return res.json({ success: true, userData: updated });
+    } catch (error) {
+        const code = error.statusCode || 500;
         return res.status(code).json({ success: false, message: error.message || "Что-то пошло не так" });
     }
 };

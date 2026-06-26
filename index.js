@@ -449,6 +449,9 @@ app.post("/checkAquaMarketPickupQr", FAMobileController.checkPickupQr)
 app.post("/completeAquaMarketPickup", FAMobileController.completePickup)
 app.get("/getAquaMarketAnalytics", FAMobileController.getAquaMarketAnalytics)
 app.get("/getAquaMarketBottleHistory", FAMobileController.getAquaMarketBottleHistory)
+app.get("/getFranchiseeMainData", FAMobileController.getFranchiseeMainData)
+app.get("/getFranchiseeAnalytics", FAMobileController.getFranchiseeAnalytics)
+app.post("/toggleAquaMarketOnline", FAMobileController.toggleAquaMarketOnline)
 
 ///////FAQ
 app.post("/addFaq", FaqController.addFaq);

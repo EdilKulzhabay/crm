@@ -65,6 +65,10 @@ const AquaMarketScheme = new mongoose.Schema(
         password: {
             type: String,
             default: ""
+        },
+        onTheLine: {
+            type: Boolean,
+            default: false
         }
     },
     {
