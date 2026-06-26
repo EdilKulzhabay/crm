@@ -125,17 +125,26 @@ export const aquaMarketLogin = async (req, res) => {
 
 export const getAquaMarketData = async (req, res) => {
     try {
-        const token = (req.headers.authorization || "").replace(/Bearer\s?/, "");
-        console.log("req.authorization in getAquaMarketData = ", req.authorization)
+        const authHeader = req.headers.authorization;
+        console.log("[getAquaMarketData] header:", authHeader);
 
+        const token = (authHeader || "").replace(/Bearer\s?/, "");
         if (!token) {
             return res.status(403).json({ success: false, message: "Нет доступа" });
         }
 
-        const decoded = jwt.verify(token, process.env.SecretKey);
-        const aquaMarket = await AquaMarket.findById(decoded._id)
-            .select("-password")
-            .populate("franchisee", "fullName mail phone");
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.SecretKey);
+        } catch (jwtErr) {
+            console.error("[getAquaMarketData] JWT verify error:", jwtErr.message);
+            return res.status(403).json({ success: false, message: "Неверный токен" });
+        }
+
+        console.log("[getAquaMarketData] decoded._id:", decoded._id);
+
+        const aquaMarket = await AquaMarket.findById(decoded._id).select("-password");
+        console.log("[getAquaMarketData] found:", aquaMarket?._id ?? "NOT FOUND");
 
         if (!aquaMarket) {
             return res.status(404).json({ success: false, message: "Аквамаркет не найден" });
@@ -143,7 +152,7 @@ export const getAquaMarketData = async (req, res) => {
 
         return res.json({ success: true, userData: aquaMarket });
     } catch (error) {
-        console.log(error);
+        console.error("[getAquaMarketData] error:", error.message);
         return res.status(500).json({
             success: false,
             message: "Что-то пошло не так",
