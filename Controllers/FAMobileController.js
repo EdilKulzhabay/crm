@@ -107,9 +107,7 @@ export const getAquaMarketData = async (req, res) => {
 export const getAquaMarketCouriers = async (req, res) => {
     try {
         const aquaMarket = await verifyAquaMarketToken(req);
-        const query = { status: "active" };
-        if (aquaMarket.franchisee) query.franchisee = aquaMarket.franchisee;
-        const couriers = await CourierAggregator.find(query)
+        const couriers = await CourierAggregator.find({onTheLine: true})
             .select("_id fullName firstName lastName onTheLine")
             .lean();
         return res.json({ success: true, couriers });

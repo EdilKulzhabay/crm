@@ -67,7 +67,7 @@ export const getAquaMarketData = async (req, res) => {
     try {
         const { aquaMarketId } = req.body
         console.log(req.body)
-        const aquaMarket = await AquaMarket.findById(aquaMarketId)
+        const aquaMarket = await AquaMarket.findById(aquaMarketId).populate("franchisee", "fullName")
 
         res.json({
             success: true,
