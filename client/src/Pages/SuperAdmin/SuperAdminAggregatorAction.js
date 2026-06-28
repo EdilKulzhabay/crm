@@ -757,6 +757,18 @@ export default function SuperAdminAggregatorAction() {
                         </Popup>
                     </Marker>
 
+                    <Marker
+                        position={[43.229749, 76.869631]}
+                        icon={createStarIcon()}
+                    >
+                        <Popup>
+                            <div>
+                                <strong>Аквамаркет</strong><br />
+                                Координаты: 43.229749°N, 76.869631°E
+                            </div>
+                        </Popup>
+                    </Marker>
+
                     {/* Заказы */}
                     {processedOrders.map((order, index) => {
                         const hasCourier = order?.courier && order?.courier !== null;
