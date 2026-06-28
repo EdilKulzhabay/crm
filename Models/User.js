@@ -55,7 +55,19 @@ const UserSchema = new mongoose.Schema(
         isBussinessCenter: {
             type: Boolean,
             default: false
-        }
+        },
+        fullBottles: {
+            b12: { type: Number, default: 0 },
+            b19: { type: Number, default: 0 }
+        },
+        emptyBottles: {
+            b12: { type: Number, default: 0 },
+            b19: { type: Number, default: 0 }
+        },
+        aquaMarkets: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "AquaMarket"
+        }]
     },
     {
         timestamps: true,

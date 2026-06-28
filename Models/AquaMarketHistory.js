@@ -8,7 +8,12 @@ const AquaMarketHistoryScheme = new mongoose.Schema(
         },
         actionType: {
             type: String,
-            enum: ["giving", "receiving", "fill", "pickup"]
+            enum: ["giving", "receiving", "fill", "pickup", "franchiseeFill", "franchiseeEmptyPickup"]
+        },
+        franchisee: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
         },
         bottles: {
             b12: { type: Number, default: 0 },

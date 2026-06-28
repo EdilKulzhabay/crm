@@ -452,6 +452,8 @@ app.get("/getAquaMarketBottleHistory", FAMobileController.getAquaMarketBottleHis
 app.get("/getFranchiseeMainData", FAMobileController.getFranchiseeMainData)
 app.get("/getFranchiseeAnalytics", FAMobileController.getFranchiseeAnalytics)
 app.post("/toggleAquaMarketOnline", FAMobileController.toggleAquaMarketOnline)
+app.post("/franchiseeAquaMarketAction", FAMobileController.franchiseeAquaMarketAction)
+app.get("/getFranchiseeAquaMarketHistory", FAMobileController.getFranchiseeAquaMarketHistory)
 
 ///////FAQ
 app.post("/addFaq", FaqController.addFaq);

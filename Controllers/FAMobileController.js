@@ -143,6 +143,15 @@ export const releaseBottles = async (req, res) => {
             }
         });
 
+        if (courierId) {
+            await CourierAggregator.findByIdAndUpdate(courierId, {
+                $inc: {
+                    capacity12: (giveFull.b12 || 0),
+                    capacity19: (giveFull.b19 || 0),
+                }
+            });
+        }
+
         await AquaMarketHistory.create({
             aquaMarket: aquaMarket._id,
             actionType: "giving",
@@ -178,6 +187,15 @@ export const acceptBottles = async (req, res) => {
                 "empty.b19": (receiveEmpty.b19 || 0),
             }
         });
+
+        if (courierId) {
+            await CourierAggregator.findByIdAndUpdate(courierId, {
+                $inc: {
+                    capacity12: -(receiveFull.b12 || 0),
+                    capacity19: -(receiveFull.b19 || 0),
+                }
+            });
+        }
 
         await AquaMarketHistory.create({
             aquaMarket: aquaMarket._id,
@@ -411,6 +429,12 @@ export const getFranchiseeMainData = async (req, res) => {
             totals,
             todayEarnings,
             bottlesDispensedToday,
+            franchiseeBottles: {
+                fullB12: user.fullBottles?.b12 || 0,
+                fullB19: user.fullBottles?.b19 || 0,
+                emptyB12: user.emptyBottles?.b12 || 0,
+                emptyB19: user.emptyBottles?.b19 || 0,
+            },
         });
     } catch (error) {
         const code = error.statusCode || 500;
@@ -458,6 +482,104 @@ export const getFranchiseeAnalytics = async (req, res) => {
     } catch (error) {
         const code = error.statusCode || 500;
         console.error("[getFranchiseeAnalytics]", error.message);
+        return res.status(code).json({ success: false, message: error.message || "Что-то пошло не так" });
+    }
+};
+
+// ─── Franchisee — AquaMarket Action ─────────────────────────────────────────
+
+export const franchiseeAquaMarketAction = async (req, res) => {
+    try {
+        const user = await verifyFranchiseeToken(req);
+        const { aquaMarketId, actionType, bottles } = req.body;
+
+        const aquaMarket = await AquaMarket.findOne({ _id: aquaMarketId, franchisee: user._id });
+        if (!aquaMarket) {
+            return res.status(404).json({ success: false, message: "Аквамаркет не найден или не принадлежит вам" });
+        }
+
+        const b12 = Number(bottles?.b12 || 0);
+        const b19 = Number(bottles?.b19 || 0);
+
+        if (b12 === 0 && b19 === 0) {
+            return res.status(400).json({ success: false, message: "Укажите количество бутылей" });
+        }
+
+        if (actionType === "fill") {
+            if (b12 > (user.fullBottles?.b12 || 0) || b19 > (user.fullBottles?.b19 || 0)) {
+                return res.status(400).json({ success: false, message: "Недостаточно полных бутылей на складе" });
+            }
+            await User.findByIdAndUpdate(user._id, {
+                $inc: { "fullBottles.b12": -b12, "fullBottles.b19": -b19 }
+            });
+            await AquaMarket.findByIdAndUpdate(aquaMarketId, {
+                $inc: { "full.b12": b12, "full.b19": b19 }
+            });
+            await AquaMarketHistory.create({
+                aquaMarket: aquaMarketId,
+                actionType: "franchiseeFill",
+                bottles: { b12, b19 },
+                franchisee: user._id,
+            });
+        } else if (actionType === "takeEmpty") {
+            if (b12 > (aquaMarket.empty?.b12 || 0) || b19 > (aquaMarket.empty?.b19 || 0)) {
+                return res.status(400).json({ success: false, message: "Недостаточно пустых бутылей в аквамаркете" });
+            }
+            await AquaMarket.findByIdAndUpdate(aquaMarketId, {
+                $inc: { "empty.b12": -b12, "empty.b19": -b19 }
+            });
+            await User.findByIdAndUpdate(user._id, {
+                $inc: { "emptyBottles.b12": b12, "emptyBottles.b19": b19 }
+            });
+            await AquaMarketHistory.create({
+                aquaMarket: aquaMarketId,
+                actionType: "franchiseeEmptyPickup",
+                bottles: { b12, b19 },
+                franchisee: user._id,
+            });
+        } else {
+            return res.status(400).json({ success: false, message: "Неверный тип действия" });
+        }
+
+        const updatedUser = await User.findById(user._id).select("-password");
+        const updatedAquaMarket = await AquaMarket.findById(aquaMarketId).select("-password");
+        return res.json({ success: true, userData: updatedUser, aquaMarket: updatedAquaMarket });
+    } catch (error) {
+        const code = error.statusCode || 500;
+        console.error("[franchiseeAquaMarketAction]", error.message);
+        return res.status(code).json({ success: false, message: error.message || "Что-то пошло не так" });
+    }
+};
+
+// ─── Franchisee — AquaMarket History ─────────────────────────────────────────
+
+export const getFranchiseeAquaMarketHistory = async (req, res) => {
+    try {
+        const user = await verifyFranchiseeToken(req);
+        const { from, to } = req.query;
+
+        const aquaMarkets = await AquaMarket.find({ franchisee: user._id }).select("_id").lean();
+        const ids = aquaMarkets.map(am => am._id);
+
+        const query = {
+            aquaMarket: { $in: ids },
+            actionType: { $in: ["franchiseeFill", "franchiseeEmptyPickup"] },
+        };
+        if (from || to) {
+            query.createdAt = {};
+            if (from) query.createdAt.$gte = new Date(from);
+            if (to) { const d = new Date(to); d.setHours(23, 59, 59, 999); query.createdAt.$lte = d; }
+        }
+
+        const history = await AquaMarketHistory.find(query)
+            .populate("aquaMarket", "address userName")
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return res.json({ success: true, history });
+    } catch (error) {
+        const code = error.statusCode || 500;
+        console.error("[getFranchiseeAquaMarketHistory]", error.message);
         return res.status(code).json({ success: false, message: error.message || "Что-то пошло не так" });
     }
 };

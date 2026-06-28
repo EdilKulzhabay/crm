@@ -48,7 +48,7 @@ export const getAquaMarkets = async (req, res) => {
             filter.franchisee = user._id
         }
 
-        const aquaMarkets = await AquaMarket.find(filter)
+        const aquaMarkets = await AquaMarket.find(filter).populate("franchisee", "fullName")
 
         res.json({
             success: true,

@@ -146,14 +146,24 @@ export const departmentAction = async (req, res) => {
         await history.save()
 
         const fran = await User.findById(franchisee)
+        const d121 = data.b121kol || 0
+        const d19 = (data.b191kol || 0) + (data.b197kol || 0)
         if (type) {
-            fran.b121kol = fran.b121kol + data.b121kol
-            fran.b191kol = fran.b191kol + data.b191kol
-            fran.b197kol = fran.b197kol + data.b197kol
+            fran.b121kol = fran.b121kol + d121
+            fran.b191kol = fran.b191kol + (data.b191kol || 0)
+            fran.b197kol = fran.b197kol + (data.b197kol || 0)
+            fran.fullBottles = {
+                b12: (fran.fullBottles?.b12 || 0) + d121,
+                b19: (fran.fullBottles?.b19 || 0) + d19
+            }
         } else {
-            fran.b121kol = fran.b121kol - data.b121kol
-            fran.b191kol = fran.b191kol - data.b191kol
-            fran.b197kol = fran.b197kol - data.b197kol
+            fran.b121kol = fran.b121kol - d121
+            fran.b191kol = fran.b191kol - (data.b191kol || 0)
+            fran.b197kol = fran.b197kol - (data.b197kol || 0)
+            fran.fullBottles = {
+                b12: (fran.fullBottles?.b12 || 0) - d121,
+                b19: (fran.fullBottles?.b19 || 0) - d19
+            }
         }
 
         await fran.save()
@@ -375,14 +385,24 @@ export const deleteDepartmentHistory = async (req, res) => {
         const franchisee = departmentHistory.franchisee
 
         const fran = await User.findById(franchisee)
+        const d121 = departmentHistory.data.b121kol || 0
+        const d19 = (departmentHistory.data.b191kol || 0) + (departmentHistory.data.b197kol || 0)
         if (departmentHistory.type) {
-            fran.b121kol = fran.b121kol - departmentHistory.data.b121kol
-            fran.b191kol = fran.b191kol - departmentHistory.data.b191kol
-            fran.b197kol = fran.b197kol - departmentHistory.data.b197kol
+            fran.b121kol = fran.b121kol - d121
+            fran.b191kol = fran.b191kol - (departmentHistory.data.b191kol || 0)
+            fran.b197kol = fran.b197kol - (departmentHistory.data.b197kol || 0)
+            fran.fullBottles = {
+                b12: (fran.fullBottles?.b12 || 0) - d121,
+                b19: (fran.fullBottles?.b19 || 0) - d19
+            }
         } else {
-            fran.b121kol = fran.b121kol + departmentHistory.data.b121kol
-            fran.b191kol = fran.b191kol + departmentHistory.data.b191kol
-            fran.b197kol = fran.b197kol + departmentHistory.data.b197kol
+            fran.b121kol = fran.b121kol + d121
+            fran.b191kol = fran.b191kol + (departmentHistory.data.b191kol || 0)
+            fran.b197kol = fran.b197kol + (departmentHistory.data.b197kol || 0)
+            fran.fullBottles = {
+                b12: (fran.fullBottles?.b12 || 0) + d121,
+                b19: (fran.fullBottles?.b19 || 0) + d19
+            }
         }
 
         await fran.save()
