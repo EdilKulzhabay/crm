@@ -34,6 +34,10 @@ export default function SuperAdminUpdateFranchisee() {
         b197kol: ""
     })
 
+    const [warehouseBottles, setWarehouseBottles] = useState({
+        fullB12: "", fullB19: "", emptyB12: "", emptyB19: ""
+    })
+
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleteObject, setDeleteObject] = useState(null)
 
@@ -393,6 +397,82 @@ export default function SuperAdminUpdateFranchisee() {
                             updateFranchiseeDataB("bottles", bottles)
                         }}>Применить</MyButton>
                     </Div>}
+
+                    <Div />
+                    <Div>Полные бутыли (склад): 12,5 л — <Info>{franchisee?.fullBottles?.b12 ?? 0}</Info> 18,9 л — <Info>{franchisee?.fullBottles?.b19 ?? 0}</Info></Div>
+                    <Li>
+                        12,5 л:{" "}[{" "}
+                        <input
+                            size={13}
+                            style={{ fontSize: '16px' }}
+                            className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                            inputMode="numeric"
+                            value={warehouseBottles.fullB12}
+                            onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                            onChange={(e) => setWarehouseBottles(p => ({ ...p, fullB12: e.target.value }))}
+                        />{" "}] шт
+                    </Li>
+                    <Li>
+                        18,9 л:{" "}[{" "}
+                        <input
+                            size={13}
+                            style={{ fontSize: '16px' }}
+                            className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                            inputMode="numeric"
+                            value={warehouseBottles.fullB19}
+                            onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                            onChange={(e) => setWarehouseBottles(p => ({ ...p, fullB19: e.target.value }))}
+                        />{" "}] шт
+                    </Li>
+                    {(warehouseBottles.fullB12 !== '' || warehouseBottles.fullB19 !== '') && (
+                        <Div>
+                            <MyButton click={() => {
+                                updateFranchiseeDataB("fullBottles", {
+                                    b12: warehouseBottles.fullB12 !== '' ? Number(warehouseBottles.fullB12) : franchisee?.fullBottles?.b12 ?? 0,
+                                    b19: warehouseBottles.fullB19 !== '' ? Number(warehouseBottles.fullB19) : franchisee?.fullBottles?.b19 ?? 0,
+                                });
+                                setWarehouseBottles(p => ({ ...p, fullB12: '', fullB19: '' }));
+                            }}>Применить полные</MyButton>
+                        </Div>
+                    )}
+
+                    <Div />
+                    <Div>Пустые бутыли (склад): 12,5 л — <Info>{franchisee?.emptyBottles?.b12 ?? 0}</Info> 18,9 л — <Info>{franchisee?.emptyBottles?.b19 ?? 0}</Info></Div>
+                    <Li>
+                        12,5 л:{" "}[{" "}
+                        <input
+                            size={13}
+                            style={{ fontSize: '16px' }}
+                            className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                            inputMode="numeric"
+                            value={warehouseBottles.emptyB12}
+                            onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                            onChange={(e) => setWarehouseBottles(p => ({ ...p, emptyB12: e.target.value }))}
+                        />{" "}] шт
+                    </Li>
+                    <Li>
+                        18,9 л:{" "}[{" "}
+                        <input
+                            size={13}
+                            style={{ fontSize: '16px' }}
+                            className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                            inputMode="numeric"
+                            value={warehouseBottles.emptyB19}
+                            onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                            onChange={(e) => setWarehouseBottles(p => ({ ...p, emptyB19: e.target.value }))}
+                        />{" "}] шт
+                    </Li>
+                    {(warehouseBottles.emptyB12 !== '' || warehouseBottles.emptyB19 !== '') && (
+                        <Div>
+                            <MyButton click={() => {
+                                updateFranchiseeDataB("emptyBottles", {
+                                    b12: warehouseBottles.emptyB12 !== '' ? Number(warehouseBottles.emptyB12) : franchisee?.emptyBottles?.b12 ?? 0,
+                                    b19: warehouseBottles.emptyB19 !== '' ? Number(warehouseBottles.emptyB19) : franchisee?.emptyBottles?.b19 ?? 0,
+                                });
+                                setWarehouseBottles(p => ({ ...p, emptyB12: '', emptyB19: '' }));
+                            }}>Применить пустые</MyButton>
+                        </Div>
+                    )}
                 </>
 
                 <Div />

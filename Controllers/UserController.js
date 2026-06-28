@@ -543,6 +543,10 @@ export const updateFranchiseeDataB = async (req, res) => {
             user.b197kol = changeData.b197kol
         } else if (change === "isBussinessCenter") {
             user.isBussinessCenter = changeData
+        } else if (change === "fullBottles") {
+            user.fullBottles = changeData
+        } else if (change === "emptyBottles") {
+            user.emptyBottles = changeData
         }
 
         await user.save()

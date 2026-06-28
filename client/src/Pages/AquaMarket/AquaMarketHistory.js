@@ -34,6 +34,9 @@ export default function AquaMarketHistory() {
         b19: 0,
     });
 
+    const [editFull, setEditFull] = useState({ b12: '', b19: '' });
+    const [editEmpty, setEditEmpty] = useState({ b12: '', b19: '' });
+
     const getHistory = async () => {
         api.post("/getAquaMarketHistory", { aquaMarketId, startDate, endDate }, {
             headers: { "Content-Type": "application/json" },
@@ -81,6 +84,20 @@ export default function AquaMarketHistory() {
         } else {
             setEndDate(formattedValue);
         }
+    };
+
+    const handleUpdateBottles = async (field, data) => {
+        await api.post("/updateAquaMarketData", { aquaMarketId, changeField: field, changeData: data }, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({ data: res }) => {
+            if (res.success) {
+                api.post("/getAquaMarketData", { aquaMarketId }, {
+                    headers: { "Content-Type": "application/json" },
+                }).then(({ data }) => setAquaMarket(data.aquaMarket));
+                if (field === "full") setEditFull({ b12: '', b19: '' });
+                if (field === "empty") setEditEmpty({ b12: '', b19: '' });
+            }
+        }).catch(console.error);
     };
 
     const handleFillBottles = async () => {
@@ -156,6 +173,73 @@ export default function AquaMarketHistory() {
                 <MyButton click={handleFillBottles}>Заполнить</MyButton>
             </Div>
             <Div />
+
+            <Div>Полные бутыли (текущие: 12,5 л — {aquaMarket?.full?.b12 ?? 0}, 18,9 л — {aquaMarket?.full?.b19 ?? 0})</Div>
+            <Li>12,5 л:{" "}[{" "}
+                <input
+                    size={13}
+                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                    style={{ fontSize: '16px' }}
+                    inputMode="numeric"
+                    value={editFull.b12}
+                    onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                    onChange={(e) => setEditFull(p => ({ ...p, b12: e.target.value }))}
+                />{" "}]
+            </Li>
+            <Li>18,9 л:{" "}[{" "}
+                <input
+                    size={13}
+                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                    style={{ fontSize: '16px' }}
+                    inputMode="numeric"
+                    value={editFull.b19}
+                    onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                    onChange={(e) => setEditFull(p => ({ ...p, b19: e.target.value }))}
+                />{" "}]
+            </Li>
+            {(editFull.b12 !== '' || editFull.b19 !== '') && (
+                <Div>
+                    <MyButton click={() => handleUpdateBottles("full", {
+                        b12: editFull.b12 !== '' ? Number(editFull.b12) : aquaMarket?.full?.b12 ?? 0,
+                        b19: editFull.b19 !== '' ? Number(editFull.b19) : aquaMarket?.full?.b19 ?? 0,
+                    })}>Сохранить полные</MyButton>
+                </Div>
+            )}
+            <Div />
+
+            <Div>Пустые бутыли (текущие: 12,5 л — {aquaMarket?.empty?.b12 ?? 0}, 18,9 л — {aquaMarket?.empty?.b19 ?? 0})</Div>
+            <Li>12,5 л:{" "}[{" "}
+                <input
+                    size={13}
+                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                    style={{ fontSize: '16px' }}
+                    inputMode="numeric"
+                    value={editEmpty.b12}
+                    onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                    onChange={(e) => setEditEmpty(p => ({ ...p, b12: e.target.value }))}
+                />{" "}]
+            </Li>
+            <Li>18,9 л:{" "}[{" "}
+                <input
+                    size={13}
+                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[50px] text-center"
+                    style={{ fontSize: '16px' }}
+                    inputMode="numeric"
+                    value={editEmpty.b19}
+                    onKeyPress={(e) => { if (!/[0-9-]/.test(e.key)) e.preventDefault(); }}
+                    onChange={(e) => setEditEmpty(p => ({ ...p, b19: e.target.value }))}
+                />{" "}]
+            </Li>
+            {(editEmpty.b12 !== '' || editEmpty.b19 !== '') && (
+                <Div>
+                    <MyButton click={() => handleUpdateBottles("empty", {
+                        b12: editEmpty.b12 !== '' ? Number(editEmpty.b12) : aquaMarket?.empty?.b12 ?? 0,
+                        b19: editEmpty.b19 !== '' ? Number(editEmpty.b19) : aquaMarket?.empty?.b19 ?? 0,
+                    })}>Сохранить пустые</MyButton>
+                </Div>
+            )}
+            <Div />
+
             <Div>
                 <DataInput type="date" name="startDate" value={startDate} change={handleDateChange} />
                 <DataInput type="date" name="endDate" value={endDate} change={handleDateChange} />
