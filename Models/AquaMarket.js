@@ -4,7 +4,7 @@ const AquaMarketScheme = new mongoose.Schema(
     {
         franchisee: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "user"
+            ref: "User"
         },
         empty: {
             b12: {
