@@ -7,6 +7,7 @@ import Li from "../../Components/Li";
 import LinkButton from "../../Components/LinkButton";
 import MyButton from "../../Components/MyButton";
 import ChooseFranchiseeModal from "../../Components/ChooseFranchiseeModal";
+import ConfirmDeleteModal from "../../Components/ConfirmDeleteModal";
 import useScrollPosition from "../../customHooks/useScrollPosition";
 
 export default function AquaMarketList() {
@@ -15,6 +16,7 @@ export default function AquaMarketList() {
     const [aquaMarkets, setAquaMarkets] = useState([]);
     const [franchiseeModal, setFranchiseeModal] = useState(false);
     const [assigningId, setAssigningId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
 
     const fetchAquaMarkets = () => {
         if (userData?._id) {
@@ -51,6 +53,17 @@ export default function AquaMarketList() {
         setAssigningId(null);
     };
 
+    const confirmDelete = () => {
+        api.post("/deleteAquaMarket", { aquaMarketId: deletingId }, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({ data }) => {
+            if (data.success) {
+                fetchAquaMarkets();
+            }
+        });
+        setDeletingId(null);
+    };
+
     return (
         <Container role={userData?.role}>
             <Div>Список аквамаркетов</Div>
@@ -71,6 +84,11 @@ export default function AquaMarketList() {
                                     Назначить франчайзи
                                 </MyButton>
                             )}
+                            {userData?.role === "superAdmin" && (
+                                <MyButton click={() => setDeletingId(aquaMarket._id)}>
+                                    <span className="text-red-400">Удалить</span>
+                                </MyButton>
+                            )}
                         </div>
                     </Li>
                 );
@@ -80,6 +98,13 @@ export default function AquaMarketList() {
                 <ChooseFranchiseeModal
                     closeFranchiseeModal={() => { setFranchiseeModal(false); setAssigningId(null); }}
                     chooseFranchisee={chooseFranchisee}
+                    scrollPosition={scrollPosition}
+                />
+            )}
+            {deletingId && (
+                <ConfirmDeleteModal
+                    closeConfirmModal={() => setDeletingId(null)}
+                    confirmDelete={confirmDelete}
                     scrollPosition={scrollPosition}
                 />
             )}
