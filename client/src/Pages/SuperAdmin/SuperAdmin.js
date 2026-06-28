@@ -211,6 +211,12 @@ export default function SuperAdmin() {
                     <LinkButton href="/addAquaMarket">Перейти</LinkButton>
                 </div>
             </Li>
+            <Li>
+                <div className="flex items-center flex-wrap gap-x-3">
+                    <div>История по платежам (аквамаркет):</div>
+                    <LinkButton href="/aquaMarketPickupPayments">Перейти</LinkButton>
+                </div>
+            </Li>
 
             <Div />
             <Div>

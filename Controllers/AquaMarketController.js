@@ -314,6 +314,34 @@ export const aquaMarketFill = async (req, res) => {
     }
 }
 
+export const getAquaMarketPickupPayments = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.body
+
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
+
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+
+        const payments = await AquaMarketHistory.find({
+            actionType: "pickup",
+            createdAt: { $gte: sDate, $lte: eDate }
+        })
+        .populate("aquaMarket", "address")
+        .sort({ createdAt: -1 })
+
+        const totalAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const cashAmount = payments.filter(p => p.paymentType === "cash").reduce((sum, p) => sum + (p.amount || 0), 0);
+        const kaspiAmount = payments.filter(p => p.paymentType === "kaspi").reduce((sum, p) => sum + (p.amount || 0), 0);
+
+        res.json({ success: true, payments, totalAmount, cashAmount, kaspiAmount })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: "Ошибка на стороне сервера" })
+    }
+}
+
 export const aquaMarketLogin = async (req, res) => {
     try {
         const { userName, password } = req.body

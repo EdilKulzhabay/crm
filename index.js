@@ -435,6 +435,7 @@ app.post("/getAquaMarketHistory", AquaMarketController.getAquaMarketHistory)
 app.post("/aquaMarketAction", AquaMarketController.aquaMarketAction)
 app.post("/aquaMarketFill", AquaMarketController.aquaMarketFill)
 app.post("/aquaMarketLogin", AquaMarketController.aquaMarketLogin)
+app.post("/getAquaMarketPickupPayments", AquaMarketController.getAquaMarketPickupPayments)
 
 ///////FA MOBILE
 app.post("/franchiseeLogin", FAMobileController.franchiseeLogin)

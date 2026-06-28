@@ -69,6 +69,7 @@ import AquaMarketReceiving from "./Pages/AquaMarket/AquaMarketReceiving";
 import AquaMarketLogin from "./Pages/AquaMarket/AquaMarketLogin";
 import AquaMarketHistory from "./Pages/AquaMarket/AquaMarketHistory";
 import AquaMarketSettings from "./Pages/AquaMarket/AquaMarketSettings";
+import AquaMarketPickupPayments from "./Pages/AquaMarket/AquaMarketPickupPayments";
 import SuperAdminFaq from "./Pages/SuperAdmin/SuperAdminFaq";
 import SuperAdminNotifications from "./Pages/SuperAdmin/SuperAdminNotifications";
 import PaymentSuccess from "./Pages/PaymentSuccess";
@@ -174,6 +175,7 @@ export const router = createBrowserRouter([
     { path: "/aquaMarketLogin", element: <AquaMarketLogin />},
     { path: "/aquaMarket/history/:aquaMarketId", element: <AquaMarketHistory />},
     { path: "/aquaMarketSettings", element: <AquaMarketSettings />},
+    { path: "/aquaMarketPickupPayments", element: <AquaMarketPickupPayments />},
 
     /////PAYMENT
     { path: "/payment", element: <PaymentPage />},
