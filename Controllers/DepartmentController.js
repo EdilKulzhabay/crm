@@ -152,9 +152,9 @@ export const departmentAction = async (req, res) => {
             fran.b121kol = fran.b121kol + d121
             fran.b191kol = fran.b191kol + (data.b191kol || 0)
             fran.b197kol = fran.b197kol + (data.b197kol || 0)
-            fran.fullBottles = {
-                b12: (fran.fullBottles?.b12 || 0) - d121,
-                b19: (fran.fullBottles?.b19 || 0) - d19
+            fran.emptyBottles = {
+                b12: (fran.emptyBottles?.b12 || 0) - d121,
+                b19: (fran.emptyBottles?.b19 || 0) - d19
             }
         } else {
             fran.b121kol = fran.b121kol - d121
