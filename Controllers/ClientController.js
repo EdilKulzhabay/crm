@@ -399,36 +399,6 @@ export const updateClientData = async (req, res) => {
         if (field === "verify" && value.status === "verified") {
             const clientAddresses = client.addresses;
 
-            // Функция для получения ID 2GIS по адресу
-            const fetchAddressId = async (item) => {
-                try {
-                    const response = await axios.get('https://catalog.api.2gis.com/3.0/items/geocode', {
-                        params: {
-                            fields: "items.point",
-                            key: "f5af220d-c60a-4cf6-a350-4a953c324a3d",
-                            q: `Алматы, ${item.street}`,
-                        },
-                    });
-                    
-                    return response.data.result.items[0] || null; // Возвращаем ID или null
-                } catch (error) {
-                    return null;
-                }
-            };
-
-            // Получаем IDs для всех адресов
-            const res2Gis = await Promise.allSettled(clientAddresses.map(fetchAddressId));
-            res2Gis.forEach((result, index) => {
-                
-                if (result.status === "fulfilled") {
-                    clientAddresses[index].id2Gis = result?.value?.id
-                    clientAddresses[index].point = result?.value?.point
-                } else {
-                    clientAddresses[index].id2Gis = null
-                    clientAddresses[index].point = {lat: null, lon: null}
-                }
-            });
-
             // Сохраняем обновленный документ клиента
             client.addresses = clientAddresses; // Перезаписываем массив addresses
             await client.save();
