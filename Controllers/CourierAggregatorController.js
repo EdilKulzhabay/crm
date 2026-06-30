@@ -10,6 +10,7 @@ import Client from "../Models/Client.js";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import CourierAggregatorIncomeLog from "../Models/CourierAggregatorIncomeLog.js";
 import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoice } from "../utils/apipay.js";
+import { sendWithdrawTelegram } from "../telegram/sendSupport.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -2241,6 +2242,14 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
         });
 
         const fullName = courier.fullName || `${courier.firstName || ""} ${courier.lastName || ""}`.trim();
+
+        void sendWithdrawTelegram({
+            fullName: fullName,
+            id: courier._id,
+            sum: sum
+        }).catch((e) =>
+            console.error("[sendSupportMessage] telegram:", e?.message || e)
+        );
 
         const mailOptions = {
             from: "info@tibetskaya.kz",
