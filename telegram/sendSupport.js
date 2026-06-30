@@ -59,7 +59,7 @@ export async function sendWithdrawTelegram({ fullName, id, sum }) {
     }
 
     const msg = [
-        "Запрос на вывод средств — ${fullName}",
+        `Запрос на вывод средств — ${fullName}`,
         "",
         `Курьер ${fullName} хочет вывести деньги на карту.\n\nСумма: ${sum} ₸`,
         "",

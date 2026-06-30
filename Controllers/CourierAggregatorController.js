@@ -2251,15 +2251,6 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
             console.error("[sendSupportMessage] telegram:", e?.message || e)
         );
 
-        const mailOptions = {
-            from: "info@tibetskaya.kz",
-            to: process.env.SENDINFOTOEMAIL,
-            subject: `Запрос на вывод средств — ${fullName}`,
-            text: `Курьер ${fullName} хочет вывести деньги на карту.\n\nСумма: ${sum} ₸`,
-        };
-
-        await transporter.sendMail(mailOptions);
-
         return res.status(200).json({
             success: true,
             message: "Запрос на вывод отправлен",
