@@ -428,6 +428,8 @@ export const getFranchiseeMainData = async (req, res) => {
             b19: acc.b19 + (am.realized?.b19 || 0),
         }), { b12: 0, b19: 0 });
 
+        console.log(`[getFranchiseeMainData] franchisee=${user._id}: summed realized bottles across ${aquaMarkets.length} aquaMarket(s) [${aquaMarkets.map(am => `${am._id}: b12=${am.realized?.b12 || 0}/b19=${am.realized?.b19 || 0}`).join(', ')}] -> total b12=${realizedBottles.b12} b19=${realizedBottles.b19}`);
+
         return res.json({
             success: true,
             aquaMarkets,

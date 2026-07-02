@@ -94,9 +94,12 @@ const deductBottleQueue = (queue, deliveredB12, deliveredB19) => {
         }
     }
 
+    const updates = [...marketMap.values()];
+    console.log(`[deductBottleQueue] delivered b12=${deliveredB12} b19=${deliveredB19} | queueBefore=${JSON.stringify(queue)} | realizationByMarket=${JSON.stringify(updates)} | remainingUnmatched b12=${remainB12} b19=${remainB19}`);
+
     return {
         newQueue: workQueue.filter(e => e.b12 > 0 || e.b19 > 0),
-        updates: [...marketMap.values()]
+        updates
     };
 };
 
@@ -845,6 +848,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         const incomeAfter = incomeBefore + incomeDelta;
 
         // Списываем доставленные бутыли из FIFO-очереди и собираем реализацию по аквамаркетам
+        console.log(`[completeOrderCourierAggregator] orderId=${orderId} courierId=${courierId}: deducting delivered products b12=${products.b12 || 0} b19=${products.b19 || 0} from bottleQueue`);
         const realizationByMarket = deductBottleQueue(courier1.bottleQueue || [], products.b12 || 0, products.b19 || 0);
 
         await CourierAggregator.updateOne({_id: courierId}, {
@@ -872,6 +876,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         // Увеличиваем "реализованные" у каждого затронутого аквамаркета
         for (const { aquaMarketId, b12, b19 } of realizationByMarket.updates) {
             if (b12 > 0 || b19 > 0) {
+                console.log(`[completeOrderCourierAggregator] orderId=${orderId}: incrementing realized bottles for aquaMarket=${aquaMarketId} by b12=${b12} b19=${b19}`);
                 await AquaMarket.updateOne(
                     { _id: aquaMarketId },
                     { $inc: { 'realized.b12': b12, 'realized.b19': b19 } }

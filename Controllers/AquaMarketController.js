@@ -249,6 +249,7 @@ export const aquaMarketAction = async (req, res) => {
                     }
                 }
             }
+            console.log(`[aquaMarketAction] giving: courier=${courierAggregatorId} took from aquaMarket=${aquaMarketId} b12=${b12taken} b19=${b19taken} -> pushed to bottleQueue`)
             await CourierAggregator.updateOne({_id: courierAggregatorId}, queueUpdate)
         } else {
             await AquaMarket.updateOne({_id: aquaMarketId}, { $set: {
