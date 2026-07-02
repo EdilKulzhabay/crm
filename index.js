@@ -485,18 +485,18 @@ app.post("/getActiveOrdersForBussinessCenter", BussinessCenterController.getActi
 app.post("/getCompletedOrdersForBussinessCenter", BussinessCenterController.getCompletedOrdersForBussinessCenter)
 app.post("/getCancelledOrdersForBussinessCenter", BussinessCenterController.getCancelledOrdersForBussinessCenter)
 
-server.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}`);
+// server.listen(process.env.PORT, () => {
+//     console.log(`Server is running on port ${process.env.PORT}`);
 
-    if (process.env.WHATSAPP_WEB_AUTOSTART !== "false") {
-        console.log(
-            "[WhatsApp OTP] Автозапуск WhatsApp Web-клиента (QR в консоли при первом входе)"
-        );
-        startWhatsAppWebClient().catch((e) =>
-            console.error("[WhatsApp Web] Ошибка старта:", e?.message || e)
-        );
-    }
-});
+//     if (process.env.WHATSAPP_WEB_AUTOSTART !== "false") {
+//         console.log(
+//             "[WhatsApp OTP] Автозапуск WhatsApp Web-клиента (QR в консоли при первом входе)"
+//         );
+//         startWhatsAppWebClient().catch((e) =>
+//             console.error("[WhatsApp Web] Ошибка старта:", e?.message || e)
+//         );
+//     }
+// });
 
 const gracefulShutdown = async () => {
     await shutdownWhatsAppWeb();
