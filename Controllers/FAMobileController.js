@@ -423,12 +423,18 @@ export const getFranchiseeMainData = async (req, res) => {
             .filter(h => h.actionType === "giving" || h.actionType === "pickup")
             .reduce((s, h) => s + (h.bottles?.b12 || 0) + (h.bottles?.b19 || 0), 0);
 
+        const realizedBottles = aquaMarkets.reduce((acc, am) => ({
+            b12: acc.b12 + (am.realized?.b12 || 0),
+            b19: acc.b19 + (am.realized?.b19 || 0),
+        }), { b12: 0, b19: 0 });
+
         return res.json({
             success: true,
             aquaMarkets,
             totals,
             todayEarnings,
             bottlesDispensedToday,
+            realizedBottles,
             franchiseeBottles: {
                 fullB12: user.fullBottles?.b12 || 0,
                 fullB19: user.fullBottles?.b19 || 0,
