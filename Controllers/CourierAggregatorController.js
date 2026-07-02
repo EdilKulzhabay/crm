@@ -1,6 +1,7 @@
 import CourierAggregator from "../Models/CourierAggregator.js";
 import CourierRestrictions from "../Models/CourierRestrictions.js";
 import Order from "../Models/Order.js";
+import AquaMarket from "../Models/AquaMarket.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
@@ -56,6 +57,47 @@ const getOrderIncomeDelta = (courier, products, orderSum, opForm) => {
         return -(Number(orderSum) || 0) + b12 * price12 + b19 * price19;
     }
     return b12 * price12 + b19 * price19;
+};
+
+// Списывает доставленные бутыли из FIFO-очереди курьера.
+// Возвращает { newQueue, updates: [{ aquaMarketId, b12, b19 }] } для инкремента realized.
+const deductBottleQueue = (queue, deliveredB12, deliveredB19) => {
+    let remainB12 = deliveredB12;
+    let remainB19 = deliveredB19;
+
+    // Клонируем очередь для безопасного изменения
+    const workQueue = queue.map(e => ({
+        aquaMarketId: e.aquaMarketId,
+        franchiseeId: e.franchiseeId,
+        b12: Number(e.b12) || 0,
+        b19: Number(e.b19) || 0
+    }));
+
+    // Агрегируем реализацию по аквамаркетам (один маркет может встречаться несколько раз)
+    const marketMap = new Map();
+
+    for (const entry of workQueue) {
+        if (remainB12 <= 0 && remainB19 <= 0) break;
+
+        const take12 = Math.min(remainB12, entry.b12);
+        const take19 = Math.min(remainB19, entry.b19);
+
+        if (take12 > 0 || take19 > 0) {
+            const key = String(entry.aquaMarketId);
+            const prev = marketMap.get(key) || { aquaMarketId: entry.aquaMarketId, b12: 0, b19: 0 };
+            marketMap.set(key, { aquaMarketId: entry.aquaMarketId, b12: prev.b12 + take12, b19: prev.b19 + take19 });
+
+            entry.b12 -= take12;
+            entry.b19 -= take19;
+            remainB12 -= take12;
+            remainB19 -= take19;
+        }
+    }
+
+    return {
+        newQueue: workQueue.filter(e => e.b12 > 0 || e.b19 > 0),
+        updates: [...marketMap.values()]
+    };
 };
 
 const logCourierIncomeChange = async ({
@@ -802,12 +844,16 @@ export const completeOrderCourierAggregator = async (req, res) => {
         const incomeDelta = getOrderIncomeDelta(courier1, products, sum, effectiveOpForm);
         const incomeAfter = incomeBefore + incomeDelta;
 
+        // Списываем доставленные бутыли из FIFO-очереди и собираем реализацию по аквамаркетам
+        const realizationByMarket = deductBottleQueue(courier1.bottleQueue || [], products.b12 || 0, products.b19 || 0);
+
         await CourierAggregator.updateOne({_id: courierId}, {
             $pull: {
                 orders: { orderId }
             },
             $set: {
                 order: nextOrder,
+                bottleQueue: realizationByMarket.newQueue,
                 point: {
                     lat: order.address.point.lat,
                     lon: order.address.point.lon
@@ -822,6 +868,16 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 emptyBottles19: +(emptyb19 || 0),
             }
         })
+
+        // Увеличиваем "реализованные" у каждого затронутого аквамаркета
+        for (const { aquaMarketId, b12, b19 } of realizationByMarket.updates) {
+            if (b12 > 0 || b19 > 0) {
+                await AquaMarket.updateOne(
+                    { _id: aquaMarketId },
+                    { $inc: { 'realized.b12': b12, 'realized.b19': b19 } }
+                )
+            }
+        }
 
         await logCourierIncomeChange({
             courierId,
@@ -2517,6 +2573,26 @@ export const sendNotificationToClient = async (req, res) => {
             success: false,
             message: "Ошибка на стороне сервера"
         });
+    }
+}
+
+export const changePasswordCourierAggregator = async (req, res) => {
+    try {
+        const { courierId, newPassword } = req.body
+
+        if (!newPassword || newPassword.length < 4) {
+            return res.json({ success: false, message: "Пароль должен быть не менее 4 символов" })
+        }
+
+        const salt = await bcrypt.genSalt(10)
+        const hash = await bcrypt.hash(newPassword, salt)
+
+        await CourierAggregator.updateOne({ _id: courierId }, { $set: { password: hash } })
+
+        res.json({ success: true, message: "Пароль успешно изменён" })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ success: false, message: "Ошибка на стороне сервера" })
     }
 }
 

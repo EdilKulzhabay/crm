@@ -229,10 +229,27 @@ export const aquaMarketAction = async (req, res) => {
                     b19: aquaMarket.full.b19 - Number(bottles.b19)
                 }
             } })
-            await CourierAggregator.updateOne({_id: courierAggregatorId}, { $set: {
-                capacity12: courierAggregator.capacity12 + Number(bottles.b12),
-                capacity19: courierAggregator.capacity19 + Number(bottles.b19)
-            } })
+
+            const b12taken = Number(bottles.b12) || 0
+            const b19taken = Number(bottles.b19) || 0
+
+            const queueUpdate = {
+                $inc: {
+                    capacity12: b12taken,
+                    capacity19: b19taken
+                }
+            }
+            if (b12taken > 0 || b19taken > 0) {
+                queueUpdate.$push = {
+                    bottleQueue: {
+                        aquaMarketId: aquaMarket._id,
+                        franchiseeId: aquaMarket.franchisee,
+                        b12: b12taken,
+                        b19: b19taken
+                    }
+                }
+            }
+            await CourierAggregator.updateOne({_id: courierAggregatorId}, queueUpdate)
         } else {
             await AquaMarket.updateOne({_id: aquaMarketId}, { $set: {
                 empty: {

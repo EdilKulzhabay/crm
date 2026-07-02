@@ -44,6 +44,7 @@ export default function MyInput(props) {
         return (
             <input
                 name={name}
+                type={props.type || "text"}
                 size={13}
                 style={{ fontSize: '16px' }}
                 className={`bg-black outline-none border-b border-${props.color} border-dashed text-sm lg:text-base`}

@@ -288,6 +288,27 @@ const CourierAggregatorSchema = new mongoose.Schema(
             }],
             default: []
         },
+        bottleQueue: {
+            type: [{
+                aquaMarketId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "AquaMarket"
+                },
+                franchiseeId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User"
+                },
+                b12: {
+                    type: Number,
+                    default: 0
+                },
+                b19: {
+                    type: Number,
+                    default: 0
+                }
+            }],
+            default: []
+        },
         soldBootles: {
             kol: {
                 type: Number,

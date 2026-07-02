@@ -69,6 +69,16 @@ const AquaMarketScheme = new mongoose.Schema(
         onTheLine: {
             type: Boolean,
             default: false
+        },
+        realized: {
+            b12: {
+                type: Number,
+                default: 0
+            },
+            b19: {
+                type: Number,
+                default: 0
+            }
         }
     },
     {

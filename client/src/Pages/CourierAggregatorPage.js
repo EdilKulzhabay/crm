@@ -49,6 +49,9 @@ export default function CourierAggregatorPage() {
     const [incomeLogDateTo, setIncomeLogDateTo] = useState(getTomorrowDate());
     const [franchiseesModal, setFranchiseesModal] = useState(false);
     const [franchisee, setFranchisee] = useState(null);
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [passwordMsg, setPasswordMsg] = useState(null);
 
     const closeFranchiseeModal = () => {
         setFranchiseesModal(false);
@@ -120,6 +123,31 @@ export default function CourierAggregatorPage() {
             await loadCourierData()
         })
     }
+
+    const handleChangePassword = async () => {
+        if (newPassword.length < 4) {
+            setPasswordMsg({ ok: false, text: "Пароль должен быть не менее 4 символов" });
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setPasswordMsg({ ok: false, text: "Пароли не совпадают" });
+            return;
+        }
+        try {
+            const { data } = await api.post("/changePasswordCourierAggregator", { courierId: id, newPassword }, {
+                headers: { "Content-Type": "application/json" },
+            });
+            if (data.success) {
+                setPasswordMsg({ ok: true, text: "Пароль успешно изменён" });
+                setNewPassword("");
+                setConfirmPassword("");
+            } else {
+                setPasswordMsg({ ok: false, text: data.message });
+            }
+        } catch {
+            setPasswordMsg({ ok: false, text: "Ошибка при смене пароля" });
+        }
+    };
     
 
     useEffect(() => {
@@ -522,6 +550,38 @@ export default function CourierAggregatorPage() {
                     </Li>
                 </>
             )}
+            <Div />
+            <Div className="text-xl font-bold">Сменить пароль</Div>
+            <Li>
+                <div className="flex flex-col gap-y-2">
+                    <div className="flex items-center gap-x-2 flex-wrap">
+                        <div>Новый пароль:</div>
+                        <MyInput
+                            value={newPassword}
+                            change={(e) => { setNewPassword(e.target.value); setPasswordMsg(null); }}
+                            color="white"
+                            type="password"
+                        />
+                    </div>
+                    <div className="flex items-center gap-x-2 flex-wrap">
+                        <div>Подтверждение:</div>
+                        <MyInput
+                            value={confirmPassword}
+                            change={(e) => { setConfirmPassword(e.target.value); setPasswordMsg(null); }}
+                            color="white"
+                            type="password"
+                        />
+                    </div>
+                    <div className="flex items-center gap-x-2 flex-wrap">
+                        <MyButton click={handleChangePassword}>Сменить пароль</MyButton>
+                        {passwordMsg && (
+                            <span className={passwordMsg.ok ? "text-green-500" : "text-red-500"}>
+                                {passwordMsg.text}
+                            </span>
+                        )}
+                    </div>
+                </div>
+            </Li>
             <Div />
         </Container>
     );
