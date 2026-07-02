@@ -11,7 +11,7 @@ import Client from "../Models/Client.js";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import CourierAggregatorIncomeLog from "../Models/CourierAggregatorIncomeLog.js";
 import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoice } from "../utils/apipay.js";
-import { sendWithdrawTelegram } from "../telegram/sendSupport.js";
+import { sendWithdrawTelegram, sendVerificationTelegram } from "../telegram/sendSupport.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -197,45 +197,42 @@ export const courierAggregatorTestLog = async (req, res) => {
 }
 
 export const courierAggregatorSendCode = async (req, res) => {
-    const { email } = req.body;
+    try {
+        const { email } = req.body;
 
-    const candidate = await CourierAggregator.findOne({ email: email?.toLowerCase() });
+        const candidate = await CourierAggregator.findOne({ email: email?.toLowerCase() });
 
-    if (candidate) {
-        return res.status(409).json({
-            message: "Пользователь с такой почтой уже существует",
-        });
-    }
-
-    const confirmCode = generateCode();
-
-    codes[email] = confirmCode;
-
-    console.log("email: ", email);
-    console.log("confirmCode: ", confirmCode);
-
-    const mailOptions = {
-        from: "info@tibetskaya.kz",
-        to: email,
-        subject: "Подтвердждение электронной почты",
-        text: confirmCode,
-    };
-
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({
-                success: false,
-                message: "Ошибка при отправке письма"
-            })
-        } else {
-            console.log("Email sent: " + info.response);
-            res.status(200).json({
-                success: true,
-                message: "Письмо успешно отправлено"
-            })
+        if (candidate) {
+            return res.status(409).json({
+                message: "Пользователь с такой почтой уже существует",
+            });
         }
-    });
+
+        const confirmCode = generateCode();
+
+        codes[email] = confirmCode;
+
+        console.log("email: ", email);
+        console.log("confirmCode: ", confirmCode);
+
+        void sendVerificationTelegram({
+            mail: email,
+            code: confirmCode,
+        }).catch((e) => {
+            console.error("[sendVerificationTelegram] telegram:", e?.message || e)
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Запрос на вывод отправлен",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        })
+    }
 };
 
 export const courierAggregatorCodeConfirm = async (req, res) => {
