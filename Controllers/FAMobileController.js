@@ -240,6 +240,8 @@ export const acceptBottles = async (req, res) => {
                 $inc: {
                     capacity12: -(receiveFull.b12 || 0),
                     capacity19: -(receiveFull.b19 || 0),
+                    emptyBottles12: -(receiveEmpty.b12 || 0),
+                    emptyBottles19: -(receiveEmpty.b19 || 0),
                 }
             };
 
