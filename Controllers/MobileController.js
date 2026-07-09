@@ -1221,112 +1221,168 @@ export const getClientAddresses = async (req, res) => {
     }
 };
 
+/**
+ * Общая логика создания заказа из мобильного приложения.
+ * Используется и HTTP-эндпоинтом addOrderClientMobile, и вебхуком ApiPay
+ * (автосоздание заказа после пополнения баланса, даже если клиент не открыл приложение).
+ *
+ * Способ оплаты (списание баланса/бутылей) решает ИСКЛЮЧИТЕЛЬНО актуальное
+ * client.paymentMethod из БД, а не `opForm`, присланный устройством — `opForm` на
+ * устройстве может быть устаревшим (клиент не обновил профиль перед отправкой),
+ * из-за чего раньше заказ мог создаваться "оплаченным", а баланс/бутыли при этом
+ * не списывались. Здесь paymentMethod заказа и фактическое списание всегда основаны
+ * на одном и том же значении — расхождение между ними невозможно.
+ */
+export async function createClientOrderCore({
+    mail,
+    address,
+    products,
+    clientNotes,
+    date,
+    opForm,
+    needCall,
+    comment,
+    notificationToken,
+}) {
+    const client = await Client.findOne({ mail: mail?.toLowerCase() });
+
+    if (!client) {
+        return { success: false, status: 404, message: "Не удалось найти клиента" };
+    }
+
+    if (client.clientType === false && address?.actual) {
+        address.actual = address.actual.replace(/квартира/gi, 'офис');
+    }
+
+    const franchisee = await User.findOne({ role: "superAdmin" });
+    const naturalFranchisee = await User.findOne({ _id: client.franchisee });
+
+    const sum =
+        Number(products.b12) * Number(client.price12) +
+        Number(products.b19) * Number(client.price19);
+
+    const todayStr = getDateAlmaty();
+
+    const findOrder = await Order.findOne({
+        client: client._id,
+        "date.d": date?.d,
+        "address.actual": address.actual,
+        status: { $ne: "cancelled" }
+    });
+
+    if (findOrder) {
+        return { success: false, message: "Заказ на эту дату уже существует" };
+    }
+
+    const resolvedD =
+        typeof date?.d === "string" && String(date.d).trim().length >= 10
+            ? String(date.d).trim().slice(0, 10)
+            : todayStr;
+
+    if (resolvedD === todayStr) {
+        const cutoff = await getOrderSameDayUntilHourValue();
+        if (getHourAlmaty() >= cutoff) {
+            return {
+                success: false,
+                status: 400,
+                message: `Приём заказов на сегодня завершён. На сегодня принимаются заказы до ${cutoff}:00 по времени Алматы. Выберите другую дату доставки.`,
+            };
+        }
+    }
+
+    let paymentMethod = "fakt";
+    if (opForm === "credit" || opForm === "coupon") {
+        if (client.paymentMethod !== "balance" && client.paymentMethod !== "coupon") {
+            return {
+                success: false,
+                status: 409,
+                message: "Оплата с кошелька недоступна для вашего аккаунта. Обновите приложение и попробуйте снова.",
+            };
+        }
+        paymentMethod = client.paymentMethod;
+        if (paymentMethod === "balance" && Number(client.balance) < sum) {
+            return { success: false, status: 400, message: "Недостаточно средств на балансе" };
+        }
+        if (paymentMethod === "coupon") {
+            if (
+                Number(products.b12) > Number(client.paidBootlesFor12 || 0) ||
+                Number(products.b19) > Number(client.paidBootlesFor19 || 0)
+            ) {
+                return { success: false, status: 400, message: "Недостаточно оплаченных бутылей" };
+            }
+        }
+    }
+
+    const clientPhone = address.phone !== "" ? address.phone : client.phone
+
+    const order = new Order({
+        franchisee: naturalFranchisee.isBussinessCenter ? naturalFranchisee._id : franchisee._id,
+        client: client._id,
+        address,
+        products,
+        date: date || {d: todayStr, time: ""},
+        sum,
+        clientNotes: clientNotes || [],
+        opForm,
+        needCall,
+        comment,
+        paymentMethod: paymentMethod,
+        wereCreated: "app",
+        clientPhone: clientPhone,
+        notificationToken: notificationToken || "",
+    });
+
+    await order.save();
+
+    client.bonus = client.bonus + 50
+    if (paymentMethod === "balance") {
+        client.balance = client.balance - sum
+    }
+    if (paymentMethod === "coupon") {
+        if (Number(products.b12) > 0) {
+            client.paidBootlesFor12 = client.paidBootlesFor12 - Number(products.b12)
+        }
+        if (Number(products.b19) > 0) {
+            client.paidBootlesFor19 = client.paidBootlesFor19 - Number(products.b19)
+        }
+    }
+    client.appOrdersPlacedCount = (client.appOrdersPlacedCount || 0) + 1;
+    const placedCount = client.appOrdersPlacedCount;
+    await client.save();
+
+    return {
+        success: true,
+        message: "Заказ успешно создан",
+        showReferralModal: placedCount > 0 && placedCount % 3 === 0,
+        appOrdersPlacedCount: placedCount,
+        order,
+        client,
+        naturalFranchisee,
+    };
+}
+
 export const addOrderClientMobile = async (req, res) => {
     try {
         const {mail, address, products, clientNotes, date, opForm, needCall, comment, notificationToken} = req.body
 
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const result = await createClientOrderCore({
+            mail, address, products, clientNotes, date, opForm, needCall, comment, notificationToken,
+        });
 
-        if (!client) {
-            return res.status(404).json({
+        if (!result.success) {
+            return res.status(result.status || 200).json({
                 success: false,
-                message: "Не удалось найти клиента",
+                message: result.message,
             });
         }
 
-        if (client.clientType === false && address?.actual) {
-            address.actual = address.actual.replace(/квартира/gi, 'офис');
-        }
-
-        const franchisee = await User.findOne({role: "superAdmin"})
-        const naturalFranchisee = await User.findOne({_id: client.franchisee})
-
-        const sum =
-            Number(products.b12) * Number(client.price12) +
-            Number(products.b19) * Number(client.price19);
-
-        const todayStr = getDateAlmaty();
-
-        const findOrder = await Order.findOne({
-            client: client._id,
-            "date.d": date?.d,
-            "address.actual": address.actual,
-            status: { $ne: "cancelled" }
-        })
-
-        if (findOrder) {
-            return res.json({
-                success: false,
-                message: "Заказ на эту дату уже существует"
-            })
-        }
-
-        const resolvedD =
-            typeof date?.d === "string" && String(date.d).trim().length >= 10
-                ? String(date.d).trim().slice(0, 10)
-                : todayStr;
-
-        if (resolvedD === todayStr) {
-            const cutoff = await getOrderSameDayUntilHourValue();
-            if (getHourAlmaty() >= cutoff) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Приём заказов на сегодня завершён. На сегодня принимаются заказы до ${cutoff}:00 по времени Алматы. Выберите другую дату доставки.`,
-                });
-            }
-        }
-
-        let paymentMethod = "fakt";
-        if (opForm === "credit") {
-            if (client.paidBootles > 0) {
-                paymentMethod = "coupon";
-            } else {
-                paymentMethod = "balance";
-            }
-        }
-
-        const clientPhone = address.phone !== "" ? address.phone : client.phone
-
-        const order = new Order({
-            franchisee: naturalFranchisee.isBussinessCenter ? naturalFranchisee._id : franchisee._id,
-            client: client._id,
-            address,
-            products,
-            date: date || {d: todayStr, time: ""},
-            sum,
-            clientNotes: clientNotes || [],
-            opForm,
-            needCall,
-            comment,
-            paymentMethod: paymentMethod,
-            wereCreated: "app",
-            clientPhone: clientPhone,
-            notificationToken: notificationToken || "",
-        });
-
-        await order.save();
-
-        client.bonus = client.bonus + 50
-        if (opForm === "credit" && client.paymentMethod === "balance") {
-            client.balance = client.balance - sum
-        }
-        if (opForm === "coupon" && client.paymentMethod === "coupon") {
-            if (products.b12 > 0) {
-                client.paidBootlesFor12 = client.paidBootlesFor12 - Number(products.b12)
-            }
-            if (products.b19 > 0) {
-                client.paidBootlesFor19 = client.paidBootlesFor19 - Number(products.b19)
-            }
-        }
-        client.appOrdersPlacedCount = (client.appOrdersPlacedCount || 0) + 1;
-        const placedCount = client.appOrdersPlacedCount;
-        await client.save();
+        const { naturalFranchisee, showReferralModal, appOrdersPlacedCount } = result;
 
         res.json({
             success: true,
             message: "Заказ успешно создан",
-            showReferralModal: placedCount > 0 && placedCount % 3 === 0,
-            appOrdersPlacedCount: placedCount,
+            showReferralModal,
+            appOrdersPlacedCount,
         });
 
         if (!address.lat && !address.lon) {
@@ -1644,9 +1700,11 @@ export const cancelOrderMobile = async (req, res) => {
     try {
         const { orderId, reason } = req.body;
         const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled", reason });
-        if (order.opForm === "coupon") {
+        // Возврат средств основан на order.paymentMethod — том же поле, которым
+        // руководствовалось фактическое списание при создании заказа (см. createClientOrderCore),
+        // а не на order.opForm, который мог отличаться от реально списанного способа оплаты.
+        if (order.paymentMethod === "coupon") {
             const client = await Client.findById(order.client);
-            client.paidBootles = client.paidBootles + (Number(order.products.b12) + Number(order.products.b19));
             if (order.products.b12 > 0) {
                 client.paidBootlesFor12 = client.paidBootlesFor12 + Number(order.products.b12);
             }
@@ -1655,7 +1713,7 @@ export const cancelOrderMobile = async (req, res) => {
             }
             await client.save();
         }
-        if (order.opForm === "credit") {
+        if (order.paymentMethod === "balance") {
             const client = await Client.findById(order.client);
             client.balance = client.balance + order.sum;
             await client.save();

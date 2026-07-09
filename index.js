@@ -27,6 +27,7 @@ import {
     BussinessCenterController,
     ApiPayController,
     FAMobileController,
+    OrderChatController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import multer from "multer";
@@ -316,6 +317,8 @@ app.post("/getCompletedOrders", checkAuth, OrderController.getCompletedOrders)
 app.post("/deleteOrder", checkAuth, OrderController.deleteOrder)
 app.post("/getOrdersForAggregator", OrderController.getOrdersForAggregator)
 app.get("/fixRinat", OrderController.fixRinat)
+app.post("/sendOrderChatMessage", checkAuth, OrderChatController.sendMessageAsClient);
+app.post("/getOrderChatMessages", checkAuth, OrderChatController.getMessagesAsClient);
 app.post("/getCancelledOrders", OrderController.getCancelledOrders)
 app.get("/getCancelledOrdersCount", OrderController.getCancelledOrdersCount)
 app.get("/getResultForToday", OrderController.getResultForToday)
@@ -411,6 +414,8 @@ app.post("/checkOrderKaspiQrCourierAggregator", checkAuthAggregator, CourierAggr
 app.post("/requestWithdrawalCourierAggregator", checkAuthAggregator, CourierAggregatorController.requestWithdrawalCourierAggregator)
 app.post("/getCourierAggregators", CourierAggregatorController.getCourierAggregators)
 app.post("/getOrdersWithCourierAggregator", CourierAggregatorController.getOrdersWithCourierAggregator)
+app.post("/courier/sendOrderChatMessage", checkAuthAggregator, OrderChatController.sendMessageAsCourier);
+app.post("/courier/getOrderChatMessages", checkAuthAggregator, OrderChatController.getMessagesAsCourier);
 app.post("/getCompletedOrCancelledOrdersFromCourierAggregator", CourierAggregatorController.getCompletedOrCancelledOrdersFromCourierAggregator)
 app.post("/clearCourierAggregatorOrders", CourierAggregatorController.clearCourierAggregatorOrders)
 app.get("/getActiveCourierAggregators", CourierAggregatorController.getActiveCourierAggregators)

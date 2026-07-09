@@ -14,6 +14,8 @@ import "dotenv/config";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import Client from "../Models/Client.js";
 import ClientPayment from "../Models/ClientPayment.js";
+import Order from "../Models/Order.js";
+import { createClientOrderCore } from "./MobileController.js";
 import {
     createQrInvoice as apipayCreateQrInvoice,
     getInvoice as apipayGetInvoice,
@@ -37,15 +39,33 @@ function isOk(status) {
     return status >= 200 && status < 300;
 }
 
+/** Минимальная валидация черновика заказа, который нужно создать после пополнения. */
+function isValidPendingOrderDraft(draft) {
+    return (
+        draft &&
+        typeof draft === "object" &&
+        typeof draft.mail === "string" &&
+        draft.mail.trim().length > 0 &&
+        draft.address &&
+        typeof draft.address === "object" &&
+        draft.products &&
+        typeof draft.products === "object" &&
+        (draft.opForm === "credit" || draft.opForm === "coupon")
+    );
+}
+
 /**
  * POST /api/apipay/qr/create
  * Body:
  *  - amount:   number   — сумма в KZT (обязательно).
  *  - clientId: ObjectId — id клиента CRM, которому при оплате пополнится balance (обязательно).
+ *  - pendingOrderDraft: object (опционально) — черновик заказа мобильного приложения
+ *    (тот же формат, что и тело addOrderClientMobile), который нужно создать сразу
+ *    после зачисления баланса — даже если клиент не вернётся в приложение.
  */
 export const createQrInvoice = async (req, res) => {
     try {
-        const { amount, clientId } = req.body || {};
+        const { amount, clientId, pendingOrderDraft } = req.body || {};
 
         if (!amount || Number(amount) <= 0) {
             return res.status(400).json({
@@ -65,6 +85,7 @@ export const createQrInvoice = async (req, res) => {
         console.log("[ApiPay] createQrInvoice REQUEST:", {
             amount: payload.amount,
             clientId,
+            hasPendingOrderDraft: isValidPendingOrderDraft(pendingOrderDraft),
         });
 
         const { status, data } = await apipayCreateQrInvoice(payload);
@@ -89,6 +110,7 @@ export const createQrInvoice = async (req, res) => {
             qrExpiresAt: data.qr_expires_at ? new Date(data.qr_expires_at) : null,
             isSandbox: !!data.is_sandbox,
             lastResponse: data,
+            pendingOrderDraft: isValidPendingOrderDraft(pendingOrderDraft) ? pendingOrderDraft : null,
         });
 
         console.log("[ApiPay] createQrInvoice SUCCESS:", {
@@ -391,7 +413,19 @@ async function handleInvoiceStatusChanged(payload) {
                 clientId: claimedDoc.client?.toString() || null,
                 amount,
             });
+
+            if (claimedDoc.order || claimedDoc.externalOrderId) {
+                // Счёт создан курьером под конкретный заказ (createOrderKaspiQrCourierAggregator) —
+                // это оплата ЭТОГО заказа, а не пополнение баланса клиента.
+                await markOrderPaidByKaspi(claimedDoc, inv);
+                return;
+            }
+
             await topUpClientBalance(claimedDoc, inv);
+
+            if (claimedDoc.pendingOrderDraft) {
+                await completePendingOrderAfterTopUp(claimedDoc);
+            }
             return;
         }
 
@@ -551,6 +585,72 @@ async function topUpClientBalance(doc, inv) {
         console.log(
             "[ApiPay] нет FCM-токенов у клиента, пропуск служебного пуша обновления баланса"
         );
+    }
+}
+
+/**
+ * Счёт был создан курьером под конкретный заказ (createOrderKaspiQrCourierAggregator).
+ * Оплата — это оплата ЗАКАЗА, а не пополнение баланса клиента: баланс здесь не трогаем,
+ * только помечаем сам заказ оплаченным, чтобы курьер видел актуальный статус сразу,
+ * не дожидаясь ручного опроса (checkOrderKaspiQrCourierAggregator).
+ */
+async function markOrderPaidByKaspi(doc, inv) {
+    const orderId = doc.order || doc.externalOrderId;
+    if (!orderId) return;
+
+    try {
+        await Order.updateOne(
+            { _id: orderId },
+            {
+                $set: {
+                    "qrCodeData.status": "paid",
+                },
+            }
+        );
+        console.log("[ApiPay] order marked as paid by Kaspi QR:", {
+            orderId: String(orderId),
+            apipayInvoiceId: doc.apipayInvoiceId,
+            amount: Number(inv.amount || doc.amount || 0),
+        });
+    } catch (e) {
+        console.error("[ApiPay] markOrderPaidByKaspi error:", e?.message);
+    }
+}
+
+/**
+ * Создаёт заказ из pendingOrderDraft сразу после зачисления баланса — работает,
+ * даже если клиент не вернулся в приложение (например, оплатил Kaspi QR и закрыл его).
+ * Идемпотентно: claim через pendingOrderApplied гарантирует ровно одну попытку создания
+ * на счёт. Если клиент всё же вернулся в приложение и заказ уже был создан "живьём" —
+ * createClientOrderCore вернёт "Заказ на эту дату уже существует", что тут не является ошибкой.
+ */
+async function completePendingOrderAfterTopUp(doc) {
+    const claimed = await ApiPayInvoice.findOneAndUpdate(
+        { _id: doc._id, pendingOrderApplied: { $ne: true } },
+        { $set: { pendingOrderApplied: true } },
+        { new: false }
+    );
+    if (!claimed) return;
+
+    try {
+        const result = await createClientOrderCore(doc.pendingOrderDraft);
+        if (result.success) {
+            console.log("[ApiPay] pending order auto-created after top-up:", {
+                apipayInvoiceId: doc.apipayInvoiceId,
+                orderId: result.order?._id?.toString(),
+            });
+        } else if (result.message === "Заказ на эту дату уже существует") {
+            console.log("[ApiPay] pending order already existed (client returned to app in time):", {
+                apipayInvoiceId: doc.apipayInvoiceId,
+            });
+        } else {
+            console.warn("[ApiPay] pending order auto-create FAILED:", {
+                apipayInvoiceId: doc.apipayInvoiceId,
+                message: result.message,
+            });
+        }
+    } catch (e) {
+        console.error("[ApiPay] completePendingOrderAfterTopUp error:", e?.message);
     }
 }
 

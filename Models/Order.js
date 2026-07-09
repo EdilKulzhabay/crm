@@ -145,6 +145,25 @@ const OrderSchema = new mongoose.Schema(
             type: Date,
             default: null
         },
+        chatMessages: [{
+            text: {
+                type: String,
+                required: true,
+            },
+            sender: {
+                type: String,
+                enum: ["client", "courier"],
+                required: true,
+            },
+            timestamp: {
+                type: String,
+                required: true,
+            },
+            isRead: {
+                type: Boolean,
+                default: false,
+            },
+        }],
         qrCodeData: {
             apipayInvoiceId: {
                 type: Number,

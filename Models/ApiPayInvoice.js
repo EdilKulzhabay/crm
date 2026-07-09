@@ -74,6 +74,20 @@ const ApiPayInvoiceSchema = new mongoose.Schema(
             default: false,
             index: true,
         },
+        /**
+         * Черновик заказа мобильного приложения, который нужно создать сразу после
+         * зачисления баланса по этому счёту (даже если клиент не вернулся в приложение).
+         * Формат — тело запроса addOrderClientMobile: { mail, address, products, clientNotes, date, opForm, needCall, comment, notificationToken }.
+         */
+        pendingOrderDraft: {
+            type: mongoose.Schema.Types.Mixed,
+            default: null,
+        },
+        /** Идемпотентность: true, если по pendingOrderDraft уже была предпринята попытка создать заказ */
+        pendingOrderApplied: {
+            type: Boolean,
+            default: false,
+        },
         totalRefunded: {
             type: Number,
             default: 0,

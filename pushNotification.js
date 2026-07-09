@@ -162,6 +162,92 @@ export const pushNotification = async (messageTitle, messageBody, expoTokens, ne
     }
 }
 
+export const pushOrderChatMessageToCourier = async (courierPushToken, orderId, message) => {
+    try {
+        const validTokens = [courierPushToken].filter(token => token && typeof token === 'string');
+        if (validTokens.length === 0) {
+            console.log('❌ Нет валидного токена курьера для отправки сообщения чата');
+            return { successCount: 0, errorCount: 0 };
+        }
+
+        const notificationKey = createNotificationKey("Сообщение от клиента", message.text, validTokens, "newOrderChatMessage", { _id: orderId });
+        const now = Date.now();
+        const lastSent = sentNotifications.get(notificationKey);
+        if (lastSent && (now - lastSent) < NOTIFICATION_DEDUP_WINDOW) {
+            return { successCount: 0, errorCount: 0 };
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const token of validTokens) {
+            try {
+                if (Expo.isExpoPushToken(token)) {
+                    const expoMessage = {
+                        to: token,
+                        sound: "default",
+                        title: "Сообщение от клиента",
+                        body: message.text,
+                        priority: "high",
+                        data: {
+                            newStatus: "newOrderChatMessage",
+                            orderId,
+                            message: JSON.stringify(message),
+                        },
+                        _displayInForeground: true,
+                        contentAvailable: true,
+                    };
+
+                    await expo.sendPushNotificationsAsync([expoMessage]);
+                    successCount++;
+                } else {
+                    const firebaseMessage = {
+                        token,
+                        notification: {
+                            title: "Сообщение от клиента",
+                            body: message.text,
+                        },
+                        data: {
+                            newStatus: "newOrderChatMessage",
+                            orderId: orderId.toString(),
+                            message: JSON.stringify(message),
+                        },
+                        android: {
+                            priority: "high",
+                        },
+                        apns: {
+                            headers: {
+                                "apns-priority": "10",
+                            },
+                            payload: {
+                                aps: {
+                                    sound: "default",
+                                    contentAvailable: true,
+                                },
+                            },
+                        },
+                    };
+
+                    await admin.app('courier-app').messaging().send(firebaseMessage);
+                    successCount++;
+                }
+            } catch (tokenError) {
+                console.error(`Ошибка при отправке сообщения чата на токен ${token}:`, tokenError);
+                errorCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            sentNotifications.set(notificationKey, now);
+        }
+
+        return { successCount, errorCount };
+    } catch (error) {
+        console.error("Критическая ошибка при отправке сообщения чата курьеру:", error);
+        throw error;
+    }
+}
+
 export const pushNotificationText = async (messageTitle, messageBody, expoTokens) => {
     try {
         // Валидация входных данных
