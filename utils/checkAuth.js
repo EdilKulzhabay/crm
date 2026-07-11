@@ -13,7 +13,7 @@ export default async (req, res, next) => {
             let userId, userType;
 
             if (decoded.client) {
-                userId = decoded.client._id;
+                userId = decoded.client._id || decoded.client;
                 userType = "client";
             } else {
                 userId = decoded._id;

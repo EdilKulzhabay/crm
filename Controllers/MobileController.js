@@ -989,7 +989,7 @@ export const refreshToken = async (req, res) => {
         const decoded = jwt.verify(refreshToken, process.env.SecretKeyRefresh);
 
         // Проверка, что refresh токен совпадает с хранимым в базе данных
-        const candidate = await Client.findById(decoded.client._id);
+        const candidate = await Client.findById(decoded.client._id || decoded.client);
 
         if (!candidate || candidate.refreshToken !== refreshToken) {
             return res.status(403).json({ success: false, message: "Неверный refresh токен" });
@@ -1012,7 +1012,7 @@ export const refreshToken = async (req, res) => {
             }
         );
 
-        await Client.findByIdAndUpdate(decoded.client._id, {
+        await Client.findByIdAndUpdate(decoded.client._id || decoded.client, {
             refreshToken: newRefreshToken,
         });
 
