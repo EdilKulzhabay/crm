@@ -1397,16 +1397,21 @@ export const deleteCourierAggregatorIncomeLog = async (req, res) => {
             });
         }
 
+        const amount = Number(log.amount) || 0;
         const incomeBefore = Number(courier.income) || 0;
-        const incomeAfter = incomeBefore - log.amount;
+        const incomeAfter = incomeBefore - amount;
 
-        await CourierAggregator.updateOne({ _id: courierId }, { $set: { income: incomeAfter } });
+        await CourierAggregator.updateOne(
+            { _id: courierId },
+            { $set: { income: incomeAfter } }
+        );
         await CourierAggregatorIncomeLog.deleteOne({ _id: logId });
 
         return res.json({
             success: true,
             income: incomeAfter,
-            message: "Запись удалена, баланс обновлён",
+            incomeBefore,
+            message: `Запись удалена. Баланс: ${incomeBefore} ₸ → ${incomeAfter} ₸`,
         });
     } catch (error) {
         console.error(error);

@@ -152,8 +152,11 @@ export default function CourierAggregatorPage() {
             );
             if (data.success) {
                 setIncome(data.income);
-                setIncomeLogActionMsg({ ok: true, text: "Запись удалена" });
-                await loadCourierData();
+                setCourier((prev) => (prev ? { ...prev, income: data.income } : prev));
+                setIncomeLogActionMsg({
+                    ok: true,
+                    text: data.message || `Запись удалена. Новый баланс: ${data.income} ₸`,
+                });
                 await loadIncomeLogs();
             } else {
                 setIncomeLogActionMsg({ ok: false, text: data.message });
@@ -172,10 +175,13 @@ export default function CourierAggregatorPage() {
             );
             if (data.success) {
                 setIncome(data.income);
+                setCourier((prev) => (prev ? { ...prev, income: data.income } : prev));
                 setEditingLogId(null);
                 setEditingOpForm("");
-                setIncomeLogActionMsg({ ok: true, text: "Форма оплаты изменена" });
-                await loadCourierData();
+                setIncomeLogActionMsg({
+                    ok: true,
+                    text: data.message || `Форма оплаты изменена. Новый баланс: ${data.income} ₸`,
+                });
                 await loadIncomeLogs();
             } else {
                 setIncomeLogActionMsg({ ok: false, text: data.message });
