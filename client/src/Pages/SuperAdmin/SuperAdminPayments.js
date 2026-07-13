@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import * as XLSX from "xlsx";
 import api from "../../api";
 import Div from "../../Components/Div";
 import Li from "../../Components/Li";
@@ -134,6 +135,28 @@ export default function SuperAdminPayments() {
         loadPayments({ searchClient: "" });
     };
 
+    const exportToExcel = () => {
+        if (payments.length === 0) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Нет данных для выгрузки");
+            return;
+        }
+
+        const mappedData = payments.map((item) => ({
+            "Наименование клиента": item?.client?.fullName || "—",
+            "Сумма": item?.amount || 0,
+            "Дата": formatPaidAt(item?.paidAt),
+        }));
+
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(mappedData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
+
+        const fileName = `payments_${dates.startDate}_${dates.endDate}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     return (
         <div className="relative">
             <Container role={userData?.role}>
@@ -211,6 +234,7 @@ export default function SuperAdminPayments() {
                         </span>
                     </MyButton>
                     <MyButton click={() => loadPayments()}>Обновить список</MyButton>
+                    <MyButton click={exportToExcel}>Экспорт в Excel</MyButton>
                 </Li>
                 <Div />
                 <Div>Период (дата платежа):</Div>
