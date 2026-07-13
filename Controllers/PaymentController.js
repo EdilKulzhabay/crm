@@ -634,7 +634,7 @@ export const getClientPaymentsForSuperAdmin = async (req, res) => {
 
         const payments = await ClientPayment.find(filter)
             .sort({ paidAt: -1 })
-            .populate("client", "fullName mail phone userName")
+            .populate("client", "fullName mail phone userName balance")
             .limit(500)
             .lean();
 

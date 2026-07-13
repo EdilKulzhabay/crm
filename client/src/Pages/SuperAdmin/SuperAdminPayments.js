@@ -147,6 +147,7 @@ export default function SuperAdminPayments() {
             "Наименование клиента": item?.client?.fullName || "—",
             "Сумма": item?.amount || 0,
             "Дата": formatPaidAt(item?.paidAt),
+            "Баланс": item?.client?.balance || 0,
         }));
 
         const workbook = XLSX.utils.book_new();

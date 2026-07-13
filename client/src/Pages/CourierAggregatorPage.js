@@ -31,6 +31,19 @@ const getTomorrowDate = () => {
     return `${year}-${month}-${day}`;
 };
 
+const OP_FORMS = [
+    { value: "fakt", label: "Нал_QR" },
+    { value: "postpay", label: "Постоплата" },
+    { value: "credit", label: "Карта" },
+    { value: "coupon", label: "Талоны" },
+    { value: "mixed", label: "Смешанно" },
+];
+
+const getOpFormLabel = (opForm) => {
+    const found = OP_FORMS.find((item) => item.value === opForm);
+    return found ? found.label : opForm;
+};
+
 export default function CourierAggregatorPage() {
     const scrollPosition = useScrollPosition();
     const userData = useFetchUserData()
@@ -52,6 +65,9 @@ export default function CourierAggregatorPage() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [passwordMsg, setPasswordMsg] = useState(null);
+    const [editingLogId, setEditingLogId] = useState(null);
+    const [editingOpForm, setEditingOpForm] = useState("");
+    const [incomeLogActionMsg, setIncomeLogActionMsg] = useState(null);
 
     const closeFranchiseeModal = () => {
         setFranchiseesModal(false);
@@ -123,6 +139,51 @@ export default function CourierAggregatorPage() {
             await loadCourierData()
         })
     }
+
+    const handleDeleteIncomeLog = async (logId) => {
+        if (!window.confirm("Удалить эту запись? Баланс курьера будет пересчитан.")) {
+            return;
+        }
+        try {
+            const { data } = await api.post(
+                "/deleteCourierAggregatorIncomeLog",
+                { logId, courierId: id },
+                { headers: { "Content-Type": "application/json" } }
+            );
+            if (data.success) {
+                setIncome(data.income);
+                setIncomeLogActionMsg({ ok: true, text: "Запись удалена" });
+                await loadCourierData();
+                await loadIncomeLogs();
+            } else {
+                setIncomeLogActionMsg({ ok: false, text: data.message });
+            }
+        } catch {
+            setIncomeLogActionMsg({ ok: false, text: "Ошибка при удалении записи" });
+        }
+    };
+
+    const handleSaveOpForm = async (logId) => {
+        try {
+            const { data } = await api.post(
+                "/updateCourierAggregatorIncomeLogOpForm",
+                { logId, courierId: id, opForm: editingOpForm },
+                { headers: { "Content-Type": "application/json" } }
+            );
+            if (data.success) {
+                setIncome(data.income);
+                setEditingLogId(null);
+                setEditingOpForm("");
+                setIncomeLogActionMsg({ ok: true, text: "Форма оплаты изменена" });
+                await loadCourierData();
+                await loadIncomeLogs();
+            } else {
+                setIncomeLogActionMsg({ ok: false, text: data.message });
+            }
+        } catch {
+            setIncomeLogActionMsg({ ok: false, text: "Ошибка при изменении формы оплаты" });
+        }
+    };
 
     const handleChangePassword = async () => {
         if (newPassword.length < 4) {
@@ -356,9 +417,15 @@ export default function CourierAggregatorPage() {
                     </MyButton>
                 </div>
             </Li>
-            {incomeLogs.length > 0 && (
-                <>
+            <>
                     <Div>История изменений баланса:</Div>
+                    {incomeLogActionMsg && (
+                        <Div>
+                            <span className={incomeLogActionMsg.ok ? "text-green-500" : "text-red-500"}>
+                                {incomeLogActionMsg.text}
+                            </span>
+                        </Div>
+                    )}
                     <Div>
                         <div className="flex items-center gap-x-2 flex-wrap">
                             <div>Дата:</div>
@@ -421,16 +488,69 @@ export default function CourierAggregatorPage() {
                                                 {" | "}
                                                 Было: {log.incomeBefore} ₸ → Стало: {log.incomeAfter} ₸
                                             </div>
-                                            {log.opForm && <div>Форма оплаты: {log.opForm}</div>}
+                                            {log.opForm && <div>Форма оплаты: {getOpFormLabel(log.opForm)}</div>}
                                             {log.comment && <div>{log.comment}</div>}
                                             {log.order?.address?.actual && (
                                                 <div>Заказ: {log.order.address.actual}</div>
                                             )}
-                                            {log.order?._id && (
-                                                <LinkButton
-                                                    color="green"
-                                                    href={`/OrderPage/${log.order._id}`}
-                                                >Перейти на заказ</LinkButton>
+                                            <div className="flex items-center gap-x-2 flex-wrap">
+                                                {log.order?._id && (
+                                                    <LinkButton
+                                                        color="green"
+                                                        href={`/OrderPage/${log.order._id}`}
+                                                    >Перейти на заказ</LinkButton>
+                                                )}
+                                                {log.type === "order_complete" && log.order?._id && (
+                                                    <MyButton
+                                                        click={() => {
+                                                            setEditingLogId(log._id);
+                                                            setEditingOpForm(log.opForm || log.order?.opForm || "fakt");
+                                                            setIncomeLogActionMsg(null);
+                                                        }}
+                                                    >
+                                                        Изменить форму оплаты
+                                                    </MyButton>
+                                                )}
+                                                <MyButton
+                                                    click={() => {
+                                                        setIncomeLogActionMsg(null);
+                                                        handleDeleteIncomeLog(log._id);
+                                                    }}
+                                                >
+                                                    Удалить
+                                                </MyButton>
+                                            </div>
+                                            {editingLogId === log._id && (
+                                                <div className="flex flex-col gap-y-1 mt-1">
+                                                    {OP_FORMS.map((item) => (
+                                                        <div
+                                                            key={item.value}
+                                                            className={clsx("hover:text-yellow-300 flex items-center gap-x-3", {
+                                                                "text-green-400": editingOpForm !== item.value,
+                                                                "text-blue-700": editingOpForm === item.value,
+                                                            })}
+                                                        >
+                                                            <div>[</div>
+                                                            <button onClick={() => setEditingOpForm(item.value)}>
+                                                                {item.label}
+                                                            </button>
+                                                            <div>]</div>
+                                                        </div>
+                                                    ))}
+                                                    <div className="flex items-center gap-x-2 flex-wrap">
+                                                        <MyButton click={() => handleSaveOpForm(log._id)}>
+                                                            Сохранить
+                                                        </MyButton>
+                                                        <MyButton
+                                                            click={() => {
+                                                                setEditingLogId(null);
+                                                                setEditingOpForm("");
+                                                            }}
+                                                        >
+                                                            Отменить
+                                                        </MyButton>
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     </Li>
@@ -439,8 +559,7 @@ export default function CourierAggregatorPage() {
                             ))}
                         </div>
                     )}
-                </>
-            )}
+            </>
 
             <Div />
             <Div className="text-xl font-bold">Активный заказ</Div>

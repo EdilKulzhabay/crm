@@ -1352,12 +1352,155 @@ export const getCourierAggregatorIncomeLogs = async (req, res) => {
         const logs = await CourierAggregatorIncomeLog.find({ courier: courierId, createdAt: { $gte: dateFrom, $lte: dateTo } })
             .sort({ createdAt: 1 })
             .limit(100)
-            .populate("order", "address sum opForm")
+            .populate("order", "address sum opForm products")
             .lean();
 
         return res.json({
             success: true,
             logs,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
+    }
+};
+
+const VALID_OP_FORMS = ["fakt", "postpay", "credit", "coupon", "mixed"];
+
+export const deleteCourierAggregatorIncomeLog = async (req, res) => {
+    try {
+        const { logId, courierId } = req.body || {};
+
+        if (!logId || !courierId) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите logId и courierId",
+            });
+        }
+
+        const log = await CourierAggregatorIncomeLog.findOne({ _id: logId, courier: courierId });
+        if (!log) {
+            return res.status(404).json({
+                success: false,
+                message: "Запись не найдена",
+            });
+        }
+
+        const courier = await CourierAggregator.findById(courierId);
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const incomeBefore = Number(courier.income) || 0;
+        const incomeAfter = incomeBefore - log.amount;
+
+        await CourierAggregator.updateOne({ _id: courierId }, { $set: { income: incomeAfter } });
+        await CourierAggregatorIncomeLog.deleteOne({ _id: logId });
+
+        return res.json({
+            success: true,
+            income: incomeAfter,
+            message: "Запись удалена, баланс обновлён",
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
+    }
+};
+
+export const updateCourierAggregatorIncomeLogOpForm = async (req, res) => {
+    try {
+        const { logId, courierId, opForm: newOpForm } = req.body || {};
+
+        if (!logId || !courierId || !newOpForm) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите logId, courierId и opForm",
+            });
+        }
+
+        if (!VALID_OP_FORMS.includes(newOpForm)) {
+            return res.status(400).json({
+                success: false,
+                message: "Некорректная форма оплаты",
+            });
+        }
+
+        const log = await CourierAggregatorIncomeLog.findOne({ _id: logId, courier: courierId });
+        if (!log) {
+            return res.status(404).json({
+                success: false,
+                message: "Запись не найдена",
+            });
+        }
+
+        if (log.type !== "order_complete" || !log.order) {
+            return res.status(400).json({
+                success: false,
+                message: "Изменение формы оплаты доступно только для завершённых заказов",
+            });
+        }
+
+        const order = await Order.findById(log.order);
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Заказ не найден",
+            });
+        }
+
+        const courier = await CourierAggregator.findById(courierId);
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const oldOpForm = log.opForm || order.opForm || "fakt";
+        if (oldOpForm === newOpForm) {
+            return res.status(400).json({
+                success: false,
+                message: "Форма оплаты уже установлена",
+            });
+        }
+
+        const products = order.products;
+        const orderSum = order.sum;
+        const oldDelta = Number(log.amount) || 0;
+        const newDelta = getOrderIncomeDelta(courier, products, orderSum, newOpForm);
+        const adjustment = newDelta - oldDelta;
+
+        const incomeBefore = Number(courier.income) || 0;
+        const incomeAfter = incomeBefore + adjustment;
+
+        await Order.updateOne({ _id: order._id }, { $set: { opForm: newOpForm } });
+        await CourierAggregator.updateOne({ _id: courierId }, { $set: { income: incomeAfter } });
+        await CourierAggregatorIncomeLog.updateOne(
+            { _id: logId },
+            {
+                $set: {
+                    opForm: newOpForm,
+                    amount: newDelta,
+                    incomeAfter: log.incomeBefore + newDelta,
+                    comment: `Форма оплаты изменена: ${oldOpForm} → ${newOpForm}`,
+                },
+            }
+        );
+
+        return res.json({
+            success: true,
+            income: incomeAfter,
+            message: "Форма оплаты изменена",
         });
     } catch (error) {
         console.error(error);
