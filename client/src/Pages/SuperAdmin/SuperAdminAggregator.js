@@ -13,7 +13,6 @@ import MySnackBar from "../../Components/MySnackBar";
 
 export default function SuperAdminAggregator() {
     const userData = useFetchUserData()
-    const [allCouriers, setAllCouriers] = useState([])
     const [allOrders, setAllOrders] = useState([])
     const [couriers, setCouriers] = useState([])
     const [orders, setOrders] = useState([])
@@ -36,12 +35,6 @@ export default function SuperAdminAggregator() {
 
     const handleSearchF = (e) => {
         setSearchF(e.target.value)
-        setPage(1)
-        setHasMore(true)
-        setAllCouriers([])
-        setCouriers([])
-        setTotalCouriers(0)
-        loadMoreCouriers(1)
     }
 
     const loadMoreCouriers = useCallback(async (page) => {
@@ -64,9 +57,9 @@ export default function SuperAdminAggregator() {
                     setHasMore(false)
                 } else {
                     if (page === 1) {
-                        setAllCouriers([...data.couriers])
+                        setCouriers([...data.couriers])
                     } else {
-                        setAllCouriers((prevCouriers) => [...prevCouriers, ...data.couriers])
+                        setCouriers((prevCouriers) => [...prevCouriers, ...data.couriers])
                     }
                     setPage(page + 1)
                 }
@@ -75,7 +68,7 @@ export default function SuperAdminAggregator() {
                 console.log(e)
             })
         setLoading(false)
-    }, [page, loading])
+    }, [page, loading, hasMore, searchF, isActive])
 
     const loadOrders = useCallback(async () => {
         api.post(
@@ -104,11 +97,10 @@ export default function SuperAdminAggregator() {
     useEffect(() => {
         setPage(1)
         setHasMore(true)
-        setAllCouriers([])
         setCouriers([])
         setTotalCouriers(0)
         loadMoreCouriers(1)
-    }, [isActive])
+    }, [isActive, searchF])
 
     useEffect(() => {
         loadOrders()
@@ -185,9 +177,9 @@ export default function SuperAdminAggregator() {
         </Div>
 
         <Div />
-        <Div>
+        {/* <Div>
             Количество курьеров: <Info>{totalCouriers}</Info>
-        </Div>
+        </Div> */}
         <div className="max-h-[400px] overflow-scroll bg-black">
             {couriers.map((courier, index) => {
                 if (couriers.length === index + 1) {
