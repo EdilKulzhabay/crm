@@ -52,7 +52,7 @@ export default function ClientList() {
 
     const [dates, setDates] = useState({
         startDate: "",
-        endData: "",
+        endDate: "",
     });
 
     const [freeInfo, setFreeInfo] = useState({
@@ -256,6 +256,7 @@ export default function ClientList() {
             .then(({ data }) => {
                 const type = "clients";
                 const clients = data.clients;
+                console.log(clients.length)
 
                 const mappedData = clients.map((item) => {
                     let addresses = "";
@@ -292,7 +293,7 @@ export default function ClientList() {
                 const nowDate = new Date();
                 const fileDate =
                     dates.startDate !== ""
-                        ? `${dates.startDate} - ${dates.endData}`
+                        ? `${dates.startDate} - ${dates.endDate}`
                         : `${nowDate.getFullYear()}:${
                               nowDate.getMonth() + 1
                           }:${nowDate.getDate()}`;
@@ -352,8 +353,8 @@ export default function ClientList() {
                                 [
                                 <DataInput
                                     color="red"
-                                    value={dates.endData}
-                                    name="endData"
+                                    value={dates.endDate}
+                                    name="endDate"
                                     change={handleDateChange}
                                 />
                                 ]

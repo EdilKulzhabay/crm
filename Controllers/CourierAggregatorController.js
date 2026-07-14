@@ -1109,7 +1109,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
 export const getCourierAggregators = async (req, res) => {
     try {
-        const { page = 1, searchF = "", isActive } = req.body;
+        const { page = 1, searchF, isActive } = req.body;
         const limit = 10;
         const skip = (page - 1) * limit;
 
@@ -1532,6 +1532,13 @@ export const clearCourierAggregatorOrders = async (req, res) => {
             { _id: orderId },
             { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } }
         )
+
+        courier.orders.forEach(async (order) => {
+            await Order.updateOne(
+                { _id: order.orderId },
+                { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } }
+            )
+        })
         
         await CourierAggregator.updateOne(
             { _id: courierId },

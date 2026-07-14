@@ -36,31 +36,12 @@ export default function SuperAdminAggregator() {
 
     const handleSearchF = (e) => {
         setSearchF(e.target.value)
-        filterCouriers(e.target.value, isActive)
-    }
-
-    const filterCouriers = (search = searchF, active = isActive) => {
-        let filtered = [...allCouriers]
-        
-        // Фильтрация по поиску
-        if (search) {
-            filtered = filtered.filter(courier => 
-                courier.fullName.toLowerCase().includes(search.toLowerCase()) ||
-                courier.phone.toLowerCase().includes(search.toLowerCase())
-            )
-        }
-        
-        // Фильтрация по активности
-        if (isActive === "active") {
-            filtered = filtered.filter(courier => courier.onTheLine === true)
-        }
-
-        if (isActive === "inActive") {
-            filtered = filtered.filter(courier => courier.onTheLine === false)
-        }
-        
-        setCouriers(filtered)
-        setTotalCouriers(filtered.length)
+        setPage(1)
+        setHasMore(true)
+        setAllCouriers([])
+        setCouriers([])
+        setTotalCouriers(0)
+        loadMoreCouriers(1)
     }
 
     const loadMoreCouriers = useCallback(async (page) => {
@@ -71,7 +52,7 @@ export default function SuperAdminAggregator() {
             "/getCourierAggregators",
             {
                 page,
-                searchF: "",
+                searchF,
                 isActive
             },
             {
@@ -88,7 +69,6 @@ export default function SuperAdminAggregator() {
                         setAllCouriers((prevCouriers) => [...prevCouriers, ...data.couriers])
                     }
                     setPage(page + 1)
-                    filterCouriers()
                 }
             })
             .catch((e) => {
@@ -122,8 +102,13 @@ export default function SuperAdminAggregator() {
     }, [hasMore])
 
     useEffect(() => {
-        filterCouriers()
-    }, [isActive, allCouriers])
+        setPage(1)
+        setHasMore(true)
+        setAllCouriers([])
+        setCouriers([])
+        setTotalCouriers(0)
+        loadMoreCouriers(1)
+    }, [isActive])
 
     useEffect(() => {
         loadOrders()
@@ -254,6 +239,7 @@ export default function SuperAdminAggregator() {
                                         Перейти
                                     </LinkButton>
                                     <MyButton click={() => {updateCourierAggregatorData(courier?.id, courier.onTheLine ? false : true)}}>{!courier.onTheLine ? "Активен" : "Неактивен"}</MyButton>
+                                    <MyButton click={() => {clearCourierAggregatorOrders(courier?.id)}}>Обновить</MyButton>
                                 </div>
                             </Li>
                         </div>
