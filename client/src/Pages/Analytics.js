@@ -105,6 +105,7 @@ export default function Analytics() {
         if (opForm === "postpay") return "Постоплата";
         if (opForm === "credit") return "Карта";
         if (opForm === "mixed") return "Смешанная";
+        if (opForm === "qr") return "QR";
         return opForm;
     }
 

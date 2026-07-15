@@ -28,7 +28,8 @@ export default function CompletedOrders() {
         totalCoupon: 0,
         totalPostpay: 0,
         totalCredit: 0,
-        totalMixed: 0
+        totalMixed: 0,
+        totalQr: 0
     })
     const [opForm, setOpForm] = useState("all")
     const [sa, setSa] = useState(false)
@@ -150,7 +151,8 @@ export default function CompletedOrders() {
                     totalCoupon: data.result.totalCoupon,
                     totalPostpay: data.result.totalPostpay,
                     totalCredit: data.result.totalCredit,
-                    totalMixed: data.result.totalMixed
+                    totalMixed: data.result.totalMixed,
+                    totalQr: data.result.totalQr
                 })
                 if (data.orders.length === 0) {
                     setHasMore(false);
@@ -401,7 +403,7 @@ export default function CompletedOrders() {
             <Li>
                 Сумма: <span className="text-red">[ <span className="text-white">{formatCurrency(info?.totalSum)}</span> ]</span>
             </Li>
-            {["fakt", "coupon", "postpay", "credit", "mixed"].map((item) => {
+            {["fakt", "coupon", "postpay", "credit", "mixed", "qr"].map((item) => {
                 return <div key={item}>
                     <Li>
                         <button onClick={() => {
@@ -417,7 +419,7 @@ export default function CompletedOrders() {
                                 "text-green-400": opForm !== item,
                                 "text-yellow-300": opForm === item
                             })}
-                        >[ {item === "fakt" ? "Нал_QR" : item === "coupon" ? "Талон" : item === "postpay" ? "Постоплата" : item === "credit" ? "Карта" : "Смешанная"} ]</button>
+                        >[ {item === "fakt" ? "Нал_QR" : item === "coupon" ? "Талон" : item === "postpay" ? "Постоплата" : item === "credit" ? "Карта" : item === "qr" ? "QR" : "Смешанная"} ]</button>
                         <Info>
                             {
                                 item === "fakt"
@@ -428,9 +430,11 @@ export default function CompletedOrders() {
                                 ? info?.totalPostpay
                                 : item === "credit"
                                 ? info?.totalCredit
+                                : item === "qr"
+                                ? info?.totalQr
                                 : info?.totalMixed
                             }
-                        </Info> 
+                        </Info>
                     </Li>
                 </div>
             })}

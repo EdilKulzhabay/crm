@@ -897,7 +897,7 @@ export const getCompletedOrders = async (req, res) => {
             if (courier.length === 0) {
                 return res.json({
                     orders: [],
-                    result: { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0 }
+                    result: { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0, totalQr: 0 }
                 })
             }
 
@@ -925,7 +925,7 @@ export const getCompletedOrders = async (req, res) => {
             if (franchisee.length === 0) {
                 return res.json({
                     orders: [],
-                    result: { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0 }
+                    result: { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0, totalQr: 0 }
                 })
             }
 
@@ -988,6 +988,7 @@ export const getCompletedOrders = async (req, res) => {
                     totalPostpay: { $sum: { $cond: [ { $eq: ["$opForm", "postpay"] }, 1, 0 ] } },
                     totalCredit: { $sum: { $cond: [ { $eq: ["$opForm", "credit"] }, 1, 0 ] } },
                     totalMixed: { $sum: { $cond: [ { $eq: ["$opForm", "mixed"] }, 1, 0 ] } },
+                    totalQr: { $sum: { $cond: [ { $eq: ["$opForm", "qr"] }, 1, 0 ] } },
                     orders: { $push: "$$ROOT" }, // Push all orders
                 },
             },
@@ -1000,7 +1001,7 @@ export const getCompletedOrders = async (req, res) => {
             .limit(limit)
             .skip(skip)
 
-        const result = ordersResult.length > 0 ? ordersResult[0] : { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0 };
+        const result = ordersResult.length > 0 ? ordersResult[0] : { totalB12: 0, totalB19: 0, totalSum: 0, totalFakt: 0, totalCoupon: 0, totalPostpay: 0, totalCredit: 0, totalMixed: 0, totalQr: 0 };
 
         // Ответ сервера
         res.json({

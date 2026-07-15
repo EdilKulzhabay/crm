@@ -698,6 +698,25 @@ export const completeOrderCourierAggregator = async (req, res) => {
 
         const courier1 = await CourierAggregator.findById(courierId)
 
+        let verifiedOpForm = opForm;
+        if (opForm === "qr") {
+            const isQrPaidOnOrder = order?.qrCodeData?.status === "paid";
+            let isQrPaidFallback = false;
+            if (!isQrPaidOnOrder && order?.qrCodeData?.apipayInvoiceId) {
+                const paidInvoice = await ApiPayInvoice.findOne({
+                    apipayInvoiceId: order.qrCodeData.apipayInvoiceId,
+                    status: "paid",
+                });
+                isQrPaidFallback = !!paidInvoice;
+            }
+            if (!isQrPaidOnOrder && !isQrPaidFallback) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Оплата по QR не подтверждена. Проверьте оплату ещё раз перед завершением заказа.",
+                });
+            }
+        }
+
         const courierName = courier1?.fullName?.toLowerCase() || '';
         const franchiseeName = order?.franchisee?.fullName?.toLowerCase() || '';
 
@@ -803,7 +822,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                     b12: emptyb12 || 0,
                     b19: emptyb19 || 0
                 },
-                ...(opForm ? { opForm } : {})
+                ...(verifiedOpForm ? { opForm: verifiedOpForm } : {})
             } 
         })
 
@@ -2707,24 +2726,6 @@ export const testPushNotificationClient = async (req, res) => {
         });
     }
     catch (error) {
-        console.log(error);
-        res.status(500).json({
-            success: false,
-            message: "Ошибка на стороне сервера"
-        });
-    }
-}
-
-export const sendNotificationToClient = async (req, res) => {
-    try {
-        const { notificationToken, message } = req.body;
-        const { pushNotificationClient } = await import("../pushNotificationClient.js");
-        await pushNotificationClient("Сообщение от курьера", message, [notificationToken], "onTheWay", { message });
-        res.status(200).json({
-            success: true,
-            message: "Уведомление успешно отправлено"
-        });
-    } catch (error) {
         console.log(error);
         res.status(500).json({
             success: false,

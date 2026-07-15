@@ -1594,7 +1594,9 @@ export default function ClientPage() {
                 <Div>Действия:</Div>
                 <Div>
                     <div className="flex items-center gap-x-3 flex-wrap">
-                        <LinkButton color="green" href={`/addOrder/${client?._id}`}>Создать заказ</LinkButton>
+                        {client?._id && (
+                            <LinkButton color="green" href={`/addOrder/${client._id}`}>Создать заказ</LinkButton>
+                        )}
                         <MyButton click={getClientOrdersForExcel}>
                             Выгрузить заказы в excel
                         </MyButton>

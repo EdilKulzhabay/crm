@@ -4,6 +4,7 @@ import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 import axios from "axios"
 import bcrypt from "bcrypt";
+import mongoose from "mongoose";
 
 export const addClient = async (req, res) => {
     try {
@@ -317,15 +318,21 @@ export const getClientDataForId = async (req, res) => {
     try {
         const { id } = req.body;
 
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                message: "Некорректный id клиента",
+            });
+        }
+
         const client = await Client.findById(id).populate("franchisee", "fullName");
 
         if (!client) {
-            res.status(404).json({
+            return res.status(404).json({
                 message: "Не удалось найти клиента",
             });
         }
 
-        res.json(client);
+        return res.json(client);
     } catch (error) {
         console.log(error);
         res.status(500).json({

@@ -429,7 +429,6 @@ app.post("/updateCourierOrdersSequence", CourierAggregatorController.updateCouri
 app.post("/resetCourierOrders", CourierAggregatorController.resetCourierOrders)
 app.post("/needToGiveTheOrderToCourier", CourierAggregatorController.needToGiveTheOrderToCourier)
 app.post("/testPushNotificationClient", CourierAggregatorController.testPushNotificationClient)
-app.post("/sendNotificationToClient", checkAuthAggregator, CourierAggregatorController.sendNotificationToClient)
 app.post("/changePasswordCourierAggregator", CourierAggregatorController.changePasswordCourierAggregator)
 app.post("/deleteCourierAggregator", CourierAggregatorController.deleteCourierAggregator)
 

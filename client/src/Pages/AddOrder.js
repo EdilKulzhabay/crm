@@ -125,6 +125,9 @@ export default function AddOrder() {
                 })
                 .catch((e) => {
                     console.log(e);
+                    setOpen(true);
+                    setStatus("error");
+                    setMessage("Не удалось загрузить данные клиента");
                 });
         }
     }, []);

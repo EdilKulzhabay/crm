@@ -37,6 +37,7 @@ const OP_FORMS = [
     { value: "credit", label: "Карта" },
     { value: "coupon", label: "Талоны" },
     { value: "mixed", label: "Смешанно" },
+    { value: "qr", label: "QR" },
 ];
 
 const getOpFormLabel = (opForm) => {
