@@ -16,6 +16,7 @@ import {
     normalizePhoneForWhatsApp,
     phonesMatch,
 } from "../whatsApp/sendRegistrationOtp.js";
+import { sendWhatsAppOtp } from "../utils/edna.js";
 import {
     generateUniqueReferralCode,
     normalizeReferralCodeInput,
@@ -83,6 +84,17 @@ const generateCode = () => {
 const codes = {};
 const lastSentTime = {}; // Отслеживание времени последней отправки
 const sendingInProgress = new Set(); // Отслеживание отправок в процессе
+
+/** Ищет клиента по телефону (номера в БД хранятся в разном форматировании — сверяем по последним 10 цифрам + нормализации) */
+async function findClientByPhone(rawPhone) {
+    const phoneNorm = normalizePhoneForWhatsApp(rawPhone);
+    if (!phoneNorm) return null;
+    const last10 = phoneNorm.slice(-10);
+    const candidates = await Client.find({
+        phone: { $regex: last10, $options: "i" },
+    }).limit(200);
+    return candidates.find((c) => phonesMatch(c.phone, phoneNorm)) || null;
+}
 
 export const sendMail = async (req, res) => {
     const { mail, phone } = req.body;
@@ -186,22 +198,26 @@ export const sendMail = async (req, res) => {
         codes[phoneNorm] = confirmCode;
         lastSentTime[phoneNorm] = now;
 
-        const mailOptions = {
-            from: "info@tibetskaya.kz",
-            to: normalizedMail,
-            subject: "Код подтверждения регистрации",
-            text: `Ваш код подтверждения: ${confirmCode}\n\nВведите его в приложении. Код привязан к указанному номеру телефона.`,
-        };
+        console.log(`[Reg OTP] sendMail: отправка кода в WhatsApp, phone=${pm}`);
+        const { ok, error: sendError } = await sendWhatsAppOtp(phone, confirmCode);
 
-        console.log(`[Reg OTP] sendMail: отправка письма на ${em}`);
-        await transporter.sendMail(mailOptions);
+        if (!ok) {
+            sendingInProgress.delete(phoneNorm);
+            delete codes[phoneNorm];
+            delete lastSentTime[phoneNorm];
+            console.error(`[Reg OTP] sendMail: ошибка отправки WhatsApp, phone=${pm}:`, sendError);
+            return res.status(500).json({
+                success: false,
+                message: "Не удалось отправить код в WhatsApp. Попробуйте позже.",
+            });
+        }
 
         sendingInProgress.delete(phoneNorm);
-        console.log(`[Reg OTP] sendMail: письмо отправлено, phone=${pm}, mail=${em}`);
+        console.log(`[Reg OTP] sendMail: код отправлен, phone=${pm}, mail=${em}`);
 
         return res.status(200).json({
             success: true,
-            message: "Код отправлен на указанную почту",
+            message: "Код отправлен в WhatsApp",
         });
     } catch (error) {
         sendingInProgress.delete(phoneNorm);
@@ -214,18 +230,100 @@ export const sendMail = async (req, res) => {
         if (error?.stack) {
             console.error("[Reg OTP] stack:", error.stack);
         }
-        const isSmtp = error && (error.code === "EAUTH" || error.responseCode);
         return res.status(500).json({
             success: false,
-            message: isSmtp
-                ? "Не удалось отправить письмо. Попробуйте позже."
-                : "Внутренняя ошибка сервера",
+            message: "Внутренняя ошибка сервера",
         });
     }
 };
 
+/** Восстановление пароля по телефону — код доставляется через WhatsApp (edna) вместо почты. */
+async function sendForgotPasswordCodeByPhone(req, res, phone) {
+    const phoneNorm = normalizePhoneForWhatsApp(phone);
+    const pm = maskPhoneForLog(phoneNorm || phone);
+
+    if (!phoneNorm || phoneNorm.length < 11) {
+        return res.status(400).json({
+            success: false,
+            message: "Некорректный номер телефона",
+        });
+    }
+
+    const now = Date.now();
+    const lastSent = lastSentTime[phoneNorm];
+    const COOLDOWN_PERIOD = 60000;
+    if (lastSent && now - lastSent < COOLDOWN_PERIOD) {
+        const remainingTime = Math.ceil((COOLDOWN_PERIOD - (now - lastSent)) / 1000);
+        return res.status(429).json({
+            success: false,
+            message: `Повторная отправка возможна через ${remainingTime} секунд`,
+        });
+    }
+
+    if (sendingInProgress.has(phoneNorm)) {
+        return res.status(429).json({
+            success: false,
+            message: "Отправка уже в процессе, пожалуйста подождите",
+        });
+    }
+
+    sendingInProgress.add(phoneNorm);
+
+    try {
+        const candidate = await findClientByPhone(phone);
+        if (!candidate) {
+            sendingInProgress.delete(phoneNorm);
+            return res.status(409).json({
+                success: false,
+                message: "Пользователь с таким номером телефона не найден",
+            });
+        }
+
+        const confirmCode = generateCode();
+        codes[phoneNorm] = confirmCode;
+        lastSentTime[phoneNorm] = now;
+
+        const { ok, error: sendError } = await sendWhatsAppOtp(phone, confirmCode);
+        sendingInProgress.delete(phoneNorm);
+
+        if (!ok) {
+            delete codes[phoneNorm];
+            delete lastSentTime[phoneNorm];
+            console.error(
+                `[ForgotPwd] sendForgotPasswordCodeByPhone: ошибка WhatsApp, phone=${pm}:`,
+                sendError
+            );
+            return res.status(500).json({
+                success: false,
+                message: "Не удалось отправить код в WhatsApp. Попробуйте позже.",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Код отправлен в WhatsApp",
+        });
+    } catch (error) {
+        sendingInProgress.delete(phoneNorm);
+        delete codes[phoneNorm];
+        delete lastSentTime[phoneNorm];
+        console.error(
+            `[ForgotPwd] sendForgotPasswordCodeByPhone: ошибка, phone=${pm}:`,
+            error?.message || error
+        );
+        return res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка сервера",
+        });
+    }
+}
+
 export const sendMailForgotPassword = async (req, res) => {
-    const { mail } = req.body;
+    const { mail, phone } = req.body;
+
+    if (phone) {
+        return sendForgotPasswordCodeByPhone(req, res, phone);
+    }
 
     // Валидация email
     if (!mail || !mail.includes('@')) {
@@ -319,22 +417,22 @@ export const sendMailForgotPassword = async (req, res) => {
 
 export const codeConfirmForgotPassword = async (req, res) => {
     try {
-        const { mail, code } = req.body;
+        const { mail, phone, code } = req.body;
         console.log("codeConfirm req.body: ", req.body);
-        
-        const normalizedMail = mail?.toLowerCase();
-        
-        if (!normalizedMail || !code) {
+
+        const key = phone ? normalizePhoneForWhatsApp(phone) : mail?.toLowerCase();
+
+        if (!key || !code) {
             return res.status(400).json({
                 success: false,
-                message: "Необходимо указать email и код"
+                message: "Необходимо указать телефон/email и код"
             });
         }
-        
-        if (codes[normalizedMail] === code) {
+
+        if (codes[key] === code) {
             console.log("codeConfirm code is correct");
-            delete codes[normalizedMail]; // Удаляем код после успешного подтверждения
-            delete lastSentTime[normalizedMail]; // Удаляем время последней отправки
+            delete codes[key]; // Удаляем код после успешного подтверждения
+            delete lastSentTime[key]; // Удаляем время последней отправки
             res.status(200).json({
                 success: true,
                 message: "Код успешно подтвержден"
@@ -357,20 +455,26 @@ export const codeConfirmForgotPassword = async (req, res) => {
 
 export const updateForgottenPassword = async (req, res) => {
     try {
-        const { mail, password } = req.body;
+        const { mail, phone, password } = req.body;
         console.log("updateForgottenPassword req.body: ", req.body);
-        const normalizedMail = mail?.toLowerCase();
-        if (!normalizedMail || !password) {
+
+        if (!password) {
             return res.status(400).json({
                 success: false,
-                message: "Необходимо указать email и пароль"
+                message: "Необходимо указать пароль"
             });
         }
-        const candidate = await Client.findOne({ mail: normalizedMail });
+
+        const candidate = phone
+            ? await findClientByPhone(phone)
+            : await Client.findOne({ mail: mail?.toLowerCase() });
+
         if (!candidate) {
             return res.status(404).json({
                 success: false,
-                message: "Пользователь с такой почтой не существует"
+                message: phone
+                    ? "Пользователь с таким номером телефона не существует"
+                    : "Пользователь с такой почтой не существует"
             });
         }
         const salt = await bcrypt.genSalt(10);
@@ -741,11 +845,13 @@ export const clientRegister = async (req, res) => {
 
 export const clientLogin = async (req, res) => {
     try {
-        const { mail } = req.body;
+        const { mail, phone } = req.body;
 
         console.log("clientLogin req.body: ", req.body);
 
-        const candidate = await Client.findOne({ mail: mail?.toLowerCase() });
+        const candidate = phone
+            ? await findClientByPhone(phone)
+            : await Client.findOne({ mail: mail?.toLowerCase() });
 
         if (!candidate) {
             console.log("clientLogin candidate is not found");

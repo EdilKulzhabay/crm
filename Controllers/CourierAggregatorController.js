@@ -12,6 +12,8 @@ import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import CourierAggregatorIncomeLog from "../Models/CourierAggregatorIncomeLog.js";
 import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoice } from "../utils/apipay.js";
 import { sendWithdrawTelegram, sendVerificationTelegram } from "../telegram/sendSupport.js";
+import { normalizePhoneForWhatsApp, phonesMatch, maskPhoneForLog } from "../whatsApp/normalizePhone.js";
+import { sendWhatsAppOtp } from "../utils/edna.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -150,6 +152,17 @@ const generateCode = () => {
 
 const codes = {};
 
+/** Ищет курьера-агрегатора по телефону (номера в БД хранятся в разном форматировании) */
+async function findCourierAggregatorByPhone(rawPhone) {
+    const phoneNorm = normalizePhoneForWhatsApp(rawPhone);
+    if (!phoneNorm) return null;
+    const last10 = phoneNorm.slice(-10);
+    const candidates = await CourierAggregator.find({
+        phone: { $regex: last10, $options: "i" },
+    }).limit(200);
+    return candidates.find((c) => phonesMatch(c.phone, phoneNorm)) || null;
+}
+
 /** Расстояние между двумя точками на сфере, метры (WGS84) */
 const haversineDistanceMeters = (lat1, lon1, lat2, lon2) => {
     if (
@@ -198,7 +211,7 @@ export const courierAggregatorTestLog = async (req, res) => {
 
 export const courierAggregatorSendCode = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, phone } = req.body;
 
         const candidate = await CourierAggregator.findOne({ email: email?.toLowerCase() });
 
@@ -208,12 +221,38 @@ export const courierAggregatorSendCode = async (req, res) => {
             });
         }
 
+        const phoneNorm = normalizePhoneForWhatsApp(phone);
+        const pm = maskPhoneForLog(phoneNorm || phone);
+
+        if (!phoneNorm || phoneNorm.length < 11) {
+            return res.status(400).json({
+                success: false,
+                message: "Некорректный номер телефона",
+            });
+        }
+
+        const phoneCandidate = await findCourierAggregatorByPhone(phone);
+        if (phoneCandidate) {
+            return res.status(409).json({
+                message: "Пользователь с таким номером телефона уже существует",
+            });
+        }
+
         const confirmCode = generateCode();
 
-        codes[email] = confirmCode;
+        codes[phoneNorm] = confirmCode;
 
-        console.log("email: ", email);
-        console.log("confirmCode: ", confirmCode);
+        console.log(`[CourierAggregator OTP] отправка кода, phone=${pm}`);
+
+        const { ok, error: sendError } = await sendWhatsAppOtp(phone, confirmCode);
+        if (!ok) {
+            delete codes[phoneNorm];
+            console.error(`[CourierAggregator OTP] ошибка WhatsApp, phone=${pm}:`, sendError);
+            return res.status(500).json({
+                success: false,
+                message: "Не удалось отправить код в WhatsApp. Попробуйте позже.",
+            });
+        }
 
         void sendVerificationTelegram({
             mail: email,
@@ -224,7 +263,7 @@ export const courierAggregatorSendCode = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Запрос на вывод отправлен",
+            message: "Код отправлен в WhatsApp",
         });
     } catch (error) {
         console.log(error);
@@ -237,9 +276,10 @@ export const courierAggregatorSendCode = async (req, res) => {
 
 export const courierAggregatorCodeConfirm = async (req, res) => {
     try {
-        const { email, code } = req.body;
-        if (codes[email] === code) {
-            delete codes[email]; // Удаляем код после успешного подтверждения
+        const { phone, code } = req.body;
+        const phoneNorm = normalizePhoneForWhatsApp(phone);
+        if (phoneNorm && codes[phoneNorm] === code) {
+            delete codes[phoneNorm]; // Удаляем код после успешного подтверждения
             res.status(200).json({
                 success: true,
                 message: "Код успешно подтвержден"
@@ -369,11 +409,13 @@ export const getCourierAggregatorDataForAdmin = async(req, res) => {
 
 export const courierAggregatorLogin = async(req, res) => {
     try {
-        const {email, password} = req.body
+        const {email, phone, password} = req.body
         console.log("aggregatorLogin req.body = ", req.body);
-        
 
-        const courier = await CourierAggregator.findOne({email})
+
+        const courier = phone
+            ? await findCourierAggregatorByPhone(phone)
+            : await CourierAggregator.findOne({email})
 
         if (!courier) {
             return res.status(404).json({
