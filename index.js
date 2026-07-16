@@ -483,6 +483,11 @@ app.post("/api/apipay/qr/create", ApiPayController.createQrInvoice);
 app.get("/api/apipay/qr/:id", ApiPayController.getQrInvoice);
 app.post("/api/apipay/qr/:id/cancel", ApiPayController.cancelQrInvoice);
 app.post("/api/apipay/qr/check", ApiPayController.checkQrInvoicesStatus);
+app.post(
+    "/getCourierQrInvoicesForSuperAdmin",
+    checkAuth,
+    ApiPayController.getCourierQrInvoicesForSuperAdmin
+);
 // /api/apipay/webhook зарегистрирован выше с express.raw()
 
 ///////BUSSINESSCENTER

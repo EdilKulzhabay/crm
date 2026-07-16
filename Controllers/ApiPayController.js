@@ -11,10 +11,14 @@
  */
 
 import "dotenv/config";
+import mongoose from "mongoose";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import Client from "../Models/Client.js";
 import ClientPayment from "../Models/ClientPayment.js";
 import Order from "../Models/Order.js";
+import Courier from "../Models/Courier.js";
+import CourierAggregator from "../Models/CourierAggregator.js";
+import User from "../Models/User.js";
 import { createClientOrderCore } from "./MobileController.js";
 import {
     createQrInvoice as apipayCreateQrInvoice,
@@ -266,6 +270,107 @@ export const checkQrInvoicesStatus = async (req, res) => {
         return res.json({ success: true, invoices: data?.invoices || [] });
     } catch (err) {
         console.error("[ApiPay] checkQrInvoicesStatus ERROR:", err?.message);
+        return res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка",
+        });
+    }
+};
+
+/**
+ * POST /getCourierQrInvoicesForSuperAdmin
+ * История QR-счетов (Kaspi Pay), сгенерированных курьерами при доставке заказа
+ * (ApiPayInvoice с заполненным order — в отличие от пополнений баланса клиентом, там order = null).
+ * Body: { startDate?, endDate?, status?, search? } — даты фильтруют по createdAt (дате создания QR).
+ */
+export const getCourierQrInvoicesForSuperAdmin = async (req, res) => {
+    try {
+        const admin = await User.findById(req.userId);
+        if (!admin || admin.role !== "superAdmin") {
+            return res.status(403).json({
+                success: false,
+                message: "Нет доступа",
+            });
+        }
+
+        const { startDate, endDate, status, search } = req.body || {};
+        const filter = { order: { $ne: null } };
+
+        if (startDate && endDate && String(startDate).length === 10 && String(endDate).length === 10) {
+            const start = new Date(`${startDate}T00:00:00.000`);
+            const end = new Date(`${endDate}T23:59:59.999`);
+            filter.createdAt = { $gte: start, $lte: end };
+        }
+
+        if (status && status !== "all") {
+            filter.status = status;
+        }
+
+        const q = search != null ? String(search).trim() : "";
+        if (q) {
+            const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const regex = new RegExp(escaped, "i");
+            const orderOrConditions = [{ "address.name": regex }, { "address.phone": regex }];
+            if (mongoose.Types.ObjectId.isValid(q)) {
+                orderOrConditions.push({ _id: new mongoose.Types.ObjectId(q) });
+            }
+            const [couriers, aggregators, matchedOrders] = await Promise.all([
+                Courier.find({ $or: [{ fullName: regex }, { phone: regex }] }).select("_id").lean(),
+                CourierAggregator.find({ $or: [{ fullName: regex }, { phone: regex }] }).select("_id").lean(),
+                Order.find({ $or: orderOrConditions }).select("_id").lean(),
+            ]);
+            const courierIds = couriers.map((c) => c._id);
+            const aggregatorIds = aggregators.map((c) => c._id);
+            const orders = await Order.find({
+                $or: [
+                    { courier: { $in: courierIds } },
+                    { courierAggregator: { $in: aggregatorIds } },
+                    { _id: { $in: matchedOrders.map((o) => o._id) } },
+                ],
+            }).select("_id").lean();
+            const orderIds = orders.map((o) => o._id);
+            if (orderIds.length === 0) {
+                return res.json({
+                    success: true,
+                    summary: { totalCount: 0, paidCount: 0, totalAmountPaid: 0 },
+                    invoices: [],
+                });
+            }
+            filter.order = { $in: orderIds };
+        }
+
+        const agg = await ApiPayInvoice.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: null,
+                    totalCount: { $sum: 1 },
+                    paidCount: { $sum: { $cond: [{ $eq: ["$status", "paid"] }, 1, 0] } },
+                    totalAmountPaid: {
+                        $sum: { $cond: [{ $eq: ["$status", "paid"] }, "$amount", 0] },
+                    },
+                },
+            },
+        ]);
+        const summary = agg[0] || { totalCount: 0, paidCount: 0, totalAmountPaid: 0 };
+
+        const invoices = await ApiPayInvoice.find(filter)
+            .sort({ createdAt: -1 })
+            .populate({
+                path: "order",
+                select: "address sum date courier courierAggregator client",
+                populate: [
+                    { path: "courier", select: "fullName phone" },
+                    { path: "courierAggregator", select: "fullName phone" },
+                    { path: "client", select: "fullName mail phone" },
+                ],
+            })
+            .limit(500)
+            .lean();
+
+        return res.json({ success: true, summary, invoices });
+    } catch (err) {
+        console.error("[ApiPay] getCourierQrInvoicesForSuperAdmin ERROR:", err?.message);
         return res.status(500).json({
             success: false,
             message: "Внутренняя ошибка",

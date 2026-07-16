@@ -76,6 +76,7 @@ import PaymentSuccess from "./Pages/PaymentSuccess";
 import PaymentError from "./Pages/PaymentError";
 import PaymentPage from "./Pages/PaymentPage";
 import SuperAdminPayments from "./Pages/SuperAdmin/SuperAdminPayments";
+import SuperAdminCourierQrPayments from "./Pages/SuperAdmin/SuperAdminCourierQrPayments";
 import SuperAdminInvoiceCounter from "./Pages/SuperAdmin/SuperAdminInvoiceCounter";
 import SuperAdminMobileOrderCutoff from "./Pages/SuperAdmin/SuperAdminMobileOrderCutoff";
 import DistributeOrders from "./Pages/DistributeOrders";
@@ -142,6 +143,7 @@ export const router = createBrowserRouter([
     { path: "/superAdminFaq", element: <SuperAdminFaq /> },
     { path: "/superAdminNotifications", element: <SuperAdminNotifications /> },
     { path: "/superAdminPayments", element: <SuperAdminPayments /> },
+    { path: "/superAdminCourierQrPayments", element: <SuperAdminCourierQrPayments /> },
     { path: "/superAdminInvoiceCounter", element: <SuperAdminInvoiceCounter /> },
     { path: "/superAdminMobileOrderCutoff", element: <SuperAdminMobileOrderCutoff /> },
     ////ADMINLINKS
