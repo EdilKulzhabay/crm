@@ -15,6 +15,7 @@ import {
     maskPhoneForLog,
     normalizePhoneForWhatsApp,
     phonesMatch,
+    buildPhoneSuffixRegex,
 } from "../whatsApp/sendRegistrationOtp.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
 import {
@@ -91,7 +92,7 @@ async function findClientByPhone(rawPhone) {
     if (!phoneNorm) return null;
     const last10 = phoneNorm.slice(-10);
     const candidates = await Client.find({
-        phone: { $regex: last10, $options: "i" },
+        phone: { $regex: buildPhoneSuffixRegex(last10), $options: "i" },
     }).limit(200);
     return candidates.find((c) => phonesMatch(c.phone, phoneNorm)) || null;
 }
@@ -99,7 +100,7 @@ async function findClientByPhone(rawPhone) {
 export const sendMail = async (req, res) => {
     const { mail, phone } = req.body;
 
-    if (!mail || !mail.includes("@")) {
+    if (mail && !mail.includes("@")) {
         console.log("[Reg OTP] sendMail: отклонено — неверный email");
         return res.status(400).json({
             success: false,
@@ -115,7 +116,7 @@ export const sendMail = async (req, res) => {
         });
     }
 
-    const normalizedMail = mail.toLowerCase();
+    const normalizedMail = mail ? mail.toLowerCase() : null;
     const phoneNorm = normalizePhoneForWhatsApp(phone);
     const pm = maskPhoneForLog(phoneNorm || phone);
     const em = maskEmailForLog(normalizedMail);
@@ -161,20 +162,22 @@ export const sendMail = async (req, res) => {
     console.log(`[Reg OTP] sendMail: блокировка отправки взята, phone=${pm}`);
 
     try {
-        const candidateMail = await Client.findOne({ mail: normalizedMail });
-        if (candidateMail) {
-            sendingInProgress.delete(phoneNorm);
-            console.log(
-                `[Reg OTP] sendMail: отклонено — почта уже занята, phone=${pm}, mail=${em}`
-            );
-            return res.status(409).json({
-                message: "Пользователь с такой почтой уже существует",
-            });
+        if (normalizedMail) {
+            const candidateMail = await Client.findOne({ mail: normalizedMail });
+            if (candidateMail) {
+                sendingInProgress.delete(phoneNorm);
+                console.log(
+                    `[Reg OTP] sendMail: отклонено — почта уже занята, phone=${pm}, mail=${em}`
+                );
+                return res.status(409).json({
+                    message: "Пользователь с такой почтой уже существует",
+                });
+            }
         }
 
         const last10 = phoneNorm.slice(-10);
         const candidates = await Client.find({
-            phone: { $regex: last10, $options: "i" },
+            phone: { $regex: buildPhoneSuffixRegex(last10), $options: "i" },
         })
             .select("phone")
             .limit(200)
@@ -769,7 +772,7 @@ export const clientRegister = async (req, res) => {
             userName,
             password: hash,
             phone,
-            mail: mail?.toLowerCase(),
+            mail: mail ? mail.toLowerCase() : undefined,
             cart: {
                 b12: 0,
                 b19: 0,

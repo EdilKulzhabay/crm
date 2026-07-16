@@ -9,6 +9,7 @@ export {
     maskPhoneForLog,
     normalizePhoneForWhatsApp,
     phonesMatch,
+    buildPhoneSuffixRegex,
 } from "./normalizePhone.js";
 
 /**

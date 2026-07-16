@@ -12,7 +12,7 @@ import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import CourierAggregatorIncomeLog from "../Models/CourierAggregatorIncomeLog.js";
 import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoice } from "../utils/apipay.js";
 import { sendWithdrawTelegram, sendVerificationTelegram } from "../telegram/sendSupport.js";
-import { normalizePhoneForWhatsApp, phonesMatch, maskPhoneForLog } from "../whatsApp/normalizePhone.js";
+import { normalizePhoneForWhatsApp, phonesMatch, maskPhoneForLog, buildPhoneSuffixRegex } from "../whatsApp/normalizePhone.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
 
 const transporter = nodemailer.createTransport({
@@ -158,7 +158,7 @@ async function findCourierAggregatorByPhone(rawPhone) {
     if (!phoneNorm) return null;
     const last10 = phoneNorm.slice(-10);
     const candidates = await CourierAggregator.find({
-        phone: { $regex: last10, $options: "i" },
+        phone: { $regex: buildPhoneSuffixRegex(last10), $options: "i" },
     }).limit(200);
     return candidates.find((c) => phonesMatch(c.phone, phoneNorm)) || null;
 }

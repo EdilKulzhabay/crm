@@ -41,3 +41,12 @@ export function phonesMatch(stored, normalizedTarget) {
     if (!a || !b) return false;
     return a === b;
 }
+
+/**
+ * Строит regex для поиска номера в БД independent от форматирования (пробелы/скобки/дефисы
+ * между цифрами: "+7 (747) 531-55-58" и т.п.) — между каждой цифрой допускаются любые
+ * не-цифровые символы, иначе прямой $regex по цифровой подстроке не находит отформатированные номера.
+ */
+export function buildPhoneSuffixRegex(digitsOnly) {
+    return String(digitsOnly).split("").join("\\D*");
+}
