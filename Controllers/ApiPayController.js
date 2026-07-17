@@ -314,17 +314,20 @@ export const getCourierQrInvoicesForSuperAdmin = async (req, res) => {
             if (mongoose.Types.ObjectId.isValid(q)) {
                 orderOrConditions.push({ _id: new mongoose.Types.ObjectId(q) });
             }
-            const [couriers, aggregators, matchedOrders] = await Promise.all([
+            const [couriers, aggregators, clients, matchedOrders] = await Promise.all([
                 Courier.find({ $or: [{ fullName: regex }, { phone: regex }] }).select("_id").lean(),
                 CourierAggregator.find({ $or: [{ fullName: regex }, { phone: regex }] }).select("_id").lean(),
+                Client.find({ $or: [{ fullName: regex }, { mail: regex }, { phone: regex }] }).select("_id").lean(),
                 Order.find({ $or: orderOrConditions }).select("_id").lean(),
             ]);
             const courierIds = couriers.map((c) => c._id);
             const aggregatorIds = aggregators.map((c) => c._id);
+            const clientIds = clients.map((c) => c._id);
             const orders = await Order.find({
                 $or: [
                     { courier: { $in: courierIds } },
                     { courierAggregator: { $in: aggregatorIds } },
+                    { client: { $in: clientIds } },
                     { _id: { $in: matchedOrders.map((o) => o._id) } },
                 ],
             }).select("_id").lean();

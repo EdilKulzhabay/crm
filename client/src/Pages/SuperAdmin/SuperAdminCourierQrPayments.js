@@ -195,7 +195,7 @@ export default function SuperAdminCourierQrPayments() {
                 <Div />
                 <Div>Фильтры:</Div>
                 <Div>
-                    <div>Поиск (курьер, телефон, адрес заказа, ID заказа):</div>
+                    <div>Поиск (курьер, клиент, почта, телефон, адрес заказа, ID заказа):</div>
                     <MyInput
                         color="white"
                         value={search}
