@@ -48,8 +48,6 @@ function isValidPendingOrderDraft(draft) {
     return (
         draft &&
         typeof draft === "object" &&
-        typeof draft.mail === "string" &&
-        draft.mail.trim().length > 0 &&
         draft.address &&
         typeof draft.address === "object" &&
         draft.products &&
@@ -741,7 +739,10 @@ async function completePendingOrderAfterTopUp(doc) {
     if (!claimed) return;
 
     try {
-        const result = await createClientOrderCore(doc.pendingOrderDraft);
+        const result = await createClientOrderCore({
+            ...doc.pendingOrderDraft,
+            clientId: doc.client,
+        });
         if (result.success) {
             console.log("[ApiPay] pending order auto-created after top-up:", {
                 apipayInvoiceId: doc.apipayInvoiceId,

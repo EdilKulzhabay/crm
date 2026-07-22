@@ -353,6 +353,10 @@ const CourierAggregatorSchema = new mongoose.Schema(
         price19: {
             type: Number,
             default: 0,
+        },
+        cardData: {
+            type: String,
+            default: "",
         }
     },
     {

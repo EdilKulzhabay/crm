@@ -86,6 +86,25 @@ const codes = {};
 const lastSentTime = {}; // Отслеживание времени последней отправки
 const sendingInProgress = new Set(); // Отслеживание отправок в процессе
 
+/**
+ * Телефоны, для которых codeConfirm только что подтвердил OTP-код.
+ * clientRegister обязан свериться с этим списком — иначе регистрацию можно
+ * пройти, вообще не подтверждая код (codeConfirm и clientRegister раньше не
+ * были никак связаны между собой).
+ */
+const verifiedPhones = {};
+const PHONE_VERIFICATION_TTL_MS = 15 * 60 * 1000; // 15 минут на завершение регистрации после подтверждения кода
+
+function isPhoneRecentlyVerified(phoneNorm) {
+    const verifiedAt = verifiedPhones[phoneNorm];
+    if (!verifiedAt) return false;
+    if (Date.now() - verifiedAt > PHONE_VERIFICATION_TTL_MS) {
+        delete verifiedPhones[phoneNorm];
+        return false;
+    }
+    return true;
+}
+
 /** Ищет клиента по телефону (номера в БД хранятся в разном форматировании — сверяем по последним 10 цифрам + нормализации) */
 async function findClientByPhone(rawPhone) {
     const phoneNorm = normalizePhoneForWhatsApp(rawPhone);
@@ -618,6 +637,7 @@ export const codeConfirm = async (req, res) => {
             console.log("codeConfirm code is correct");
             delete codes[phoneNorm];
             delete lastSentTime[phoneNorm];
+            verifiedPhones[phoneNorm] = Date.now();
             res.status(200).json({
                 success: true,
                 message: "Код успешно подтвержден",
@@ -726,15 +746,31 @@ export const createTestAccount = async (req, res) => {
 export const clientRegister = async (req, res) => {
     try {
         const { userName, phone, mail, referralCode: referralCodeRaw } = req.body;
-        const superAdmin = await User.findOne({ role: "superAdmin" });
-        const candidate = await Client.findOne({ phone });
 
-        // if (candidate) {
-        //     return res.status(409).json({
-        //         success: false,
-        //         message: "Пользователь с таким номером уже существует",
-        //     });
-        // }
+        const phoneNorm = normalizePhoneForWhatsApp(phone);
+        if (!phoneNorm || phoneNorm.length < 11) {
+            return res.status(400).json({
+                success: false,
+                message: "Некорректный номер телефона",
+            });
+        }
+
+        if (!isPhoneRecentlyVerified(phoneNorm)) {
+            return res.status(400).json({
+                success: false,
+                message: "Телефон не подтверждён кодом из WhatsApp. Запросите код заново.",
+            });
+        }
+
+        const superAdmin = await User.findOne({ role: "superAdmin" });
+        const candidate = await findClientByPhone(phone);
+
+        if (candidate) {
+            return res.status(409).json({
+                success: false,
+                message: "Пользователь с таким номером уже существует",
+            });
+        }
 
         let referredById = null;
         let signupBalance = 0;
@@ -789,6 +825,7 @@ export const clientRegister = async (req, res) => {
         });
 
         const client = await doc.save();
+        delete verifiedPhones[phoneNorm];
 
         const accessToken = jwt.sign(
             { client: client._id },
@@ -962,8 +999,8 @@ export const clientLogin = async (req, res) => {
  */
 export const generateInvoicePdfMobile = async (req, res) => {
     try {
-        const { mail, qty19: q19raw, qty12: q12raw } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId, qty19: q19raw, qty12: q12raw } = req.body;
+        const client = await Client.findById(clientId);
         if (!client) {
             return res.status(404).json({ success: false, message: "Клиент не найден" });
         }
@@ -1036,10 +1073,10 @@ export const generateInvoicePdfMobile = async (req, res) => {
 
 export const updateClientDataMobile = async (req, res) => {
     try {
-        const { mail, field, value } = req.body;
+        const { clientId, field, value } = req.body;
         console.log("updateClientDataMobile req.body: ", req.body);
 
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const client = await Client.findById(clientId);
         if (!client) {
             return res
                 .status(404)
@@ -1148,9 +1185,9 @@ export const logOutClient = async (req, res) => {
 
 export const addClientAddress = async (req, res) => {
     try {
-        const { mail, name, city, street, house, link } = req.body;
+        const { clientId, name, city, street, house, link } = req.body;
 
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const client = await Client.findById(clientId);
 
         const addressesLenght = client?.addresses?.length
 
@@ -1179,8 +1216,8 @@ export const addClientAddress = async (req, res) => {
 
 export const saveFcmToken = async (req, res) => {
     try {
-        const { mail, fcmToken } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId, fcmToken } = req.body;
+        const client = await Client.findById(clientId);
         if (!client) {
             return res.status(404).json({
                 message: "Клиент не найден",
@@ -1204,11 +1241,11 @@ export const saveFcmToken = async (req, res) => {
 
 export const removeFcmToken = async (req, res) => {
     try {
-        const { mail, fcmToken } = req.body;
-        if (!mail || !fcmToken) {
-            return res.status(400).json({ message: "mail и fcmToken обязательны" });
+        const { clientId, fcmToken } = req.body;
+        if (!clientId || !fcmToken) {
+            return res.status(400).json({ message: "clientId и fcmToken обязательны" });
         }
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const client = await Client.findById(clientId);
         if (!client) {
             return res.status(404).json({ message: "Клиент не найден" });
         }
@@ -1231,8 +1268,8 @@ export const removeFcmToken = async (req, res) => {
 
 export const testNotification = async (req, res) => {
     try {
-        const { mail, fcmToken } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId, fcmToken } = req.body;
+        const client = await Client.findById(clientId);
 
         const order = await Order.findOne({ client: client._id });
 
@@ -1263,13 +1300,11 @@ export const testNotification = async (req, res) => {
 
 export const updateClientAddress = async (req, res) => {
     try {
-        const { mail, _id, name, street, house, link, phone } = req.body;
+        const { clientId, _id, name, street, house, link, phone } = req.body;
 
         console.log("updateClientAddress", req.body);
-        
 
-        // Найти клиента по email
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const client = await Client.findById(clientId);
 
         if (!client) {
             return res.status(404).json({
@@ -1315,9 +1350,9 @@ export const updateClientAddress = async (req, res) => {
 
 export const getClientAddresses = async (req, res) => {
     try {
-        const { mail } = req.body;
+        const { clientId } = req.body;
 
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const client = await Client.findById(clientId);
 
         const addresses = client.addresses;
 
@@ -1343,7 +1378,7 @@ export const getClientAddresses = async (req, res) => {
  * на одном и том же значении — расхождение между ними невозможно.
  */
 export async function createClientOrderCore({
-    mail,
+    clientId,
     address,
     products,
     clientNotes,
@@ -1353,7 +1388,7 @@ export async function createClientOrderCore({
     comment,
     notificationToken,
 }) {
-    const client = await Client.findOne({ mail: mail?.toLowerCase() });
+    const client = await Client.findById(clientId);
 
     if (!client) {
         return { success: false, status: 404, message: "Не удалось найти клиента" };
@@ -1472,10 +1507,10 @@ export async function createClientOrderCore({
 
 export const addOrderClientMobile = async (req, res) => {
     try {
-        const {mail, address, products, clientNotes, date, opForm, needCall, comment, notificationToken} = req.body
+        const {clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken} = req.body
 
         const result = await createClientOrderCore({
-            mail, address, products, clientNotes, date, opForm, needCall, comment, notificationToken,
+            clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken,
         });
 
         if (!result.success) {
@@ -1569,9 +1604,9 @@ export const addOrderClientMobile = async (req, res) => {
 
 export const getActiveOrdersMobile = async (req, res) => {
     try {
-        const {mail} = req.body;
+        const {clientId} = req.body;
 
-        const client = await Client.findOne({mail});
+        const client = await Client.findById(clientId);
 
         const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } })
             .sort({ createdAt: -1 })
@@ -1595,9 +1630,9 @@ export const getActiveOrdersMobile = async (req, res) => {
 
 export const getClientOrdersMobile = async (req, res) => {
     try {
-        const {mail} = req.body
+        const {clientId} = req.body
 
-        const client = await Client.findOne({mail})
+        const client = await Client.findById(clientId)
 
         const orders = await Order.find({client: client._id})
             .sort({ createdAt: -1 })
@@ -1629,11 +1664,11 @@ export const getCourierLocation = async (req, res) => {
 
 export const getClientDataMobile = async (req, res) => {
     try {
-        const { mail } = req.body;
-        let client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId } = req.body;
+        let client = clientId ? await Client.findById(clientId) : null;
         if (client) {
             await ensureReferralCodeForClient(client);
-            client = await Client.findOne({ mail: mail?.toLowerCase() });
+            client = await Client.findById(clientId);
         }
         if (!client) {
             return res.json({ client: null });
@@ -1657,8 +1692,8 @@ export const getClientDataMobile = async (req, res) => {
 
 export const deleteClientMobile = async (req, res) => {
     try {
-        const { mail } = req.body;
-        await Client.findOneAndDelete({ mail: mail?.toLowerCase() });
+        const { clientId } = req.body;
+        await Client.findByIdAndDelete(clientId);
         res.json({
             success: true,
             message: "Клиент успешно удален",
@@ -1674,21 +1709,21 @@ export const deleteClientMobile = async (req, res) => {
 
 export const sendSupportMessage = async (req, res) => {
     try {
-        const { mail, message } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId, message } = req.body;
+        const client = await Client.findById(clientId);
         if (!client) {
             return res.status(404).json({
                 success: false,
                 message: "Клиент не найден",
             });
         }
-        
+
         const { _id, ...newMessage } = message;
 
         client.supportMessages.push(newMessage);
         await client.save();
 
-        const updatedClient = await Client.findOne({ mail: mail?.toLowerCase() });
+        const updatedClient = await Client.findById(clientId);
 
         const messages = updatedClient.supportMessages;
 
@@ -1730,8 +1765,8 @@ export const sendSupportMessage = async (req, res) => {
 
 export const getSupportMessages = async (req, res) => {
     try {
-        const { mail } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId } = req.body;
+        const client = await Client.findById(clientId);
         if (!client) {
             return res.status(404).json({
                 success: false,
@@ -1752,8 +1787,8 @@ export const getSupportMessages = async (req, res) => {
 
 export const replyToSupportMessage = async (req, res) => {
     try {
-        const { mail, message } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId, message } = req.body;
+        const client = await Client.findById(clientId);
         if (!client) {
             return res.status(404).json({
                 success: false,
@@ -1855,8 +1890,8 @@ export const updateOrderDataMobile = async (req, res) => {
 
 export const getLastOrderMobile = async (req, res) => {
     try {
-        const { mail } = req.body;
-        const client = await Client.findOne({ mail: mail?.toLowerCase() });
+        const { clientId } = req.body;
+        const client = await Client.findById(clientId);
         const order = await Order.findOne({ client: client._id }).sort({ createdAt: -1 });
         if (!order) {
             return res.json({

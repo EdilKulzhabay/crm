@@ -52,7 +52,7 @@ export default function SupportChat() {
             timestamp: new Date().toISOString(),
             isRead: false,
         }
-        api.post(`/replyToSupportMessage`, { mail: client?.mail, message: messageData }, {
+        api.post(`/replyToSupportMessage`, { clientId: client?._id, message: messageData }, {
             headers: { "Content-Type": "application/json" },
         }).then(({ data }) => {
             if (data.success) {

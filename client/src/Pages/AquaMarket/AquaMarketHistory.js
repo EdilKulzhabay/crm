@@ -37,6 +37,26 @@ export default function AquaMarketHistory() {
     const [editFull, setEditFull] = useState({ b12: '', b19: '' });
     const [editEmpty, setEditEmpty] = useState({ b12: '', b19: '' });
 
+    const historySummary = history.reduce((acc, item) => {
+        const b12 = Number(item?.bottles?.b12) || 0;
+        const b19 = Number(item?.bottles?.b19) || 0;
+        if (item?.actionType === "giving") {
+            acc.giving.b12 += b12;
+            acc.giving.b19 += b19;
+        } else if (item?.actionType === "receiving") {
+            acc.receiving.b12 += b12;
+            acc.receiving.b19 += b19;
+        } else if (item?.actionType === "fill") {
+            acc.fill.b12 += b12;
+            acc.fill.b19 += b19;
+        }
+        return acc;
+    }, {
+        giving: { b12: 0, b19: 0 },
+        receiving: { b12: 0, b19: 0 },
+        fill: { b12: 0, b19: 0 },
+    });
+
     const getHistory = async () => {
         api.post("/getAquaMarketHistory", { aquaMarketId, startDate, endDate }, {
             headers: { "Content-Type": "application/json" },
@@ -246,6 +266,13 @@ export default function AquaMarketHistory() {
                 <MyButton click={getHistory}>Применить</MyButton>
             </Div>
             <Div />
+
+            <Div>Итоги за период</Div>
+            <Li>Отдано курьерам: 12,5 л — <Info>{historySummary.giving.b12}</Info>, 18,9 л — <Info>{historySummary.giving.b19}</Info></Li>
+            <Li>Принято от курьеров: 12,5 л — <Info>{historySummary.receiving.b12}</Info>, 18,9 л — <Info>{historySummary.receiving.b19}</Info></Li>
+            <Li>Заполнено: 12,5 л — <Info>{historySummary.fill.b12}</Info>, 18,9 л — <Info>{historySummary.fill.b19}</Info></Li>
+            <Div />
+
             {history.length > 0 && history.map((item) => (
                 <div key={item?._id}>
                     <Div>{item?.actionType === "giving" ? "Отдача" : item?.actionType === "receiving" ? "Прием" : "Заполнение"}</Div>

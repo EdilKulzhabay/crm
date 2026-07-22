@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import Container from "../Components/Container";
 import Div from "../Components/Div";
@@ -49,6 +49,7 @@ export default function CourierAggregatorPage() {
     const scrollPosition = useScrollPosition();
     const userData = useFetchUserData()
     const { id } = useParams();
+    const navigate = useNavigate();
     const [courier, setCourier] = useState(null);
     const [completedOrders, setCompletedOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -69,6 +70,8 @@ export default function CourierAggregatorPage() {
     const [editingLogId, setEditingLogId] = useState(null);
     const [editingOpForm, setEditingOpForm] = useState("");
     const [incomeLogActionMsg, setIncomeLogActionMsg] = useState(null);
+    const [cardData, setCardData] = useState("");
+    const [deleting, setDeleting] = useState(false);
 
     const closeFranchiseeModal = () => {
         setFranchiseesModal(false);
@@ -96,6 +99,7 @@ export default function CourierAggregatorPage() {
             setPrice12(data.userData.price12);
             setPrice19(data.userData.price19);
             setIncome(data.userData.income || 0);
+            setCardData(data.userData.cardData || "");
         } catch (error) {
             console.error("Ошибка при загрузке данных курьера:", error);
         }
@@ -216,7 +220,29 @@ export default function CourierAggregatorPage() {
             setPasswordMsg({ ok: false, text: "Ошибка при смене пароля" });
         }
     };
-    
+
+    const handleDeleteCourier = async () => {
+        if (deleting) return;
+        if (!window.confirm("Удалить курьера? Это действие нельзя отменить.")) {
+            return;
+        }
+        setDeleting(true);
+        try {
+            const { data } = await api.post("/deleteCourierAggregator", { courierId: id }, {
+                headers: { "Content-Type": "application/json" },
+            });
+            if (data.success) {
+                navigate("/aggregator");
+            } else {
+                setDeleting(false);
+                window.alert(data.message || "Не удалось удалить курьера");
+            }
+        } catch {
+            setDeleting(false);
+            window.alert("Ошибка при удалении курьера");
+        }
+    };
+
 
     useEffect(() => {
         loadCourierData();
@@ -707,6 +733,33 @@ export default function CourierAggregatorPage() {
                         )}
                     </div>
                 </div>
+            </Li>
+            <Div />
+
+            <Div className="text-xl font-bold">Данные карты</Div>
+            <Li>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <MyInput
+                        value={cardData}
+                        change={(e) => setCardData(e.target.value)}
+                        color="white"
+                    />
+                    <MyButton
+                        click={() => {
+                            updateCourierAggregatorData(id, "cardData", cardData)
+                        }}
+                    >
+                        Сохранить
+                    </MyButton>
+                </div>
+            </Li>
+            <Div />
+
+            <Div className="text-xl font-bold">Удаление курьера</Div>
+            <Li>
+                <MyButton click={handleDeleteCourier}>
+                    {deleting ? "Удаление..." : "Удалить курьера"}
+                </MyButton>
             </Li>
             <Div />
         </Container>
