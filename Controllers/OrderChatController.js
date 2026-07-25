@@ -12,10 +12,6 @@ export const sendMessageAsClient = async (req, res) => {
             return res.status(404).json({ success: false, message: "Заказ не найден" });
         }
 
-        if (!order.client || order.client.toString() !== req.userId) {
-            return res.status(403).json({ success: false, message: "Нет доступа" });
-        }
-
         const newMessage = {
             text,
             sender: "client",
@@ -53,10 +49,6 @@ export const getMessagesAsClient = async (req, res) => {
             return res.status(404).json({ success: false, message: "Заказ не найден" });
         }
 
-        if (!order.client || order.client.toString() !== req.userId) {
-            return res.status(403).json({ success: false, message: "Нет доступа" });
-        }
-
         res.json({ success: true, messages: order.chatMessages });
     } catch (error) {
         console.log(error);
@@ -77,11 +69,15 @@ export const sendMessageAsCourier = async (req, res) => {
             return res.status(403).json({ success: false, message: "Нет доступа" });
         }
 
+        const courierAggregator = await CourierAggregator.findById(req.userId);
+
         const newMessage = {
             text,
             sender: "courier",
             timestamp: new Date().toISOString(),
             isRead: false,
+            courierId: courierAggregator?._id || null,
+            courierFullName: courierAggregator?.fullName || "",
         };
 
         order.chatMessages.push(newMessage);

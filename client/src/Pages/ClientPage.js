@@ -16,6 +16,12 @@ import useFetchUserData from "../customHooks/useFetchUserData";
 import DataInput from "../Components/DataInput";
 import Li2 from "../Components/Li2";
 
+const OPERATION_LOG_FIELD_LABELS = {
+    balance: "Баланс",
+    paidBootlesFor12: "Оплаченные талоны 12-литровых бутылей",
+    paidBootlesFor19: "Оплаченные талоны 19-литровых бутылей",
+};
+
 const getCurrentDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -61,10 +67,15 @@ export default function ClientPage() {
     const [balance, setBalance] = useState(0)
     const [secretCode, setSecretCode] = useState("")
     const [updateBalanceModal, setUpdateBalanceModal] = useState(false)
+    const [changedBy, setChangedBy] = useState("")
+    const [changeReason, setChangeReason] = useState("")
+    const [operationLog, setOperationLog] = useState([])
 
     const [needVerification, setNeedVerification] = useState(false)
 
     const [invLegal, setInvLegal] = useState("")
+
+    const [notes, setNotes] = useState("")
 
     const closeSnack = () => {
         setOpen(false);
@@ -319,6 +330,23 @@ export default function ClientPage() {
                         setInvLegal("")
                     }
                 }
+                setNotes(typeof data?.notes === "string" ? data.notes : "")
+            })
+            .catch((e) => {
+                console.log(e);
+            });
+    };
+
+    const getOperationLog = () => {
+        api.post(
+            "/getClientOperationLog",
+            { clientId: id },
+            { headers: { "Content-Type": "application/json" } }
+        )
+            .then(({ data }) => {
+                if (data.success) {
+                    setOperationLog(data.logs || []);
+                }
             })
             .catch((e) => {
                 console.log(e);
@@ -327,6 +355,7 @@ export default function ClientPage() {
 
     useEffect(() => {
         getClientData();
+        getOperationLog();
     }, []);
 
     const deleteAdress = (id) => {
@@ -373,7 +402,7 @@ export default function ClientPage() {
             });
     }
 
-    const updateClientData = (field, value) => {
+    const updateClientData = (field, value, extra = {}) => {
         let field2 = field
         if (field === "addresses") {
             const sendAddress = {
@@ -399,7 +428,7 @@ export default function ClientPage() {
 
         api.post(
             "/updateClientData",
-            { clientId: client._id, field: field2, value },
+            { clientId: client._id, field: field2, value, ...extra },
             {
                 headers: { "Content-Type": "application/json" },
             }
@@ -413,11 +442,15 @@ export default function ClientPage() {
                     setStatus("success");
                     setMessage(data.message);
                     getClientData(); // обновляем данные клиента после успешного обновления
+                    getOperationLog();
                     setSelectAddress(null)
                 }
             })
             .catch((e) => {
                 console.log(e);
+                setOpen(true);
+                setStatus("error");
+                setMessage(e?.response?.data?.message || "Не удалось изменить данные");
             });
     };
 
@@ -585,8 +618,8 @@ export default function ClientPage() {
                 scrollPosition={scrollPosition}
                 add={true}
             />}
-            {updatePaidBottlesModal && 
-                <div 
+            {updatePaidBottlesModal &&
+                <div
                     onClick={() => {
                         setUpdatePaidBottlesModal(false)
                     }}
@@ -594,7 +627,7 @@ export default function ClientPage() {
                     style={{ minHeight: scrollPosition }} >
                     <div
                         className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-80"
-                        style={{ top: scrollPosition + 50 }} 
+                        style={{ top: scrollPosition + 50 }}
                     >
                         <div
                             onClick={(e) => {
@@ -602,33 +635,54 @@ export default function ClientPage() {
                             }}
                             className="relative px-8 py-4 border border-red rounded-md"
                         >
-                            <div>
+                            <div className="flex flex-col gap-y-2">
+                                <div className="text-white text-sm">Код подтверждения:</div>
                                 <MyInput
                                     value={secretCode}
                                     change={(e) => {setSecretCode(e.target.value)}}
                                     color="white"
                                 />
+                                <div className="text-white text-sm">Кто вносит изменение:</div>
+                                <MyInput
+                                    value={changedBy}
+                                    change={(e) => {setChangedBy(e.target.value)}}
+                                    color="white"
+                                />
+                                <div className="text-white text-sm">Причина изменения:</div>
+                                <MyInput
+                                    value={changeReason}
+                                    change={(e) => {setChangeReason(e.target.value)}}
+                                    color="white"
+                                />
                                 <MyButton click={() => {
-                                    if (secretCode === process.env.REACT_APP_SECRET_CODE) {
-                                        setUpdatePaidBottlesModal(false)
-                                        updateClientData("paidBootlesFor19", paidBootlesFor19)
-                                        updateClientData("paidBootlesFor12", paidBootlesFor12)
-                                        updateClientData("paymentMethod", "coupon")
-                                        setSecretCode("")
-                                    } else {
+                                    if (secretCode !== process.env.REACT_APP_SECRET_CODE) {
                                         setOpen(true);
                                         setStatus("error");
                                         setMessage("Неверный код");
                                         setSecretCode("")
+                                        return
                                     }
+                                    if (!changedBy.trim() || !changeReason.trim()) {
+                                        setOpen(true);
+                                        setStatus("error");
+                                        setMessage("Укажите, кто вносит изменение и по какой причине");
+                                        return
+                                    }
+                                    setUpdatePaidBottlesModal(false)
+                                    updateClientData("paidBootlesFor19", paidBootlesFor19, { changedBy, reason: changeReason })
+                                    updateClientData("paidBootlesFor12", paidBootlesFor12, { changedBy, reason: changeReason })
+                                    updateClientData("paymentMethod", "coupon")
+                                    setSecretCode("")
+                                    setChangedBy("")
+                                    setChangeReason("")
                                 }}>Подтвердить</MyButton>
                             </div>
                         </div>
                     </div>
                 </div>
             }
-            {updateBalanceModal && 
-                <div 
+            {updateBalanceModal &&
+                <div
                     onClick={() => {
                         setUpdateBalanceModal(false)
                     }}
@@ -636,7 +690,7 @@ export default function ClientPage() {
                     style={{ minHeight: scrollPosition }} >
                     <div
                         className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-80"
-                        style={{ top: scrollPosition + 50 }} 
+                        style={{ top: scrollPosition + 50 }}
                     >
                         <div
                             onClick={(e) => {
@@ -644,23 +698,44 @@ export default function ClientPage() {
                             }}
                             className="relative px-8 py-4 border border-red rounded-md"
                         >
-                            <div>
+                            <div className="flex flex-col gap-y-2">
+                                <div className="text-white text-sm">Код подтверждения:</div>
                                 <MyInput
                                     value={secretCode}
                                     change={(e) => {setSecretCode(e.target.value)}}
                                     color="white"
                                 />
+                                <div className="text-white text-sm">Кто вносит изменение:</div>
+                                <MyInput
+                                    value={changedBy}
+                                    change={(e) => {setChangedBy(e.target.value)}}
+                                    color="white"
+                                />
+                                <div className="text-white text-sm">Причина изменения:</div>
+                                <MyInput
+                                    value={changeReason}
+                                    change={(e) => {setChangeReason(e.target.value)}}
+                                    color="white"
+                                />
                                 <MyButton click={() => {
-                                    if (secretCode === process.env.REACT_APP_SECRET_CODE) {
-                                        setUpdateBalanceModal(false)
-                                        updateClientData("balance", balance)
-                                        setSecretCode("")
-                                    } else {
+                                    if (secretCode !== process.env.REACT_APP_SECRET_CODE) {
                                         setOpen(true);
                                         setStatus("error");
                                         setMessage("Неверный код");
                                         setSecretCode("")
+                                        return
                                     }
+                                    if (!changedBy.trim() || !changeReason.trim()) {
+                                        setOpen(true);
+                                        setStatus("error");
+                                        setMessage("Укажите, кто вносит изменение и по какой причине");
+                                        return
+                                    }
+                                    setUpdateBalanceModal(false)
+                                    updateClientData("balance", balance, { changedBy, reason: changeReason })
+                                    setSecretCode("")
+                                    setChangedBy("")
+                                    setChangeReason("")
                                 }}>Подтвердить</MyButton>
                             </div>
                         </div>
@@ -868,11 +943,30 @@ export default function ClientPage() {
                     </Li>
                     <Li>
                         <div>Метод оплаты: {client?.paymentMethod === "balance" ? "Баланс" : "Талоны"}</div>
-                        <div className="text-green-400 flex items-center gap-x-3">
+                        <div className="text-yellow-400 flex items-center gap-x-3">
                             [
-                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "balance")}}>Баланс</button> /
-                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "coupon")}}>Талоны</button>
+                                <button className="text-yellow-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "balance")}}>Баланс</button> /
+                                <button className="text-yellow-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "coupon")}}>Талоны</button>
                             ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Журнал операций (баланс / талоны):</div>
+                        <div className="flex flex-col gap-y-2 text-sm">
+                            {operationLog.length === 0 && (
+                                <div className="text-gray-400">Изменений не было</div>
+                            )}
+                            {operationLog.map((entry) => (
+                                <div key={entry._id} className="border-b border-gray-700 pb-1">
+                                    <div>
+                                        {new Date(entry.createdAt).toLocaleString('ru-RU')} — {entry.changedBy}
+                                    </div>
+                                    <div>
+                                        {OPERATION_LOG_FIELD_LABELS[entry.field] || entry.field}: {String(entry.oldValue ?? "—")} → {String(entry.newValue ?? "—")}
+                                    </div>
+                                    <div className="text-gray-400">Причина: {entry.reason}</div>
+                                </div>
+                            ))}
                         </div>
                     </Li>
                     <Li>
@@ -1407,6 +1501,16 @@ export default function ClientPage() {
                     <div className="flex flex-col gap-y-2">
                     <textarea size={13} style={{ fontSize: '16px' }} value={invLegal} onChange={(e) => {setInvLegal(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
                         <MyButton click={() => { updateClientData("invoiceLegalData", invLegal) }}>Сохранить юр. данные</MyButton>
+                    </div>
+                </Li>
+                <Div />
+                <Div>
+                    Заметки:
+                </Div>
+                <Li>
+                    <div className="flex flex-col gap-y-2">
+                    <textarea size={13} style={{ fontSize: '16px' }} value={notes} onChange={(e) => {setNotes(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
+                        <MyButton click={() => { updateClientData("notes", notes) }}>Сохранить заметки</MyButton>
                     </div>
                 </Li>
 

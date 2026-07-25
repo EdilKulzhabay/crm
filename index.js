@@ -261,6 +261,7 @@ app.post("/deleteClientAdmin", ClientController.deleteClientAdmin);
 app.post("/getClientDataForId", ClientController.getClientDataForId);
 app.post("/deleteClientAdress", ClientController.deleteClientAdress);
 app.post("/updateClientData", ClientController.updateClientData);
+app.post("/getClientOperationLog", ClientController.getClientOperationLog);
 app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
 app.post("/getClientsForExcel", checkAuth, ClientController.getClientsForExcel);
 app.post("/getNotVerifyClients", ClientController.getNotVerifyClients);
@@ -317,8 +318,8 @@ app.post("/getCompletedOrders", checkAuth, OrderController.getCompletedOrders)
 app.post("/deleteOrder", checkAuth, OrderController.deleteOrder)
 app.post("/getOrdersForAggregator", OrderController.getOrdersForAggregator)
 app.get("/fixRinat", OrderController.fixRinat)
-app.post("/sendOrderChatMessage", checkAuth, OrderChatController.sendMessageAsClient);
-app.post("/getOrderChatMessages", checkAuth, OrderChatController.getMessagesAsClient);
+app.post("/sendOrderChatMessage", OrderChatController.sendMessageAsClient);
+app.post("/getOrderChatMessages", OrderChatController.getMessagesAsClient);
 app.post("/getCancelledOrders", OrderController.getCancelledOrders)
 app.get("/getCancelledOrdersCount", OrderController.getCancelledOrdersCount)
 app.get("/getResultForToday", OrderController.getResultForToday)

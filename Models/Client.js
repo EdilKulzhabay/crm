@@ -290,6 +290,11 @@ const ClientSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        /** Произвольные заметки менеджера по клиенту */
+        notes: {
+            type: String,
+            default: "",
+        },
     },
     {
         timestamps: true,

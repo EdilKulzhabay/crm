@@ -758,13 +758,25 @@ export default function SuperAdminAggregatorAction() {
                     </Marker>
 
                     <Marker
-                        position={[43.229749, 76.869631]}
+                        position={[43.235778, 76.866585]}
                         icon={createStarIcon()}
                     >
                         <Popup>
                             <div>
                                 <strong>Аквамаркет</strong><br />
-                                Координаты: 43.229749°N, 76.869631°E
+                                Координаты: 43.235778°N, 76.866585°E
+                            </div>
+                        </Popup>
+                    </Marker>
+
+                    <Marker
+                        position={[43.23933, 76.890709]}
+                        icon={createStarIcon()}
+                    >
+                        <Popup>
+                            <div>
+                                <strong>Аквамаркет</strong><br />
+                                Координаты: 43.23933°N, 76.890709°E
                             </div>
                         </Popup>
                     </Marker>
@@ -788,6 +800,10 @@ export default function SuperAdminAggregatorAction() {
                                     Статус: {order.status}<br />
                                     Форма оплаты: {opForm}<br />
                                     Тип клиента: {clientType ? 'Физ лицо' : 'Юр лицо'}<br />
+                                    Время заказа: {order?.createdAt ? (() => {
+                                        const ms = new Date(order.createdAt).getTime();
+                                        return Number.isNaN(ms) ? "—" : new Date(ms + 5 * 60 * 1000).toLocaleString('ru-RU');
+                                    })() : ""}<br />
                                     {order.date?.time && order.date.time !== "" && (
                                         <><strong>Время доставки: {order.date.time}</strong><br /></>
                                     )}

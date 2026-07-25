@@ -629,7 +629,7 @@ export default function OrderPage() {
                         </div>
                     </div>
                 </Div>
-                {userData?.role === "superAdmin" && orderStatus === "delivered" && <>
+                {userData?.role === "superAdmin" && <>
                     <Div>
                         Время заказа: {order?.createdAt ? (() => {
                             const ms = new Date(order.createdAt).getTime();
@@ -734,6 +734,28 @@ export default function OrderPage() {
                         </div>
                     </Div>
                 </>}
+
+                <Div />
+                <Div>История чата:</Div>
+                {(order?.chatMessages || []).length === 0 && (
+                    <Li>Сообщений нет</Li>
+                )}
+                {(order?.chatMessages || []).map((msg, index) => (
+                    <Li key={msg._id || index}>
+                        <div className="flex flex-col">
+                            <div className={clsx("text-sm", {
+                                "text-blue-400": msg.sender === "client",
+                                "text-green-400": msg.sender === "courier"
+                            })}>
+                                {msg.sender === "client" ? "Клиент" : (msg.courierFullName || "Курьер")}
+                                {" — "}
+                                {msg.timestamp ? new Date(msg.timestamp).toLocaleString('ru-RU') : ""}
+                            </div>
+                            <div>{msg.text}</div>
+                        </div>
+                    </Li>
+                ))}
+
                 <Div />
                 <MySnackBar
                     open={open}

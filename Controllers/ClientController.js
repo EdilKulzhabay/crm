@@ -2,9 +2,13 @@ import Client from "../Models/Client.js";
 import Notification from "../Models/Notification.js";
 import Order from "../Models/Order.js";
 import User from "../Models/User.js";
+import ClientOperationLog from "../Models/ClientOperationLog.js";
 import axios from "axios"
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
+
+/** Поля, изменение которых через CRM требует указания "кто" и "зачем" и пишется в журнал операций */
+const MANUAL_LOGGED_FIELDS = ["balance", "paidBootlesFor12", "paidBootlesFor19"];
 
 export const addClient = async (req, res) => {
     try {
@@ -370,8 +374,8 @@ export const deleteClientAdress = async (req, res) => {
 
 export const updateClientData = async (req, res) => {
     try {
-        const { clientId, field, value } = req.body;
-    
+        const { clientId, field, value, changedBy, reason } = req.body;
+
         // Находим текущего клиента
         const client = await Client.findById(clientId);
         if (!client) {
@@ -387,7 +391,17 @@ export const updateClientData = async (req, res) => {
                     "Порядковый номер счёта задаётся глобально: Суперадмин → «Номер следующего счёта».",
             });
         }
-  
+
+        const trimmedChangedBy = typeof changedBy === "string" ? changedBy.trim() : "";
+        const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+        if (MANUAL_LOGGED_FIELDS.includes(field) && (!trimmedChangedBy || !trimmedReason)) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите, кто вносит изменение и по какой причине.",
+            });
+        }
+        const oldValue = client[field];
+
         // Обновляем поле клиента
         if (field !== "status") {
             client.verify.status = "waitingVerification"
@@ -471,9 +485,34 @@ export const updateClientData = async (req, res) => {
             }
         } else {
             await client.save();
+            if (MANUAL_LOGGED_FIELDS.includes(field)) {
+                await ClientOperationLog.create({
+                    client: client._id,
+                    field,
+                    oldValue,
+                    newValue: client[field],
+                    changedBy: trimmedChangedBy,
+                    reason: trimmedReason,
+                });
+            }
         }
 
         res.json({ success: true, message: "Данные успешно изменены" });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
+export const getClientOperationLog = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+
+        const logs = await ClientOperationLog.find({ client: clientId }).sort({ createdAt: -1 });
+
+        res.json({ success: true, logs });
     } catch (error) {
         console.log(error);
         res.status(500).json({

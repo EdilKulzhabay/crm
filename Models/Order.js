@@ -163,6 +163,16 @@ const OrderSchema = new mongoose.Schema(
                 type: Boolean,
                 default: false,
             },
+            /** Заполняется только для sender === "courier" */
+            courierId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "CourierAggregator",
+                default: null,
+            },
+            courierFullName: {
+                type: String,
+                default: "",
+            },
         }],
         qrCodeData: {
             apipayInvoiceId: {
