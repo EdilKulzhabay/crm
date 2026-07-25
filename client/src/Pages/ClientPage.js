@@ -942,7 +942,7 @@ export default function ClientPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div>Метод оплаты: {client?.paymentMethod === "balance" ? "Баланс" : "Талоны"}</div>
+                        <div>Метод оплаты: <span className="text-yellow-400">{client?.paymentMethod === "balance" ? "Баланс" : "Талоны"}</span></div>
                         <div className="text-yellow-400 flex items-center gap-x-3">
                             [
                                 <button className="text-yellow-400 hover:text-blue-500" onClick={() => {updateClientData("paymentMethod", "balance")}}>Баланс</button> /
