@@ -866,7 +866,7 @@ export default function ClientPage() {
                         
                     </Li>
                     <Li>
-                        <div>Тип клиента: {client?.clientType ? "Физ лицо" : "Юр лицо"}</div>
+                        <div>Тип клиента: <span className="text-yellow-400">{client?.clientType ? "Физ лицо" : "Юр лицо"}</span></div>
                         <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                             [
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("clientType", true)}}>Физ лицо</button>

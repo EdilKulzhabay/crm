@@ -1,7 +1,7 @@
 export default function MyInput(props) {
     const name = props.name || "";
     const format = props?.format || ""
-    const textColor = props?.textColor || "black"
+    const textColor = props?.textColor || "white"
 
     if (props?.width === "qwe") {
         return (
