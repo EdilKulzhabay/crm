@@ -418,11 +418,12 @@ export default function SuperAdminAggregatorAction() {
     };
 
     const getOpForm = (opForm) => {
-        if (opForm === "fakt") return "Нал_QR";
+        if (opForm === "fakt") return "Нал";
         if (opForm === "postpay") return "Постоплата";
         if (opForm === "credit") return "Карта";
         if (opForm === "coupon") return "Талоны";
         if (opForm === "mixed") return "Смешанно";
+        if (opForm === "qr") return "QR";
         return "Неизвестно";
     };
 
@@ -676,7 +677,7 @@ export default function SuperAdminAggregatorAction() {
                     </div>
                     <div className="flex items-center gap-2">
                         <div style={{width:20,height:20,outline:'2px solid #f59e0b',background:'#e5e7eb'}}></div>
-                        <span className="text-sm">Форма оплаты Нал_QR (золотая обводка)</span>
+                        <span className="text-sm">Форма оплаты Нал (золотая обводка)</span>
                     </div>
                     <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Другие элементы:</div>
                     <div className="flex items-center">
@@ -1035,7 +1036,7 @@ export default function SuperAdminAggregatorAction() {
                         <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Типы клиентов:</div>
                         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-gray-400 rounded-full"></div><span className="text-sm">Физ лица (круг)</span></div>
                         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-gray-400"></div><span className="text-sm">Юр лица (квадрат)</span></div>
-                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-black rounded-full"></div><span className="text-sm">Нал_QR (чёрная точка)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-black rounded-full"></div><span className="text-sm">Нал (чёрная точка)</span></div>
                     </>) : (<>
                         <div className="text-xs font-semibold text-gray-600 mt-2 mb-1">Полоска сверху иконки:</div>
                         <div className="flex items-center gap-2">
@@ -1095,7 +1096,7 @@ export default function SuperAdminAggregatorAction() {
                         </div>
                         <div className="flex items-center gap-2">
                             <div style={{width:20,height:20,outline:'2px solid #f59e0b',background:'#e5e7eb'}}></div>
-                            <span className="text-sm">Нал_QR (золотая обводка)</span>
+                            <span className="text-sm">Нал (золотая обводка)</span>
                         </div>
                         <div className="text-xs font-semibold text-gray-600 mt-3 mb-1">Другие элементы:</div>
                         <div className="flex items-center gap-2">

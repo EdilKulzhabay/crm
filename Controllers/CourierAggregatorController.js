@@ -741,22 +741,30 @@ export const completeOrderCourierAggregator = async (req, res) => {
         const courier1 = await CourierAggregator.findById(courierId)
 
         let verifiedOpForm = opForm;
+        const isQrPaidOnOrder = order?.qrCodeData?.status === "paid";
+        let isQrPaidFallback = false;
+        if (!isQrPaidOnOrder && order?.qrCodeData?.apipayInvoiceId) {
+            const paidInvoice = await ApiPayInvoice.findOne({
+                apipayInvoiceId: order.qrCodeData.apipayInvoiceId,
+                status: "paid",
+            });
+            isQrPaidFallback = !!paidInvoice;
+        }
+        const isQrPaid = isQrPaidOnOrder || isQrPaidFallback;
+
         if (opForm === "qr") {
-            const isQrPaidOnOrder = order?.qrCodeData?.status === "paid";
-            let isQrPaidFallback = false;
-            if (!isQrPaidOnOrder && order?.qrCodeData?.apipayInvoiceId) {
-                const paidInvoice = await ApiPayInvoice.findOne({
-                    apipayInvoiceId: order.qrCodeData.apipayInvoiceId,
-                    status: "paid",
-                });
-                isQrPaidFallback = !!paidInvoice;
-            }
-            if (!isQrPaidOnOrder && !isQrPaidFallback) {
+            if (!isQrPaid) {
                 return res.status(400).json({
                     success: false,
                     message: "Оплата по QR не подтверждена. Проверьте оплату ещё раз перед завершением заказа.",
                 });
             }
+        }
+
+        // Заказ фактически оплачен через QR (Kaspi/ApiPay) — фиксируем opForm = "qr",
+        // даже если клиент прислал другое значение (например, исходную форму оплаты заказа).
+        if (isQrPaid) {
+            verifiedOpForm = "qr";
         }
 
         const courierName = courier1?.fullName?.toLowerCase() || '';
@@ -868,8 +876,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
             } 
         })
 
-        // Возврат основан на order.paymentMethod (реально списанный способ при создании заказа),
-        // а не на opForm, который может отличаться (см. аналогичную логику в cancelOrderMobile).
+        // Возврат основан на order.opForm: "credit" — деньги на баланс, "coupon" — талоны.
         const orderedB12 = Number(order.products?.b12 || 0)
         const orderedB19 = Number(order.products?.b19 || 0)
         const deliveredB12 = Number(b12 || 0)
@@ -879,10 +886,10 @@ export const completeOrderCourierAggregator = async (req, res) => {
 
         if (
             order.wereCreated === "app" &&
-            (order.paymentMethod === "balance" || order.paymentMethod === "coupon") &&
+            (order.opForm === "credit" || order.opForm === "coupon") &&
             (shortfallB12 > 0 || shortfallB19 > 0)
         ) {
-            if (order.paymentMethod === "balance") {
+            if (order.opForm === "credit") {
                 const refundSum =
                     shortfallB12 * Number(order.client.price12 || 0) +
                     shortfallB19 * Number(order.client.price19 || 0)

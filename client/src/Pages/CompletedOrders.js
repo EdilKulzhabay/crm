@@ -419,7 +419,7 @@ export default function CompletedOrders() {
                                 "text-green-400": opForm !== item,
                                 "text-yellow-300": opForm === item
                             })}
-                        >[ {item === "fakt" ? "Нал_QR" : item === "coupon" ? "Талон" : item === "postpay" ? "Постоплата" : item === "credit" ? "Карта" : item === "qr" ? "QR" : "Смешанная"} ]</button>
+                        >[ {item === "fakt" ? "Нал" : item === "coupon" ? "Талон" : item === "postpay" ? "Постоплата" : item === "credit" ? "Карта" : item === "qr" ? "QR" : "Смешанная"} ]</button>
                         <Info>
                             {
                                 item === "fakt"

@@ -514,16 +514,15 @@ export const updateCourierOrderStatus = async (req, res) => {
             const shortfallB12 = Math.max(0, orderedB12 - deliveredB12)
             const shortfallB19 = Math.max(0, orderedB19 - deliveredB19)
 
-            // Возврат основан на order.paymentMethod (реально списанный способ при создании заказа),
-            // а не на opForm, который может отличаться (см. аналогичную логику в cancelOrderMobile).
+            // Возврат основан на order.opForm: "credit" — деньги на баланс, "coupon" — талоны.
             if (
                 order.wereCreated === "app" &&
-                (order.paymentMethod === "balance" || order.paymentMethod === "coupon") &&
+                (order.opForm === "credit" || order.opForm === "coupon") &&
                 (shortfallB12 > 0 || shortfallB19 > 0)
             ) {
                 const refundClient = await Client.findById(order.client)
                 if (refundClient) {
-                    if (order.paymentMethod === "balance") {
+                    if (order.opForm === "credit") {
                         const refundSum =
                             shortfallB12 * Number(refundClient.price12 || 0) +
                             shortfallB19 * Number(refundClient.price19 || 0)
