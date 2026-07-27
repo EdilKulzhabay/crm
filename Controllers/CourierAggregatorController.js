@@ -868,23 +868,34 @@ export const completeOrderCourierAggregator = async (req, res) => {
             } 
         })
 
-        // if (order.client.paidBootlesFor12 > 0 || order.client.paidBootlesFor19 > 0 || order.client.balance > 0) {
-        //     if (order.opForm === "coupon") {
-        //         await Client.updateOne({_id: order.client._id}, {
-        //             $inc: {
-        //                 paidBootlesFor12: order.products.b12 - (b12 || 0),
-        //                 paidBootlesFor19: order.products.b19 - (b19 || 0),
-        //             }
-        //         })
-        //     }
-        //     if (order.opForm === "credit") {
-        //         await Client.updateOne({_id: order.client._id}, {
-        //             $inc: {
-        //                 balance: order.client.price12 * ((order.products.b12 || 0) - (b12 || 0)) + order.client.price19 * ((order.products.b19 || 0) - (b19 || 0)),
-        //             }
-        //         })
-        //     }
-        // }
+        // Возврат основан на order.paymentMethod (реально списанный способ при создании заказа),
+        // а не на opForm, который может отличаться (см. аналогичную логику в cancelOrderMobile).
+        const orderedB12 = Number(order.products?.b12 || 0)
+        const orderedB19 = Number(order.products?.b19 || 0)
+        const deliveredB12 = Number(b12 || 0)
+        const deliveredB19 = Number(b19 || 0)
+        const shortfallB12 = Math.max(0, orderedB12 - deliveredB12)
+        const shortfallB19 = Math.max(0, orderedB19 - deliveredB19)
+
+        if (
+            order.wereCreated === "app" &&
+            (order.paymentMethod === "balance" || order.paymentMethod === "coupon") &&
+            (shortfallB12 > 0 || shortfallB19 > 0)
+        ) {
+            if (order.paymentMethod === "balance") {
+                const refundSum =
+                    shortfallB12 * Number(order.client.price12 || 0) +
+                    shortfallB19 * Number(order.client.price19 || 0)
+                await Client.updateOne({_id: order.client._id}, { $inc: { balance: refundSum } })
+            } else {
+                await Client.updateOne({_id: order.client._id}, {
+                    $inc: {
+                        paidBootlesFor12: shortfallB12,
+                        paidBootlesFor19: shortfallB19,
+                    }
+                })
+            }
+        }
 
         await Client.updateOne({_id: order.client._id}, {
             $set: {

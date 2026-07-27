@@ -50,9 +50,23 @@ export const getAquaMarkets = async (req, res) => {
 
         const aquaMarkets = await AquaMarket.find(filter).populate("franchisee", "fullName")
 
+        const givingCounts = await AquaMarketHistory.aggregate([
+            { $match: { actionType: "giving" } },
+            { $group: { _id: "$aquaMarket", count: { $sum: 1 } } }
+        ])
+        const givingCountByAquaMarket = givingCounts.reduce((acc, item) => {
+            acc[item._id.toString()] = item.count
+            return acc
+        }, {})
+
+        const aquaMarketsWithGivingCount = aquaMarkets.map((aquaMarket) => ({
+            ...aquaMarket.toObject(),
+            givingCount: givingCountByAquaMarket[aquaMarket._id.toString()] || 0
+        }))
+
         res.json({
             success: true,
-            aquaMarkets
+            aquaMarkets: aquaMarketsWithGivingCount
         })
     } catch (error) {
         console.log(error);

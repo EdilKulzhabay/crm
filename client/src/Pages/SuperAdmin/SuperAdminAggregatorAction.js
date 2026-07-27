@@ -153,6 +153,18 @@ export default function SuperAdminAggregatorAction() {
     const [reorderLoading, setReorderLoading] = useState(false)
     const [draggedOrderIndex, setDraggedOrderIndex] = useState(null)
     const [viewMode, setViewMode] = useState('icons')
+    const [aquaMarkets, setAquaMarkets] = useState([])
+
+    useEffect(() => {
+        if (!userData?._id) return;
+
+        api.post("/getAquaMarkets", { franchiseeId: userData._id }).then((res) => {
+            setAquaMarkets(res.data.aquaMarkets || [])
+        }).catch((err) => {
+            console.log(err)
+        })
+    }, [userData?._id])
+
     useEffect(() => {
         setLoading(true)
 
@@ -733,53 +745,23 @@ export default function SuperAdminAggregatorAction() {
                         </Popup>
                     </Marker>
 
-                    <Marker
-                        position={[43.260627, 76.924226]}
-                        icon={createStarIcon()}
-                    >
-                        <Popup>
-                            <div>
-                                <strong>Аквамаркет</strong><br />
-                                Координаты: 43.260627°N, 76.924226°E
-                            </div>
-                        </Popup>
-                    </Marker>
-
-                    <Marker
-                        position={[43.299359, 77.001365]}
-                        icon={createStarIcon()}
-                    >
-                        <Popup>
-                            <div>
-                                <strong>Аквамаркет</strong><br />
-                                Координаты: 43.299359°N, 77.001365°E
-                            </div>
-                        </Popup>
-                    </Marker>
-
-                    <Marker
-                        position={[43.235778, 76.866585]}
-                        icon={createStarIcon()}
-                    >
-                        <Popup>
-                            <div>
-                                <strong>Аквамаркет</strong><br />
-                                Координаты: 43.235778°N, 76.866585°E
-                            </div>
-                        </Popup>
-                    </Marker>
-
-                    <Marker
-                        position={[43.23933, 76.890709]}
-                        icon={createStarIcon()}
-                    >
-                        <Popup>
-                            <div>
-                                <strong>Аквамаркет</strong><br />
-                                Координаты: 43.23933°N, 76.890709°E
-                            </div>
-                        </Popup>
-                    </Marker>
+                    {aquaMarkets
+                        .filter((am) => am?.point?.lat && am?.point?.lon)
+                        .map((am) => (
+                            <Marker
+                                key={am._id}
+                                position={[am.point.lat, am.point.lon]}
+                                icon={createStarIcon()}
+                            >
+                                <Popup>
+                                    <div>
+                                        <strong>{am.address || "Аквамаркет"}</strong><br />
+                                        Полные бутыли: 12,5 л — {am.full?.b12 ?? 0}, 18,9 л — {am.full?.b19 ?? 0}<br />
+                                        Количество вывозов: {am.givingCount ?? 0}
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        ))}
 
                     {/* Заказы */}
                     {processedOrders.map((order, index) => {
@@ -800,6 +782,7 @@ export default function SuperAdminAggregatorAction() {
                                     Статус: {order.status}<br />
                                     Форма оплаты: {opForm}<br />
                                     Тип клиента: {clientType ? 'Физ лицо' : 'Юр лицо'}<br />
+                                    Телефон: {order.client?.phone || order.clientPhone || '—'}<br />
                                     Время заказа: {order?.createdAt ? (() => {
                                         const ms = new Date(order.createdAt).getTime();
                                         return Number.isNaN(ms) ? "—" : new Date(ms + 5 * 60 * 1000).toLocaleString('ru-RU');
@@ -820,6 +803,14 @@ export default function SuperAdminAggregatorAction() {
                                         className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
                                     >
                                         Профиль клиента
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            window.open(`/orderPage/${order._id}`, '_blank');
+                                        }}
+                                        className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-full mb-2"
+                                    >
+                                        Посмотреть заказ
                                     </button>
                                     {order.status === "awaitingOrder" && !secret && !isAssigned && (
                                         <button

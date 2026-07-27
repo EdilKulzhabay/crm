@@ -70,6 +70,9 @@ export default function ClientPage() {
     const [changedBy, setChangedBy] = useState("")
     const [changeReason, setChangeReason] = useState("")
     const [operationLog, setOperationLog] = useState([])
+    const [editingLogId, setEditingLogId] = useState(null)
+    const [editLogChangedBy, setEditLogChangedBy] = useState("")
+    const [editLogReason, setEditLogReason] = useState("")
 
     const [needVerification, setNeedVerification] = useState(false)
 
@@ -350,6 +353,47 @@ export default function ClientPage() {
             })
             .catch((e) => {
                 console.log(e);
+            });
+    };
+
+    const startEditingLogEntry = (entry) => {
+        setEditingLogId(entry._id);
+        setEditLogChangedBy(entry.changedBy || "");
+        setEditLogReason(entry.reason || "");
+    };
+
+    const cancelEditingLogEntry = () => {
+        setEditingLogId(null);
+        setEditLogChangedBy("");
+        setEditLogReason("");
+    };
+
+    const updateOperationLogEntry = () => {
+        if (!editLogChangedBy.trim() || !editLogReason.trim()) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Укажите, кто вносит изменение и по какой причине");
+            return;
+        }
+        api.post(
+            "/updateClientOperationLog",
+            { logId: editingLogId, changedBy: editLogChangedBy, reason: editLogReason },
+            { headers: { "Content-Type": "application/json" } }
+        )
+            .then(({ data }) => {
+                if (data.success) {
+                    setOpen(true);
+                    setStatus("success");
+                    setMessage(data.message);
+                    cancelEditingLogEntry();
+                    getOperationLog();
+                }
+            })
+            .catch((e) => {
+                console.log(e);
+                setOpen(true);
+                setStatus("error");
+                setMessage(e?.response?.data?.message || "Не удалось изменить запись журнала");
             });
     };
 
@@ -647,12 +691,14 @@ export default function ClientPage() {
                                     value={changedBy}
                                     change={(e) => {setChangedBy(e.target.value)}}
                                     color="white"
+                                    textColor="white"
                                 />
                                 <div className="text-white text-sm">Причина изменения:</div>
                                 <MyInput
                                     value={changeReason}
                                     change={(e) => {setChangeReason(e.target.value)}}
                                     color="white"
+                                    textColor="white"
                                 />
                                 <MyButton click={() => {
                                     if (secretCode !== process.env.REACT_APP_SECRET_CODE) {
@@ -831,7 +877,7 @@ export default function ClientPage() {
                     </Li>
                     {userData?.role === "superAdmin" && <>
                     <Li>
-                        <div>Тип бутылки: {client?.clientBottleType}</div>
+                        <div>Тип бутылки: <span className="text-yellow-400">{client?.clientBottleType}</span></div>
                         <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                             [
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("clientBottleType", 1)}}>1</button>
@@ -841,7 +887,7 @@ export default function ClientPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div>Кол-во бутылок: {client?.clientBottleCount}</div>
+                        <div>Кол-во бутылок: <span className="text-yellow-400">{client?.clientBottleCount}</span></div>
                         <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                             <MyInput
                                 value={clientBottleCount}
@@ -852,7 +898,7 @@ export default function ClientPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div>Долг по бутылям: {client?.clientBottleCredit}</div>
+                        <div>Долг по бутылям: <span className="text-yellow-400">{client?.clientBottleCredit}</span></div>
                         <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                             <MyInput
                                 value={clientBottleCredit}
@@ -910,7 +956,7 @@ export default function ClientPage() {
 
                 {userData?.role === "superAdmin" && <>
                     <Li>
-                        <div>Баланс: {client?.balance || 0}</div>
+                        <div>Баланс: <span className="text-yellow-400">{client?.balance || 0}</span></div>
                         <div className="flex items-center gap-x-2 flex-wrap text-green-400">
                             <MyInput
                                 value={balance}
@@ -959,18 +1005,48 @@ export default function ClientPage() {
                             {operationLog.map((entry) => (
                                 <div key={entry._id} className="border-b border-gray-700 pb-1">
                                     <div>
-                                        {new Date(entry.createdAt).toLocaleString('ru-RU')} — {entry.changedBy}
+                                        {new Date(entry.createdAt).toLocaleString('ru-RU')}
                                     </div>
                                     <div>
                                         {OPERATION_LOG_FIELD_LABELS[entry.field] || entry.field}: {String(entry.oldValue ?? "—")} → {String(entry.newValue ?? "—")}
                                     </div>
-                                    <div className="text-gray-400">Причина: {entry.reason}</div>
+                                    {editingLogId === entry._id ? (
+                                        <div className="flex flex-col gap-y-1 mt-1">
+                                            <div className="text-gray-400">Кто:</div>
+                                            <MyInput
+                                                value={editLogChangedBy}
+                                                change={(e) => setEditLogChangedBy(e.target.value)}
+                                                color="white"
+                                            />
+                                            <div className="text-gray-400">Причина:</div>
+                                            <MyInput
+                                                value={editLogReason}
+                                                change={(e) => setEditLogReason(e.target.value)}
+                                                color="white"
+                                            />
+                                            <div className="flex items-center gap-x-2">
+                                                <MyButton click={updateOperationLogEntry}>Сохранить</MyButton>
+                                                <MyButton click={cancelEditingLogEntry}>Отменить</MyButton>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-x-2 flex-wrap">
+                                            <div>Кто: {entry.changedBy}</div>
+                                            <div className="text-gray-400">Причина: {entry.reason}</div>
+                                            <button
+                                                className="text-green-400 hover:text-blue-500"
+                                                onClick={() => startEditingLogEntry(entry)}
+                                            >
+                                                Изменить
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </Li>
                     <Li>
-                        <div>Берут ли 19-литровые бутыли: {client?.doesItTake19Bottles ? "Да" : "Нет"}</div>
+                        <div>Берут ли 19-литровые бутыли: <span className="text-yellow-400">{client?.doesItTake19Bottles ? "Да" : "Нет"}</span></div>
                         <div className="text-green-400 flex items-center gap-x-3">
                             [
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("doesItTake19Bottles", true)}}>Да</button> /
@@ -979,7 +1055,7 @@ export default function ClientPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div>Берут ли 12-литровые бутыли: {client?.doesItTake12Bottles ? "Да" : "Нет"}</div>
+                        <div>Берут ли 12-литровые бутыли: <span className="text-yellow-400">{client?.doesItTake12Bottles ? "Да" : "Нет"}</span></div>
                         <div className="text-green-400 flex items-center gap-x-3">
                             [
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("doesItTake12Bottles", true)}}>Да</button> /
@@ -988,7 +1064,7 @@ export default function ClientPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div>Блок «Ремонт техники» в приложении: {client?.showRepairMasterInApp !== false ? "Показывать" : "Скрыть"}</div>
+                        <div>Блок «Ремонт техники» в приложении: <span className="text-yellow-400">{client?.showRepairMasterInApp !== false ? "Показывать" : "Скрыть"}</span></div>
                         <div className="text-green-400 flex items-center gap-x-3">
                             [
                                 <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("showRepairMasterInApp", true)}}>Показывать</button> /

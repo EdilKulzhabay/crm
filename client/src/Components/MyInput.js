@@ -1,6 +1,7 @@
 export default function MyInput(props) {
     const name = props.name || "";
     const format = props?.format || ""
+    const textColor = props?.textColor || "black"
 
     if (props?.width === "qwe") {
         return (
@@ -47,7 +48,7 @@ export default function MyInput(props) {
                 type={props.type || "text"}
                 size={13}
                 style={{ fontSize: '16px' }}
-                className={`bg-black outline-none border-b border-${props.color} border-dashed text-sm lg:text-base`}
+                className={`bg-black outline-none border-b border-${props.color} border-dashed text-sm lg:text-base text-${textColor}`}
                 value={props.value}
                 onChange={props.change}
             />

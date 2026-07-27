@@ -36,6 +36,8 @@ export default function AquaMarketHistory() {
 
     const [editFull, setEditFull] = useState({ b12: '', b19: '' });
     const [editEmpty, setEditEmpty] = useState({ b12: '', b19: '' });
+    const [editAddress, setEditAddress] = useState('');
+    const [editPoint, setEditPoint] = useState({ lat: '', lon: '' });
 
     const historySummary = history.reduce((acc, item) => {
         const b12 = Number(item?.bottles?.b12) || 0;
@@ -120,6 +122,35 @@ export default function AquaMarketHistory() {
         }).catch(console.error);
     };
 
+    const handleUpdateAddress = async () => {
+        await api.post("/updateAquaMarketData", { aquaMarketId, changeField: "address", changeData: editAddress }, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({ data: res }) => {
+            if (res.success) {
+                api.post("/getAquaMarketData", { aquaMarketId }, {
+                    headers: { "Content-Type": "application/json" },
+                }).then(({ data }) => setAquaMarket(data.aquaMarket));
+                setEditAddress('');
+            }
+        }).catch(console.error);
+    };
+
+    const handleUpdatePoint = async () => {
+        await api.post("/updateAquaMarketData", { aquaMarketId, changeField: "point", changeData: {
+            lat: editPoint.lat !== '' ? Number(editPoint.lat) : aquaMarket?.point?.lat,
+            lon: editPoint.lon !== '' ? Number(editPoint.lon) : aquaMarket?.point?.lon,
+        } }, {
+            headers: { "Content-Type": "application/json" },
+        }).then(({ data: res }) => {
+            if (res.success) {
+                api.post("/getAquaMarketData", { aquaMarketId }, {
+                    headers: { "Content-Type": "application/json" },
+                }).then(({ data }) => setAquaMarket(data.aquaMarket));
+                setEditPoint({ lat: '', lon: '' });
+            }
+        }).catch(console.error);
+    };
+
     const handleFillBottles = async () => {
         await api.post("/aquaMarketFill", { aquaMarketId, bottles }, {
             headers: { "Content-Type": "application/json" },
@@ -141,6 +172,47 @@ export default function AquaMarketHistory() {
         <Container role={userData?.role}>
             <Div>История</Div>
             <Div>Аквамаркет: {aquaMarket?.address}</Div>
+            <Li>Название:{" "}[{" "}
+                <input
+                    size={20}
+                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base"
+                    style={{ fontSize: '16px' }}
+                    value={editAddress}
+                    placeholder={aquaMarket?.address || ''}
+                    onChange={(e) => setEditAddress(e.target.value)}
+                />{" "}]
+            </Li>
+            {editAddress !== '' && (
+                <Div>
+                    <MyButton click={handleUpdateAddress}>Сохранить название</MyButton>
+                </Div>
+            )}
+            <Div>Координаты (текущие: {aquaMarket?.point?.lat ?? '—'}, {aquaMarket?.point?.lon ?? '—'})</Div>
+            <Li>Широта (lat):{" "}[{" "}
+                <input
+                    size={13}
+                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[100px] text-center"
+                    style={{ fontSize: '16px' }}
+                    inputMode="decimal"
+                    value={editPoint.lat}
+                    onChange={(e) => setEditPoint(p => ({ ...p, lat: e.target.value }))}
+                />{" "}]
+            </Li>
+            <Li>Долгота (lon):{" "}[{" "}
+                <input
+                    size={13}
+                    className="bg-black outline-none border-b border-white border-dashed text-sm lg:text-base w-[100px] text-center"
+                    style={{ fontSize: '16px' }}
+                    inputMode="decimal"
+                    value={editPoint.lon}
+                    onChange={(e) => setEditPoint(p => ({ ...p, lon: e.target.value }))}
+                />{" "}]
+            </Li>
+            {(editPoint.lat !== '' || editPoint.lon !== '') && (
+                <Div>
+                    <MyButton click={handleUpdatePoint}>Сохранить координаты</MyButton>
+                </Div>
+            )}
             <Div />
             <Div>Заполнить бутыли</Div>
             <Li>12,5 л: 

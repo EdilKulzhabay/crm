@@ -521,6 +521,38 @@ export const getClientOperationLog = async (req, res) => {
     }
 };
 
+export const updateClientOperationLog = async (req, res) => {
+    try {
+        const { logId, changedBy, reason } = req.body;
+
+        const trimmedChangedBy = typeof changedBy === "string" ? changedBy.trim() : "";
+        const trimmedReason = typeof reason === "string" ? reason.trim() : "";
+        if (!trimmedChangedBy || !trimmedReason) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите, кто вносит изменение и по какой причине.",
+            });
+        }
+
+        const log = await ClientOperationLog.findByIdAndUpdate(
+            logId,
+            { changedBy: trimmedChangedBy, reason: trimmedReason },
+            { new: true }
+        );
+
+        if (!log) {
+            return res.status(404).json({ success: false, message: "Запись журнала не найдена" });
+        }
+
+        res.json({ success: true, message: "Запись журнала обновлена", log });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
 export const updateClientFranchisee = async (req, res) => {
     try {
         const { clientId, franchiseeId } = req.body;
