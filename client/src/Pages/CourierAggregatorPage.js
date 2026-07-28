@@ -533,7 +533,7 @@ export default function CourierAggregatorPage() {
                                                         href={`/OrderPage/${log.order._id}`}
                                                     >Перейти на заказ</LinkButton>
                                                 )}
-                                                {log.type === "order_complete" && log.order?._id && (
+                                                {log.order?._id && (
                                                     <MyButton
                                                         click={() => {
                                                             setEditingLogId(log._id);

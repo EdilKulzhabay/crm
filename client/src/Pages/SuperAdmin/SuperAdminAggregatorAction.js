@@ -758,7 +758,7 @@ export default function SuperAdminAggregatorAction() {
                                     <div>
                                         <strong>{am.address || "Аквамаркет"}</strong><br />
                                         Полные бутыли: 12,5 л — {am.full?.b12 ?? 0}, 18,9 л — {am.full?.b19 ?? 0}<br />
-                                        Количество вывозов: {am.givingCount ?? 0}
+                                        Количество вывозов сегодня: {am.givingCount ?? 0}
                                     </div>
                                 </Popup>
                             </Marker>

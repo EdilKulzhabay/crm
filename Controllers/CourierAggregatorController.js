@@ -1447,7 +1447,7 @@ export const getCourierAggregatorIncomeLogs = async (req, res) => {
     }
 };
 
-const VALID_OP_FORMS = ["fakt", "postpay", "credit", "coupon", "mixed"];
+const VALID_OP_FORMS = ["fakt", "postpay", "credit", "coupon", "mixed", "qr"];
 
 export const deleteCourierAggregatorIncomeLog = async (req, res) => {
     try {
@@ -1527,10 +1527,10 @@ export const updateCourierAggregatorIncomeLogOpForm = async (req, res) => {
             });
         }
 
-        if (log.type !== "order_complete" || !log.order) {
+        if (!log.order) {
             return res.status(400).json({
                 success: false,
-                message: "Изменение формы оплаты доступно только для завершённых заказов",
+                message: "Изменение формы оплаты доступно только для записей с привязанным заказом",
             });
         }
 

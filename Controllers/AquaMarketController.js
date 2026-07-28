@@ -4,6 +4,7 @@ import CourierAggregator from "../Models/CourierAggregator.js";
 import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { getTodayAlmaty } from "../utils/dateUtils.js";
 
 export const addAquaMarket = async (req, res) => {
     try {
@@ -50,8 +51,15 @@ export const getAquaMarkets = async (req, res) => {
 
         const aquaMarkets = await AquaMarket.find(filter).populate("franchisee", "fullName")
 
+        const todayAlmaty = getTodayAlmaty()
+        const startOfTodayAlmaty = new Date(`${todayAlmaty}T00:00:00.000+05:00`)
+        const endOfTodayAlmaty = new Date(`${todayAlmaty}T23:59:59.999+05:00`)
+
         const givingCounts = await AquaMarketHistory.aggregate([
-            { $match: { actionType: "giving" } },
+            { $match: {
+                actionType: "giving",
+                createdAt: { $gte: startOfTodayAlmaty, $lte: endOfTodayAlmaty }
+            } },
             { $group: { _id: "$aquaMarket", count: { $sum: 1 } } }
         ])
         const givingCountByAquaMarket = givingCounts.reduce((acc, item) => {
