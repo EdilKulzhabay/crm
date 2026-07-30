@@ -281,7 +281,7 @@ function drawBankBeneficiaryGrid(doc, left, y, pageW) {
 /**
  * Исполнитель / Покупатель / Договор: колонка подписей слева (~20%), значение справа полужирным.
  */
-function drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer) {
+function drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer, contractText) {
     const labelW = Math.floor(pageW * 0.15);
     const gap = 8; // горизонтальный зазор подпись/значение (в 2 раза меньше базовых 16)
     const valueX = left + labelW + gap;
@@ -291,7 +291,7 @@ function drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer) {
     const rows = [
         { label: "Исполнитель:", value: STATIC.executorBlock },
         { label: "Покупатель:", value: buyer },
-        { label: "Договор:", value: STATIC.contract },
+        { label: "Договор:", value: contractText || STATIC.contract },
     ];
 
     for (const { label, value } of rows) {
@@ -326,7 +326,14 @@ export function buildInvoicePdfBuffer(params) {
         qty12,
         price19,
         price12,
+        basis,
+        contractNumber,
     } = params;
+
+    const contractText =
+        basis === "договор"
+            ? `На основании Договора № ${contractNumber || ""}`.trim()
+            : STATIC.contract;
 
     if (!fs.existsSync(FONT_PATH)) {
         throw new Error(`Шрифт для PDF не найден: ${FONT_PATH}`);
@@ -380,7 +387,7 @@ export function buildInvoicePdfBuffer(params) {
         doc.restore();
         y = y + 14; // сместить "y" ниже линии (высота линии + отступ 6)
         doc.font("main").fontSize(8).fillColor("#000000");
-        y = drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer);
+        y = drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer, contractText);
 
         const colW = [
             22,

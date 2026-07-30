@@ -154,6 +154,9 @@ export default function SuperAdminAggregatorAction() {
     const [draggedOrderIndex, setDraggedOrderIndex] = useState(null)
     const [viewMode, setViewMode] = useState('icons')
     const [aquaMarkets, setAquaMarkets] = useState([])
+    const [showAquaMarketAssignModal, setShowAquaMarketAssignModal] = useState(false)
+    const [selectedAquaMarket, setSelectedAquaMarket] = useState(null)
+    const [aquaMarketAssignLoading, setAquaMarketAssignLoading] = useState(false)
 
     useEffect(() => {
         if (!userData?._id) return;
@@ -290,6 +293,41 @@ export default function SuperAdminAggregatorAction() {
         setShowAssignModal(true);
     };
 
+    const openAquaMarketAssignModal = (aquaMarket) => {
+        setSelectedAquaMarket(aquaMarket);
+        setShowAquaMarketAssignModal(true);
+    };
+
+    const handleAssignAquaMarketToCourier = async (courierId) => {
+        if (!selectedAquaMarket) return;
+
+        setAquaMarketAssignLoading(true);
+        try {
+            const response = await api.post("/assignAquaMarketToCourier", {
+                aquaMarketId: selectedAquaMarket._id,
+                courierId: courierId
+            });
+
+            if (response.data.success) {
+                const couriersRes = await api.get("/getActiveCourierAggregators");
+                setCouriers(couriersRes.data.couriers);
+
+                const allCouriersRes = await api.get("/getAllCouriersWithOrderCount");
+                setAllCouriers(allCouriersRes.data.couriers);
+
+                setShowAquaMarketAssignModal(false);
+                setSelectedAquaMarket(null);
+
+                alert("Курьер успешно отправлен в аквамаркет!");
+            }
+        } catch (error) {
+            console.log("Ошибка отправки курьера в аквамаркет:", error);
+            const errorMessage = error.response?.data?.message || "Ошибка при отправке курьера в аквамаркет";
+            alert(`Ошибка: ${errorMessage}`);
+        }
+        setAquaMarketAssignLoading(false);
+    };
+
     const openReorderModal = (courier) => {
         if (!courier.orders || courier.orders.length === 0) {
             alert("У курьера нет заказов для изменения очередности.");
@@ -299,12 +337,17 @@ export default function SuperAdminAggregatorAction() {
         const enrichedOrders = courier.orders.map((orderItem) => {
             const orderId = orderItem.orderId || orderItem._id;
             const matchedOrder = orders.find(o => o._id === orderId);
+            const isAquaMarketStop = orderItem.stopType === "aquaMarket";
 
             return {
                 ...orderItem,
                 orderId,
-                clientName: matchedOrder?.client?.fullName || orderItem.clientTitle || "Неизвестный клиент",
-                address: matchedOrder?.address?.actual || orderItem.clientAddress || "Адрес не указан",
+                clientName: isAquaMarketStop
+                    ? "Поездка в аквамаркет"
+                    : (matchedOrder?.client?.fullName || orderItem.clientTitle || "Неизвестный клиент"),
+                address: isAquaMarketStop
+                    ? (orderItem.aquaMarketAddress || "Адрес не указан")
+                    : (matchedOrder?.address?.actual || orderItem.clientAddress || "Адрес не указан"),
                 deliveryTime: matchedOrder?.date?.time || orderItem.date?.time || "",
                 status: matchedOrder?.status || orderItem.status || ""
             };
@@ -755,10 +798,17 @@ export default function SuperAdminAggregatorAction() {
                                 icon={createStarIcon()}
                             >
                                 <Popup>
-                                    <div>
+                                    <div className="min-w-[220px]">
                                         <strong>{am.address || "Аквамаркет"}</strong><br />
                                         Полные бутыли: 12,5 л — {am.full?.b12 ?? 0}, 18,9 л — {am.full?.b19 ?? 0}<br />
                                         Количество вывозов сегодня: {am.givingCount ?? 0}
+                                        <br /><br />
+                                        <button
+                                            onClick={() => openAquaMarketAssignModal(am)}
+                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+                                        >
+                                            Отправить курьера
+                                        </button>
                                     </div>
                                 </Popup>
                             </Marker>
@@ -1250,6 +1300,63 @@ export default function SuperAdminAggregatorAction() {
                             onClick={() => {
                                 setShowAssignModal(false);
                                 setSelectedOrder(null);
+                            }}
+                            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                        >
+                            Отмена
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Модальное окно отправки курьера в аквамаркет */}
+        {showAquaMarketAssignModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white text-black p-6 rounded-lg max-w-md w-full mx-4">
+                    <h3 className="text-lg font-bold mb-4">
+                        Отправить курьера в аквамаркет
+                    </h3>
+
+                    {selectedAquaMarket && (
+                        <div className="mb-4 p-3 bg-gray-100 rounded">
+                            <p><strong>Аквамаркет:</strong> {selectedAquaMarket.address || "Без адреса"}</p>
+                            <p><strong>Полные бутыли:</strong> 12,5 л — {selectedAquaMarket.full?.b12 ?? 0}, 18,9 л — {selectedAquaMarket.full?.b19 ?? 0}</p>
+                        </div>
+                    )}
+
+                    <div className="max-h-60 overflow-y-auto">
+                        {allCouriers.length === 0 ? (
+                            <p className="text-gray-500">Нет доступных курьеров</p>
+                        ) : (
+                            allCouriers.map((courier) => (
+                                <div
+                                    key={courier._id}
+                                    className="border-b border-gray-200 py-3 cursor-pointer hover:bg-gray-50"
+                                    onClick={() => handleAssignAquaMarketToCourier(courier._id)}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold">{courier.fullName}</p>
+                                            <p className="text-sm text-gray-600">
+                                                Заказов: {courier.orderCount} |
+                                                Вместимость: {courier.capacity12} 12л, {courier.capacity19} 19л
+                                            </p>
+                                        </div>
+                                        {aquaMarketAssignLoading && (
+                                            <div className="text-blue-500">Отправляется...</div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={() => {
+                                setShowAquaMarketAssignModal(false);
+                                setSelectedAquaMarket(null);
                             }}
                             className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                         >

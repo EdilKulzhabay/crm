@@ -137,6 +137,16 @@ const CourierAggregatorSchema = new mongoose.Schema(
             orderId: {
                 type: String
             },
+            stopType: {
+                type: String,
+                enum: ["order", "aquaMarket"],
+                default: "order"
+            },
+            aquaMarketId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "AquaMarket",
+                default: null
+            },
             status: {
                 type: String
             },
@@ -213,6 +223,16 @@ const CourierAggregatorSchema = new mongoose.Schema(
             type: [{
                 orderId: {
                     type: String
+                },
+                stopType: {
+                    type: String,
+                    enum: ["order", "aquaMarket"],
+                    default: "order"
+                },
+                aquaMarketId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "AquaMarket",
+                    default: null
                 },
                 status: {
                     type: String

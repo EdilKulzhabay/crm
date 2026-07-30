@@ -290,6 +290,17 @@ const ClientSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        /** Основание для счёта/договора: публичная оферта или отдельный договор */
+        basis: {
+            type: String,
+            enum: ["оферта", "договор"],
+            default: "оферта",
+        },
+        /** Номер договора; обязателен только когда basis === "договор" */
+        contractNumber: {
+            type: String,
+            default: "",
+        },
         /** Произвольные заметки менеджера по клиенту */
         notes: {
             type: String,

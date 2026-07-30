@@ -1,6 +1,7 @@
 import AquaMarket from "../Models/AquaMarket.js";
 import AquaMarketHistory from "../Models/AquaMarketHistory.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
+import Order from "../Models/Order.js";
 import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -290,6 +291,27 @@ export const aquaMarketAction = async (req, res) => {
         })
 
         await history.save()
+
+        // Бутыли отданы/приняты у этого курьера — убираем соответствующую остановку "аквамаркет" из его очереди.
+        const stopIndex = courierAggregator.orders.findIndex(
+            (o) => o.stopType === "aquaMarket" && String(o.aquaMarketId) === String(aquaMarketId)
+        )
+
+        if (stopIndex !== -1) {
+            const removedStop = courierAggregator.orders[stopIndex]
+            const isActiveStop = stopIndex === 0
+            const nextStop = courierAggregator.orders.length > 1 ? courierAggregator.orders[1] : null
+
+            const stopUpdateOps = { $pull: { orders: { _id: removedStop._id } } }
+            if (isActiveStop) {
+                stopUpdateOps.$set = { order: nextStop }
+                if (nextStop && nextStop.stopType !== "aquaMarket" && nextStop.orderId) {
+                    await Order.updateOne({ _id: nextStop.orderId }, { $set: { status: "onTheWay" } })
+                }
+            }
+
+            await CourierAggregator.updateOne({ _id: courierAggregatorId }, stopUpdateOps)
+        }
 
         res.json({
             success: true,

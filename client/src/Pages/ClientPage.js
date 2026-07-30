@@ -78,6 +78,9 @@ export default function ClientPage() {
 
     const [invLegal, setInvLegal] = useState("")
 
+    const [basis, setBasis] = useState("оферта")
+    const [contractNumber, setContractNumber] = useState("")
+
     const [notes, setNotes] = useState("")
 
     const closeSnack = () => {
@@ -334,6 +337,8 @@ export default function ClientPage() {
                     }
                 }
                 setNotes(typeof data?.notes === "string" ? data.notes : "")
+                setBasis(data?.basis === "договор" ? "договор" : "оферта")
+                setContractNumber(typeof data?.contractNumber === "string" ? data.contractNumber : "")
             })
             .catch((e) => {
                 console.log(e);
@@ -1569,6 +1574,34 @@ export default function ClientPage() {
                     />
                 </>
 
+                <Div />
+                <Div>
+                    Основание: <span className="text-yellow-300">{basis === "оферта" ? "Оферта" : `Договор № ${contractNumber || "—"}`}</span>
+                </Div>
+                <Li>
+                    <div className="flex flex-col gap-y-2">
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="hover:text-blue-500" onClick={() => {setBasis("оферта")}}>Оферта</button> /
+                                <button className="hover:text-blue-500" onClick={() => {setBasis("договор")}}>Договор</button>
+                            ]
+                        </div>
+                        {basis === "договор" && (
+                            <div className="flex items-center gap-x-3">
+                                <div>Номер договора:</div>
+                                <input
+                                    style={{ fontSize: "16px" }}
+                                    value={contractNumber}
+                                    onChange={(e) => setContractNumber(e.target.value)}
+                                    className="bg-black text-white border border-white rounded-lg p-1 text-sm"
+                                />
+                            </div>
+                        )}
+                        <MyButton click={() => {
+                            updateClientData("basis", basis, { contractNumber: basis === "договор" ? contractNumber : "" })
+                        }}>Сохранить основание</MyButton>
+                    </div>
+                </Li>
                 <Div />
                 <Div>
                     Юр. данные для счёта:

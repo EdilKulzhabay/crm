@@ -1048,6 +1048,8 @@ export const generateInvoicePdfMobile = async (req, res) => {
             qty12,
             price19,
             price12,
+            basis: client.basis,
+            contractNumber: client.contractNumber,
         });
 
         const nextNum = nextInvoiceSequentialNumber(inv);

@@ -32,7 +32,9 @@ export default function AddClient() {
         mail: "",
         price19: "",
         price12: "",
-        opForm: ""
+        opForm: "",
+        basis: "оферта",
+        contractNumber: ""
     });
     const [addresses, setAddresses] = useState([]);
 
@@ -54,6 +56,10 @@ export default function AddClient() {
 
     const updateOpForm = (op) => {
         setForm({...form, opForm: op})
+    }
+
+    const updateBasis = (basis) => {
+        setForm({ ...form, basis, contractNumber: basis === "оферта" ? "" : form.contractNumber })
     }
 
     const addressChangeHandler = (index, event) => {
@@ -82,21 +88,23 @@ export default function AddClient() {
     };
 
     const addClient = () => {
-        const { mail, ...formWithoutMail } = form;
-        
-        const formComplete = Object.values(formWithoutMail).every(
+        const { mail, contractNumber, ...formRequired } = form;
+
+        const formComplete = Object.values(formRequired).every(
             (value) => value.trim() !== ""
         );
         const addressIncomplete = addresses.some((address) => !address.exactLink || address.exactLink.trim() === "");
+        const contractNumberMissing = form.basis === "договор" && form.contractNumber.trim() === "";
 
         if (
             !formComplete ||
-            addresses[0].street === "" || 
-            addressIncomplete
+            addresses[0].street === "" ||
+            addressIncomplete ||
+            contractNumberMissing
         ) {
             setOpen(true);
             setStatus("error");
-            setMessage("Заполните все поля");
+            setMessage(contractNumberMissing ? "Укажите номер договора" : "Заполните все поля");
             return;
         }
 
@@ -127,6 +135,9 @@ export default function AddClient() {
                     mail: "",
                     price19: "",
                     price12: "",
+                    opForm: "",
+                    basis: "оферта",
+                    contractNumber: ""
                 });
                 setAddresses([]);
             }
@@ -269,6 +280,35 @@ export default function AddClient() {
                         </div>
                     </Div>
                 </div>
+                <Div />
+                <Div>
+                    <div>Основание: <span className="text-yellow-300">{form.basis === "оферта" ? "Оферта" : "Договор"}</span></div>
+                </Div>
+                <Div>
+                    <div className="text-green-400 flex items-center gap-x-3">
+                        [
+                            <button className="hover:text-blue-500" onClick={() => {updateBasis("оферта")}}>Оферта</button> /
+                            <button className="hover:text-blue-500" onClick={() => {updateBasis("договор")}}>Договор</button>
+                        ]
+                    </div>
+                </Div>
+                {form.basis === "договор" && (
+                    <Li>
+                        <div className="flex items-center gap-x-3">
+                            <div>Номер договора:</div>
+                            <div>
+                                [{" "}
+                                <MyInput
+                                    name="contractNumber"
+                                    value={form.contractNumber}
+                                    change={changeHandler}
+                                    color="white"
+                                />{" "}
+                                ]
+                            </div>
+                        </div>
+                    </Li>
+                )}
                 <Div />
                 <Div>
                     <div>Цена товаров:</div>

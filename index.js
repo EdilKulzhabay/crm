@@ -426,6 +426,7 @@ app.get("/getActiveCourierAggregators", CourierAggregatorController.getActiveCou
 app.get("/getAllCouriersWithOrderCount", CourierAggregatorController.getAllCouriersWithOrderCount)
 app.post("/assignOrderToCourier", CourierAggregatorController.assignOrderToCourier)
 app.post("/removeOrderFromCourier", CourierAggregatorController.removeOrderFromCourier)
+app.post("/assignAquaMarketToCourier", CourierAggregatorController.assignAquaMarketToCourier)
 app.post("/resendNotificationToCourier", CourierAggregatorController.resendNotificationToCourier)
 app.post("/updateCourierOrdersSequence", CourierAggregatorController.updateCourierOrdersSequence)
 app.post("/resetCourierOrders", CourierAggregatorController.resetCourierOrders)

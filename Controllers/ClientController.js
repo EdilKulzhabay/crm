@@ -21,8 +21,19 @@ export const addClient = async (req, res) => {
             price19,
             price12,
             franchisee,
-            opForm
+            opForm,
+            basis,
+            contractNumber
         } = req.body;
+
+        const normalizedBasis = basis === "договор" ? "договор" : "оферта";
+        const trimmedContractNumber = typeof contractNumber === "string" ? contractNumber.trim() : "";
+        if (normalizedBasis === "договор" && !trimmedContractNumber) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите номер договора",
+            });
+        }
 
         const client = new Client({
             fullName,
@@ -34,6 +45,8 @@ export const addClient = async (req, res) => {
             price12,
             franchisee,
             opForm,
+            basis: normalizedBasis,
+            contractNumber: normalizedBasis === "договор" ? trimmedContractNumber : "",
             verify: {status: "waitingVerification", message: ""}
         });
 
@@ -374,7 +387,7 @@ export const deleteClientAdress = async (req, res) => {
 
 export const updateClientData = async (req, res) => {
     try {
-        const { clientId, field, value, changedBy, reason } = req.body;
+        const { clientId, field, value, changedBy, reason, contractNumber } = req.body;
 
         // Находим текущего клиента
         const client = await Client.findById(clientId);
@@ -390,6 +403,23 @@ export const updateClientData = async (req, res) => {
                 message:
                     "Порядковый номер счёта задаётся глобально: Суперадмин → «Номер следующего счёта».",
             });
+        }
+
+        if (field === "basis") {
+            if (value !== "оферта" && value !== "договор") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Основание может быть только «оферта» или «договор»",
+                });
+            }
+            const trimmedContractNumber = typeof contractNumber === "string" ? contractNumber.trim() : "";
+            if (value === "договор" && !trimmedContractNumber) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Укажите номер договора",
+                });
+            }
+            client.contractNumber = value === "договор" ? trimmedContractNumber : "";
         }
 
         const trimmedChangedBy = typeof changedBy === "string" ? changedBy.trim() : "";

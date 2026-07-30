@@ -664,7 +664,7 @@ export const updateCourierAggregatorData = async (req, res) => {
                 const updatedCourier = await CourierAggregator.findById(id);
                 
                 if (updatedCourier && updatedCourier.orders.length > 0) {
-                    const orderIds = updatedCourier.orders.map(item => item.orderId);
+                    const orderIds = updatedCourier.orders.map(item => item.orderId).filter(Boolean);
                     await Order.updateMany({_id: { $in: orderIds}}, {courierAggregator: null})
                     await CourierAggregator.updateOne({_id: id}, { $set: {
                         orders: [],
@@ -734,11 +734,32 @@ export const completeOrderCourierAggregator = async (req, res) => {
             b19: b19 || 0
         }
 
-        const order = await Order.findById(orderId)
+        // Атомарно "забираем" заказ на завершение: если статус уже "delivered" (например,
+        // повторный запрос из-за плохого интернета у курьера — таймаут/retry/повторное нажатие),
+        // findOneAndUpdate не найдёт документ и вернёт null, не применив $set.
+        // Это гарантирует, что все начисления ниже (доход курьера, списание бутылей, realized
+        // аквамаркета, возврат клиенту) выполнятся ровно один раз, даже при гонке двух запросов.
+        const order = await Order.findOneAndUpdate(
+            { _id: orderId, status: { $ne: "delivered" } },
+            { $set: { status: "delivered" } },
+            { new: false }
+        )
             .populate("client", "price19 price12 _id paidBootlesFor12 paidBootlesFor19 balance")
             .populate("franchisee", "fullName")
 
         const courier1 = await CourierAggregator.findById(courierId)
+
+        if (!order) {
+            // Заказ уже был завершён предыдущим запросом — не повторяем начисления,
+            // просто подтверждаем клиенту, что заказ завершён (курьер получит следующий заказ
+            // из списка, т.к. ротация courier1.order уже произошла при первом успешном запросе).
+            return res.json({
+                success: true,
+                alreadyCompleted: true,
+                message: "Заказ уже завершён",
+                income: courier1?.income,
+            });
+        }
 
         let verifiedOpForm = opForm;
         const isQrPaidOnOrder = order?.qrCodeData?.status === "paid";
@@ -914,7 +935,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
         })
 
         const nextOrder = courier1.orders.length > 1 ? courier1.orders[1] : null;
-        if (nextOrder) {
+        if (nextOrder && nextOrder.orderId) {
             await Order.updateOne({_id: nextOrder.orderId}, { $set: { status: "onTheWay" } });
         }
 
@@ -1083,7 +1104,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
 
         const nextOrder = courier.orders.length > 1 ? courier.orders[1] : null;
 
-        if (nextOrder) {
+        if (nextOrder && nextOrder.orderId) {
             await Order.updateOne({_id: nextOrder.orderId}, { $set: { status: "onTheWay" } });
         }
 
@@ -1605,14 +1626,18 @@ export const clearCourierAggregatorOrders = async (req, res) => {
             return res.status(404).json({ message: "Курьер не найден", success: false })
         }
         
-        const orderId = courier.order.orderId
+        // Остановки "аквамаркет" не привязаны к Order (нет orderId) — пропускаем их здесь.
+        const orderId = courier.order?.orderId
 
-        await Order.updateOne(
-            { _id: orderId },
-            { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } }
-        )
+        if (orderId) {
+            await Order.updateOne(
+                { _id: orderId },
+                { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } }
+            )
+        }
 
         courier.orders.forEach(async (order) => {
+            if (!order.orderId) return
             await Order.updateOne(
                 { _id: order.orderId },
                 { $set: { forAggregator: true, status: "awaitingOrder", courierAggregator: null } }
@@ -2159,6 +2184,92 @@ export const assignOrderToCourier = async (req, res) => {
     }
 };
 
+// Ставит курьеру в очередь остановку "поехать в аквамаркет" (не привязана к конкретному заказу клиента).
+// Остановка автоматически убирается из очереди, когда аквамаркет фиксирует отдачу или приёмку бутылей
+// у этого курьера (см. aquaMarketAction в AquaMarketController.js).
+export const assignAquaMarketToCourier = async (req, res) => {
+    try {
+        const { aquaMarketId, courierId } = req.body;
+
+        const aquaMarket = await AquaMarket.findById(aquaMarketId);
+
+        if (!aquaMarket) {
+            return res.status(404).json({
+                success: false,
+                message: "Аквамаркет не найден"
+            });
+        }
+
+        const courier = await CourierAggregator.findById(courierId);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден"
+            });
+        }
+
+        if (!courier.onTheLine) {
+            return res.status(400).json({
+                success: false,
+                message: "Курьер неактивен"
+            });
+        }
+
+        const stopObject = {
+            stopType: "aquaMarket",
+            aquaMarketId: aquaMarket._id,
+            aquaMarketAddress: aquaMarket.address || "",
+            aquaMarketAddressLink: aquaMarket.link || "",
+            aquaMarketPoints: aquaMarket.point,
+            status: "awaitingOrder"
+        };
+
+        const hasActiveOrder = courier.orders.length > 0;
+
+        if (!hasActiveOrder) {
+            await CourierAggregator.updateOne(
+                { _id: courierId },
+                {
+                    $set: {
+                        order: stopObject,
+                        orders: [stopObject]
+                    }
+                }
+            );
+
+            try {
+                const { pushNotificationText } = await import("../pushNotification.js");
+                await pushNotificationText(
+                    "newOrder",
+                    `Новая остановка: аквамаркет ${aquaMarket.address || ""}`,
+                    [courier.notificationPushToken]
+                );
+            } catch (notificationError) {
+                console.log("Ошибка отправки уведомления:", notificationError);
+            }
+        } else {
+            await CourierAggregator.updateOne(
+                { _id: courierId },
+                {
+                    $push: { orders: stopObject }
+                }
+            );
+        }
+
+        res.json({
+            success: true,
+            message: "Курьер успешно отправлен в аквамаркет"
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Ошибка на стороне сервера"
+        });
+    }
+};
+
 export const removeOrderFromCourier = async (req, res) => {
     try {
         const { orderId, courierId } = req.body;
@@ -2268,7 +2379,7 @@ export const updateCourierOrdersSequence = async (req, res) => {
             });
         }
 
-        const firstOrderId = courier.orders[0]?.orderId?.toString();
+        const firstOrderId = (courier.orders[0]?.orderId || courier.orders[0]?._id)?.toString();
         if (!firstOrderId) {
             return res.status(400).json({
                 success: false,
@@ -2297,8 +2408,9 @@ export const updateCourierOrdersSequence = async (req, res) => {
             return order;
         });
 
+        // У остановок "аквамаркет" нет orderId — используем _id подзаписи как ключ.
         const orderMap = new Map(
-            existingOrders.map(order => [order.orderId?.toString(), order])
+            existingOrders.map(order => [(order.orderId || order._id)?.toString(), order])
         );
 
         const reorderedOrders = [];
@@ -2346,7 +2458,8 @@ export const resetCourierOrders = async (req, res) => {
             });
         }
 
-        const orderIds = courier.orders.map(order => order.orderId);
+        // Остановки "аквамаркет" не привязаны к Order — пропускаем их здесь.
+        const orderIds = courier.orders.map(order => order.orderId).filter(Boolean);
 
         console.log("orderIds = ", orderIds);
 
@@ -2396,6 +2509,13 @@ export const resendNotificationToCourier = async (req, res) => {
         // Берем первый заказ из массива orders
         const firstOrderData = courier.orders[0];
         const orderId = firstOrderData.orderId;
+
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Текущая остановка курьера — аквамаркет, уведомление о заказе недоступно"
+            });
+        }
 
         // Находим заказ
         const order = await Order.findById(orderId)
