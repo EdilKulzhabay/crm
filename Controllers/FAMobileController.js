@@ -3,6 +3,7 @@ import AquaMarket from "../Models/AquaMarket.js";
 import AquaMarketHistory from "../Models/AquaMarketHistory.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
+import Order from "../Models/Order.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoice } from "../utils/apipay.js";
@@ -57,6 +58,28 @@ const refundBottleQueueForMarket = (queue, aquaMarketId, refundB12, refundB19) =
         unmatchedB12: remainB12,
         unmatchedB19: remainB19,
     };
+};
+
+// Бутыли отданы/приняты у этого курьера — убирает ВСЕ остановки "поездка в аквамаркет" на этот
+// aquaMarketId из его очереди (не только активную), мутируя переданный updateOps добавлением
+// $pull и (если удалена активная остановка) order в $set. См. аналогичную логику в
+// aquaMarketAction (Controllers/AquaMarketController.js).
+const applyAquaMarketStopRemoval = async (courierOrders, aquaMarketId, updateOps) => {
+    const isMatchingStop = (o) => o.stopType === "aquaMarket" && String(o.aquaMarketId) === String(aquaMarketId);
+    const orders = courierOrders || [];
+    if (!orders.some(isMatchingStop)) return;
+
+    const wasActiveStopRemoved = isMatchingStop(orders[0]);
+    const remainingOrders = orders.filter((o) => !isMatchingStop(o));
+    const nextStop = remainingOrders.length > 0 ? remainingOrders[0] : null;
+
+    updateOps.$pull = { orders: { stopType: "aquaMarket", aquaMarketId } };
+    if (wasActiveStopRemoved) {
+        updateOps.$set = { ...(updateOps.$set || {}), order: nextStop };
+        if (nextStop && nextStop.stopType !== "aquaMarket" && nextStop.orderId) {
+            await Order.updateOne({ _id: nextStop.orderId }, { $set: { status: "onTheWay" } });
+        }
+    }
 };
 
 // ─── Franchisee ──────────────────────────────────────────────────────────────
@@ -176,6 +199,8 @@ export const releaseBottles = async (req, res) => {
         });
 
         if (courierId) {
+            const courier = await CourierAggregator.findById(courierId).select("orders");
+
             const courierUpdate = {
                 $inc: {
                     capacity12: (giveFull.b12 || 0),
@@ -194,6 +219,9 @@ export const releaseBottles = async (req, res) => {
                     }
                 };
             }
+
+            await applyAquaMarketStopRemoval(courier?.orders, aquaMarket._id, courierUpdate);
+
             console.log(`[releaseBottles] aquaMarket=${aquaMarket._id} gave courier=${courierId} b12=${giveFull.b12 || 0} b19=${giveFull.b19 || 0} full bottles -> pushed to bottleQueue; received back empty b12=${receiveEmpty.b12 || 0} b19=${receiveEmpty.b19 || 0}`);
             await CourierAggregator.findByIdAndUpdate(courierId, courierUpdate);
         }
@@ -236,6 +264,8 @@ export const acceptBottles = async (req, res) => {
 
         if (courierId) {
             const totalReceiveFull = (receiveFull.b12 || 0) + (receiveFull.b19 || 0);
+            const courier = await CourierAggregator.findById(courierId).select("orders bottleQueue");
+
             const courierUpdate = {
                 $inc: {
                     capacity12: -(receiveFull.b12 || 0),
@@ -248,13 +278,14 @@ export const acceptBottles = async (req, res) => {
             if (totalReceiveFull > 0) {
                 // Если курьер возвращает полные бутыли ИМЕННО тому аквамаркету, у которого их взял,
                 // они не были реализованы — убираем их из FIFO-очереди, чтобы не засчитались при доставке.
-                const courier = await CourierAggregator.findById(courierId).select("bottleQueue");
                 const refund = refundBottleQueueForMarket(courier?.bottleQueue || [], aquaMarket._id, receiveFull.b12 || 0, receiveFull.b19 || 0);
                 courierUpdate.$set = { bottleQueue: refund.newQueue };
                 if (refund.unmatchedB12 > 0 || refund.unmatchedB19 > 0) {
                     console.warn(`[acceptBottles] aquaMarket=${aquaMarket._id} took back full bottles from courier=${courierId}, but bottleQueue has no matching entries for b12=${refund.unmatchedB12} b19=${refund.unmatchedB19} (likely bottles taken from a different aquaMarket, so realized not affected for those)`);
                 }
             }
+
+            await applyAquaMarketStopRemoval(courier?.orders, aquaMarket._id, courierUpdate);
 
             console.log(`[acceptBottles] aquaMarket=${aquaMarket._id} received from courier=${courierId} full b12=${receiveFull.b12 || 0} b19=${receiveFull.b19 || 0} (removed from bottleQueue if matched to this market), empty b12=${receiveEmpty.b12 || 0} b19=${receiveEmpty.b19 || 0}`);
             await CourierAggregator.findByIdAndUpdate(courierId, courierUpdate);
