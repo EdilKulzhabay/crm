@@ -157,6 +157,7 @@ export default function SuperAdminAggregatorAction() {
     const [showAquaMarketAssignModal, setShowAquaMarketAssignModal] = useState(false)
     const [selectedAquaMarket, setSelectedAquaMarket] = useState(null)
     const [aquaMarketAssignLoading, setAquaMarketAssignLoading] = useState(false)
+    const [aquaMarketBottlesToTake, setAquaMarketBottlesToTake] = useState({ b12: "", b19: "" })
 
     useEffect(() => {
         if (!userData?._id) return;
@@ -295,17 +296,26 @@ export default function SuperAdminAggregatorAction() {
 
     const openAquaMarketAssignModal = (aquaMarket) => {
         setSelectedAquaMarket(aquaMarket);
+        setAquaMarketBottlesToTake({ b12: "", b19: "" });
         setShowAquaMarketAssignModal(true);
     };
 
     const handleAssignAquaMarketToCourier = async (courierId) => {
         if (!selectedAquaMarket) return;
 
+        const b12 = Number(aquaMarketBottlesToTake.b12) || 0;
+        const b19 = Number(aquaMarketBottlesToTake.b19) || 0;
+        if (b12 <= 0 && b19 <= 0) {
+            alert("Укажите количество бутылей 12,5 л и/или 18,9 л для сбора");
+            return;
+        }
+
         setAquaMarketAssignLoading(true);
         try {
             const response = await api.post("/assignAquaMarketToCourier", {
                 aquaMarketId: selectedAquaMarket._id,
-                courierId: courierId
+                courierId: courierId,
+                bottles: { b12, b19 }
             });
 
             if (response.data.success) {
@@ -1006,31 +1016,46 @@ export default function SuperAdminAggregatorAction() {
                         return null;
                     })}
 
-                    {/* Линии от курьеров к назначенным заказам */}
+                    {/* Линии от курьеров к назначенным остановкам (заказы клиентов + поездки в аквамаркет) */}
                     {couriers.map((courier, courierIndex) => {
                         if (courier.point?.lat && courier.point?.lon && courier.orders && courier.orders.length > 0) {
                             const lines = [];
-                            const courierOrderIds = courier.orders.map(order => order.orderId);
 
-                            const orderedCourierOrders = [];
-                            courierOrderIds.forEach(orderId => {
-                                const order = orders.find(o => o._id === orderId);
-                                if (order) {
-                                    orderedCourierOrders.push(order);
-                                }
-                            });
+                            const stopPoints = courier.orders
+                                .map((stopItem) => {
+                                    if (stopItem.stopType === "aquaMarket") {
+                                        if (stopItem.aquaMarketPoints?.lat && stopItem.aquaMarketPoints?.lon) {
+                                            return {
+                                                lat: stopItem.aquaMarketPoints.lat,
+                                                lon: stopItem.aquaMarketPoints.lon,
+                                                isAquaMarket: true
+                                            };
+                                        }
+                                        return null;
+                                    }
+                                    const order = orders.find(o => o._id === stopItem.orderId);
+                                    if (order?.address?.point?.lat && order?.address?.point?.lon) {
+                                        return {
+                                            lat: order.address.point.lat,
+                                            lon: order.address.point.lon,
+                                            isAquaMarket: false
+                                        };
+                                    }
+                                    return null;
+                                })
+                                .filter(Boolean);
 
-                            const firstOrder = orderedCourierOrders[0];
-                            if (firstOrder && firstOrder.address?.point?.lat && firstOrder.address?.point?.lon) {
+                            const firstStop = stopPoints[0];
+                            if (firstStop) {
                                 lines.push(
                                     <Polyline
                                         key={`line-courier-${courierIndex}`}
                                         positions={[
                                             [courier.point.lat, courier.point.lon],
-                                            [firstOrder.address.point.lat, firstOrder.address.point.lon]
+                                            [firstStop.lat, firstStop.lon]
                                         ]}
                                         pathOptions={{
-                                            color: "purple",
+                                            color: firstStop.isAquaMarket ? "blue" : "purple",
                                             weight: 3,
                                             opacity: 0.7,
                                             dashArray: "10, 5"
@@ -1039,28 +1064,25 @@ export default function SuperAdminAggregatorAction() {
                                 );
                             }
 
-                            for (let i = 0; i < orderedCourierOrders.length - 1; i++) {
-                                const currentOrder = orderedCourierOrders[i];
-                                const nextOrder = orderedCourierOrders[i + 1];
+                            for (let i = 0; i < stopPoints.length - 1; i++) {
+                                const currentStop = stopPoints[i];
+                                const nextStop = stopPoints[i + 1];
 
-                                if (currentOrder.address?.point?.lat && currentOrder.address?.point?.lon &&
-                                    nextOrder.address?.point?.lat && nextOrder.address?.point?.lon) {
-                                    lines.push(
-                                        <Polyline
-                                            key={`line-order-${courierIndex}-${i}`}
-                                            positions={[
-                                                [currentOrder.address.point.lat, currentOrder.address.point.lon],
-                                                [nextOrder.address.point.lat, nextOrder.address.point.lon]
-                                            ]}
-                                            pathOptions={{
-                                                color: "purple",
-                                                weight: 3,
-                                                opacity: 0.7,
-                                                dashArray: "10, 5"
-                                            }}
-                                        />
-                                    );
-                                }
+                                lines.push(
+                                    <Polyline
+                                        key={`line-order-${courierIndex}-${i}`}
+                                        positions={[
+                                            [currentStop.lat, currentStop.lon],
+                                            [nextStop.lat, nextStop.lon]
+                                        ]}
+                                        pathOptions={{
+                                            color: nextStop.isAquaMarket ? "blue" : "purple",
+                                            weight: 3,
+                                            opacity: 0.7,
+                                            dashArray: "10, 5"
+                                        }}
+                                    />
+                                );
                             }
 
                             return lines;
@@ -1324,6 +1346,32 @@ export default function SuperAdminAggregatorAction() {
                             <p><strong>Полные бутыли:</strong> 12,5 л — {selectedAquaMarket.full?.b12 ?? 0}, 18,9 л — {selectedAquaMarket.full?.b19 ?? 0}</p>
                         </div>
                     )}
+
+                    <div className="mb-4">
+                        <p className="font-semibold mb-2">Сколько бутылей нужно забрать:</p>
+                        <div className="flex gap-x-4">
+                            <label className="flex items-center gap-x-2">
+                                12,5 л:
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className="border border-gray-300 rounded px-2 py-1 w-20"
+                                    value={aquaMarketBottlesToTake.b12}
+                                    onChange={(e) => setAquaMarketBottlesToTake({ ...aquaMarketBottlesToTake, b12: e.target.value })}
+                                />
+                            </label>
+                            <label className="flex items-center gap-x-2">
+                                18,9 л:
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className="border border-gray-300 rounded px-2 py-1 w-20"
+                                    value={aquaMarketBottlesToTake.b19}
+                                    onChange={(e) => setAquaMarketBottlesToTake({ ...aquaMarketBottlesToTake, b19: e.target.value })}
+                                />
+                            </label>
+                        </div>
+                    </div>
 
                     <div className="max-h-60 overflow-y-auto">
                         {allCouriers.length === 0 ? (

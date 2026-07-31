@@ -375,8 +375,18 @@ const CourierAggregatorSchema = new mongoose.Schema(
             default: 0,
         },
         cardData: {
-            type: String,
-            default: "",
+            accountNumber: {
+                type: String,
+                default: ""
+            },
+            IIN: {
+                type: String,
+                default: ""
+            },
+            fullName: {
+                type: String,
+                default: ""
+            }
         }
     },
     {

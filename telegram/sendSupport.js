@@ -47,7 +47,7 @@ export async function sendSupportTelegram({ fullName, mail, text, id }) {
     }
 }
 
-export async function sendWithdrawTelegram({ fullName, id, sum }) {
+export async function sendWithdrawTelegram({ fullName, id, sum, cardData }) {
     const token = process.env.TELEGRAM_BOT_TOKEN_SUPPORT;
     const chatId = process.env.TELEGRAM_WITHDRAW_CHAT_ID;
 
@@ -62,6 +62,10 @@ export async function sendWithdrawTelegram({ fullName, id, sum }) {
         `Запрос на вывод средств — ${fullName}`,
         "",
         `Курьер ${fullName} хочет вывести деньги на карту.\n\nСумма: ${sum} ₸`,
+        "",
+        `Номер счета (IBAN): ${cardData?.accountNumber || "—"}`,
+        `ИИН получателя: ${cardData?.IIN || "—"}`,
+        `ФИО получателя: ${cardData?.fullName || "—"}`,
         "",
         `Ссылка на курьера: https://tibetskayacrm.kz/CourierAggregatorPage/${id}`,
     ].join("\n");

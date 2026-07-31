@@ -18,7 +18,7 @@ const STATIC = {
     iik: "KZ1596521F0008530262",
     kbe: "17",
     bik: "IRTYKZKA",
-    paymentCode: "859",
+    paymentCode: "857",
     executorBlock:
         'БИН 220340005670, Товарищество с ограниченной ответственностью "Verto Business (Верто Бизнес)", Республики Казахстан, г. Алматы, мкр. Нурлытау, ул. Г. Баязитовой, 12',
     contract: "На основании публичной оферты",
@@ -330,6 +330,10 @@ export function buildInvoicePdfBuffer(params) {
         contractNumber,
     } = params;
 
+    const basisPhrase =
+        basis === "договор"
+            ? `условиям Договора № ${contractNumber || ""}`.trim()
+            : "условиям публичной оферты";
     const contractText =
         basis === "договор"
             ? `На основании Договора № ${contractNumber || ""}`.trim()
@@ -405,7 +409,7 @@ export function buildInvoicePdfBuffer(params) {
         let n = 1;
         if (qty19 > 0) {
             const name19 =
-                'Оплата за обеспечение доступа к сервису и ресурсам экосистемы «Тибетская» (пакет «Water 19L») согласно условиям публичной оферты';
+                `Оплата за обеспечение доступа к сервису и ресурсам экосистемы «Тибетская» (пакет «Water 19L») согласно ${basisPhrase}`;
             tableRows.push([
                 String(n),
                 STATIC.code19,
@@ -419,7 +423,7 @@ export function buildInvoicePdfBuffer(params) {
         }
         if (qty12 > 0) {
             const name12 =
-                'Оплата за обеспечение доступа к сервису и ресурсам экосистемы «Тибетская» (пакет «Water 12L») согласно условиям публичной оферты';
+                `Оплата за обеспечение доступа к сервису и ресурсам экосистемы «Тибетская» (пакет «Water 12L») согласно ${basisPhrase}`;
             tableRows.push([
                 String(n),
                 STATIC.code12,

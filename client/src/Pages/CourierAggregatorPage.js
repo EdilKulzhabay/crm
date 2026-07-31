@@ -70,7 +70,7 @@ export default function CourierAggregatorPage() {
     const [editingLogId, setEditingLogId] = useState(null);
     const [editingOpForm, setEditingOpForm] = useState("");
     const [incomeLogActionMsg, setIncomeLogActionMsg] = useState(null);
-    const [cardData, setCardData] = useState("");
+    const [cardData, setCardData] = useState({ accountNumber: "", IIN: "", fullName: "" });
     const [deleting, setDeleting] = useState(false);
 
     const closeFranchiseeModal = () => {
@@ -99,7 +99,11 @@ export default function CourierAggregatorPage() {
             setPrice12(data.userData.price12);
             setPrice19(data.userData.price19);
             setIncome(data.userData.income || 0);
-            setCardData(data.userData.cardData || "");
+            setCardData({
+                accountNumber: data.userData.cardData?.accountNumber || "",
+                IIN: data.userData.cardData?.IIN || "",
+                fullName: data.userData.cardData?.fullName || "",
+            });
         } catch (error) {
             console.error("Ошибка при загрузке данных курьера:", error);
         }
@@ -738,19 +742,40 @@ export default function CourierAggregatorPage() {
 
             <Div className="text-xl font-bold">Данные карты</Div>
             <Li>
-                <div className="flex items-center gap-x-2 flex-wrap">
-                    <MyInput
-                        value={cardData}
-                        change={(e) => setCardData(e.target.value)}
-                        color="white"
-                    />
-                    <MyButton
-                        click={() => {
-                            updateCourierAggregatorData(id, "cardData", cardData)
-                        }}
-                    >
-                        Сохранить
-                    </MyButton>
+                <div className="flex flex-col gap-y-2">
+                    <div className="flex items-center gap-x-2 flex-wrap">
+                        <div>Номер счета (IBAN):</div>
+                        <MyInput
+                            value={cardData.accountNumber}
+                            change={(e) => setCardData({ ...cardData, accountNumber: e.target.value })}
+                            color="white"
+                        />
+                    </div>
+                    <div className="flex items-center gap-x-2 flex-wrap">
+                        <div>ИИН получателя:</div>
+                        <MyInput
+                            value={cardData.IIN}
+                            change={(e) => setCardData({ ...cardData, IIN: e.target.value })}
+                            color="white"
+                        />
+                    </div>
+                    <div className="flex items-center gap-x-2 flex-wrap">
+                        <div>ФИО получателя:</div>
+                        <MyInput
+                            value={cardData.fullName}
+                            change={(e) => setCardData({ ...cardData, fullName: e.target.value })}
+                            color="white"
+                        />
+                    </div>
+                    <div>
+                        <MyButton
+                            click={() => {
+                                updateCourierAggregatorData(id, "cardData", cardData)
+                            }}
+                        >
+                            Сохранить
+                        </MyButton>
+                    </div>
                 </div>
             </Li>
             <Div />

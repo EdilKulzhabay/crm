@@ -310,7 +310,12 @@ export const aquaMarketAction = async (req, res) => {
                 }
             }
 
-            await CourierAggregator.updateOne({ _id: courierAggregatorId }, stopUpdateOps)
+            const pullResult = await CourierAggregator.updateOne({ _id: courierAggregatorId }, stopUpdateOps)
+            if (pullResult.modifiedCount === 0) {
+                console.log(`[aquaMarketAction] courier=${courierAggregatorId} aquaMarket=${aquaMarketId}: остановка была найдена в снимке очереди (stopIndex=${stopIndex}), но updateOne ничего не изменил (modifiedCount=0) — вероятна гонка с параллельным изменением очереди этого курьера`)
+            }
+        } else {
+            console.log(`[aquaMarketAction] courier=${courierAggregatorId} aquaMarket=${aquaMarketId}: в очереди курьера не найдена остановка stopType="aquaMarket" с этим aquaMarketId — удалять нечего (курьер выбран без постановки в очередь на этот аквамаркет, либо очередь уже была очищена ранее)`)
         }
 
         res.json({

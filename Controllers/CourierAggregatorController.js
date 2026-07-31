@@ -2189,7 +2189,17 @@ export const assignOrderToCourier = async (req, res) => {
 // у этого курьера (см. aquaMarketAction в AquaMarketController.js).
 export const assignAquaMarketToCourier = async (req, res) => {
     try {
-        const { aquaMarketId, courierId } = req.body;
+        const { aquaMarketId, courierId, bottles } = req.body;
+
+        const b12ToTake = Number(bottles?.b12) || 0;
+        const b19ToTake = Number(bottles?.b19) || 0;
+
+        if (b12ToTake <= 0 && b19ToTake <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите количество бутылей 12,5 л и/или 18,9 л для сбора"
+            });
+        }
 
         const aquaMarket = await AquaMarket.findById(aquaMarketId);
 
@@ -2222,6 +2232,7 @@ export const assignAquaMarketToCourier = async (req, res) => {
             aquaMarketAddress: aquaMarket.address || "",
             aquaMarketAddressLink: aquaMarket.link || "",
             aquaMarketPoints: aquaMarket.point,
+            products: { b12: b12ToTake, b19: b19ToTake },
             status: "awaitingOrder"
         };
 
@@ -2644,6 +2655,13 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
             });
         }
 
+        if (!courier.cardData?.accountNumber?.trim() || !courier.cardData?.IIN?.trim() || !courier.cardData?.fullName?.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Заполните банковские реквизиты в профиле перед выводом средств",
+            });
+        }
+
         await logCourierIncomeChange({
             courierId,
             type: "withdrawal_request",
@@ -2658,7 +2676,8 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
         void sendWithdrawTelegram({
             fullName: fullName,
             id: courier._id,
-            sum: sum
+            sum: sum,
+            cardData: courier.cardData
         }).catch((e) =>
             console.error("[sendSupportMessage] telegram:", e?.message || e)
         );
