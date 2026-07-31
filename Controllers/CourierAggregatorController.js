@@ -2226,6 +2226,16 @@ export const assignAquaMarketToCourier = async (req, res) => {
             });
         }
 
+        const alreadyQueued = courier.orders.some(
+            (o) => o.stopType === "aquaMarket" && String(o.aquaMarketId) === String(aquaMarket._id)
+        );
+        if (alreadyQueued) {
+            return res.status(400).json({
+                success: false,
+                message: "У этого курьера уже есть поездка в данный аквамаркет в очереди"
+            });
+        }
+
         const stopObject = {
             stopType: "aquaMarket",
             aquaMarketId: aquaMarket._id,

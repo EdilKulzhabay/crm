@@ -292,18 +292,23 @@ export const aquaMarketAction = async (req, res) => {
 
         await history.save()
 
-        // Бутыли отданы/приняты у этого курьера — убираем соответствующую остановку "аквамаркет" из его очереди.
-        const stopIndex = courierAggregator.orders.findIndex(
-            (o) => o.stopType === "aquaMarket" && String(o.aquaMarketId) === String(aquaMarketId)
-        )
+        // Бутыли отданы/приняты у этого курьера — убираем ВСЕ остановки "аквамаркет" на этот
+        // aquaMarketId из его очереди (не только первую по индексу — если курьера по ошибке
+        // отправляли в один и тот же аквамаркет несколько раз, дубликаты не должны оставаться висеть).
+        const isMatchingAquaMarketStop = (o) =>
+            o.stopType === "aquaMarket" && String(o.aquaMarketId) === String(aquaMarketId)
 
-        if (stopIndex !== -1) {
-            const removedStop = courierAggregator.orders[stopIndex]
-            const isActiveStop = stopIndex === 0
-            const nextStop = courierAggregator.orders.length > 1 ? courierAggregator.orders[1] : null
+        const hadMatchingStop = courierAggregator.orders.some(isMatchingAquaMarketStop)
 
-            const stopUpdateOps = { $pull: { orders: { _id: removedStop._id } } }
-            if (isActiveStop) {
+        if (hadMatchingStop) {
+            const wasActiveStopRemoved = isMatchingAquaMarketStop(courierAggregator.orders[0])
+            const remainingOrders = courierAggregator.orders.filter((o) => !isMatchingAquaMarketStop(o))
+            const nextStop = remainingOrders.length > 0 ? remainingOrders[0] : null
+
+            const stopUpdateOps = {
+                $pull: { orders: { stopType: "aquaMarket", aquaMarketId: aquaMarketId } }
+            }
+            if (wasActiveStopRemoved) {
                 stopUpdateOps.$set = { order: nextStop }
                 if (nextStop && nextStop.stopType !== "aquaMarket" && nextStop.orderId) {
                     await Order.updateOne({ _id: nextStop.orderId }, { $set: { status: "onTheWay" } })
@@ -312,7 +317,7 @@ export const aquaMarketAction = async (req, res) => {
 
             const pullResult = await CourierAggregator.updateOne({ _id: courierAggregatorId }, stopUpdateOps)
             if (pullResult.modifiedCount === 0) {
-                console.log(`[aquaMarketAction] courier=${courierAggregatorId} aquaMarket=${aquaMarketId}: остановка была найдена в снимке очереди (stopIndex=${stopIndex}), но updateOne ничего не изменил (modifiedCount=0) — вероятна гонка с параллельным изменением очереди этого курьера`)
+                console.log(`[aquaMarketAction] courier=${courierAggregatorId} aquaMarket=${aquaMarketId}: остановка была найдена в снимке очереди, но updateOne ничего не изменил (modifiedCount=0) — вероятна гонка с параллельным изменением очереди этого курьера`)
             }
         } else {
             console.log(`[aquaMarketAction] courier=${courierAggregatorId} aquaMarket=${aquaMarketId}: в очереди курьера не найдена остановка stopType="aquaMarket" с этим aquaMarketId — удалять нечего (курьер выбран без постановки в очередь на этот аквамаркет, либо очередь уже была очищена ранее)`)
