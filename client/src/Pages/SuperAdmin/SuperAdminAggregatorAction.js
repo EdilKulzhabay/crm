@@ -152,6 +152,7 @@ export default function SuperAdminAggregatorAction() {
     const [reorderedCourierOrders, setReorderedCourierOrders] = useState([])
     const [reorderLoading, setReorderLoading] = useState(false)
     const [draggedOrderIndex, setDraggedOrderIndex] = useState(null)
+    const [dragOverIndex, setDragOverIndex] = useState(null)
     const [viewMode, setViewMode] = useState('icons')
     const [aquaMarkets, setAquaMarkets] = useState([])
     const [showAquaMarketAssignModal, setShowAquaMarketAssignModal] = useState(false)
@@ -172,26 +173,15 @@ export default function SuperAdminAggregatorAction() {
     useEffect(() => {
         setLoading(true)
 
-        api.get("/getAllOrderForToday").then((res) => {
-            console.log("Заказы с сервера:", res.data.orders);
-            setOrders(res.data.orders)
-        }).catch((err) => {
+        Promise.all([
+            api.get("/getAllOrderForToday").then((res) => setOrders(res.data.orders)),
+            api.get("/getActiveCourierAggregators").then((res) => setCouriers(res.data.couriers)),
+            api.get("/getAllCouriersWithOrderCount").then((res) => setAllCouriers(res.data.couriers))
+        ]).catch((err) => {
             console.log(err)
+        }).finally(() => {
+            setLoading(false)
         })
-
-        api.get("/getActiveCourierAggregators").then((res) => {
-            setCouriers(res.data.couriers)
-        }).catch((err) => {
-            console.log(err)
-        })
-
-        api.get("/getAllCouriersWithOrderCount").then((res) => {
-            setAllCouriers(res.data.couriers)
-        }).catch((err) => {
-            console.log(err)
-        })
-
-        setLoading(false)
     }, [])
 
     const handleAssignOrder = async (courierId) => {
@@ -281,10 +271,21 @@ export default function SuperAdminAggregatorAction() {
             });
 
             if (response.data.success) {
+                const ordersRes = await api.get("/getAllOrderForToday");
+                setOrders(ordersRes.data.orders);
+
+                const couriersRes = await api.get("/getActiveCourierAggregators");
+                setCouriers(couriersRes.data.couriers);
+
+                const allCouriersRes = await api.get("/getAllCouriersWithOrderCount");
+                setAllCouriers(allCouriersRes.data.couriers);
+
                 alert("Заказы курьера успешно сброшены!");
             }
         } catch (error) {
             console.log("Ошибка сброса заказов:", error);
+            const errorMessage = error.response?.data?.message || "Ошибка при сбросе заказов";
+            alert(`Ошибка: ${errorMessage}`);
         }
         setResetOrdersLoading(false);
     };
@@ -373,6 +374,7 @@ export default function SuperAdminAggregatorAction() {
         setSelectedCourierForReorder(null);
         setReorderedCourierOrders([]);
         setDraggedOrderIndex(null);
+        setDragOverIndex(null);
         setReorderLoading(false);
     };
 
@@ -389,11 +391,22 @@ export default function SuperAdminAggregatorAction() {
     const handleDragOver = (event, index) => {
         if (index === 0) return;
         event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        if (dragOverIndex !== index) {
+            setDragOverIndex(index);
+        }
     };
 
-    const handleDragEnter = (event, index) => {
+    const handleDragLeave = () => {
+        setDragOverIndex(null);
+    };
+
+    const handleDrop = (event, index) => {
         event.preventDefault();
+
         if (draggedOrderIndex === null || draggedOrderIndex === index || index === 0 || draggedOrderIndex === 0) {
+            setDraggedOrderIndex(null);
+            setDragOverIndex(null);
             return;
         }
 
@@ -403,11 +416,14 @@ export default function SuperAdminAggregatorAction() {
             updated.splice(index, 0, removed);
             return updated;
         });
-        setDraggedOrderIndex(index);
+
+        setDraggedOrderIndex(null);
+        setDragOverIndex(null);
     };
 
     const handleDragEnd = () => {
         setDraggedOrderIndex(null);
+        setDragOverIndex(null);
     };
 
     const handleSaveReorderedOrders = async () => {
@@ -1211,16 +1227,17 @@ export default function SuperAdminAggregatorAction() {
                                     key={order.orderId || index}
                                     draggable={index !== 0}
                                     onDragStart={(event) => handleDragStart(event, index)}
-                                    onDragEnter={(event) => handleDragEnter(event, index)}
                                     onDragOver={(event) => handleDragOver(event, index)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={(event) => handleDrop(event, index)}
                                     onDragEnd={handleDragEnd}
-                                    onDrop={handleDragEnd}
                                     className={clsx(
                                         "border border-gray-300 rounded-md p-3 bg-white shadow-sm transition",
                                         {
                                             "opacity-60 cursor-not-allowed": index === 0,
                                             "cursor-move": index !== 0,
-                                            "ring-2 ring-purple-500": draggedOrderIndex === index && index !== 0
+                                            "opacity-40": draggedOrderIndex === index,
+                                            "ring-2 ring-purple-500": dragOverIndex === index && index !== 0 && draggedOrderIndex !== index
                                         }
                                     )}
                                 >

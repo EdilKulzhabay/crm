@@ -387,6 +387,24 @@ const CourierAggregatorSchema = new mongoose.Schema(
                 type: String,
                 default: ""
             }
+        },
+        carData: {
+            brand: {
+                type: String,
+                default: ""
+            },
+            model: {
+                type: String,
+                default: ""
+            },
+            color: {
+                type: String,
+                default: ""
+            },
+            plateNumber: {
+                type: String,
+                default: ""
+            }
         }
     },
     {

@@ -28,6 +28,7 @@ import {
 } from "../utils/invoicePdf.js";
 import { takeNextInvoiceNumberForPdf } from "../utils/invoiceCounter.js";
 import { getDateAlmaty, getHourAlmaty } from "../utils/dateUtils.js";
+import { sendCompleteRegistration } from "../utils/metaConversionsApi.js";
 import {
     getOrderSameDayUntilHourValue,
     withOrderSameDayUntilHour,
@@ -683,8 +684,8 @@ export const createTestAccount = async (req, res) => {
                 b19: 0,
             },
             franchisee: superAdmin._id,
-            price12: 900,
-            price19: 1300,
+            price12: 1100,
+            price19: 1500,
             dailyWater: 2,
             opForm: "fakt",
             type: true
@@ -814,8 +815,8 @@ export const clientRegister = async (req, res) => {
                 b19: 0,
             },
             franchisee: superAdmin._id,
-            price12: 900,
-            price19: 1300,
+            price12: 1100,
+            price19: 1500,
             dailyWater: 2,
             opForm: "fakt",
             type: true,
@@ -826,6 +827,12 @@ export const clientRegister = async (req, res) => {
 
         const client = await doc.save();
         delete verifiedPhones[phoneNorm];
+
+        try {
+            await sendCompleteRegistration(client, req);
+        } catch (metaErr) {
+            console.error("Meta CAPI CompleteRegistration (не критично):", metaErr);
+        }
 
         const accessToken = jwt.sign(
             { client: client._id },
@@ -1612,7 +1619,7 @@ export const getActiveOrdersMobile = async (req, res) => {
 
         const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } })
             .sort({ createdAt: -1 })
-            .populate("courierAggregator", "userName fullName _id point phone")
+            .populate("courierAggregator", "userName fullName _id point phone carNumber carData")
 
         if (!orders) {
             return res.status(404).json({

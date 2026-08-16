@@ -217,6 +217,7 @@ export const courierAggregatorSendCode = async (req, res) => {
 
         if (candidate) {
             return res.status(409).json({
+                success: false,
                 message: "Пользователь с такой почтой уже существует",
             });
         }
@@ -234,6 +235,7 @@ export const courierAggregatorSendCode = async (req, res) => {
         const phoneCandidate = await findCourierAggregatorByPhone(phone);
         if (phoneCandidate) {
             return res.status(409).json({
+                success: false,
                 message: "Пользователь с таким номером телефона уже существует",
             });
         }
@@ -1032,6 +1034,17 @@ export const completeOrderCourierAggregator = async (req, res) => {
             await applyReferrerBonusOnFirstDeliveredOrder(order.client?._id || order.client);
         } catch (refErr) {
             console.error("Реферальный бонус (не критично):", refErr);
+        }
+
+        try {
+            // order — снимок ДО завершения (findOneAndUpdate({new:false})), sum в нём ещё
+            // старый/нулевой; актуальная сумма — локальная переменная sum, посчитанная выше
+            // и уже сохранённая в Order.updateOne (строки 885-891).
+            order.sum = sum;
+            const { sendFirstPurchaseIfApplicable } = await import("../utils/metaConversionsApi.js");
+            await sendFirstPurchaseIfApplicable(order);
+        } catch (metaErr) {
+            console.error("Meta CAPI Purchase (не критично):", metaErr);
         }
 
     } catch (error) {

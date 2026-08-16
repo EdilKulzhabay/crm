@@ -497,6 +497,13 @@ export const updateOrder = async (req, res) => {
                 } catch (refErr) {
                     console.error("Реферальный бонус (не критично):", refErr);
                 }
+
+                try {
+                    const { sendFirstPurchaseIfApplicable } = await import("../utils/metaConversionsApi.js");
+                    await sendFirstPurchaseIfApplicable(order);
+                } catch (metaErr) {
+                    console.error("Meta CAPI Purchase (не критично):", metaErr);
+                }
             }
             
             const client = await Client.findById(order.client)

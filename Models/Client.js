@@ -279,6 +279,24 @@ const ClientSchema = new mongoose.Schema(
         referralReferrerBonusPaid: {
             type: Boolean,
         },
+        /** Meta Conversions API: CompleteRegistration уже отправлен (антидубль), см. utils/metaConversionsApi.js */
+        metaRegistrationSent: {
+            type: Boolean,
+            default: false,
+        },
+        metaRegistrationEventId: {
+            type: String,
+            default: null,
+        },
+        /** Meta Conversions API: Purchase за первую доставленную сделку уже отправлен (антидубль) */
+        metaFirstPurchaseSent: {
+            type: Boolean,
+            default: false,
+        },
+        metaFirstPurchaseEventId: {
+            type: String,
+            default: null,
+        },
         /** Счётчик успешно оформленных заказов через приложение (для показа реф. модалки каждые 3) */
         appOrdersPlacedCount: {
             type: Number,
