@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import * as XLSX from "xlsx";
 import api from "../../api";
 import Container from "../../Components/Container";
 import Div from "../../Components/Div";
@@ -192,6 +193,49 @@ export default function SuperAdminUpdateFranchisee() {
     
         // Преобразуем число в строку и форматируем его
         return `${String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} тенге`;
+    };
+
+    const exportRecentOrderClientsToExcel = () => {
+        api.post(
+            "/getFranchiseeClientsWithRecentOrders",
+            { franchiseeId: id },
+            {
+                headers: { "Content-Type": "application/json" },
+            }
+        )
+            .then(({ data }) => {
+                const clients = data.clients;
+
+                const mappedData = clients.map((item) => {
+                    let addresses = "";
+                    item.addresses.forEach((address, index) => {
+                        addresses += `Адрес${index + 1} ${address.street} ${address.house}\n`;
+                    });
+                    return {
+                        "Имя Клиента": item.fullName,
+                        "Контактное лицо": item.userName,
+                        Адрес: addresses,
+                        Номер: item.phone,
+                        Почта: item.mail,
+                        "Статус клиента": item.status === "active" ? "Раб." : "Не раб.",
+                        "Дата добавления": item.createdAt?.slice(0, 10),
+                        Баланс: item.balance,
+                        Франчайзи: item.franchisee?.fullName,
+                    };
+                });
+
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.json_to_sheet(mappedData);
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Clients");
+
+                const fileName = `${franchisee?.fullName || "franchisee"}_clients_6mo.xlsx`;
+                XLSX.writeFile(workbook, fileName);
+            })
+            .catch((e) => {
+                setOpen(true);
+                setMessage(e.response?.data?.message || "Не удалось выгрузить данные");
+                setStatus("error");
+            });
     };
 
     const updateFranchiseeDataB = (change, changeData) => {
@@ -494,6 +538,11 @@ export default function SuperAdminUpdateFranchisee() {
                 </Div>
 
                 <Div />
+                <Div>
+                    <MyButton click={exportRecentOrderClientsToExcel}>
+                        Экспорт клиентов с заказами за 6 мес. в excel
+                    </MyButton>
+                </Div>
                 <Div>Список клиентов:</Div>
                 <div className="max-h-[180px] overflow-scroll">
                     {clients.map((client, index) => {

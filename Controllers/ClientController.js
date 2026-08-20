@@ -668,6 +668,46 @@ export const getClientsForExcel = async (req, res) => {
     }
 };
 
+/** Выгрузка клиентов франчайзи, у которых был хотя бы один заказ за последние N месяцев (по умолчанию 6) */
+export const getFranchiseeClientsWithRecentOrders = async (req, res) => {
+    try {
+        const { franchiseeId, monthsBack = 6 } = req.body;
+
+        if (!franchiseeId) {
+            return res.status(400).json({
+                message: "Не передан franchiseeId",
+            });
+        }
+
+        const franchisee = await User.findById(franchiseeId);
+        if (!franchisee) {
+            return res.status(404).json({
+                message: "Франчайзи не найден",
+            });
+        }
+
+        const sinceDate = new Date();
+        sinceDate.setMonth(sinceDate.getMonth() - monthsBack);
+
+        const clientIds = await Order.distinct("client", {
+            franchisee: franchiseeId,
+            createdAt: { $gte: sinceDate },
+            client: { $ne: null },
+        });
+
+        const clients = await Client.find({ _id: { $in: clientIds } })
+            .populate("franchisee", "fullName userName")
+            .sort({ createdAt: -1 });
+
+        res.json({ clients, total: clients.length });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Что-то пошло не так",
+        });
+    }
+};
+
 export const getNotVerifyClients = async (req, res) => {
     try {
         const {page, searchF, sa} = req.body

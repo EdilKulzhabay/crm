@@ -265,6 +265,7 @@ app.post("/getClientOperationLog", ClientController.getClientOperationLog);
 app.post("/updateClientOperationLog", ClientController.updateClientOperationLog);
 app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
 app.post("/getClientsForExcel", checkAuth, ClientController.getClientsForExcel);
+app.post("/getFranchiseeClientsWithRecentOrders", checkAuth, ClientController.getFranchiseeClientsWithRecentOrders);
 app.post("/getNotVerifyClients", ClientController.getNotVerifyClients);
 app.post("/clientAddPassword", ClientController.clientAddPassword);
 app.get("/checkClientsCoincidences", ClientController.checkClientsCoincidences)
