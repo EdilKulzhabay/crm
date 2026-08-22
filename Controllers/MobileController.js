@@ -1386,6 +1386,14 @@ export const getClientAddresses = async (req, res) => {
  * не списывались. Здесь paymentMethod заказа и фактическое списание всегда основаны
  * на одном и том же значении — расхождение между ними невозможно.
  */
+/**
+ * Цена новой тары (когда клиент не возвращает пустую бутыль в обмен) — должна совпадать
+ * с NEW_TARE_PRICE_B19/B12 в tibetskaya_client/src/components/MainOrderCard.tsx.
+ * Отдельного конфига под это в БД нет, поэтому значение задублировано намеренно.
+ */
+const NEW_TARE_PRICE_B19 = 3500;
+const NEW_TARE_PRICE_B12 = 2500;
+
 export async function createClientOrderCore({
     clientId,
     address,
@@ -1396,6 +1404,7 @@ export async function createClientOrderCore({
     needCall,
     comment,
     notificationToken,
+    emptyBottles,
 }) {
     const client = await Client.findById(clientId);
 
@@ -1410,9 +1419,23 @@ export async function createClientOrderCore({
     const franchisee = await User.findOne({ role: "superAdmin" });
     const naturalFranchisee = await User.findOne({ _id: client.franchisee });
 
+    // Если клиент не возвращает пустую бутыль (или это старый флоу, который вообще
+    // не спрашивает про тару — repeat-заказ, AddOrderScreen, CRM), считаем тару
+    // полностью обменной по умолчанию — это сохраняет прежнее поведение (без доплаты).
+    const exchangedB19 = Number.isFinite(Number(emptyBottles?.b19))
+        ? Math.max(0, Number(emptyBottles.b19))
+        : Number(products.b19 || 0);
+    const exchangedB12 = Number.isFinite(Number(emptyBottles?.b12))
+        ? Math.max(0, Number(emptyBottles.b12))
+        : Number(products.b12 || 0);
+    const newTareB19 = Math.max(0, Number(products.b19 || 0) - exchangedB19);
+    const newTareB12 = Math.max(0, Number(products.b12 || 0) - exchangedB12);
+    const tareSum = newTareB19 * NEW_TARE_PRICE_B19 + newTareB12 * NEW_TARE_PRICE_B12;
+
     const sum =
         Number(products.b12) * Number(client.price12) +
-        Number(products.b19) * Number(client.price19);
+        Number(products.b19) * Number(client.price19) +
+        tareSum;
 
     const todayStr = getDateAlmaty();
 
@@ -1463,6 +1486,11 @@ export async function createClientOrderCore({
             ) {
                 return { success: false, status: 400, message: "Недостаточно оплаченных бутылей" };
             }
+            // Купон/абонемент покрывает только сами бутыли воды — новая тара (если нет
+            // обмена) всё равно списывается деньгами с баланса.
+            if (tareSum > 0 && Number(client.balance) < tareSum) {
+                return { success: false, status: 400, message: "Недостаточно средств на балансе для оплаты новой тары" };
+            }
         }
     }
 
@@ -1483,6 +1511,7 @@ export async function createClientOrderCore({
         wereCreated: "app",
         clientPhone: clientPhone,
         notificationToken: notificationToken || "",
+        emptyBottles: { b12: exchangedB12, b19: exchangedB19 },
     });
 
     await order.save();
@@ -1497,6 +1526,9 @@ export async function createClientOrderCore({
         }
         if (Number(products.b19) > 0) {
             client.paidBootlesFor19 = client.paidBootlesFor19 - Number(products.b19)
+        }
+        if (tareSum > 0) {
+            client.balance = client.balance - tareSum
         }
     }
     client.appOrdersPlacedCount = (client.appOrdersPlacedCount || 0) + 1;
@@ -1516,10 +1548,10 @@ export async function createClientOrderCore({
 
 export const addOrderClientMobile = async (req, res) => {
     try {
-        const {clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken} = req.body
+        const {clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken, emptyBottles} = req.body
 
         const result = await createClientOrderCore({
-            clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken,
+            clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken, emptyBottles,
         });
 
         if (!result.success) {
@@ -1617,7 +1649,18 @@ export const getActiveOrdersMobile = async (req, res) => {
 
         const client = await Client.findById(clientId);
 
-        const orders = await Order.find({ client: client._id, status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } })
+        // Помимо активных заказов отдаём и доставленные сегодня — клиентское приложение
+        // показывает для них отдельную карточку «Заказ доставлен» на главном экране.
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const orders = await Order.find({
+            client: client._id,
+            $or: [
+                { status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } },
+                { status: "delivered", updatedAt: { $gte: startOfDay } },
+            ],
+        })
             .sort({ createdAt: -1 })
             .populate("courierAggregator", "userName fullName _id point phone carNumber carData")
 
