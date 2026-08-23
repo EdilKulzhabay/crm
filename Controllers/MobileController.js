@@ -1092,8 +1092,18 @@ export const updateClientDataMobile = async (req, res) => {
                 .json({ success: false, message: "Клиент не найден" });
         }
 
+        // Пароль всегда хранится как bcrypt-хэш (см. updateForgottenPassword) — этот
+        // эндпоинт универсальный (field/value для любого поля), поэтому для password
+        // нужно явно хэшировать, иначе clientLogin (bcrypt.compare) больше не сможет
+        // сверить пароль и клиент не сможет войти после смены через "Изменить данные".
+        let updateValue = value;
+        if (field === "password") {
+            const salt = await bcrypt.genSalt(10);
+            updateValue = await bcrypt.hash(value, salt);
+        }
+
         const updatedClient = await Client.findByIdAndUpdate(client._id, {
-            [field]: value
+            [field]: updateValue
         }, { new: true });
 
         const clientData = await withOrderSameDayUntilHour({
@@ -1746,7 +1756,22 @@ export const getClientDataMobile = async (req, res) => {
 export const deleteClientMobile = async (req, res) => {
     try {
         const { clientId } = req.body;
-        await Client.findByIdAndDelete(clientId);
+        const client = await Client.findById(clientId);
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: "Клиент не найден",
+            });
+        }
+
+        // Мягкое удаление — так же, как в CRM (см. ClientController.deleteClient):
+        // сохраняем запись, но клиент больше не сможет пройти clientLogin, т.к. там
+        // проверяется candidate.status !== "active". Также сбрасываем refreshToken,
+        // чтобы уже выданный на устройстве токен нельзя было обновить.
+        client.status = "deleted";
+        client.refreshToken = null;
+        await client.save();
+
         res.json({
             success: true,
             message: "Клиент успешно удален",
