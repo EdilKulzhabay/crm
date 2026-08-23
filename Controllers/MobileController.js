@@ -1649,8 +1649,8 @@ export const getActiveOrdersMobile = async (req, res) => {
 
         const client = await Client.findById(clientId);
 
-        // Помимо активных заказов отдаём и доставленные сегодня — клиентское приложение
-        // показывает для них отдельную карточку «Заказ доставлен» на главном экране.
+        // Помимо активных заказов отдаём доставленные и отменённые сегодня — клиентское
+        // приложение показывает для них отдельные карточки на главном экране.
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
 
@@ -1659,6 +1659,7 @@ export const getActiveOrdersMobile = async (req, res) => {
             $or: [
                 { status: { $in: ["awaitingOrder", "inLine", "onTheWay"] } },
                 { status: "delivered", updatedAt: { $gte: startOfDay } },
+                { status: "cancelled", updatedAt: { $gte: startOfDay } },
             ],
         })
             .sort({ createdAt: -1 })
