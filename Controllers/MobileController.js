@@ -800,8 +800,11 @@ export const clientRegister = async (req, res) => {
             signupBalance = 1000;
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(req.body.password, salt);
+        let hash;
+        if (req.body.password) {
+            const salt = await bcrypt.genSalt(10);
+            hash = await bcrypt.hash(req.body.password, salt);
+        }
         const myReferralCode = await generateUniqueReferralCode();
 
         const doc = new Client({
@@ -890,6 +893,71 @@ export const clientRegister = async (req, res) => {
     }
 };
 
+/** Собирает clientData + токены для успешного входа. Общий шаг для clientLogin и clientLoginOtp. */
+async function buildClientLoginResponse(candidate) {
+    await ensureReferralCodeForClient(candidate);
+    const c = await Client.findById(candidate._id);
+
+    const clientData = await withOrderSameDayUntilHour({
+        _id: c._id,
+        fullName: c.fullName,
+        userName: c.userName,
+        phone: c.phone,
+        mail: c.mail,
+        password: c.password,
+        franchisee: c.franchisee,
+        addresses: c.addresses,
+        status: c.status,
+        cart: c.cart,
+        bonus: c.bonus,
+        balance: c.balance,
+        referralCode: c.referralCode,
+        appOrdersPlacedCount: c.appOrdersPlacedCount || 0,
+        price12: c.price12,
+        price19: c.price19,
+        paymentMethod: c.paymentMethod,
+        paidBootlesFor19: c.paidBootlesFor19,
+        paidBootlesFor12: c.paidBootlesFor12,
+        doesItTake19Bottles: c.doesItTake19Bottles,
+        doesItTake12Bottles: c.doesItTake12Bottles,
+        subscription: c.subscription,
+        chooseTime: c.chooseTime,
+        expoPushToken: c.expoPushToken,
+        clientType: c.clientType,
+        clientBottleType: c.clientBottleType,
+        clientBottleCount: c.clientBottleCount,
+        clientBottleCredit: c.clientBottleCredit,
+        verify: c.verify,
+        haveCompletedOrder: c.haveCompletedOrder,
+        savedCard: c.savedCard,
+        isStartedHydration: c.isStartedHydration,
+        showRepairMasterInApp: c.showRepairMasterInApp !== false,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+        invoiceLegalData: normalizeInvoiceLegalData(c.invoiceLegalData),
+    });
+
+    const accessToken = jwt.sign(
+        { client: candidate._id },
+        process.env.SecretKey,
+        {
+            expiresIn: "30d", // Время жизни access токена (например, 15 минут)
+        }
+    );
+
+    const refreshToken = jwt.sign(
+        { client: candidate._id },
+        process.env.SecretKeyRefresh,
+        {
+            expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
+        }
+    );
+
+    await Client.findByIdAndUpdate(candidate._id, { refreshToken });
+
+    return { accessToken, refreshToken, clientData };
+}
+
 export const clientLogin = async (req, res) => {
     try {
         const { mail, phone } = req.body;
@@ -929,71 +997,155 @@ export const clientLogin = async (req, res) => {
             });
         }
 
-        await ensureReferralCodeForClient(candidate);
-        const c = await Client.findById(candidate._id);
+        const { accessToken, refreshToken, clientData } = await buildClientLoginResponse(candidate);
 
-        const clientData = await withOrderSameDayUntilHour({
-            _id: c._id,
-            fullName: c.fullName,
-            userName: c.userName,
-            phone: c.phone,
-            mail: c.mail,
-            password: c.password,
-            franchisee: c.franchisee,
-            addresses: c.addresses,
-            status: c.status,
-            cart: c.cart,
-            bonus: c.bonus,
-            balance: c.balance,
-            referralCode: c.referralCode,
-            appOrdersPlacedCount: c.appOrdersPlacedCount || 0,
-            price12: c.price12,
-            price19: c.price19,
-            paymentMethod: c.paymentMethod,
-            paidBootlesFor19: c.paidBootlesFor19,
-            paidBootlesFor12: c.paidBootlesFor12,
-            doesItTake19Bottles: c.doesItTake19Bottles,
-            doesItTake12Bottles: c.doesItTake12Bottles,
-            subscription: c.subscription,
-            chooseTime: c.chooseTime,
-            expoPushToken: c.expoPushToken,
-            clientType: c.clientType,
-            clientBottleType: c.clientBottleType,
-            clientBottleCount: c.clientBottleCount,
-            clientBottleCredit: c.clientBottleCredit,
-            verify: c.verify,
-            haveCompletedOrder: c.haveCompletedOrder,
-            savedCard: c.savedCard,
-            isStartedHydration: c.isStartedHydration,
-            showRepairMasterInApp: c.showRepairMasterInApp !== false,
-            createdAt: c.createdAt,
-            updatedAt: c.updatedAt,
-            invoiceLegalData: normalizeInvoiceLegalData(c.invoiceLegalData),
-        });
-
-        const accessToken = jwt.sign(
-            { client: candidate._id },
-            process.env.SecretKey,
-            {
-                expiresIn: "30d", // Время жизни access токена (например, 15 минут)
-            }
-        );
-
-        const refreshToken2 = jwt.sign(
-            { client: candidate._id },
-            process.env.SecretKeyRefresh,
-            {
-                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
-            }
-        );
-
-        await Client.findByIdAndUpdate(candidate._id, {
-            refreshToken: refreshToken2,
-        });
-
-        res.json({ success: true, accessToken, refreshToken: refreshToken2, clientData });
+        res.json({ success: true, accessToken, refreshToken, clientData });
     } catch (error) {
         console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Не удалось авторизоваться",
+        });
+    }
+};
+
+/** Отправка OTP-кода в WhatsApp для входа по номеру телефона (без пароля). */
+export const sendLoginOtp = async (req, res) => {
+    const { phone } = req.body;
+
+    if (!phone || String(phone).trim() === "") {
+        return res.status(400).json({
+            success: false,
+            message: "Укажите номер телефона",
+        });
+    }
+
+    const phoneNorm = normalizePhoneForWhatsApp(phone);
+    const pm = maskPhoneForLog(phoneNorm || phone);
+
+    if (!phoneNorm || phoneNorm.length < 11) {
+        return res.status(400).json({
+            success: false,
+            message: "Некорректный номер телефона",
+        });
+    }
+
+    const now = Date.now();
+    const lastSent = lastSentTime[phoneNorm];
+    const COOLDOWN_PERIOD = 60000;
+
+    if (lastSent && now - lastSent < COOLDOWN_PERIOD) {
+        const remainingTime = Math.ceil((COOLDOWN_PERIOD - (now - lastSent)) / 1000);
+        return res.status(429).json({
+            success: false,
+            message: `Повторная отправка возможна через ${remainingTime} секунд`,
+        });
+    }
+
+    if (sendingInProgress.has(phoneNorm)) {
+        return res.status(429).json({
+            success: false,
+            message: "Отправка уже в процессе, пожалуйста подождите",
+        });
+    }
+
+    sendingInProgress.add(phoneNorm);
+
+    try {
+        const candidate = await findClientByPhone(phone);
+        if (!candidate) {
+            sendingInProgress.delete(phoneNorm);
+            console.log(`[Login OTP] sendLoginOtp: отклонено — телефон не найден, phone=${pm}`);
+            return res.status(404).json({
+                success: false,
+                message: "Пользователь с таким номером телефона не найден",
+            });
+        }
+
+        const confirmCode = generateCode();
+        codes[phoneNorm] = confirmCode;
+        lastSentTime[phoneNorm] = now;
+
+        const { ok, error: sendError } = await sendWhatsAppOtp(phone, confirmCode);
+        sendingInProgress.delete(phoneNorm);
+
+        if (!ok) {
+            delete codes[phoneNorm];
+            delete lastSentTime[phoneNorm];
+            console.error(`[Login OTP] sendLoginOtp: ошибка WhatsApp, phone=${pm}:`, sendError);
+            return res.status(500).json({
+                success: false,
+                message: "Не удалось отправить код в WhatsApp. Попробуйте позже.",
+            });
+        }
+
+        console.log(`[Login OTP] sendLoginOtp: код отправлен, phone=${pm}`);
+        return res.status(200).json({
+            success: true,
+            message: "Код отправлен в WhatsApp",
+        });
+    } catch (error) {
+        sendingInProgress.delete(phoneNorm);
+        delete codes[phoneNorm];
+        delete lastSentTime[phoneNorm];
+        console.error(`[Login OTP] sendLoginOtp: ошибка, phone=${pm}:`, error?.message || error);
+        return res.status(500).json({
+            success: false,
+            message: "Внутренняя ошибка сервера",
+        });
+    }
+};
+
+/** Подтверждение OTP-кода и вход по номеру телефона (без пароля). */
+export const clientLoginOtp = async (req, res) => {
+    try {
+        const { phone, code } = req.body;
+
+        if (!phone || !code) {
+            return res.status(400).json({
+                success: false,
+                message: "Необходимо указать номер телефона и код",
+            });
+        }
+
+        const phoneNorm = normalizePhoneForWhatsApp(phone);
+        if (!phoneNorm) {
+            return res.status(400).json({
+                success: false,
+                message: "Некорректный номер телефона",
+            });
+        }
+
+        if (codes[phoneNorm] !== code) {
+            return res.status(400).json({
+                success: false,
+                message: "Неверный код",
+            });
+        }
+
+        delete codes[phoneNorm];
+        delete lastSentTime[phoneNorm];
+
+        const candidate = await findClientByPhone(phone);
+        if (!candidate) {
+            return res.status(404).json({
+                success: false,
+                message: "Пользователь с таким номером телефона не найден",
+            });
+        }
+
+        if (candidate.status !== "active") {
+            return res.status(404).json({
+                success: false,
+                message: "Ваш аккаунт заблокироан, свяжитесь с вашим франчайзи",
+            });
+        }
+
+        const { accessToken, refreshToken, clientData } = await buildClientLoginResponse(candidate);
+
+        res.json({ success: true, accessToken, refreshToken, clientData });
+    } catch (error) {
+        console.log("Ошибка в clientLoginOtp:", error);
         res.status(500).json({
             success: false,
             message: "Не удалось авторизоваться",

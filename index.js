@@ -357,6 +357,8 @@ app.post("/sendMailRecovery", MobileController.sendMailRecovery);
 app.post("/codeConfirm", MobileController.codeConfirm);
 app.post("/clientRegister", MobileController.clientRegister);
 app.post("/clientLogin", MobileController.clientLogin);
+app.post("/sendLoginOtp", MobileController.sendLoginOtp);
+app.post("/clientLoginOtp", MobileController.clientLoginOtp);
 app.post("/updateForgottenPassword", MobileController.updateForgottenPassword);
 app.post("/addClientAddress", checkAuth, MobileController.addClientAddress);
 app.post("/updateClientAddress", checkAuth, MobileController.updateClientAddress);
