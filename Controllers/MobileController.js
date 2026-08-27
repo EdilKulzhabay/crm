@@ -746,7 +746,7 @@ export const createTestAccount = async (req, res) => {
 
 export const clientRegister = async (req, res) => {
     try {
-        const { userName, phone, mail, referralCode: referralCodeRaw } = req.body;
+        const { userName, phone, mail, referralCode: referralCodeRaw, fbclid } = req.body;
 
         const phoneNorm = normalizePhoneForWhatsApp(phone);
         if (!phoneNorm || phoneNorm.length < 11) {
@@ -829,7 +829,7 @@ export const clientRegister = async (req, res) => {
         delete verifiedPhones[phoneNorm];
 
         try {
-            await sendCompleteRegistration(client, req);
+            await sendCompleteRegistration(client, req, fbclid);
         } catch (metaErr) {
             console.error("Meta CAPI CompleteRegistration (не критично):", metaErr);
         }

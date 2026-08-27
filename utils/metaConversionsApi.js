@@ -1,10 +1,15 @@
 /**
  * Meta (Facebook) Conversions API — серверная отправка событий CompleteRegistration и Purchase.
- * Документация: https://developers.facebook.com/docs/marketing-api/conversions-api
+ * Документация: https://developers.facebook.com/documentation/ads-commerce/conversions-api
  *
  * У нас нет сайта / Meta Pixel в браузере — только мобильное приложение и этот backend,
- * поэтому action_source = "system_generated" (событие сформировано нашей системой по
- * финальному бизнес-статусу, а не поймано Pixel/SDK на стороне клиента).
+ * поэтому action_source = "app" (конверсия сделана в мобильном приложении — отдельное
+ * документированное значение, а не "website"/"system_generated").
+ *
+ * fbc (клик по рекламе Facebook/Instagram) на чистом мобильном приложении без
+ * Universal/App Links берём из deferred app link FBSDK на стороне клиента
+ * (tibetskaya_client/src/utils/metaAttribution.ts) — оттуда приходит сырой fbclid,
+ * здесь он оборачивается в формат fb.<subdomainIndex>.<creationTime>.<fbclid>, см. buildFbc().
  *
  * Переменные окружения:
  * - META_PIXEL_ID           — обязателен, ID пикселя/датасета
@@ -38,7 +43,19 @@ function hashSha256(rawValue) {
     return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-function buildUserData(client, req) {
+/**
+ * Собрать fbc из сырого fbclid (пришедшего от мобильного клиента) по формату Meta:
+ * fb.<subdomainIndex>.<creationTimeMs>.<fbclid>. Значение регистрозависимое — не менять.
+ * Документация: https://developers.facebook.com/documentation/ads-commerce/conversions-api/parameter-builder-library
+ * subdomainIndex=1 — как рекомендовано при генерации без сохранённой браузерной _fbc cookie.
+ */
+function buildFbc(fbclid) {
+    const value = String(fbclid ?? "").trim();
+    if (!value) return null;
+    return `fb.1.${Date.now()}.${value}`;
+}
+
+function buildUserData(client, req, fbc) {
     const userData = {
         external_id: [hashSha256(client?._id)].filter(Boolean),
     };
@@ -54,6 +71,9 @@ function buildUserData(client, req) {
 
     const ua = req?.headers?.["user-agent"];
     if (ua) userData.client_user_agent = ua;
+
+    // fbc не хэшируется (в отличие от em/ph) — передаётся как есть.
+    if (fbc) userData.fbc = fbc;
 
     return userData;
 }
@@ -71,7 +91,7 @@ async function sendMetaEvent({ eventName, eventId, userData, customData }) {
             {
                 event_name: eventName,
                 event_time: Math.floor(Date.now() / 1000),
-                action_source: "system_generated",
+                action_source: "app",
                 event_id: eventId,
                 user_data: userData,
                 custom_data: customData,
@@ -111,19 +131,31 @@ async function sendMetaEvent({ eventName, eventId, userData, customData }) {
  * Отправить CompleteRegistration сразу после фактического создания аккаунта
  * (не на клик по кнопке, не на открытие формы).
  * Идемпотентно по флагу client.metaRegistrationSent.
+ *
+ * @param {string|null} [fbclid] — сырой fbclid, захваченный мобильным клиентом при
+ * первом запуске (deferred app link). Сохраняется на клиенте как готовый fbc, чтобы
+ * его же переиспользовать позже для Purchase — см. sendFirstPurchaseIfApplicable.
  */
-export async function sendCompleteRegistration(client, req) {
+export async function sendCompleteRegistration(client, req, fbclid) {
     try {
         if (!client) {
             return { ok: false, skipped: true };
         }
+
+        const fbc = buildFbc(fbclid);
 
         // Атомарно "застолбить" отправку до вызова Meta, чтобы параллельный/повторный
         // вызов не отправил событие дважды (findOneAndUpdate с $ne — одна БД-операция).
         const eventId = `reg_${crypto.randomUUID()}`;
         const claimed = await Client.findOneAndUpdate(
             { _id: client._id, metaRegistrationSent: { $ne: true } },
-            { $set: { metaRegistrationSent: true, metaRegistrationEventId: eventId } }
+            {
+                $set: {
+                    metaRegistrationSent: true,
+                    metaRegistrationEventId: eventId,
+                    ...(fbc ? { metaFbc: fbc } : {}),
+                },
+            }
         );
         if (!claimed) {
             return { ok: false, skipped: true };
@@ -132,7 +164,7 @@ export async function sendCompleteRegistration(client, req) {
         const result = await sendMetaEvent({
             eventName: "CompleteRegistration",
             eventId,
-            userData: buildUserData(client, req),
+            userData: buildUserData(client, req, fbc),
             customData: { content_name: "app_registration", status: "completed" },
         });
 
@@ -180,7 +212,7 @@ export async function sendFirstPurchaseIfApplicable(order) {
         const claimed = await Client.findOneAndUpdate(
             { _id: clientId, metaFirstPurchaseSent: { $ne: true } },
             { $set: { metaFirstPurchaseSent: true, metaFirstPurchaseEventId: eventId } }
-        ).select("mail phone");
+        ).select("mail phone metaFbc");
         if (!claimed) {
             return { ok: false, skipped: true };
         }
@@ -188,7 +220,7 @@ export async function sendFirstPurchaseIfApplicable(order) {
         const result = await sendMetaEvent({
             eventName: "Purchase",
             eventId,
-            userData: buildUserData(claimed, null),
+            userData: buildUserData(claimed, null, claimed.metaFbc || null),
             customData: {
                 currency: META_DEFAULT_CURRENCY,
                 value: Number(order.sum || 0),

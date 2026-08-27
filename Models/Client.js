@@ -297,6 +297,13 @@ const ClientSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
+        /** Meta Conversions API: сформированный fbc (клик по рекламе Facebook/Instagram),
+         * захваченный при регистрации через deferred app link — переиспользуется для
+         * Purchase-события той же сделки, см. utils/metaConversionsApi.js */
+        metaFbc: {
+            type: String,
+            default: null,
+        },
         /** Счётчик успешно оформленных заказов через приложение (для показа реф. модалки каждые 3) */
         appOrdersPlacedCount: {
             type: Number,
