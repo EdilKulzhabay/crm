@@ -275,6 +275,8 @@ app.get("/getInvoiceGlobalCounter", checkAuth, InvoiceCounterController.getInvoi
 app.post("/setInvoiceGlobalCounter", checkAuth, InvoiceCounterController.setInvoiceGlobalCounter);
 app.get("/getMobileOrderCutoffSettings", checkAuth, MobileAppSettingsController.getMobileOrderCutoffSettings);
 app.post("/setMobileOrderCutoffSettings", checkAuth, MobileAppSettingsController.setMobileOrderCutoffSettings);
+app.get("/getAppVersionSettings", checkAuth, MobileAppSettingsController.getAppVersionSettings);
+app.post("/setAppVersionSettings", checkAuth, MobileAppSettingsController.setAppVersionSettings);
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
@@ -382,6 +384,7 @@ app.post("/removeFcmToken", MobileController.removeFcmToken)
 app.post("/getOrderDataMobile", MobileController.getOrderDataMobile)
 app.post("/cancelOrderMobile", MobileController.cancelOrderMobile)
 app.post("/updateOrderDataMobile", MobileController.updateOrderDataMobile)
+app.post("/submitOrderReviewMobile", MobileController.submitOrderReviewMobile)
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile)
 app.post("/requestMasterCallMobile", MobileController.requestMasterCallMobile)
 app.post("/codeConfirmForgotPassword", MobileController.codeConfirmForgotPassword)

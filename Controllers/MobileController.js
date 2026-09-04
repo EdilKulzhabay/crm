@@ -33,6 +33,7 @@ import {
     getOrderSameDayUntilHourValue,
     withOrderSameDayUntilHour,
 } from "../utils/mobileOrderCutoff.js";
+import { getLatestAppVersionValue } from "../utils/mobileAppVersion.js";
 
 /** Строка для счёта; старые документы могли хранить вложенный объект */
 function normalizeInvoiceLegalData(raw) {
@@ -1890,11 +1891,13 @@ export const getClientDataMobile = async (req, res) => {
         }
         const plain = client.toObject ? client.toObject({ flattenMaps: true }) : { ...client._doc };
         const orderSameDayUntilHour = await getOrderSameDayUntilHourValue();
+        const latestAppVersion = await getLatestAppVersionValue();
         res.json({
             client: {
                 ...plain,
                 invoiceLegalData: normalizeInvoiceLegalData(client.invoiceLegalData),
                 orderSameDayUntilHour,
+                latestAppVersion,
             },
         });
     } catch (error) {
@@ -2117,6 +2120,39 @@ export const updateOrderDataMobile = async (req, res) => {
         });
     }
 }
+
+export const submitOrderReviewMobile = async (req, res) => {
+    try {
+        const { orderId, rating, comment } = req.body;
+        const ratingNum = Number(rating);
+        if (!orderId || !Number.isInteger(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+            return res.status(400).json({ success: false, message: "Некорректная оценка" });
+        }
+
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Заказ не найден" });
+        }
+        if (order.status !== "delivered") {
+            return res.status(400).json({
+                success: false,
+                message: "Отзыв доступен только для доставленных заказов",
+            });
+        }
+
+        order.clientReview = ratingNum;
+        order.clientReviewComment = String(comment || "").trim().slice(0, 300);
+        await order.save();
+
+        res.json({ success: true, order });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            success: false,
+            message: "Что-то пошло не так",
+        });
+    }
+};
 
 export const getLastOrderMobile = async (req, res) => {
     try {

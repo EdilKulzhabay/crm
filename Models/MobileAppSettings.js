@@ -10,6 +10,12 @@ const MobileAppSettingsSchema = new mongoose.Schema(
             min: 0,
             max: 23,
         },
+        /** Актуальная версия мобильного клиента — сравнивается с версией установленного
+         * приложения, чтобы показать модалку «Доступна новая версия» */
+        latestAppVersion: {
+            type: String,
+            default: "",
+        },
     },
     { timestamps: true }
 );

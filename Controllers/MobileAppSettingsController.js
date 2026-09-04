@@ -69,3 +69,46 @@ export const setMobileOrderCutoffSettings = async (req, res) => {
         res.status(500).json({ success: false, message: "Ошибка сервера" });
     }
 };
+
+export const getAppVersionSettings = async (req, res) => {
+    try {
+        const admin = await requireSuperAdmin(req, res);
+        if (!admin) return;
+
+        let doc = await MobileAppSettings.findOne();
+        if (!doc) {
+            doc = await MobileAppSettings.create({});
+        }
+
+        res.json({ success: true, latestAppVersion: doc.latestAppVersion || "" });
+    } catch (e) {
+        console.error("getAppVersionSettings", e);
+        res.status(500).json({ success: false, message: "Ошибка сервера" });
+    }
+};
+
+export const setAppVersionSettings = async (req, res) => {
+    try {
+        const admin = await requireSuperAdmin(req, res);
+        if (!admin) return;
+
+        const latestAppVersion = String(req.body.latestAppVersion || "").trim();
+        if (!latestAppVersion) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите версию приложения",
+            });
+        }
+
+        const doc = await MobileAppSettings.findOneAndUpdate(
+            {},
+            { $set: { latestAppVersion } },
+            { new: true, upsert: true }
+        );
+
+        res.json({ success: true, latestAppVersion: doc.latestAppVersion });
+    } catch (e) {
+        console.error("setAppVersionSettings", e);
+        res.status(500).json({ success: false, message: "Ошибка сервера" });
+    }
+};

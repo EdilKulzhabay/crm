@@ -85,6 +85,10 @@ const OrderSchema = new mongoose.Schema(
             type: Number,
             default: 0
         },
+        clientReviewComment: {
+            type: String,
+            default: ""
+        },
         clientNotes: [String],
         income: {
             type: Number,
