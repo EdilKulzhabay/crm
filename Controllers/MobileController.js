@@ -2182,18 +2182,26 @@ export const requestMasterCallMobile = async (req, res) => {
     try {
         const { fullName, phone, mail } = req.body;
 
-        if (!fullName || !phone || !mail) {
+        if (!phone) {
             return res.status(400).json({
                 success: false,
                 message:
-                    "Укажите имя и телефон в профиле, чтобы мы могли с вами связаться",
+                    "Укажите телефон в профиле, чтобы мы могли с вами связаться",
+            });
+        }
+
+        const client = await Client.findOne({ phone });
+        if (!client) {
+            return res.status(400).json({
+                success: false,
+                message: "Клиент не найден",
             });
         }
 
         const tgResult = await sendMasterCallTelegram({
-            fullName,
+            fullName: fullName || client.fullName,
             phone,
-            mail,
+            mail: mail || client.mail,
         });
 
         if (!tgResult.ok) {
