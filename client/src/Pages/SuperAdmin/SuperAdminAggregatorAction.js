@@ -187,6 +187,12 @@ export default function SuperAdminAggregatorAction() {
     const handleAssignOrder = async (courierId) => {
         if (!selectedOrder) return;
 
+        const isAlreadyAssigned = selectedOrder.courierAggregator && (selectedOrder.courierAggregator._id || selectedOrder.courierAggregator);
+        if (isAlreadyAssigned) {
+            alert("Заказ уже назначен курьеру!");
+            return;
+        }
+
         setAssignLoading(true);
         try {
             const response = await api.post("/assignOrderToCourier", {

@@ -255,6 +255,12 @@ export default function CompletedOrders() {
             });
     };
 
+    const formatDateTime = (date) => {
+        if (!date) return "—";
+        const ms = new Date(date).getTime();
+        return Number.isNaN(ms) ? "—" : new Date(ms + 5 * 60 * 1000).toLocaleString('ru-RU');
+    };
+
     const formatCurrency = (amount) => {
         if (amount === undefined || amount === null) {
             return "0 тенге"; // Или любое другое значение по умолчанию
@@ -467,6 +473,10 @@ export default function CompletedOrders() {
                                         {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
                                     {item?.courierAggregator?.fullName && <div className="text-orange-400">Курьер: {item?.courierAggregator?.fullName}</div>}
+                                    {userData?.role === "superAdmin" && <>
+                                        <div className="text-sm text-gray-400">Время заказа: {formatDateTime(item?.createdAt)}</div>
+                                        <div className="text-sm text-gray-400">Время завершения: {item?.deliveredTime ? formatDateTime(item?.deliveredTime) : "Не доставлен"}</div>
+                                    </>}
                                 </div>
                             </Li>
                         </div>
@@ -495,6 +505,10 @@ export default function CompletedOrders() {
                                         {item?.transferred ? <div>{item?.transferredFranchise}</div> : <div>{item?.franchisee?.fullName}</div>}
                                         </>}
                                     {item?.courierAggregator?.fullName && <div className="text-orange-400">Курьер: {item?.courierAggregator?.fullName}</div>}
+                                    {userData?.role === "superAdmin" && <>
+                                        <div className="text-sm text-gray-400">Время заказа: {formatDateTime(item?.createdAt)}</div>
+                                        <div className="text-sm text-gray-400">Время завершения: {item?.deliveredTime ? formatDateTime(item?.deliveredTime) : "Не доставлен"}</div>
+                                    </>}
                                 </div>
                             </Li>
                         </div>
