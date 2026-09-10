@@ -32,8 +32,6 @@ import {
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
-import swaggerUi from "swagger-ui-express";
-import adsApiSpec from "./openapi/adsApiSpec.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -405,7 +403,6 @@ app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
 app.get("/ads/registrations", checkAdsApiKey, AdsAnalyticsController.getRegistrations)
 app.get("/ads/orders", checkAdsApiKey, AdsAnalyticsController.getOrders)
 app.get("/ads/repeat-orders", checkAdsApiKey, AdsAnalyticsController.getRepeatOrders)
-app.use("/ads/docs", swaggerUi.serve, swaggerUi.setup(adsApiSpec, { customSiteTitle: "Tibetskaya Ads API" }))
 
 /////////////COURIERAGGREGATOR
 app.post("/courierAggregatorTestLog", CourierAggregatorController.courierAggregatorTestLog)
