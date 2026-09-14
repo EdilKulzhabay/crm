@@ -43,6 +43,31 @@ function createNotificationKey(messageTitle, messageBody, notificationTokens, ne
     return `${messageTitle}_${messageBody}_${tokensHash}_${newStatus}_${orderId}`;
 }
 
+// FCM принимает максимум 500 токенов за один вызов sendEachForMulticast
+const FCM_MULTICAST_CHUNK_SIZE = 500;
+
+function chunkArray(array, size) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+}
+
+function logTokenSendError(token, error) {
+    const errorCode = error?.code || 'unknown';
+    const shortToken = token.length > 40 ? token.substring(0, 40) + '...' : token;
+
+    if (errorCode === 'messaging/invalid-argument') {
+        console.error(`❌ Невалидный токен (invalid-argument): ${shortToken}`);
+        console.error(`   Токен будет пропущен. Возможно, токен поврежден или имеет неправильный формат.`);
+    } else if (errorCode === 'messaging/registration-token-not-registered') {
+        console.error(`❌ Токен не зарегистрирован: ${shortToken}`);
+    } else {
+        console.error(`❌ Ошибка при отправке уведомления на токен ${shortToken}:`, errorCode, error?.message);
+    }
+}
+
 /**
  * @param {object} [options]
  * @param {import("mongoose").Types.ObjectId|string} [options.clientId] — если не указан, клиенты ищутся по токенам
@@ -76,29 +101,27 @@ export const pushNotificationClient = async (
 
         console.log(`Отправка уведомления "${messageTitle}" на ${validTokens.length} устройств`);
 
-        let successCount = 0;
-        let errorCount = 0;
+        // Подготавливаем данные с гарантией строкового типа (одинаковы для всех токенов)
+        const messageData = {
+            newStatus: newStatus.toString(),
+            orderId: (data?.orderId || 'unknown').toString(),
+        };
+        for (const [key, value] of Object.entries(messageData)) {
+            if (typeof value !== 'string') {
+                console.error(`Поле ${key} не является строкой:`, typeof value, value);
+                messageData[key] = String(value);
+            }
+        }
+        console.log("Отправляемые данные:", messageData);
 
-        for (const token of validTokens) {
-            try {
-                // Подготавливаем данные с гарантией строкового типа
-                const messageData = {
-                    newStatus: newStatus.toString(),
-                    orderId: (data?.orderId || 'unknown').toString(),
-                };
-
-                // Проверяем, что все значения являются строками
-                for (const [key, value] of Object.entries(messageData)) {
-                    if (typeof value !== 'string') {
-                        console.error(`Поле ${key} не является строкой:`, typeof value, value);
-                        messageData[key] = String(value);
-                    }
-                }
-
-                console.log("Отправляемые данные:", messageData);
-
-                const message = {
-                    token,
+        // Отправляем батчами по FCM_MULTICAST_CHUNK_SIZE токенов, батчи — параллельно,
+        // чтобы не отправлять по одному токену последовательно (при 1000+ токенах
+        // это превышает таймаут HTTP-запроса на клиенте и в nginx).
+        const tokenChunks = chunkArray(validTokens, FCM_MULTICAST_CHUNK_SIZE);
+        const chunkResponses = await Promise.all(
+            tokenChunks.map((chunkTokens) =>
+                admin.app('client-app').messaging().sendEachForMulticast({
+                    tokens: chunkTokens,
                     notification: {
                         title: messageTitle,
                         body: messageBody,
@@ -122,33 +145,30 @@ export const pushNotificationClient = async (
                             },
                         },
                     },
-                };
+                })
+            )
+        );
 
-                const response = await admin.app('client-app').messaging().send(message);
-                console.log("Firebase message sent successfully:", response);
-                successCount++;
-            } catch (tokenError) {
-                errorCount++;
-                const errorCode = tokenError.errorInfo?.code || 'unknown';
-                const shortToken = token.length > 40 ? token.substring(0, 40) + '...' : token;
-                
-                if (errorCode === 'messaging/invalid-argument') {
-                    console.error(`❌ Невалидный токен (invalid-argument): ${shortToken}`);
-                    console.error(`   Токен будет пропущен. Возможно, токен поврежден или имеет неправильный формат.`);
-                } else if (errorCode === 'messaging/registration-token-not-registered') {
-                    console.error(`❌ Токен не зарегистрирован: ${shortToken}`);
+        let successCount = 0;
+        let errorCount = 0;
+
+        chunkResponses.forEach((batchResponse, chunkIndex) => {
+            const chunkTokens = tokenChunks[chunkIndex];
+            batchResponse.responses.forEach((sendResponse, tokenIndex) => {
+                if (sendResponse.success) {
+                    successCount++;
                 } else {
-                    console.error(`❌ Ошибка при отправке уведомления на токен ${shortToken}:`, errorCode, tokenError.message);
+                    errorCount++;
+                    logTokenSendError(chunkTokens[tokenIndex], sendResponse.error);
                 }
-                // Продолжаем отправку на другие токены
-            }
-        }
+            });
+        });
 
         // Отмечаем уведомление как отправленное только если была хотя бы одна успешная отправка
         if (successCount > 0) {
             sentNotifications.set(notificationKey, now);
             console.log(`✅ Уведомление успешно отправлено: ${successCount} успешно, ${errorCount} ошибок`);
-            
+
             // Очищаем старые записи (старше 5 минут)
             const cleanupTime = now - (5 * 60 * 1000);
             for (const [key, timestamp] of sentNotifications.entries()) {
