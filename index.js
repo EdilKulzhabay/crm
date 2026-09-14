@@ -68,6 +68,15 @@ mongoose
 
 const app = express();
 
+// CORS должен быть первым middleware, чтобы Access-Control-Allow-Origin
+// присутствовал и в ответах об ошибках (например 413 от парсеров body ниже) —
+// иначе браузер показывает такие ошибки как "CORS blocked" вместо реального статуса.
+app.use(
+    cors({
+        origin: "*",
+    })
+);
+
 // ВАЖНО: ApiPay webhook должен принять СЫРОЙ body, чтобы HMAC-SHA256 верно посчитался.
 // Регистрируем до глобального express.json().
 app.post(
@@ -76,14 +85,11 @@ app.post(
     ApiPayController.apipayWebhook
 );
 
-app.use(express.json());
+// limit увеличен с дефолтных 100kb: массовая рассылка push-уведомлений передаёт
+// в теле запроса массив из тысяч FCM/Expo токенов (каждый ~150-200 символов).
+app.use(express.json({ limit: "5mb" }));
 app.use(express.text());
-app.use(express.urlencoded({ extended: true })); // Для поддержки URL-encoded данных
-app.use(
-    cors({
-        origin: "*",
-    })
-);
+app.use(express.urlencoded({ extended: true, limit: "5mb" })); // Для поддержки URL-encoded данных
 app.use("/static", express.static("/home/ubuntu/crm"));
 
 
