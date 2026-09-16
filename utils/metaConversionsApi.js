@@ -32,9 +32,11 @@ const META_API_VERSION = process.env.META_API_VERSION || "v21.0";
 const META_TEST_EVENT_CODE = process.env.META_TEST_EVENT_CODE || "";
 const META_DEFAULT_CURRENCY = process.env.META_DEFAULT_CURRENCY || "KZT";
 
-function isConfigured() {
-    return Boolean(META_PIXEL_ID && META_CAPI_ACCESS_TOKEN);
-}
+// Второй пиксель — App-лендинг (client/src/Pages/AppLanding.js), отдельный от
+// основного сайтового META_PIXEL_ID выше. ID не секретный (уже в клиентском коде),
+// а токен — своя переменная окружения, т.к. обычно выписывается отдельно на датасет.
+const META_APP_LANDING_PIXEL_ID = "4433061166916167";
+const META_APP_LANDING_CAPI_TOKEN = process.env.META_APP_LANDING_CAPI_TOKEN || "";
 
 /** Meta требует SHA-256 для email/телефона/внешнего ID (customer information parameters). */
 function hashSha256(rawValue) {
@@ -78,10 +80,19 @@ function buildUserData(client, req, fbc) {
     return userData;
 }
 
-async function sendMetaEvent({ eventName, eventId, userData, customData }) {
-    if (!isConfigured()) {
+async function sendMetaEvent({
+    eventName,
+    eventId,
+    userData,
+    customData,
+    pixelId = META_PIXEL_ID,
+    accessToken = META_CAPI_ACCESS_TOKEN,
+    actionSource = "app",
+    eventSourceUrl,
+}) {
+    if (!pixelId || !accessToken) {
         console.warn(
-            `[meta-capi] ${eventName}: META_PIXEL_ID/META_CAPI_ACCESS_TOKEN не заданы, событие не отправлено`
+            `[meta-capi] ${eventName}: pixelId/accessToken не заданы, событие не отправлено`
         );
         return { ok: false, error: "NOT_CONFIGURED" };
     }
@@ -91,10 +102,11 @@ async function sendMetaEvent({ eventName, eventId, userData, customData }) {
             {
                 event_name: eventName,
                 event_time: Math.floor(Date.now() / 1000),
-                action_source: "app",
+                action_source: actionSource,
                 event_id: eventId,
                 user_data: userData,
                 custom_data: customData,
+                ...(eventSourceUrl ? { event_source_url: eventSourceUrl } : {}),
             },
         ],
     };
@@ -104,10 +116,10 @@ async function sendMetaEvent({ eventName, eventId, userData, customData }) {
 
     try {
         const res = await axios.post(
-            `https://graph.facebook.com/${META_API_VERSION}/${META_PIXEL_ID}/events`,
+            `https://graph.facebook.com/${META_API_VERSION}/${pixelId}/events`,
             payload,
             {
-                params: { access_token: META_CAPI_ACCESS_TOKEN },
+                params: { access_token: accessToken },
                 timeout: 10000,
                 validateStatus: () => true,
             }
@@ -241,4 +253,47 @@ export async function sendFirstPurchaseIfApplicable(order) {
         console.error("[meta-capi] sendFirstPurchaseIfApplicable:", error);
         return { ok: false, error };
     }
+}
+
+/**
+ * Зеркалирует клиентский fbq('trackCustom', 'DownloadClick...') с App-лендинга
+ * (client/src/Pages/AppLanding.js) через CAPI, на отдельный META_APP_LANDING_PIXEL_ID.
+ * Событие анонимное (до регистрации/входа) — action_source "website", user_data
+ * строится из fbp/fbc/IP/UA запроса, без привязки к Client.
+ */
+export async function sendDownloadClickEvent({
+    eventName,
+    eventId,
+    fbp,
+    fbc,
+    sourceUrl,
+    req,
+}) {
+    if (!META_APP_LANDING_CAPI_TOKEN) {
+        console.warn(
+            `[meta-capi] ${eventName}: META_APP_LANDING_CAPI_TOKEN не задан, событие не отправлено`
+        );
+        return { ok: false, error: "NOT_CONFIGURED" };
+    }
+
+    const userData = {};
+    const ip = req?.ip || req?.headers?.["x-forwarded-for"] || req?.socket?.remoteAddress;
+    if (ip) userData.client_ip_address = String(ip).split(",")[0].trim();
+
+    const ua = req?.headers?.["user-agent"];
+    if (ua) userData.client_user_agent = ua;
+
+    if (fbp) userData.fbp = fbp;
+    if (fbc) userData.fbc = fbc;
+
+    return sendMetaEvent({
+        eventName,
+        eventId,
+        userData,
+        customData: {},
+        pixelId: META_APP_LANDING_PIXEL_ID,
+        accessToken: META_APP_LANDING_CAPI_TOKEN,
+        actionSource: "website",
+        eventSourceUrl: sourceUrl,
+    });
 }

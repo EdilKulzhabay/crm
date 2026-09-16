@@ -20,3 +20,4 @@ export * as ApiPayController from "./ApiPayController.js";
 export * as FAMobileController from "./FAMobileController.js";
 export * as OrderChatController from "./OrderChatController.js";
 export * as AdsAnalyticsController from "./AdsAnalyticsController.js";
+export * as TrackingController from "./TrackingController.js";

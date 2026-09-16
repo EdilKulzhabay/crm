@@ -29,6 +29,7 @@ import {
     FAMobileController,
     OrderChatController,
     AdsAnalyticsController,
+    TrackingController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
@@ -409,6 +410,9 @@ app.post("/getSAGeneralInfo", AnalyticsController.getSAGeneralInfo)
 app.get("/ads/registrations", checkAdsApiKey, AdsAnalyticsController.getRegistrations)
 app.get("/ads/orders", checkAdsApiKey, AdsAnalyticsController.getOrders)
 app.get("/ads/repeat-orders", checkAdsApiKey, AdsAnalyticsController.getRepeatOrders)
+
+////////TRACKING (зеркало клиентского Meta Pixel с App-лендинга в CAPI, см. utils/metaConversionsApi.js)
+app.post("/api/track-download", TrackingController.trackDownload)
 
 /////////////COURIERAGGREGATOR
 app.post("/courierAggregatorTestLog", CourierAggregatorController.courierAggregatorTestLog)
