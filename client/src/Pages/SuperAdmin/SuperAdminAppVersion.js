@@ -11,6 +11,7 @@ import useFetchUserData from "../../customHooks/useFetchUserData";
 export default function SuperAdminAppVersion() {
     const userData = useFetchUserData();
     const [value, setValue] = useState("");
+    const [courierValue, setCourierValue] = useState("");
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -24,6 +25,9 @@ export default function SuperAdminAppVersion() {
             .then(({ data }) => {
                 if (data?.success && data.latestAppVersion != null) {
                     setValue(String(data.latestAppVersion));
+                }
+                if (data?.success && data.latestCourierAppVersion != null) {
+                    setCourierValue(String(data.latestCourierAppVersion));
                 }
             })
             .catch((e) => {
@@ -67,6 +71,34 @@ export default function SuperAdminAppVersion() {
             });
     };
 
+    const saveCourier = () => {
+        const trimmed = String(courierValue).trim();
+        if (!trimmed) {
+            setOpen(true);
+            setStatus("error");
+            setMessage("Укажите версию приложения курьера");
+            return;
+        }
+        api.post(
+            "/setAppVersionSettings",
+            { latestCourierAppVersion: trimmed },
+            { headers: { "Content-Type": "application/json" } }
+        )
+            .then(({ data }) => {
+                setOpen(true);
+                setStatus("success");
+                setMessage("Сохранено");
+                if (data?.latestCourierAppVersion != null) {
+                    setCourierValue(String(data.latestCourierAppVersion));
+                }
+            })
+            .catch((e) => {
+                setOpen(true);
+                setStatus("error");
+                setMessage(e?.response?.data?.message || "Ошибка сохранения");
+            });
+    };
+
     const closeSnack = () => setOpen(false);
 
     if (userData?.role !== "superAdmin") {
@@ -82,7 +114,7 @@ export default function SuperAdminAppVersion() {
         <Container role={userData?.role}>
             <Div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <div>Актуальная версия мобильного приложения</div>
+                    <div>Актуальная версия мобильного приложения (клиент)</div>
                 </div>
             </Div>
             <Div />
@@ -95,6 +127,26 @@ export default function SuperAdminAppVersion() {
                         color="white"
                     />
                     <MyButton click={save} disabled={loading}>
+                        Сохранить
+                    </MyButton>
+                </div>
+            </Div>
+            <Div />
+            <Div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <div>Актуальная версия приложения курьера</div>
+                </div>
+            </Div>
+            <Div />
+            <Div>
+                <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
+                    <span>Версия</span>
+                    <MyInput
+                        value={courierValue}
+                        change={(e) => setCourierValue(e.target.value)}
+                        color="white"
+                    />
+                    <MyButton click={saveCourier} disabled={loading}>
                         Сохранить
                     </MyButton>
                 </div>

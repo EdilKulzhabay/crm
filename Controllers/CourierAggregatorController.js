@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { getDateAlmaty } from "../utils/dateUtils.js";
+import { getLatestCourierAppVersionValue } from "../utils/mobileAppVersion.js";
 import { sendEmailAboutAggregator } from "./SendEmailOrder.js";
 import Client from "../Models/Client.js";
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
@@ -370,9 +371,11 @@ export const getCourierAggregatorData = async(req, res) => {
             })
         }
 
+        const latestAppVersion = await getLatestCourierAppVersionValue();
+
         return res.json({
             success: true,
-            userData: courier._doc,
+            userData: { ...courier._doc, latestAppVersion },
         })
     } catch (error) {
         console.log(error);
@@ -1413,6 +1416,58 @@ export const getCourierAggregatorDeliveredBottlesToday = async (req, res) => {
         return res.json({
             success: true,
             deliveredBottles,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Ошибка сервера",
+        });
+    }
+};
+
+/**
+ * Возвращает рейтинг курьера, "замороженный" на конец вчерашнего дня:
+ * учитывает только отзывы к заказам, доставленным до сегодняшней даты (Алматы).
+ * Сделано намеренно так, чтобы курьер не видел изменение рейтинга сразу
+ * после сегодняшней доставки и не мог сопоставить его с конкретным клиентом —
+ * значение обновляется только на следующий день.
+ */
+export const getCourierAggregatorRating = async (req, res) => {
+    try {
+        const id = req.userId;
+
+        const courier = await CourierAggregator.findById(id);
+
+        if (!courier) {
+            return res.status(404).json({
+                success: false,
+                message: "Курьер не найден",
+            });
+        }
+
+        const today = getDateAlmaty();
+
+        const reviewedOrders = await Order.find({
+            courierAggregator: courier._id,
+            status: "delivered",
+            clientReview: { $exists: true, $ne: 0 },
+            "date.d": { $lt: today },
+        }).select("clientReview");
+
+        if (reviewedOrders.length === 0) {
+            return res.json({
+                success: true,
+                rating: null,
+            });
+        }
+
+        const totalRating = reviewedOrders.reduce((sum, order) => sum + order.clientReview, 0);
+        const rating = Math.round((totalRating / reviewedOrders.length) * 10) / 10;
+
+        return res.json({
+            success: true,
+            rating,
         });
     } catch (error) {
         console.error(error);

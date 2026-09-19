@@ -16,6 +16,11 @@ const MobileAppSettingsSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        /** Актуальная версия приложения курьера — аналогично latestAppVersion, но для courier */
+        latestCourierAppVersion: {
+            type: String,
+            default: "",
+        },
     },
     { timestamps: true }
 );

@@ -80,7 +80,11 @@ export const getAppVersionSettings = async (req, res) => {
             doc = await MobileAppSettings.create({});
         }
 
-        res.json({ success: true, latestAppVersion: doc.latestAppVersion || "" });
+        res.json({
+            success: true,
+            latestAppVersion: doc.latestAppVersion || "",
+            latestCourierAppVersion: doc.latestCourierAppVersion || "",
+        });
     } catch (e) {
         console.error("getAppVersionSettings", e);
         res.status(500).json({ success: false, message: "Ошибка сервера" });
@@ -92,21 +96,49 @@ export const setAppVersionSettings = async (req, res) => {
         const admin = await requireSuperAdmin(req, res);
         if (!admin) return;
 
-        const latestAppVersion = String(req.body.latestAppVersion || "").trim();
-        if (!latestAppVersion) {
+        const hasClientVersion = req.body.latestAppVersion !== undefined;
+        const hasCourierVersion = req.body.latestCourierAppVersion !== undefined;
+
+        if (!hasClientVersion && !hasCourierVersion) {
             return res.status(400).json({
                 success: false,
                 message: "Укажите версию приложения",
             });
         }
 
+        const update = {};
+        if (hasClientVersion) {
+            const latestAppVersion = String(req.body.latestAppVersion || "").trim();
+            if (!latestAppVersion) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Укажите версию клиентского приложения",
+                });
+            }
+            update.latestAppVersion = latestAppVersion;
+        }
+        if (hasCourierVersion) {
+            const latestCourierAppVersion = String(req.body.latestCourierAppVersion || "").trim();
+            if (!latestCourierAppVersion) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Укажите версию приложения курьера",
+                });
+            }
+            update.latestCourierAppVersion = latestCourierAppVersion;
+        }
+
         const doc = await MobileAppSettings.findOneAndUpdate(
             {},
-            { $set: { latestAppVersion } },
+            { $set: update },
             { new: true, upsert: true }
         );
 
-        res.json({ success: true, latestAppVersion: doc.latestAppVersion });
+        res.json({
+            success: true,
+            latestAppVersion: doc.latestAppVersion,
+            latestCourierAppVersion: doc.latestCourierAppVersion,
+        });
     } catch (e) {
         console.error("setAppVersionSettings", e);
         res.status(500).json({ success: false, message: "Ошибка сервера" });
