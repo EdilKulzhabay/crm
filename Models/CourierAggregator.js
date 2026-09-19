@@ -31,6 +31,10 @@ const CourierAggregatorSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
+        noOrderSince: {
+            type: Date,
+            default: null
+        },
         notAccesptedKol: {
             type: Number,
             default: 0,

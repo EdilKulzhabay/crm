@@ -34,6 +34,7 @@ import {
     withOrderSameDayUntilHour,
 } from "../utils/mobileOrderCutoff.js";
 import { getLatestAppVersionValue } from "../utils/mobileAppVersion.js";
+import { recalculateCourierAggregatorRating } from "../utils/courierRating.js";
 
 /** Строка для счёта; старые документы могли хранить вложенный объект */
 function normalizeInvoiceLegalData(raw) {
@@ -2143,6 +2144,14 @@ export const submitOrderReviewMobile = async (req, res) => {
         order.clientReview = ratingNum;
         order.clientReviewComment = String(comment || "").trim().slice(0, 300);
         await order.save();
+
+        if (order.courierAggregator) {
+            try {
+                await recalculateCourierAggregatorRating(order.courierAggregator);
+            } catch (ratingError) {
+                console.log("Ошибка пересчёта рейтинга курьера:", ratingError);
+            }
+        }
 
         res.json({ success: true, order });
     } catch (error) {

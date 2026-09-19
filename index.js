@@ -52,6 +52,7 @@ import {
     startWhatsAppWebClient,
     shutdownWhatsAppWeb,
 } from "./whatsApp/waWebClient.js";
+import { startCourierIdleOfflineCheck } from "./utils/courierIdleOfflineCheck.js";
 
 // Импортируем функцию оптимизации маршрутов
 // import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
@@ -524,6 +525,8 @@ app.post("/getCancelledOrdersForBussinessCenter", BussinessCenterController.getC
 
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
+
+    startCourierIdleOfflineCheck();
 
     // if (process.env.WHATSAPP_WEB_AUTOSTART !== "false") {
     //     console.log(

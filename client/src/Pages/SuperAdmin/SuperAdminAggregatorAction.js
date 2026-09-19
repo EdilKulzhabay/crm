@@ -143,6 +143,7 @@ export default function SuperAdminAggregatorAction() {
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [assignLoading, setAssignLoading] = useState(false)
+    const [alreadyAssignedInfo, setAlreadyAssignedInfo] = useState(null)
     const [removeLoading, setRemoveLoading] = useState(false)
     const [resendNotificationLoading, setResendNotificationLoading] = useState(false)
     const [resetOrdersLoading, setResetOrdersLoading] = useState(false)
@@ -187,9 +188,15 @@ export default function SuperAdminAggregatorAction() {
     const handleAssignOrder = async (courierId) => {
         if (!selectedOrder) return;
 
-        const isAlreadyAssigned = selectedOrder.courierAggregator && (selectedOrder.courierAggregator._id || selectedOrder.courierAggregator);
-        if (isAlreadyAssigned) {
-            alert("Заказ уже назначен курьеру!");
+        const alreadyAssignedCourierName = selectedOrder.courierAggregator?.fullName
+            || (typeof selectedOrder.courierAggregator === "string" ? selectedOrder.courierAggregator : null);
+        if (selectedOrder.courierAggregator) {
+            setShowAssignModal(false);
+            setSelectedOrder(null);
+            setAlreadyAssignedInfo({
+                message: "Этот заказ уже назначен курьеру.",
+                courierName: alreadyAssignedCourierName
+            });
             return;
         }
 
@@ -217,8 +224,26 @@ export default function SuperAdminAggregatorAction() {
             }
         } catch (error) {
             console.log("Ошибка назначения заказа:", error);
-            const errorMessage = error.response?.data?.message || "Ошибка при назначении заказа";
-            alert(`Ошибка: ${errorMessage}`);
+
+            if (error.response?.data?.alreadyAssigned) {
+                setShowAssignModal(false);
+                setSelectedOrder(null);
+                setAlreadyAssignedInfo({
+                    message: error.response.data.message || "Этот заказ уже назначен курьеру.",
+                    courierName: error.response.data.courierName || null
+                });
+
+                // Локальное состояние устарело — подтягиваем актуальный список заказов
+                try {
+                    const ordersRes = await api.get("/getAllOrderForToday");
+                    setOrders(ordersRes.data.orders);
+                } catch (refreshError) {
+                    console.log("Ошибка обновления списка заказов:", refreshError);
+                }
+            } else {
+                const errorMessage = error.response?.data?.message || "Ошибка при назначении заказа";
+                alert(`Ошибка: ${errorMessage}`);
+            }
         }
         setAssignLoading(false);
     };
@@ -1349,6 +1374,31 @@ export default function SuperAdminAggregatorAction() {
                             className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
                         >
                             Отмена
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Модальное окно: заказ уже назначен курьеру */}
+        {alreadyAssignedInfo && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white text-black p-6 rounded-lg max-w-sm w-full mx-4">
+                    <h3 className="text-lg font-bold mb-2 text-red-600">
+                        Заказ уже назначен
+                    </h3>
+                    <p className="text-gray-700">
+                        {alreadyAssignedInfo.message}
+                        {alreadyAssignedInfo.courierName && (
+                            <> Курьер: <strong>{alreadyAssignedInfo.courierName}</strong>.</>
+                        )}
+                    </p>
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={() => setAlreadyAssignedInfo(null)}
+                            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+                        >
+                            Понятно
                         </button>
                     </div>
                 </div>

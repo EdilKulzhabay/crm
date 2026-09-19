@@ -1925,6 +1925,19 @@ export const assignOrderToCourier = async (req, res) => {
             status: order.status
         });
 
+        // Заказ уже назначен курьеру — не даём назначить повторно (в т.ч. тому же курьеру)
+        if (order.courierAggregator) {
+            const existingCourier = await CourierAggregator.findById(order.courierAggregator).select("fullName");
+            return res.status(409).json({
+                success: false,
+                alreadyAssigned: true,
+                courierName: existingCourier?.fullName || null,
+                message: existingCourier
+                    ? `Этот заказ уже назначен курьеру: ${existingCourier.fullName}`
+                    : "Этот заказ уже назначен курьеру"
+            });
+        }
+
         // Находим курьера
         const courier = await CourierAggregator.findById(courierId);
 
@@ -2666,6 +2679,13 @@ export const requestWithdrawalCourierAggregator = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Курьер не найден",
+            });
+        }
+
+        if (courier.order?.orderId || courier.order?.stopType === "aquaMarket") {
+            return res.status(400).json({
+                success: false,
+                message: "Вывод средств недоступен во время выполнения заказа",
             });
         }
 
