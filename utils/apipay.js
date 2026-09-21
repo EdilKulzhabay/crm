@@ -2,7 +2,7 @@
  * ApiPay.kz (Kaspi Pay) — утилиты
  * Документация: https://apipay.kz/docs
  *
- * Base URL: https://bpapi.bazarbay.site/api/v1
+ * Base URL: https://api.apipay.kz/api/v1
  * Auth: X-API-Key
  * Webhook signature: HMAC-SHA256 над сырым телом, заголовок X-Webhook-Signature: sha256=<hex>
  */
@@ -12,7 +12,7 @@ import crypto from "crypto";
 import "dotenv/config";
 
 export const APIPAY_BASE_URL =
-    process.env.APIPAY_BASE_URL || "https://bpapi.bazarbay.site/api/v1";
+    process.env.APIPAY_BASE_URL || "https://api.apipay.kz/api/v1";
 export const APIPAY_API_KEY = process.env.APIPAY_API_KEY || "";
 export const APIPAY_WEBHOOK_SECRET = process.env.APIPAY_WEBHOOK_SECRET || "";
 
