@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import http from "http";
+import crypto from "crypto";
 import { Server } from "socket.io";
 
 import "dotenv/config";
@@ -525,6 +526,29 @@ app.post("/getCompletedOrdersForBussinessCenter", BussinessCenterController.getC
 app.post("/getCancelledOrdersForBussinessCenter", BussinessCenterController.getCancelledOrdersForBussinessCenter)
 
 app.post("/riseAgency", (req, res) => {
+    const expectedToken = process.env.RISE_AGENCY_API_TOKEN;
+
+    if (!expectedToken) {
+        console.log("RISE_AGENCY_API_TOKEN не задан в .env");
+        return res.status(500).json({ message: "Сервис временно недоступен" });
+    }
+
+    const providedToken = req.headers["x-api-token"];
+
+    if (!providedToken || typeof providedToken !== "string") {
+        return res.status(401).json({ message: "Нет доступа" });
+    }
+
+    const provided = Buffer.from(providedToken);
+    const expected = Buffer.from(expectedToken);
+    const isValid =
+        provided.length === expected.length &&
+        crypto.timingSafeEqual(provided, expected);
+
+    if (!isValid) {
+        return res.status(401).json({ message: "Нет доступа" });
+    }
+
     console.log(req.body);
     res.status(200).json({ message: "Agency risen successfully" });
 })
