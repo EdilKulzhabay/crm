@@ -538,12 +538,7 @@ app.post("/riseAgency", (req, res) => {
     if (!providedToken || typeof providedToken !== "string") {
         return res.status(401).json({ message: "Нет доступа" });
     }
-
-    const provided = Buffer.from(providedToken);
-    const expected = Buffer.from(expectedToken);
-    const isValid =
-        provided.length === expected.length &&
-        crypto.timingSafeEqual(provided, expected);
+    const isValid = providedToken === expectedToken;
 
     if (!isValid) {
         return res.status(401).json({ message: "Нет доступа" });
