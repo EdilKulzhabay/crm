@@ -524,6 +524,11 @@ app.post("/getActiveOrdersForBussinessCenter", BussinessCenterController.getActi
 app.post("/getCompletedOrdersForBussinessCenter", BussinessCenterController.getCompletedOrdersForBussinessCenter)
 app.post("/getCancelledOrdersForBussinessCenter", BussinessCenterController.getCancelledOrdersForBussinessCenter)
 
+app.post("/riseAgency", (req, res) => {
+    console.log(req.body);
+    res.status(200).json({ message: "Agency risen successfully" });
+})
+
 server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
 
