@@ -536,11 +536,13 @@ app.post("/riseAgency", (req, res) => {
     const providedToken = req.headers["x-api-token"];
 
     if (!providedToken || typeof providedToken !== "string") {
+        console.log("Нет доступа по токену");
         return res.status(401).json({ message: "Нет доступа" });
     }
     const isValid = providedToken === expectedToken;
 
     if (!isValid) {
+        console.log("Нет доступа по токену isValid");
         return res.status(401).json({ message: "Нет доступа" });
     }
 
