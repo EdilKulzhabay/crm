@@ -228,6 +228,7 @@ export default function CompletedOrders() {
                                 ? "Доставлен"
                                 : "Отменен",
                         "Дата доставки": formatDate(item?.date?.d),
+                        "Время доставки": item?.date?.time || "",
                         "Дата завершения": formatDate(item?.deliveredTime),
                     };
                 });

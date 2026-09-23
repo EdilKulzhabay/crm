@@ -1138,7 +1138,8 @@ export const cancelOrderCourierAggregator = async (req, res) => {
             { $set: {
                 status: "cancelled",
                 reason: reason,
-                courierAggregator: null
+                courierAggregator: null,
+                cancelledBy: "courier"
             }}
         )
 
@@ -1252,7 +1253,7 @@ export const getCourierAggregators = async (req, res) => {
         const couriers = await CourierAggregator.find(query)
             .skip(skip)
             .limit(limit)
-            .sort({ createdAt: -1 });
+            .sort({ raiting: -1 });
 
         res.json({
             totalCouriers,
@@ -1735,7 +1736,8 @@ export const getActiveCourierAggregators = async (req, res) => {
                     model: 'Client',
                     select: 'fullName _id'
                 }
-            });
+            })
+            .sort({ raiting: -1 });
         res.json({ couriers })
     } catch (error) {
         console.error(error);
@@ -1932,7 +1934,8 @@ export const appointmentFranchisee = async (req, res) => {
 export const getAllCouriersWithOrderCount = async (req, res) => {
     try {
         const couriers = await CourierAggregator.find({ onTheLine: true })
-            .select('fullName _id orders order capacity12 capacity19');
+            .select('fullName _id orders order capacity12 capacity19 raiting balance')
+            .sort({ raiting: -1 });
 
         const couriersWithCount = couriers.map(courier => ({
             _id: courier._id,
@@ -1940,7 +1943,9 @@ export const getAllCouriersWithOrderCount = async (req, res) => {
             orderCount: courier.orders ? courier.orders.length : 0,
             hasActiveOrder: courier.order !== null,
             capacity12: courier.capacity12,
-            capacity19: courier.capacity19
+            capacity19: courier.capacity19,
+            raiting: courier.raiting,
+            balance: courier.balance
         }));
 
         res.json({

@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import MyButton from "../Components/MyButton";
 import MySnackBar from "../Components/MySnackBar";
+import LinkButton from "../Components/LinkButton";
 export default function SupportChat() {
     const userData = useFetchUserData();
     const { id } = useParams();
@@ -79,6 +80,11 @@ export default function SupportChat() {
                 <Div />
                 <Div>
                     <div>Переписка с клиентом: {client?.userName}</div>
+                </Div>
+                <Div>
+                    <LinkButton color="green" href={`/ClientPage/${client?._id}`}>
+                        Профиль клиента
+                    </LinkButton>
                 </Div>
                 <Div />
                 <div

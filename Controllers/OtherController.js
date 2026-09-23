@@ -553,7 +553,7 @@ export const getClientsWithPushToken = async (req, res) => {
 
 export const getSupportContacts = async (req, res) => {
     try {
-        const supportContacts = await SupportContacts.find().populate("client").sort({ createdAt: -1 });
+        const supportContacts = await SupportContacts.find().populate("client").sort({ updatedAt: -1 });
         res.json({
             success: true,
             supportContacts

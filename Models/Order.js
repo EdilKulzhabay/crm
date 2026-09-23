@@ -102,6 +102,12 @@ const OrderSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
+        /** Кто отменил заказ: клиент (моб. приложение), курьер-агрегатор или оператор CRM */
+        cancelledBy: {
+            type: String,
+            enum: ["client", "courier", "operator"],
+            default: null
+        },
         forAggregator: {
             type: Boolean,
             default: false

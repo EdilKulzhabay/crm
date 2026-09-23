@@ -1496,14 +1496,17 @@ export const updateClientAddress = async (req, res) => {
             });
         }
 
-        // Обновить данные адреса
+        // Обновить данные адреса. Координаты (point) привязаны к старому тексту
+        // адреса, поэтому при изменении данных адреса их нужно обнулить — адрес
+        // потребует повторной верификации/геокодирования.
         client.addresses[addressIndex] = {
             ...client.addresses[addressIndex]._doc, // Сохранение других полей
             name,
             street,
             link,
             house,
-            phone
+            phone,
+            point: { lat: null, lon: null }
         };
 
         // Сохранить изменения
@@ -1660,6 +1663,8 @@ export async function createClientOrderCore({
 
     const clientPhone = address.phone !== "" ? address.phone : client.phone
 
+    const previousOrdersCount = await Order.countDocuments({ client: client._id });
+
     const order = new Order({
         franchisee: naturalFranchisee.isBussinessCenter ? naturalFranchisee._id : franchisee._id,
         client: client._id,
@@ -1676,6 +1681,7 @@ export async function createClientOrderCore({
         clientPhone: clientPhone,
         notificationToken: notificationToken || "",
         emptyBottles: { b12: exchangedB12, b19: exchangedB19 },
+        isUrgent: previousOrdersCount === 0,
     });
 
     await order.save();
@@ -2077,7 +2083,7 @@ export const getOrderDataMobile = async (req, res) => {
 export const cancelOrderMobile = async (req, res) => {
     try {
         const { orderId, reason } = req.body;
-        const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled", reason });
+        const order = await Order.findByIdAndUpdate(orderId, { status: "cancelled", reason, cancelledBy: "client" });
         // Возврат средств основан на order.paymentMethod — том же поле, которым
         // руководствовалось фактическое списание при создании заказа (см. createClientOrderCore),
         // а не на order.opForm, который мог отличаться от реально списанного способа оплаты.

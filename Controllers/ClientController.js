@@ -236,16 +236,17 @@ export const searchClient = async (req, res) => {
             { userName: { $regex: regex } },
             { phone: { $regex: regex } },
             { mail: { $regex: regex } },
-            { 
-                addresses: { 
-                    $elemMatch: { 
+            { invoiceLegalData: { $regex: regex } },
+            {
+                addresses: {
+                    $elemMatch: {
                         $or: [
                             { street: { $regex: regex } },
                             { house: { $regex: regex } },
                             { phone: { $regex: regex } },
-                        ] 
-                    } 
-                } 
+                        ]
+                    }
+                }
             },
         ];
 

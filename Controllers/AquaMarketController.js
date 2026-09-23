@@ -61,17 +61,30 @@ export const getAquaMarkets = async (req, res) => {
                 actionType: "giving",
                 createdAt: { $gte: startOfTodayAlmaty, $lte: endOfTodayAlmaty }
             } },
-            { $group: { _id: "$aquaMarket", count: { $sum: 1 } } }
+            { $group: {
+                _id: "$aquaMarket",
+                count: { $sum: 1 },
+                b12: { $sum: "$bottles.b12" },
+                b19: { $sum: "$bottles.b19" }
+            } }
         ])
         const givingCountByAquaMarket = givingCounts.reduce((acc, item) => {
-            acc[item._id.toString()] = item.count
+            acc[item._id.toString()] = {
+                count: item.count,
+                b12: item.b12 || 0,
+                b19: item.b19 || 0
+            }
             return acc
         }, {})
 
-        const aquaMarketsWithGivingCount = aquaMarkets.map((aquaMarket) => ({
-            ...aquaMarket.toObject(),
-            givingCount: givingCountByAquaMarket[aquaMarket._id.toString()] || 0
-        }))
+        const aquaMarketsWithGivingCount = aquaMarkets.map((aquaMarket) => {
+            const giving = givingCountByAquaMarket[aquaMarket._id.toString()]
+            return {
+                ...aquaMarket.toObject(),
+                givingCount: giving?.count || 0,
+                givenBottlesToday: { b12: giving?.b12 || 0, b19: giving?.b19 || 0 }
+            }
+        })
 
         res.json({
             success: true,

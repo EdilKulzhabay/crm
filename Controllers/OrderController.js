@@ -49,6 +49,8 @@ export const addOrder = async (req, res) => {
 
         const clientPhone = address.phone !== "" ? address.phone : client.phone
 
+        const previousOrdersCount = await Order.countDocuments({ client: client._id })
+
         const order = new Order({
             franchisee: client.franchisee,
             client,
@@ -64,7 +66,8 @@ export const addOrder = async (req, res) => {
             transferredFranchise,
             // income: Number(products.b12 || 0) * Number(process.env.Reward12) + Number(products.b19 || 0) * Number(process.env.Reward19)
             income: sum,
-            clientPhone: clientPhone
+            clientPhone: clientPhone,
+            isUrgent: previousOrdersCount === 0
         });
 
         await order.save();
@@ -480,6 +483,9 @@ export const updateOrder = async (req, res) => {
         if (change === "status") {
             const oldStatus = order.status; // Сохраняем старый статус
             order.status = changeData;
+            if (changeData === "cancelled") {
+                order.cancelledBy = "operator";
+            }
             if (changeData === "delivered" || changeData === "cancelled") {
                 const courierId = order.courier
                 await Courier.updateOne(

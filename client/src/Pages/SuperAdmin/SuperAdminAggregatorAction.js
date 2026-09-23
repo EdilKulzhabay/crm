@@ -47,6 +47,17 @@ const createStarIcon = () => {
     });
 };
 
+const urgentBadgeHtml = `<div style="position:absolute; top:-4px; right:-4px; width:14px; height:14px; background:#dc2626; color:white; border-radius:50%; font-size:10px; font-weight:bold; line-height:14px; text-align:center; box-shadow:0 0 0 1px white;">!</div>`;
+
+const createUrgentIcon = () => {
+    return L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="width:16px;height:16px;background:#dc2626;color:white;border-radius:50%;font-size:11px;font-weight:bold;line-height:16px;text-align:center;box-shadow:0 0 0 2px white;">!</div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 24]
+    });
+};
+
 const regularStatusImages = [img1, img2, img3, img4, img5];
 const legalStatusImages = [img1Legal, img2Legal, img3Legal, img4Legal, img5Legal];
 
@@ -89,7 +100,7 @@ const createOrderIcon = (order) => {
             : `<div style="width:16px;height:16px;background:#111827;border-radius:50%;"></div>`;
         return L.divIcon({
             className: 'custom-order-icon',
-            html: shape,
+            html: `<div style="position:relative;display:inline-block;">${shape}${order.isUrgent ? urgentBadgeHtml : ''}</div>`,
             iconSize: [16, 16],
             iconAnchor: [8, 8]
         });
@@ -123,9 +134,10 @@ const createOrderIcon = (order) => {
         : '';
     return L.divIcon({
         className: 'custom-order-icon',
-        html: `<div style="display:inline-block;${outline}">
+        html: `<div style="position:relative;display:inline-block;${outline}">
             ${lineHtml}
             <img src="${imgSrc}" style="width:20px;height:20px;display:block;" />
+            ${order.isUrgent ? urgentBadgeHtml : ''}
         </div>`,
         iconSize: [20, showLine ? 24 : 20],
         iconAnchor: [10, showLine ? 12 : 10]
@@ -566,6 +578,18 @@ export default function SuperAdminAggregatorAction() {
         }, 0),
     };
 
+    // Показатель достаточности курьеров: сколько курьеров нужно (по 1 на каждые
+    // 6 активных заказов) против того, сколько сейчас реально на линии.
+    const activeOrdersCount = orderStats.awaitingOrder + orderStats.onTheWay;
+    const requiredCouriersCount = Math.ceil(activeOrdersCount / 6);
+    const activeCouriersCount = couriers.length;
+    const courierDeficit = requiredCouriersCount - activeCouriersCount;
+    const sufficiencyColorClass = courierDeficit <= 0
+        ? "text-green-400"
+        : courierDeficit === 1
+            ? "text-yellow-400"
+            : "text-red-400";
+
     const processOrdersWithOffset = (orders) => {
         const coordinateGroups = new Map();
 
@@ -621,7 +645,7 @@ export default function SuperAdminAggregatorAction() {
         {/* Статистика */}
         <div className="mb-4 p-4 bg-gray-800 rounded-lg">
             <h3 className="text-lg font-bold mb-2">Статистика заказов:</h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 <div className="text-center">
                     <div className="text-green-400 font-bold">{orderStats.awaitingOrder}
                         ({orderStats.awaitingOrdersBottles19};{orderStats.awaitingOrdersBottles12})</div>
@@ -656,6 +680,12 @@ export default function SuperAdminAggregatorAction() {
                         Всего
                     </button>
                 </div>
+                <div className="text-center">
+                    <div className={clsx("font-bold", sufficiencyColorClass)}>
+                        {requiredCouriersCount} / {activeCouriersCount}
+                    </div>
+                    <div className="text-sm">Достаточность курьеров</div>
+                </div>
             </div>
         </div>
 
@@ -674,6 +704,10 @@ export default function SuperAdminAggregatorAction() {
                                 </div>
                                 <div className="text-green-400">
                                     19л: {courier.capacity19 || 0}
+                                </div>
+                                <div className="text-sm text-gray-400 mt-1">Баланс:</div>
+                                <div className="text-yellow-400">
+                                    {courier.balance || 0} ₸
                                 </div>
                             </div>
                             <div>
@@ -792,6 +826,10 @@ export default function SuperAdminAggregatorAction() {
                         <div className="w-8 h-0.5 bg-purple-500 mr-2" style={{borderTop: '2px dashed purple'}}></div>
                         <span className="text-sm">Маршрут курьера</span>
                     </div>
+                    <div className="flex items-center">
+                        <div style={{width:14,height:14,background:'#dc2626',color:'white',borderRadius:'50%',fontSize:10,fontWeight:'bold',lineHeight:'14px',textAlign:'center'}} className="mr-2">!</div>
+                        <span className="text-sm">Срочный заказ</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -858,7 +896,8 @@ export default function SuperAdminAggregatorAction() {
                                     <div className="min-w-[220px]">
                                         <strong>{am.address || "Аквамаркет"}</strong><br />
                                         Полные бутыли: 12,5 л — {am.full?.b12 ?? 0}, 18,9 л — {am.full?.b19 ?? 0}<br />
-                                        Количество вывозов сегодня: {am.givingCount ?? 0}
+                                        Количество вывозов сегодня: {am.givingCount ?? 0}<br />
+                                        Отпущено бутылей сегодня: 12,5 л — {am.givenBottlesToday?.b12 ?? 0}, 18,9 л — {am.givenBottlesToday?.b19 ?? 0}
                                         <br /><br />
                                         <button
                                             onClick={() => openAquaMarketAssignModal(am)}
@@ -902,6 +941,9 @@ export default function SuperAdminAggregatorAction() {
                                     {bottles19 > 0 && `${bottles19} 19л бутылей`}
                                     {isAssigned && (
                                         <><br /><strong>Курьер: {order.courierAggregator?.fullName || 'Назначен'}</strong></>
+                                    )}
+                                    {order.isUrgent && (
+                                        <><br /><strong style={{color: '#dc2626'}}>⚠ Срочный заказ!</strong></>
                                     )}
                                     <br /><br />
                                     <button
@@ -977,6 +1019,12 @@ export default function SuperAdminAggregatorAction() {
                                             pathOptions={{ color: "black", fillColor: "black", fillOpacity: 1, weight: 1 }}
                                         />
                                     )}
+                                    {order.isUrgent && (
+                                        <Marker
+                                            position={[order.offsetLat, order.offsetLon]}
+                                            icon={createUrgentIcon()}
+                                        />
+                                    )}
                                 </React.Fragment>
                             );
                         } else {
@@ -998,6 +1046,12 @@ export default function SuperAdminAggregatorAction() {
                                             pathOptions={{ color: "black", fillColor: "black", fillOpacity: 1, weight: 1 }}
                                         />
                                     )}
+                                    {order.isUrgent && (
+                                        <Marker
+                                            position={[order.offsetLat, order.offsetLon]}
+                                            icon={createUrgentIcon()}
+                                        />
+                                    )}
                                 </React.Fragment>
                             );
                         }
@@ -1016,7 +1070,8 @@ export default function SuperAdminAggregatorAction() {
                                         <div className="min-w-[250px]">
                                             <strong>Курьер: {courier.fullName}</strong><br />
                                             Телефон: {courier.phone}<br />
-                                            Статус: {courier.onTheLine ? "Активен" : "Неактивен"}
+                                            Статус: {courier.onTheLine ? "Активен" : "Неактивен"}<br />
+                                            Баланс: {courier.balance || 0} ₸
                                             <br />Заказов: {courier.orders?.length || 0}
                                             {(courier.orders && courier.orders.length > 0) && (
                                                 <>
@@ -1229,6 +1284,10 @@ export default function SuperAdminAggregatorAction() {
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-0.5" style={{borderTop: '2px dashed purple'}}></div>
                             <span className="text-sm">Маршрут курьера</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div style={{width:14,height:14,background:'#dc2626',color:'white',borderRadius:'50%',fontSize:10,fontWeight:'bold',lineHeight:'14px',textAlign:'center'}}>!</div>
+                            <span className="text-sm">Срочный заказ</span>
                         </div>
                     </>)}
                     </div>
