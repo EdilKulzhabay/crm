@@ -228,7 +228,7 @@ export default function CompletedOrders() {
                                 ? "Доставлен"
                                 : "Отменен",
                         "Дата доставки": formatDate(item?.date?.d),
-                        "Время доставки": item?.date?.time || "",
+                        "Время создания заказа": item?.createdAt ? formatDateTime(item?.createdAt) : "",
                         "Дата завершения": formatDate(item?.deliveredTime),
                     };
                 });

@@ -695,7 +695,10 @@ export default function SuperAdminAggregatorAction() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allCouriers.map((courier) => (
                     <div key={courier._id} className="bg-gray-700 p-4 rounded-lg">
-                        <div className="font-bold text-lg mb-2">{courier.fullName}</div>
+                        <div className="font-bold text-lg mb-2 flex items-center gap-x-2">
+                            {courier.fullName}
+                            <span className="text-yellow-400 text-sm font-normal">⭐ {courier.raiting || 0}</span>
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                             <div>
                                 <div className="text-sm text-gray-400">Остаток бутылей:</div>
@@ -1070,6 +1073,7 @@ export default function SuperAdminAggregatorAction() {
                                         <div className="min-w-[250px]">
                                             <strong>Курьер: {courier.fullName}</strong><br />
                                             Телефон: {courier.phone}<br />
+                                            Рейтинг: ⭐ {courier.raiting || 0}<br />
                                             Статус: {courier.onTheLine ? "Активен" : "Неактивен"}<br />
                                             Баланс: {courier.balance || 0} ₸
                                             <br />Заказов: {courier.orders?.length || 0}
@@ -1409,7 +1413,7 @@ export default function SuperAdminAggregatorAction() {
                                 >
                                     <div className="flex justify-between items-center">
                                         <div>
-                                            <p className="font-semibold">{courier.fullName}</p>
+                                            <p className="font-semibold">{courier.fullName} <span className="text-yellow-600">⭐ {courier.raiting || 0}</span></p>
                                             <p className="text-sm text-gray-600">
                                                 Заказов: {courier.orderCount} |
                                                 Вместимость: {courier.capacity12} 12л, {courier.capacity19} 19л
@@ -1517,7 +1521,7 @@ export default function SuperAdminAggregatorAction() {
                                 >
                                     <div className="flex justify-between items-center">
                                         <div>
-                                            <p className="font-semibold">{courier.fullName}</p>
+                                            <p className="font-semibold">{courier.fullName} <span className="text-yellow-600">⭐ {courier.raiting || 0}</span></p>
                                             <p className="text-sm text-gray-600">
                                                 Заказов: {courier.orderCount} |
                                                 Вместимость: {courier.capacity12} 12л, {courier.capacity19} 19л

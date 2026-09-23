@@ -1256,6 +1256,27 @@ export const updateClientDataMobile = async (req, res) => {
             updateValue = await bcrypt.hash(value, salt);
         }
 
+        // Клиент через приложение сохраняет весь массив addresses целиком (редактирование
+        // одного адреса), но не трогает point — старые координаты остаются привязанными
+        // к уже изменённому тексту адреса. Обнуляем point для тех адресов, где реально
+        // поменялись текстовые поля, чтобы адрес потребовал повторной геовалидации.
+        if (field === "addresses" && Array.isArray(value)) {
+            const addressTextFields = ["name", "city", "street", "floor", "apartment", "house", "link", "phone"];
+            const oldAddressesById = new Map(
+                (client.addresses || [])
+                    .filter((addr) => addr?._id)
+                    .map((addr) => [addr._id.toString(), addr])
+            );
+            updateValue = value.map((addr) => {
+                const oldAddr = addr?._id ? oldAddressesById.get(addr._id.toString()) : null;
+                if (!oldAddr) return addr; // новый адрес — точки ещё не было
+                const changed = addressTextFields.some(
+                    (key) => (addr?.[key] ?? "") !== (oldAddr?.[key] ?? "")
+                );
+                return changed ? { ...addr, point: { lat: null, lon: null } } : addr;
+            });
+        }
+
         const updatedClient = await Client.findByIdAndUpdate(client._id, {
             [field]: updateValue
         }, { new: true });

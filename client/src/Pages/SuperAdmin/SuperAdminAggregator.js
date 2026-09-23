@@ -189,6 +189,8 @@ export default function SuperAdminAggregator() {
                                 <div className="flex items-center gap-x-2 flex-wrap">
                                     <div>{courier.fullName}</div>
                                     <div>|</div>
+                                    <div className="text-yellow-400">⭐ {courier.raiting || 0}</div>
+                                    <div>|</div>
                                     <div>{courier.phone}</div>
                                     <div>|</div>
                                     <div className={clsx("", {
@@ -215,6 +217,8 @@ export default function SuperAdminAggregator() {
                             <Li>
                                 <div className="flex items-center gap-x-2 flex-wrap">
                                     <div>{courier.fullName}</div>
+                                    <div>|</div>
+                                    <div className="text-yellow-400">⭐ {courier.raiting || 0}</div>
                                     <div>|</div>
                                     <div>{courier.phone}</div>
                                     <div>|</div>
