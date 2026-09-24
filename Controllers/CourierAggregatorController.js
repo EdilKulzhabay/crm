@@ -1934,7 +1934,7 @@ export const appointmentFranchisee = async (req, res) => {
 export const getAllCouriersWithOrderCount = async (req, res) => {
     try {
         const couriers = await CourierAggregator.find({ onTheLine: true })
-            .select('fullName _id orders order capacity12 capacity19 raiting balance')
+            .select('fullName _id orders order capacity12 capacity19 raiting income')
             .sort({ raiting: -1 });
 
         const couriersWithCount = couriers.map(courier => ({
@@ -1945,7 +1945,7 @@ export const getAllCouriersWithOrderCount = async (req, res) => {
             capacity12: courier.capacity12,
             capacity19: courier.capacity19,
             raiting: courier.raiting,
-            balance: courier.balance
+            income: courier.income
         }));
 
         res.json({

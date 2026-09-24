@@ -710,7 +710,7 @@ export default function SuperAdminAggregatorAction() {
                                 </div>
                                 <div className="text-sm text-gray-400 mt-1">Баланс:</div>
                                 <div className="text-yellow-400">
-                                    {courier.balance || 0} ₸
+                                    {courier.income || 0} ₸
                                 </div>
                             </div>
                             <div>
@@ -1075,7 +1075,7 @@ export default function SuperAdminAggregatorAction() {
                                             Телефон: {courier.phone}<br />
                                             Рейтинг: ⭐ {courier.raiting || 0}<br />
                                             Статус: {courier.onTheLine ? "Активен" : "Неактивен"}<br />
-                                            Баланс: {courier.balance || 0} ₸
+                                            Баланс: {courier.income || 0} ₸
                                             <br />Заказов: {courier.orders?.length || 0}
                                             {(courier.orders && courier.orders.length > 0) && (
                                                 <>
@@ -1417,6 +1417,9 @@ export default function SuperAdminAggregatorAction() {
                                             <p className="text-sm text-gray-600">
                                                 Заказов: {courier.orderCount} |
                                                 Вместимость: {courier.capacity12} 12л, {courier.capacity19} 19л
+                                            </p>
+                                            <p className="text-sm text-gray-600">
+                                                Баланс: <span className="font-semibold text-yellow-700">{courier.income || 0} ₸</span>
                                             </p>
                                         </div>
                                         {assignLoading && (
