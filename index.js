@@ -54,6 +54,7 @@ import {
     shutdownWhatsAppWeb,
 } from "./whatsApp/waWebClient.js";
 import { startCourierIdleOfflineCheck } from "./utils/courierIdleOfflineCheck.js";
+import { initCalls } from "./calls/index.js";
 
 // Импортируем функцию оптимизации маршрутов
 // import { optimizedZoneBasedDistribution } from "./optimizeRoutesWithTSP.js";
@@ -189,6 +190,10 @@ global.io = new Server(server, {
         origin: "*", // или укажите конкретные домены
     },
 });
+
+// VoIP-звонки клиент ↔ курьер: namespace /calls + REST /calls/*
+const { router: callRouter } = initCalls(io);
+app.use("/calls", callRouter);
 
 io.on("connection", (socket) => {
     console.log("New WebSocket connection");

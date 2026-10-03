@@ -144,3 +144,19 @@ PORT=               # Порт сервера
 - `accessoriesImages/` — изображения аксессуаров
 - Telegram и WhatsApp интеграции для уведомлений оператора
 - `pdfTitle.png` / `pdfEnd.png` — шапка/подвал для генерируемых PDF
+
+## VoIP-звонки клиент ↔ курьер (`calls/`)
+
+WebRTC P2P, сигналинг через Socket.io namespace `/calls`, TURN — coturn на этом же сервере (`deploy/coturn/turnserver.conf.example`).
+
+- Подключение: `io(`${API}/calls`, { auth: { token: <access JWT> } })`. Токены: клиент `{ client }`, курьер `{ _id, role: "courier" }` (CourierAggregator). Без валидного токена — `connect_error: UNAUTHORIZED`.
+- Клиент → сервер (с ack `{ ok, data } | { ok: false, error: { code, message } }`): `call:invite {orderId}`, `call:accept {callId}`, `call:reject {callId}`, `call:end {callId}`, `call:signal {callId, kind: offer|answer|ice, payload}` (только в принятом звонке).
+- Сервер → клиент: `call:incoming {callId, orderId, caller}`, `call:accepted {callId}`, `call:signal`, `call:ended {callId, status, reason, durationSec}`, `call:resume` (после переподключения).
+- `GET /calls/ice-servers` (Bearer) — STUN/TURN с временной учёткой (HMAC, TTL 4 ч).
+- Правило доступа (`callPolicy.js`): только клиент и назначенный курьер заказа; от назначения курьера до 30 мин после `deliveredTime`; не для `cancelled`.
+- Живое состояние — в памяти процесса (один инстанс). При кластеризации нужен Redis + `@socket.io/redis-adapter`.
+- Env: `TURN_SECRET` (= `static-auth-secret` coturn), `TURN_URLS`, `STUN_URLS` (через запятую).
+- Пуши о входящем (`calls/push/`): при каждом `invite` вызываемому уходит VoIP-пуш APNs (iOS, PushKit → CallKit) и high-priority FCM data (Android, `type: incoming_call`); неотвеченный звонок шлёт на Android `type: call_ended`. На iOS отмену не шлём — любой VoIP-пуш обязан показать CallKit. `callUuid` = `callIdToUuid(callId)`.
+- Токены устройств: `POST /calls/push-token {platform: ios|android, token, apnsEnvironment: sandbox|production}`, `DELETE /calls/push-token {token}` (Bearer), коллекция `CallPushToken` (до 5 устройств на участника, протухшие удаляются по ответу APNs/FCM).
+- Env пушей: `APNS_KEY_PATH` (.p8, тип «Apple Push Notifications service»), `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID_CLIENT` (com.tibetskayaclientapp), `APNS_BUNDLE_ID_COURIER` (com.tibetskayacourier2.app), `COURIER_FIREBASE_SERVICE_ACCOUNT_PATH` (проект courier-74d57), `CLIENT_FIREBASE_SERVICE_ACCOUNT_PATH` (необязательно: по умолчанию используется firebase-приложение `client-app`). Не заданный канал отключается с предупреждением в логе.
+- Тесты: `npm run test:calls`.
