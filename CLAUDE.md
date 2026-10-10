@@ -149,7 +149,7 @@ PORT=               # Порт сервера
 
 WebRTC P2P, сигналинг через Socket.io namespace `/calls`, TURN — coturn на этом же сервере (`deploy/coturn/turnserver.conf.example`).
 
-- Подключение: `io(`${API}/calls`, { auth: { token: <access JWT> } })`. Токены: клиент `{ client }`, курьер `{ _id, role: "courier" }` (CourierAggregator). Без валидного токена — `connect_error: UNAUTHORIZED`.
+- Подключение: `io(`${API}/calls`, { auth: { token: <access JWT>, deviceId?: <id установки приложения> } })`. Токены: клиент `{ client }`, курьер `{ _id, role: "courier" }` (CourierAggregator). Без валидного токена — `connect_error: UNAUTHORIZED`.
 - Клиент → сервер (с ack `{ ok, data } | { ok: false, error: { code, message } }`): `call:invite {orderId}`, `call:accept {callId}`, `call:reject {callId}`, `call:end {callId}`, `call:signal {callId, kind: offer|answer|ice, payload}` (только в принятом звонке).
 - Сервер → клиент: `call:incoming {callId, orderId, caller}`, `call:accepted {callId}`, `call:signal`, `call:ended {callId, status, reason, durationSec}`, `call:resume` (после переподключения).
 - `GET /calls/ice-servers` (Bearer) — STUN/TURN с временной учёткой (HMAC, TTL 4 ч).
@@ -159,4 +159,5 @@ WebRTC P2P, сигналинг через Socket.io namespace `/calls`, TURN —
 - Пуши о входящем (`calls/push/`): при каждом `invite` вызываемому уходит VoIP-пуш APNs (iOS, PushKit → CallKit) и high-priority FCM data (Android, `type: incoming_call`); неотвеченный звонок шлёт на Android `type: call_ended`. На iOS отмену не шлём — любой VoIP-пуш обязан показать CallKit. `callUuid` = `callIdToUuid(callId)`.
 - Токены устройств: `POST /calls/push-token {platform: ios|android, token, apnsEnvironment: sandbox|production}`, `DELETE /calls/push-token {token}` (Bearer), коллекция `CallPushToken` (до 5 устройств на участника, протухшие удаляются по ответу APNs/FCM).
 - Env пушей: `APNS_KEY_PATH` (.p8, тип «Apple Push Notifications service»), `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID_CLIENT` (com.tibetskayaclientapp), `APNS_BUNDLE_ID_COURIER` (com.tibetskayacourier2.app), `COURIER_FIREBASE_SERVICE_ACCOUNT_PATH` (проект courier-74d57), `CLIENT_FIREBASE_SERVICE_ACCOUNT_PATH` (необязательно: по умолчанию используется firebase-приложение `client-app`). Не заданный канал отключается с предупреждением в логе.
+- Звонок на устройство заказа: клиентское приложение передаёт `deviceId` (UUID установки) при создании заказа (`Order.clientDeviceId`, в т.ч. в `pendingOrderDraft` ApiPay), в `POST /calls/push-token` и в `auth` сокета. Входящий, пуши и все события звонка идут только на это устройство (комната `client:<id>:device:<deviceId>`), принять звонок с другого устройства аккаунта нельзя. Нет `clientDeviceId` (заказ из CRM / старое приложение) или устройство уже не в аккаунте (нет push-токена и сокета) — звонок на все устройства, как раньше.
 - Тесты: `npm run test:calls`.

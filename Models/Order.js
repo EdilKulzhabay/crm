@@ -151,6 +151,15 @@ const OrderSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        /**
+         * Установка мобильного приложения, с которой создан заказ: звонок курьера по заказу
+         * идёт только на неё (под одним аккаунтом клиента может быть несколько телефонов).
+         * null — заказ из CRM или из старой версии приложения: звонок на все устройства.
+         */
+        clientDeviceId: {
+            type: String,
+            default: null,
+        },
         deliveredTime: {
             type: Date,
             default: null

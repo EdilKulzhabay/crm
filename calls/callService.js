@@ -7,7 +7,7 @@ import {
     SOCKET_EVENTS,
 } from "./callConstants.js";
 import { CALL_ERROR_CODES, CallError } from "./callErrors.js";
-import { getCounterpart, isOrderCallable, participantKey } from "./callPolicy.js";
+import { getCounterpart, isActingAs, isOrderCallable, participantKey } from "./callPolicy.js";
 import { noopCallPushNotifier } from "./push/callPushNotifier.js";
 
 /** @typedef {import("./callPolicy.js").Participant} Participant */
@@ -39,6 +39,8 @@ import { noopCallPushNotifier } from "./push/callPushNotifier.js";
  *   repository: typeof import("./callRepository.js").mongoCallRepository,
  *   emit: (participant: Participant, event: string, payload: object) => void,
  *   pushNotifier?: typeof noopCallPushNotifier,
+ *   isKnownDevice?: (participant: Participant) => Promise<boolean>,
+ *   isConnected?: (participant: Participant) => boolean,
  *   logger?: Pick<Console, "error" | "info">,
  *   now?: () => Date,
  *   setTimer?: typeof setTimeout,
@@ -51,6 +53,10 @@ export const createCallService = ({
     repository,
     emit,
     pushNotifier = noopCallPushNotifier,
+    // Устройство ещё привязано к аккаунту (есть push-токен или открытый сокет)
+    isKnownDevice = async () => true,
+    // У стороны звонка остался другой открытый сокет
+    isConnected = () => false,
     logger = console,
     now = () => new Date(),
     setTimer = setTimeout,
@@ -63,9 +69,11 @@ export const createCallService = ({
     /** participantKey → callId */
     const busy = new Map();
 
-    const isSame = (a, b) => participantKey(a) === participantKey(b);
-    const isParticipant = (call, user) => isSame(call.caller, user) || isSame(call.callee, user);
-    const otherSide = (call, user) => (isSame(call.caller, user) ? call.callee : call.caller);
+    // user — тот, кто действует (сокет); сторона звонка может быть привязана к устройству
+    const isParticipant = (call, user) => isActingAs(call.caller, user) || isActingAs(call.callee, user);
+    const otherSide = (call, user) => (isActingAs(call.caller, user) ? call.callee : call.caller);
+    /** Сторона звонка, за которую действует user, или null (например, другое устройство аккаунта) */
+    const sideOf = (call, user) => [call.caller, call.callee].find((side) => isActingAs(side, user)) ?? null;
 
     /** Ошибка записи истории не должна обрывать живой звонок — логируем и продолжаем. */
     const persist = async (callId, fields) => {
@@ -92,7 +100,7 @@ export const createCallService = ({
     };
 
     const assertCallee = (call, user) => {
-        if (!isSame(call.callee, user)) {
+        if (!isActingAs(call.callee, user)) {
             throw new CallError(CALL_ERROR_CODES.FORBIDDEN, "Действие доступно только вызываемому абоненту");
         }
     };
@@ -172,7 +180,18 @@ export const createCallService = ({
         if (!isOrderCallable(order, now())) {
             throw new CallError(CALL_ERROR_CODES.CALL_NOT_ALLOWED, "Звонок по этому заказу сейчас недоступен");
         }
-        return { order, callee };
+        return { order, callee: await resolveCalleeDevice(callee) };
+    };
+
+    /**
+     * Устройство, с которого создан заказ, могло выйти из аккаунта или переустановить приложение —
+     * тогда звоним на весь аккаунт, иначе до клиента не дозвониться вовсе.
+     * @param {Participant} callee
+     */
+    const resolveCalleeDevice = async (callee) => {
+        if (!callee.deviceId || (await isKnownDevice(callee))) return callee;
+        logger.info(`[calls] устройство заказа ${participantKey(callee)} не найдено — звонок на все устройства`);
+        return { type: callee.type, id: callee.id, deviceId: null };
     };
 
     /**
@@ -246,7 +265,7 @@ export const createCallService = ({
 
         let outcome = { status: CALL_STATUSES.ENDED, reason: END_REASONS.HANGUP };
         if (call.status === CALL_STATUSES.RINGING) {
-            outcome = isSame(call.caller, user)
+            outcome = isActingAs(call.caller, user)
                 ? { status: CALL_STATUSES.CANCELLED, reason: END_REASONS.CANCELLED }
                 : { status: CALL_STATUSES.REJECTED, reason: END_REASONS.REJECTED };
         }
@@ -262,11 +281,14 @@ export const createCallService = ({
         emit(otherSide(call, user), SOCKET_EVENTS.SIGNAL, { callId, kind, payload });
     };
 
-    /** Последний сокет участника отключился: даём время переподключиться (смена Wi-Fi ↔ LTE). */
+    /** Сокет участника отключился: если других сокетов стороны нет, даём время переподключиться (смена Wi-Fi ↔ LTE). */
     const onParticipantOffline = (user) => {
         const key = participantKey(user);
         const call = calls.get(busy.get(key));
         if (!call || call.graceTimers.has(key)) return;
+        const side = sideOf(call, user);
+        // Отключилось другое устройство аккаунта или у стороны остался живой сокет
+        if (!side || isConnected(side)) return;
 
         const timer = setTimer(() => {
             if (!calls.has(call.id)) return;
@@ -286,14 +308,15 @@ export const createCallService = ({
     const onParticipantOnline = (user) => {
         const key = participantKey(user);
         const call = calls.get(busy.get(key));
-        if (!call) return null;
+        // Звонок привязан к другому устройству аккаунта — здесь его не показываем
+        if (!call || !sideOf(call, user)) return null;
 
         const timer = call.graceTimers.get(key);
         if (timer) {
             clearTimer(timer);
             call.graceTimers.delete(key);
         }
-        const role = isSame(call.caller, user) ? "caller" : "callee";
+        const role = isActingAs(call.caller, user) ? "caller" : "callee";
         return { callId: call.id, orderId: call.orderId, status: call.status, role };
     };
 

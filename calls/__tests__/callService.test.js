@@ -47,7 +47,7 @@ const createClock = (startMs = Date.UTC(2026, 8, 29, 10)) => {
     };
 };
 
-const setup = ({ order = makeOrder(), repoOverrides = {}, pushNotifier } = {}) => {
+const setup = ({ order = makeOrder(), repoOverrides = {}, pushNotifier, isKnownDevice, isConnected } = {}) => {
     const clock = createClock();
     const emitted = [];
     const updates = [];
@@ -64,6 +64,8 @@ const setup = ({ order = makeOrder(), repoOverrides = {}, pushNotifier } = {}) =
         repository,
         emit: (participant, event, payload) => emitted.push({ to: participant, event, payload }),
         pushNotifier,
+        isKnownDevice,
+        isConnected,
         logger: { error: () => {}, info: () => {} },
         now: clock.now,
         setTimer: clock.setTimer,
@@ -356,7 +358,7 @@ describe("пуши о звонке", () => {
         const { callId } = await service.invite(COURIER, ORDER_ID);
 
         assert.equal(push.incoming.length, 1);
-        assert.deepEqual(push.incoming[0].callee, CLIENT);
+        assert.deepEqual(push.incoming[0].callee, { ...CLIENT, deviceId: null });
         assert.equal(push.incoming[0].call.callId, callId);
         assert.deepEqual(push.incoming[0].call.caller, { type: "courier", name: "Ерлан" });
         assert.equal(push.incoming[0].call.ringTimeoutMs, RING_TIMEOUT_MS);
@@ -398,5 +400,99 @@ describe("пуши о звонке", () => {
         await service.end(CLIENT, callId);
 
         assert.equal(push.ended.length, 0);
+    });
+});
+
+describe("звонок на устройство, с которого создан заказ", () => {
+    const DEVICE_A = "device-AAAA";
+    const DEVICE_B = "device-BBBB";
+    const CLIENT_A = { ...CLIENT, deviceId: DEVICE_A };
+    const CLIENT_B = { ...CLIENT, deviceId: DEVICE_B };
+    const orderFromA = makeOrder({ clientDeviceId: DEVICE_A });
+
+    const devicesOf = (emitted, event) => emitted.filter((e) => e.event === event).map((e) => e.to.deviceId ?? null);
+
+    test("входящий и пуш уходят только на устройство заказа", async () => {
+        const pushed = [];
+        const { service, emitted } = setup({
+            order: orderFromA,
+            isKnownDevice: async () => true,
+            pushNotifier: {
+                notifyIncomingCall: async (callee) => pushed.push(callee),
+                notifyCallEnded: async () => {},
+            },
+        });
+
+        await service.invite(COURIER, ORDER_ID);
+
+        assert.deepEqual(devicesOf(emitted, SOCKET_EVENTS.INCOMING), [DEVICE_A]);
+        assert.deepEqual(pushed, [CLIENT_A]);
+    });
+
+    test("устройство заказа больше не зарегистрировано — звонок на весь аккаунт", async () => {
+        const { service, emitted } = setup({ order: orderFromA, isKnownDevice: async () => false });
+
+        await service.invite(COURIER, ORDER_ID);
+
+        assert.deepEqual(devicesOf(emitted, SOCKET_EVENTS.INCOMING), [null]);
+    });
+
+    test("другое устройство аккаунта не может принять или отклонить звонок", async () => {
+        const { service } = setup({ order: orderFromA });
+        const { callId } = await service.invite(COURIER, ORDER_ID);
+
+        await assertCallError(() => service.accept(CLIENT_B, callId), CALL_ERROR_CODES.CALL_NOT_FOUND);
+        await assertCallError(() => service.reject(CLIENT_B, callId), CALL_ERROR_CODES.CALL_NOT_FOUND);
+        await service.accept(CLIENT_A, callId);
+    });
+
+    test("завершение звонка приходит на устройство заказа", async () => {
+        const { service, emitted } = setup({ order: orderFromA });
+        const { callId } = await service.invite(COURIER, ORDER_ID);
+
+        await service.end(COURIER, callId);
+
+        const endedTo = emitted.filter((e) => e.event === SOCKET_EVENTS.ENDED && e.to.type === "client");
+        assert.deepEqual(endedTo.map((e) => e.to.deviceId), [DEVICE_A]);
+    });
+
+    test("восстановление звонка — только на устройстве заказа", async () => {
+        const { service } = setup({ order: orderFromA });
+        const { callId } = await service.invite(COURIER, ORDER_ID);
+        await service.accept(CLIENT_A, callId);
+
+        assert.equal(service.onParticipantOnline(CLIENT_B), null);
+        assert.equal(service.onParticipantOnline(CLIENT_A)?.callId, callId);
+    });
+
+    test("отключение другого устройства не обрывает звонок", async () => {
+        const { service, clock, eventsTo } = setup({ order: orderFromA });
+        const { callId } = await service.invite(COURIER, ORDER_ID);
+        await service.accept(CLIENT_A, callId);
+
+        service.onParticipantOffline(CLIENT_B);
+        clock.advance(GRACE_MS * 2);
+
+        assert.equal(eventsTo(COURIER, SOCKET_EVENTS.ENDED).length, 0);
+    });
+
+    test("сторона ещё на связи другим сокетом — grace-период не запускается", async () => {
+        const { service, clock, eventsTo } = setup({ order: orderFromA, isConnected: () => true });
+        const { callId } = await service.invite(COURIER, ORDER_ID);
+        await service.accept(CLIENT_A, callId);
+
+        service.onParticipantOffline(CLIENT_A);
+        clock.advance(GRACE_MS * 2);
+
+        assert.equal(eventsTo(COURIER, SOCKET_EVENTS.ENDED).length, 0);
+    });
+
+    test("клиент звонит с устройства — ответ курьера приходит на это устройство", async () => {
+        const { service, emitted } = setup();
+        const { callId } = await service.invite(CLIENT_A, ORDER_ID);
+
+        await service.accept(COURIER, callId);
+
+        assert.deepEqual(devicesOf(emitted, SOCKET_EVENTS.ACCEPTED), [DEVICE_A]);
     });
 });

@@ -1,5 +1,6 @@
 import { APNS_ENVIRONMENTS, PUSH_PLATFORMS } from "../../Models/CallPushToken.js";
 import { CALL_ERROR_CODES, CallError } from "../callErrors.js";
+import { parseDeviceId } from "../callPolicy.js";
 
 /** VoIP-токен PushKit — hex (сейчас 64 символа, Apple не гарантирует длину) */
 const IOS_TOKEN_PATTERN = /^[0-9a-f]{64,200}$/i;
@@ -10,20 +11,22 @@ const invalid = (message) => new CallError(CALL_ERROR_CODES.VALIDATION, message)
 
 /**
  * @param {unknown} body
- * @returns {{ platform: "ios" | "android", token: string, apnsEnvironment: string | null }}
+ * @returns {{ platform: "ios" | "android", token: string, apnsEnvironment: string | null, deviceId: string | null }}
  */
 export const parsePushTokenInput = (body) => {
     const { platform, token, apnsEnvironment } = body ?? {};
+    // Старые версии приложения не передают deviceId — токен считается «на весь аккаунт»
+    const deviceId = parseDeviceId(body?.deviceId);
 
     if (platform === PUSH_PLATFORMS.IOS) {
         if (typeof token !== "string" || !IOS_TOKEN_PATTERN.test(token)) throw invalid("Некорректный VoIP-токен");
         if (!Object.values(APNS_ENVIRONMENTS).includes(apnsEnvironment)) throw invalid("Некорректное окружение APNs");
-        return { platform, token: token.toLowerCase(), apnsEnvironment };
+        return { platform, token: token.toLowerCase(), apnsEnvironment, deviceId };
     }
 
     if (platform === PUSH_PLATFORMS.ANDROID) {
         if (typeof token !== "string" || !ANDROID_TOKEN_PATTERN.test(token)) throw invalid("Некорректный FCM-токен");
-        return { platform, token, apnsEnvironment: null };
+        return { platform, token, apnsEnvironment: null, deviceId };
     }
 
     throw invalid("Некорректная платформа");

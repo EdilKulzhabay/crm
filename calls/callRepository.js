@@ -14,7 +14,7 @@ export const isValidObjectId = (value) => typeof value === "string" && /^[a-f0-9
  */
 const findOrderForCall = async (orderId) => {
     const order = await Order.findById(orderId)
-        .select("status client courierAggregator deliveredTime")
+        .select("status client courierAggregator deliveredTime clientDeviceId")
         .populate("client", "fullName")
         .populate("courierAggregator", "fullName")
         .lean();
@@ -25,6 +25,7 @@ const findOrderForCall = async (orderId) => {
         id: order._id.toString(),
         status: order.status,
         clientId: order.client?._id?.toString() ?? null,
+        clientDeviceId: order.clientDeviceId ?? null,
         courierId: order.courierAggregator?._id?.toString() ?? null,
         deliveredTime: order.deliveredTime ?? null,
         clientName: order.client?.fullName || "Клиент",

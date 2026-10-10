@@ -218,6 +218,7 @@ describe("pushTokenInput", () => {
             platform: "ios",
             token: "a".repeat(64),
             apnsEnvironment: "production",
+            deviceId: null,
         });
         assert.throws(() => parsePushTokenInput({ platform: "ios", token: "A".repeat(64) }), { code: "VALIDATION" });
         assert.throws(() => parsePushTokenInput({ platform: "ios", token: "zz", apnsEnvironment: "production" }), {
@@ -230,9 +231,16 @@ describe("pushTokenInput", () => {
             platform: "android",
             token: ANDROID_TOKEN,
             apnsEnvironment: null,
+            deviceId: null,
         });
         assert.throws(() => parsePushTokenInput({ platform: "android", token: { $ne: "" } }), { code: "VALIDATION" });
         assert.throws(() => parsePushTokenInput({ platform: "web", token: ANDROID_TOKEN }), { code: "VALIDATION" });
+    });
+
+    test("deviceId устройства сохраняется, некорректный — игнорируется", () => {
+        const input = { platform: "android", token: ANDROID_TOKEN };
+        assert.equal(parsePushTokenInput({ ...input, deviceId: "device-AAAA" }).deviceId, "device-AAAA");
+        assert.equal(parsePushTokenInput({ ...input, deviceId: { $ne: null } }).deviceId, null);
     });
 
     test("parseTokenOnly отклоняет не-строки (NoSQL-инъекции)", () => {

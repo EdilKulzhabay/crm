@@ -2,10 +2,9 @@ import express from "express";
 import { CALLS_NAMESPACE } from "./callConstants.js";
 import { checkCallAuth, resolveCallParticipant } from "./callAuth.js";
 import { CallError, toPublicError } from "./callErrors.js";
-import { participantKey } from "./callPolicy.js";
 import { mongoCallRepository } from "./callRepository.js";
 import { createCallService } from "./callService.js";
-import { registerCallSocket } from "./callSocket.js";
+import { createParticipantChannel, registerCallSocket } from "./callSocket.js";
 import { buildIceServers, readTurnConfig } from "./iceServers.js";
 import { createCallPushNotifierFromEnv, mongoPushTokenRepository } from "./push/index.js";
 import { parsePushTokenInput, parseTokenOnly } from "./push/pushTokenInput.js";
@@ -68,9 +67,14 @@ const createCallRouter = (turnConfig, tokenRepository) => {
  */
 export const initCalls = (io) => {
     const nsp = io.of(CALLS_NAMESPACE);
+    const channel = createParticipantChannel(nsp);
     const service = createCallService({
         repository: mongoCallRepository,
-        emit: (participant, event, payload) => nsp.to(participantKey(participant)).emit(event, payload),
+        emit: channel.emit,
+        isConnected: channel.isConnected,
+        // Устройство заказа ещё в аккаунте: открыто приложение или зарегистрирован push-токен
+        isKnownDevice: async (participant) =>
+            channel.isConnected(participant) || mongoPushTokenRepository.hasDeviceToken(participant),
         pushNotifier: createCallPushNotifierFromEnv(),
     });
 

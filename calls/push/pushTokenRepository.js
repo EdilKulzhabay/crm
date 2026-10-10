@@ -7,6 +7,10 @@ const DUPLICATE_KEY_ERROR = 11000;
 
 const byParticipant = (participant) => ({ participantType: participant.type, participantId: participant.id });
 
+/** Участник с deviceId — только токены этого устройства, без него — все устройства аккаунта */
+const byParticipantDevice = (participant) =>
+    participant.deviceId ? { ...byParticipant(participant), deviceId: participant.deviceId } : byParticipant(participant);
+
 /** Оставляет только MAX_PUSH_TOKENS_PER_PARTICIPANT самых свежих токенов участника */
 const trimOldTokens = async (participant) => {
     const stale = await CallPushToken.find(byParticipant(participant))
@@ -20,16 +24,26 @@ const trimOldTokens = async (participant) => {
 };
 
 /**
- * @param {{ participant: Participant, platform: "ios" | "android", token: string, apnsEnvironment: string | null }} input
+ * @param {{
+ *   participant: Participant,
+ *   platform: "ios" | "android",
+ *   token: string,
+ *   apnsEnvironment: string | null,
+ *   deviceId: string | null,
+ * }} input
  */
-const saveToken = async ({ participant, platform, token, apnsEnvironment }) => {
-    const update = { $set: { ...byParticipant(participant), platform, apnsEnvironment } };
+const saveToken = async ({ participant, platform, token, apnsEnvironment, deviceId }) => {
+    const update = { $set: { ...byParticipant(participant), platform, apnsEnvironment, deviceId } };
     try {
         await CallPushToken.updateOne({ token }, update, { upsert: true });
     } catch (error) {
         // Два одновременных upsert одного токена: второй падает на unique-индексе — просто обновляем
         if (error?.code !== DUPLICATE_KEY_ERROR) throw error;
         await CallPushToken.updateOne({ token }, update);
+    }
+    if (deviceId) {
+        // Токен устройства сменился (обновление FCM/PushKit) — старый больше не нужен
+        await CallPushToken.deleteMany({ ...byParticipant(participant), deviceId, platform, token: { $ne: token } });
     }
     await trimOldTokens(participant);
 };
@@ -44,7 +58,15 @@ const removeToken = async (participant, token) => {
  * @returns {Promise<{ platform: string, token: string, apnsEnvironment: string | null }[]>}
  */
 const findTokens = (participant) =>
-    CallPushToken.find(byParticipant(participant)).select("platform token apnsEnvironment -_id").lean();
+    CallPushToken.find(byParticipantDevice(participant)).select("platform token apnsEnvironment -_id").lean();
+
+/**
+ * Устройство всё ещё привязано к аккаунту: после выхода из аккаунта токен удаляется.
+ * @param {Participant & { deviceId: string }} participant
+ * @returns {Promise<boolean>}
+ */
+const hasDeviceToken = async (participant) =>
+    Boolean(await CallPushToken.exists(byParticipantDevice(participant)));
 
 /** @param {string[]} tokens */
 const deleteTokens = async (tokens) => {
@@ -52,4 +74,10 @@ const deleteTokens = async (tokens) => {
     await CallPushToken.deleteMany({ token: { $in: tokens } });
 };
 
-export const mongoPushTokenRepository = Object.freeze({ saveToken, removeToken, findTokens, deleteTokens });
+export const mongoPushTokenRepository = Object.freeze({
+    saveToken,
+    removeToken,
+    findTokens,
+    hasDeviceToken,
+    deleteTokens,
+});

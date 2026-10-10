@@ -35,6 +35,7 @@ import {
 } from "../utils/mobileOrderCutoff.js";
 import { getLatestAppVersionValue } from "../utils/mobileAppVersion.js";
 import { recalculateCourierAggregatorRating } from "../utils/courierRating.js";
+import { parseDeviceId } from "../calls/callPolicy.js";
 
 /** Строка для счёта; старые документы могли хранить вложенный объект */
 function normalizeInvoiceLegalData(raw) {
@@ -1593,6 +1594,7 @@ export async function createClientOrderCore({
     comment,
     notificationToken,
     emptyBottles,
+    deviceId,
 }) {
     const client = await Client.findById(clientId);
 
@@ -1701,6 +1703,8 @@ export async function createClientOrderCore({
         wereCreated: "app",
         clientPhone: clientPhone,
         notificationToken: notificationToken || "",
+        // Звонок курьера пойдёт только на это устройство (calls/callPolicy.js)
+        clientDeviceId: parseDeviceId(deviceId),
         emptyBottles: { b12: exchangedB12, b19: exchangedB19 },
         isUrgent: previousOrdersCount === 0,
     });
@@ -1739,10 +1743,10 @@ export async function createClientOrderCore({
 
 export const addOrderClientMobile = async (req, res) => {
     try {
-        const {clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken, emptyBottles} = req.body
+        const {clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken, emptyBottles, deviceId} = req.body
 
         const result = await createClientOrderCore({
-            clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken, emptyBottles,
+            clientId, address, products, clientNotes, date, opForm, needCall, comment, notificationToken, emptyBottles, deviceId,
         });
 
         if (!result.success) {

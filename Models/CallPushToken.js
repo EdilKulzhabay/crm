@@ -29,6 +29,14 @@ const CallPushTokenSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        /**
+         * Установка приложения (генерируется на устройстве). Звонок по заказу идёт только
+         * на токены устройства, с которого заказ создан. null — старые версии приложения.
+         */
+        deviceId: {
+            type: String,
+            default: null,
+        },
         /** Только для iOS: debug-сборки получают токены песочницы APNs */
         apnsEnvironment: {
             type: String,
@@ -44,5 +52,6 @@ const CallPushTokenSchema = new mongoose.Schema(
 // Токен принадлежит одному устройству: при входе под другим аккаунтом он переезжает
 CallPushTokenSchema.index({ token: 1 }, { unique: true });
 CallPushTokenSchema.index({ participantType: 1, participantId: 1, updatedAt: -1 });
+CallPushTokenSchema.index({ participantType: 1, participantId: 1, deviceId: 1 });
 
 export default mongoose.model("CallPushToken", CallPushTokenSchema);

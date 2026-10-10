@@ -6,11 +6,14 @@ import {
 } from "./callConstants.js";
 
 /**
- * @typedef {{ type: "client" | "courier", id: string }} Participant
+ * Участник звонка. deviceId — конкретное устройство аккаунта: когда задан, звонок и все его
+ * события идут только на это устройство (несколько человек под одним аккаунтом клиента).
+ * @typedef {{ type: "client" | "courier", id: string, deviceId?: string | null }} Participant
  * @typedef {{
  *   id: string,
  *   status: string,
  *   clientId: string | null,
+ *   clientDeviceId?: string | null,
  *   courierId: string | null,
  *   deliveredTime: Date | null,
  *   clientName: string,
@@ -31,7 +34,8 @@ export const getCounterpart = (order, participant) => {
         return { type: PARTICIPANT_TYPES.COURIER, id: order.courierId };
     }
     if (participant.type === PARTICIPANT_TYPES.COURIER && participant.id === order.courierId) {
-        return { type: PARTICIPANT_TYPES.CLIENT, id: order.clientId };
+        // Звонок курьера — на устройство, с которого клиент оформил заказ
+        return { type: PARTICIPANT_TYPES.CLIENT, id: order.clientId, deviceId: order.clientDeviceId ?? null };
     }
     return null;
 };
@@ -58,3 +62,31 @@ export const isOrderCallable = (order, now) => {
  * @returns {string}
  */
 export const participantKey = (participant) => `${participant.type}:${participant.id}`;
+
+/** Идентификатор установки приложения: UUID или похожая строка, без спецсимволов */
+const DEVICE_ID_PATTERN = /^[A-Za-z0-9-]{8,64}$/;
+
+/**
+ * Неверный deviceId не ломает звонки: участник просто считается «без устройства».
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+export const parseDeviceId = (value) => (typeof value === "string" && DEVICE_ID_PATTERN.test(value) ? value : null);
+
+/**
+ * Комната Socket.io стороны звонка: устройство, если оно известно, иначе весь аккаунт.
+ * @param {Participant} participant
+ * @returns {string}
+ */
+export const participantRoom = (participant) =>
+    participant.deviceId ? `${participantKey(participant)}:device:${participant.deviceId}` : participantKey(participant);
+
+/**
+ * Может ли user действовать за сторону звонка side: тот же аккаунт и, если сторона
+ * привязана к устройству, то же устройство.
+ * @param {Participant} side
+ * @param {Participant} user
+ * @returns {boolean}
+ */
+export const isActingAs = (side, user) =>
+    participantKey(side) === participantKey(user) && (!side.deviceId || side.deviceId === user.deviceId);

@@ -5,7 +5,7 @@ import {
     SOCKET_EVENTS,
 } from "./callConstants.js";
 import { CALL_ERROR_CODES, CallError, toPublicError } from "./callErrors.js";
-import { participantKey } from "./callPolicy.js";
+import { parseDeviceId, participantKey, participantRoom } from "./callPolicy.js";
 import { isValidObjectId } from "./callRepository.js";
 import { createKeyedRateLimiter, createRateLimiter } from "./rateLimiter.js";
 
@@ -51,6 +51,18 @@ const handle = (socket, isAllowed, handler) => async (data, ack) => {
 };
 
 /**
+ * Доставка событий стороне звонка и проверка, на связи ли она. Сокет состоит в комнате аккаунта
+ * и, если приложение передало deviceId, в комнате устройства (participantRoom).
+ * @param {import("socket.io").Namespace} nsp
+ */
+export const createParticipantChannel = (nsp) => ({
+    /** @type {(participant: Participant, event: string, payload: object) => void} */
+    emit: (participant, event, payload) => nsp.to(participantRoom(participant)).emit(event, payload),
+    /** @type {(participant: Participant) => boolean} */
+    isConnected: (participant) => (nsp.adapter.rooms.get(participantRoom(participant))?.size ?? 0) > 0,
+});
+
+/**
  * @param {import("socket.io").Namespace} nsp
  * @param {ReturnType<typeof import("./callService.js").createCallService>} service
  * @param {(token: unknown) => Promise<Participant | null>} authenticate
@@ -63,7 +75,8 @@ export const registerCallSocket = (nsp, service, authenticate) => {
         try {
             const participant = await authenticate(socket.handshake.auth?.token);
             if (!participant) return next(new Error("UNAUTHORIZED"));
-            socket.data.participant = participant;
+            // Устройство приложения: звонок по заказу идёт только на устройство, где заказ создан
+            socket.data.participant = { ...participant, deviceId: parseDeviceId(socket.handshake.auth?.deviceId) };
             next();
         } catch (error) {
             console.error("[calls] ошибка авторизации сокета:", error);
@@ -76,6 +89,7 @@ export const registerCallSocket = (nsp, service, authenticate) => {
         const user = socket.data.participant;
         const room = participantKey(user);
         socket.join(room);
+        if (user.deviceId) socket.join(participantRoom(user));
 
         const activeCall = service.onParticipantOnline(user);
         if (activeCall) socket.emit(SOCKET_EVENTS.RESUME, activeCall);
@@ -108,11 +122,8 @@ export const registerCallSocket = (nsp, service, authenticate) => {
             })
         );
 
-        socket.on("disconnect", () => {
-            // У участника может быть несколько сокетов (новый подключился раньше, чем закрылся старый).
-            // На момент события отключившийся сокет уже вышел из комнаты.
-            const remaining = nsp.adapter.rooms.get(room)?.size ?? 0;
-            if (remaining === 0) service.onParticipantOffline(user);
-        });
+        // Остались ли у стороны звонка другие сокеты, проверяет сервис (isConnected): только он знает,
+        // привязана сторона к устройству или ко всему аккаунту. Отключившийся сокет уже вне комнат.
+        socket.on("disconnect", () => service.onParticipantOffline(user));
     });
 };
