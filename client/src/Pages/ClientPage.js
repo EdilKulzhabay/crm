@@ -1077,6 +1077,24 @@ export default function ClientPage() {
                             ]
                         </div>
                     </Li>
+                    <Li>
+                        <div>Блокировка из-за АВР: <span className={client?.avrBlocked ? "text-red" : "text-yellow-400"}>{client?.avrBlocked ? "Да (заказы в приложении заблокированы)" : "Нет"}</span></div>
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("avrBlocked", true)}}>Да</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("avrBlocked", false)}}>Нет</button>
+                            ]
+                        </div>
+                    </Li>
+                    <Li>
+                        <div>Оплата только онлайн: <span className="text-yellow-400">{client?.onlinePaymentOnly ? "Да (без оплаты наличными курьеру)" : "Нет"}</span></div>
+                        <div className="text-green-400 flex items-center gap-x-3">
+                            [
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("onlinePaymentOnly", true)}}>Да</button> /
+                                <button className="text-green-400 hover:text-blue-500" onClick={() => {updateClientData("onlinePaymentOnly", false)}}>Нет</button>
+                            ]
+                        </div>
+                    </Li>
                 </>}
 
                 <Div />

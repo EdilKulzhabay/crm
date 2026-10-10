@@ -935,6 +935,8 @@ async function buildClientLoginResponse(candidate) {
         savedCard: c.savedCard,
         isStartedHydration: c.isStartedHydration,
         showRepairMasterInApp: c.showRepairMasterInApp !== false,
+        avrBlocked: c.avrBlocked === true,
+        onlinePaymentOnly: c.onlinePaymentOnly === true,
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
         invoiceLegalData: normalizeInvoiceLegalData(c.invoiceLegalData),
@@ -1306,6 +1308,8 @@ export const updateClientDataMobile = async (req, res) => {
             savedCard: updatedClient._doc.savedCard,
             isStartedHydration: updatedClient._doc.isStartedHydration,
             showRepairMasterInApp: updatedClient._doc.showRepairMasterInApp !== false,
+            avrBlocked: updatedClient._doc.avrBlocked === true,
+            onlinePaymentOnly: updatedClient._doc.onlinePaymentOnly === true,
             createdAt: updatedClient._doc.createdAt,
             invoiceLegalData: normalizeInvoiceLegalData(updatedClient._doc.invoiceLegalData),
         });
@@ -1583,6 +1587,11 @@ export const getClientAddresses = async (req, res) => {
 const NEW_TARE_PRICE_B19 = 3500;
 const NEW_TARE_PRICE_B12 = 2500;
 
+/** Код ответа, по которому приложение показывает модалку «Подтвердите АВР» (см. client.avrBlocked). */
+const AVR_BLOCKED_CODE = "AVR_BLOCKED";
+const AVR_BLOCKED_MESSAGE =
+    "Доступ к приложению временно приостановлен. Чтобы продолжить пользоваться приложением, подтвердите акт выполненных работ (АВР) на портале ИС ЭСФ.";
+
 export async function createClientOrderCore({
     clientId,
     address,
@@ -1600,6 +1609,10 @@ export async function createClientOrderCore({
 
     if (!client) {
         return { success: false, status: 404, message: "Не удалось найти клиента" };
+    }
+
+    if (client.avrBlocked === true) {
+        return { success: false, status: 403, code: AVR_BLOCKED_CODE, message: AVR_BLOCKED_MESSAGE };
     }
 
     if (client.clientType === false && address?.actual) {
@@ -1656,8 +1669,17 @@ export async function createClientOrderCore({
         }
     }
 
+    const isWalletPayment = opForm === "credit" || opForm === "coupon";
+    if (client.onlinePaymentOnly === true && !isWalletPayment) {
+        return {
+            success: false,
+            status: 409,
+            message: "Для вашего аккаунта доступна только онлайн-оплата. Обновите приложение и попробуйте снова.",
+        };
+    }
+
     let paymentMethod = "fakt";
-    if (opForm === "credit" || opForm === "coupon") {
+    if (isWalletPayment) {
         if (client.paymentMethod !== "balance" && client.paymentMethod !== "coupon") {
             return {
                 success: false,
@@ -1752,6 +1774,7 @@ export const addOrderClientMobile = async (req, res) => {
         if (!result.success) {
             return res.status(result.status || 200).json({
                 success: false,
+                code: result.code,
                 message: result.message,
             });
         }
@@ -2150,6 +2173,53 @@ export const updateOrderDataMobile = async (req, res) => {
         res.status(500).json({
             message: "Что-то пошло не так",
         });
+    }
+}
+
+const ORDER_COMMENT_MAX_LENGTH = 300;
+/** Пока курьер не выехал, клиент может менять комментарий; в пути — уже нет. */
+const ORDER_COMMENT_EDITABLE_STATUSES = ["awaitingOrder", "inLine"];
+
+/**
+ * Комментарий клиента к заказу (курьер видит его как order.comment).
+ * Отдельный эндпоинт вместо updateOrderDataMobile: тот пишет любое поле заказа.
+ */
+export const updateOrderCommentMobile = async (req, res) => {
+    try {
+        const { orderId, clientId, comment } = req.body;
+
+        if (typeof comment !== "string") {
+            return res.status(400).json({ success: false, message: "Некорректный комментарий" });
+        }
+        const trimmed = comment.trim();
+        if (trimmed.length > ORDER_COMMENT_MAX_LENGTH) {
+            return res.status(400).json({
+                success: false,
+                message: `Комментарий не длиннее ${ORDER_COMMENT_MAX_LENGTH} символов`,
+            });
+        }
+
+        const order = await Order.findOneAndUpdate(
+            {
+                _id: orderId,
+                client: clientId,
+                status: { $in: ORDER_COMMENT_EDITABLE_STATUSES },
+            },
+            { $set: { comment: trimmed } },
+            { new: true }
+        );
+
+        if (!order) {
+            return res.status(409).json({
+                success: false,
+                message: "Комментарий можно изменить только до выезда курьера",
+            });
+        }
+
+        res.json({ success: true, comment: order.comment });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ success: false, message: "Что-то пошло не так" });
     }
 }
 

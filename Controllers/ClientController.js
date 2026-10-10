@@ -434,12 +434,15 @@ export const updateClientData = async (req, res) => {
         const oldValue = client[field];
 
         // Обновляем поле клиента
-        if (field !== "status") {
+        // Служебные флаги (АВР, только онлайн-оплата) не должны сбрасывать верификацию клиента
+        if (field !== "status" && field !== "avrBlocked" && field !== "onlinePaymentOnly") {
             client.verify.status = "waitingVerification"
             client.verify.message = ""
         }
         if (field === "mail") {
             client[field] = value?.toLowerCase()
+        } else if (field === "avrBlocked" || field === "onlinePaymentOnly") {
+            client[field] = value === true
         } else {
             client[field] = value;
         }

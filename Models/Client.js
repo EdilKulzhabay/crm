@@ -242,6 +242,16 @@ const ClientSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        /** Блокировка из-за неподтверждённого АВР (ИС ЭСФ): в приложении нельзя создать/повторить заказ */
+        avrBlocked: {
+            type: Boolean,
+            default: false,
+        },
+        /** Только онлайн-оплата: в приложении не предлагаем «наличными курьеру» (opForm "fakt") */
+        onlinePaymentOnly: {
+            type: Boolean,
+            default: false,
+        },
         savedCard: {
             cardToken: {
                 type: String,
