@@ -18,6 +18,8 @@ import User from "../Models/User.js";
 import { buildPaymentFormSign, verifyCallbackSign } from "../utils/payplusUtils.js";
 import { extractPayplusCardLast4 } from "../utils/extractPayplusCardLast4.js";
 
+const ALMATY_UTC_OFFSET = "+05:00";
+
 function collectClientFcmTokens(client) {
     const list = [...(client?.notificationPushTokens || [])];
     const legacy = client?.notificationPushToken;
@@ -565,8 +567,16 @@ export const getClientPaymentsForSuperAdmin = async (req, res) => {
         const filter = {};
 
         if (startDate && endDate && String(startDate).length === 10 && String(endDate).length === 10) {
-            const start = new Date(`${startDate}T00:00:00.000`);
-            const end = new Date(`${endDate}T23:59:59.999`);
+            // Даты из CRM — календарные дни Алматы; без явного смещения они
+            // парсились бы в часовом поясе сервера и захватывали чужие часы.
+            const start = new Date(`${startDate}T00:00:00.000${ALMATY_UTC_OFFSET}`);
+            const end = new Date(`${endDate}T23:59:59.999${ALMATY_UTC_OFFSET}`);
+            if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Некорректный формат даты, ожидается ГГГГ-ММ-ДД",
+                });
+            }
             filter.paidAt = { $gte: start, $lte: end };
         }
 

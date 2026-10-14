@@ -108,6 +108,12 @@ const OrderSchema = new mongoose.Schema(
             enum: ["client", "courier", "operator"],
             default: null
         },
+        /** Курьер-агрегатор, отменивший заказ (courierAggregator при отмене обнуляется) */
+        cancelledByCourierAggregator: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "CourierAggregator",
+            default: null
+        },
         forAggregator: {
             type: Boolean,
             default: false

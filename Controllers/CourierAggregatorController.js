@@ -639,6 +639,18 @@ export const updateCourierAggregatorData = async (req, res) => {
                 incomeAfter: newIncome,
                 comment: "Изменение администратором",
             });
+        } else if (changeField === "raiting") {
+            const newRaiting = Number(changeData);
+            if (!Number.isFinite(newRaiting) || newRaiting < MIN_COURIER_RAITING || newRaiting > MAX_COURIER_RAITING) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Рейтинг должен быть числом от ${MIN_COURIER_RAITING} до ${MAX_COURIER_RAITING}`,
+                });
+            }
+
+            await CourierAggregator.updateOne({ _id: id }, { $set: {
+                raiting: Math.round(newRaiting * 10) / 10
+            } })
         } else {
             await CourierAggregator.updateOne({_id: id}, { $set: {
                 [changeField]: changeData
@@ -1139,7 +1151,8 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                 status: "cancelled",
                 reason: reason,
                 courierAggregator: null,
-                cancelledBy: "courier"
+                cancelledBy: "courier",
+                cancelledByCourierAggregator: id
             }}
         )
 
@@ -1536,6 +1549,9 @@ export const getCourierAggregatorIncomeLogs = async (req, res) => {
         });
     }
 };
+
+const MIN_COURIER_RAITING = 0;
+const MAX_COURIER_RAITING = 5;
 
 const VALID_OP_FORMS = ["fakt", "postpay", "credit", "coupon", "mixed", "qr"];
 

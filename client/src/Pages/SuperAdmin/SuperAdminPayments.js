@@ -36,6 +36,8 @@ const formatPaidAt = (iso) => {
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            // Фильтр на бэкенде считает дни по Алматы — показываем время в той же зоне
+            timeZone: "Asia/Almaty",
         });
     } catch {
         return String(iso);

@@ -53,6 +53,7 @@ export default function SuperAdminAggregator() {
             }
         )
             .then(({ data }) => {
+                setTotalCouriers(data.totalCouriers || 0)
                 if (data.couriers.length === 0) {
                     setHasMore(false)
                 } else {
@@ -177,9 +178,9 @@ export default function SuperAdminAggregator() {
         </Div>
 
         <Div />
-        {/* <Div>
+        <Div>
             Количество курьеров: <Info>{totalCouriers}</Info>
-        </Div> */}
+        </Div>
         <div className="max-h-[400px] overflow-scroll bg-black">
             {couriers.map((courier, index) => {
                 if (couriers.length === index + 1) {

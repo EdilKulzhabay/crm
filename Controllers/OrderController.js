@@ -442,6 +442,7 @@ export const getOrderDataForId = async (req, res) => {
             .populate("courier")
             .populate("client")
             .populate("courierAggregator")
+            .populate("cancelledByCourierAggregator", "fullName phone")
 
         res.json({
             order,

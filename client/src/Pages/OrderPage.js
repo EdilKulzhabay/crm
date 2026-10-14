@@ -660,6 +660,27 @@ export default function OrderPage() {
                         <div>{order?.courierAggregator?.fullName || order?.courier?.fullName}</div>
                     </div>
                 </Div>
+                {orderStatus === "cancelled" && order?.cancelledBy === "courier" && <>
+                    <Div>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Отменил курьер:</div>
+                            <div className="text-red">
+                                {order?.cancelledByCourierAggregator?.fullName || "Неизвестно"}
+                            </div>
+                            {order?.cancelledByCourierAggregator?._id && (
+                                <LinkButton href={`/CourierAggregatorPage/${order.cancelledByCourierAggregator._id}`}>
+                                    Просмотр
+                                </LinkButton>
+                            )}
+                        </div>
+                    </Div>
+                    <Div>
+                        <div className="flex items-center gap-x-3 flex-wrap">
+                            <div>Причина отмены:</div>
+                            <div className="text-red">{order?.reason || "Не указана"}</div>
+                        </div>
+                    </Div>
+                </>}
                 {userData?.userName !== "Vasiliy" && 
                     <Li>
                         <div className="flex items-center gap-x-3 flex-wrap">

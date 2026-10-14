@@ -31,6 +31,9 @@ const getTomorrowDate = () => {
     return `${year}-${month}-${day}`;
 };
 
+const MIN_RAITING = 0;
+const MAX_RAITING = 5;
+
 const OP_FORMS = [
     { value: "fakt", label: "Нал_QR" },
     { value: "postpay", label: "Постоплата" },
@@ -59,6 +62,7 @@ export default function CourierAggregatorPage() {
     const [price12, setPrice12] = useState(0);
     const [price19, setPrice19] = useState(0);
     const [income, setIncome] = useState(0);
+    const [raiting, setRaiting] = useState(0);
     const [incomeLogs, setIncomeLogs] = useState([]);
     const [incomeLogDateFrom, setIncomeLogDateFrom] = useState(getCurrentDate());
     const [incomeLogDateTo, setIncomeLogDateTo] = useState(getTomorrowDate());
@@ -99,6 +103,7 @@ export default function CourierAggregatorPage() {
             setPrice12(data.userData.price12);
             setPrice19(data.userData.price19);
             setIncome(data.userData.income || 0);
+            setRaiting(data.userData.raiting || 0);
             setCardData({
                 accountNumber: data.userData.cardData?.accountNumber || "",
                 IIN: data.userData.cardData?.IIN || "",
@@ -148,6 +153,20 @@ export default function CourierAggregatorPage() {
             await loadCourierData()
         })
     }
+
+    const handleUpdateRaiting = async () => {
+        const value = Number(String(raiting).replace(",", "."));
+        if (!Number.isFinite(value) || value < MIN_RAITING || value > MAX_RAITING) {
+            window.alert(`Рейтинг должен быть числом от ${MIN_RAITING} до ${MAX_RAITING}`);
+            return;
+        }
+        try {
+            await updateCourierAggregatorData(id, "raiting", value);
+        } catch (error) {
+            console.error("Ошибка при обновлении рейтинга:", error);
+            window.alert(error?.response?.data?.message || "Не удалось обновить рейтинг");
+        }
+    };
 
     const handleDeleteIncomeLog = async (logId) => {
         if (!window.confirm("Удалить эту запись? Баланс курьера будет пересчитан.")) {
@@ -351,6 +370,23 @@ export default function CourierAggregatorPage() {
                             updateCourierAggregatorData(id, "capacity", capacity)
                         }}
                     >
+                        Обновить
+                    </MyButton>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center gap-x-2 flex-wrap">
+                    <div className="text-yellow-400">
+                        Рейтинг: ⭐ {courier.raiting || 0}
+                    </div>
+
+                    <MyInput
+                        value={raiting}
+                        change={(e) => setRaiting(e.target.value)}
+                        color="white"
+                    />
+
+                    <MyButton click={handleUpdateRaiting}>
                         Обновить
                     </MyButton>
                 </div>
