@@ -33,6 +33,7 @@ import {
     TrackingController,
     PartnerController,
     PartnerProgramController,
+    PartnerAdminController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
@@ -52,6 +53,8 @@ import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 import checkAuthPartner from "./utils/checkAuthPartner.js";
+import requireSuperAdmin from "./utils/requireSuperAdmin.js";
+import { startPartnerLapseCheck } from "./utils/partnerLapseCheck.js";
 import {
     startWhatsAppWebClient,
     shutdownWhatsAppWeb,
@@ -423,6 +426,10 @@ app.post("/updatePartnerCardData", checkAuthPartner, PartnerProgramController.up
 app.post("/requestPartnerWithdrawal", checkAuthPartner, PartnerProgramController.requestPartnerWithdrawal);
 app.post("/savePartnerPushToken", checkAuthPartner, PartnerProgramController.savePartnerPushToken);
 app.post("/removePartnerPushToken", checkAuthPartner, PartnerProgramController.removePartnerPushToken);
+// CRM: привязка клиента к партнёру (страница клиента, суперадмин)
+app.post("/searchPartnersAdmin", checkAuth, requireSuperAdmin, PartnerAdminController.searchPartnersAdmin);
+app.post("/getClientPartnerAdmin", checkAuth, requireSuperAdmin, PartnerAdminController.getClientPartnerAdmin);
+app.post("/setClientPartner", checkAuth, requireSuperAdmin, PartnerAdminController.setClientPartner);
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)
@@ -577,6 +584,7 @@ server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
 
     startCourierIdleOfflineCheck();
+    startPartnerLapseCheck();
 
     // if (process.env.WHATSAPP_WEB_AUTOSTART !== "false") {
     //     console.log(

@@ -15,6 +15,7 @@ import ConfirmDeleteModal from "../Components/ConfirmDeleteModal";
 import useFetchUserData from "../customHooks/useFetchUserData";
 import DataInput from "../Components/DataInput";
 import Li2 from "../Components/Li2";
+import ClientPartnerBinding from "../Components/ClientPartnerBinding";
 
 const OPERATION_LOG_FIELD_LABELS = {
     balance: "Баланс",
@@ -47,6 +48,11 @@ export default function ClientPage() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+    const showPartnerMessage = useCallback((text, messageStatus) => {
+        setMessage(text);
+        setStatus(messageStatus);
+        setOpen(true);
+    }, []);
 
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
@@ -1640,6 +1646,10 @@ export default function ClientPage() {
                         <MyButton click={() => { updateClientData("notes", notes) }}>Сохранить заметки</MyButton>
                     </div>
                 </Li>
+
+                {userData?.role === "superAdmin" && (
+                    <ClientPartnerBinding clientId={id} onMessage={showPartnerMessage} />
+                )}
 
                 <Div />
                 <Div>Сводная информация:</Div>

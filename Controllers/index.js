@@ -23,3 +23,4 @@ export * as AdsAnalyticsController from "./AdsAnalyticsController.js";
 export * as TrackingController from "./TrackingController.js";
 export * as PartnerController from "./PartnerController.js";
 export * as PartnerProgramController from "./PartnerProgramController.js";
+export * as PartnerAdminController from "./PartnerAdminController.js";

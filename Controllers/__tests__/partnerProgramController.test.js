@@ -35,6 +35,8 @@ describe("PartnerProgramController", () => {
                     { _id: "c1", userName: "Марат Касымов", createdAt: "2026-10-01T07:00:00Z", haveCompletedOrder: true },
                     { _id: "c2", userName: "Дана", createdAt: "2026-10-02T07:00:00Z" },
                 ],
+                loadRhythm: async () =>
+                    new Map([["c1", { lastOrderDay: "2026-10-07", daysSinceLast: 4, intervalDays: 3, isLapsed: true }]]),
                 listTransactions: async () => [
                     { _id: "t1", type: "referral_bonus", amount: 200, status: "completed", clientName: "Марат К.", createdAt: "x", client: "c1" },
                 ],
@@ -57,12 +59,28 @@ describe("PartnerProgramController", () => {
         return res;
     };
 
-    test("lists referred clients with short names and order status only", async () => {
+    test("lists referred clients with short names, order status and rhythm", async () => {
         const res = await call("getPartnerClients");
 
         assert.deepEqual(res.body.clients, [
-            { id: "c1", name: "Марат К.", registeredAt: "2026-10-01T07:00:00Z", hasOrdered: true },
-            { id: "c2", name: "Дана", registeredAt: "2026-10-02T07:00:00Z", hasOrdered: false },
+            {
+                id: "c1",
+                name: "Марат К.",
+                registeredAt: "2026-10-01T07:00:00Z",
+                hasOrdered: true,
+                lastOrderDay: "2026-10-07",
+                intervalDays: 3,
+                isLapsed: true,
+            },
+            {
+                id: "c2",
+                name: "Дана",
+                registeredAt: "2026-10-02T07:00:00Z",
+                hasOrdered: false,
+                lastOrderDay: null,
+                intervalDays: null,
+                isLapsed: false,
+            },
         ]);
     });
 

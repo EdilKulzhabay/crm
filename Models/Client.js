@@ -284,6 +284,11 @@ const ClientSchema = new mongoose.Schema(
             default: null,
             index: true,
         },
+        /** День последнего заказа, за перерыв после которого партнёр уже уведомлён (utils/partnerLapseCheck.js) */
+        partnerLapseNotifiedDay: {
+            type: String,
+            default: null,
+        },
         /**
          * У ПРИГЛАШЁННОГО клиента: пригласившему уже начислили бонус за первую доставку этого человека.
          * Каждый приглашённый друг — отдельный документ Client со своим полем → число друзей не ограничено.

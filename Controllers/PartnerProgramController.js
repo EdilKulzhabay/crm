@@ -3,6 +3,8 @@ import Partner from "../Models/Partner.js";
 import PartnerTransaction from "../Models/PartnerTransaction.js";
 import { sendPartnerWithdrawTelegram } from "../telegram/sendPartnerWithdraw.js";
 import { MAX_PUSH_TOKENS } from "../utils/partnerPush.js";
+import { getTodayAlmaty } from "../utils/dateUtils.js";
+import { loadClientsRhythm } from "../utils/partnerClientActivity.js";
 import {
     PartnerLedgerError,
     requestPartnerWithdrawal as requestWithdrawal,
@@ -45,6 +47,7 @@ const defaultRepository = {
             .sort({ createdAt: -1 })
             .limit(CLIENTS_LIMIT)
             .lean(),
+    loadRhythm: (clientIds) => loadClientsRhythm(clientIds, getTodayAlmaty()),
     listTransactions: (partnerId) =>
         PartnerTransaction.find({ partner: partnerId }).sort({ createdAt: -1 }).limit(TRANSACTIONS_LIMIT).lean(),
     updateCardData: (partnerId, cardData) =>
@@ -72,14 +75,21 @@ export function createPartnerProgramController({
     async function getPartnerClients(req, res) {
         try {
             const clients = await repo.listReferredClients(req.partnerId);
+            const rhythms = await repo.loadRhythm(clients.map((client) => client._id));
             return res.status(200).json({
                 success: true,
-                clients: clients.map((client) => ({
-                    id: String(client._id),
-                    name: shortClientName(client.userName),
-                    registeredAt: client.createdAt,
-                    hasOrdered: client.haveCompletedOrder === true,
-                })),
+                clients: clients.map((client) => {
+                    const rhythm = rhythms.get(String(client._id));
+                    return {
+                        id: String(client._id),
+                        name: shortClientName(client.userName),
+                        registeredAt: client.createdAt,
+                        hasOrdered: client.haveCompletedOrder === true || Boolean(rhythm?.lastOrderDay),
+                        lastOrderDay: rhythm?.lastOrderDay ?? null,
+                        intervalDays: rhythm?.intervalDays ?? null,
+                        isLapsed: rhythm?.isLapsed ?? false,
+                    };
+                }),
             });
         } catch (error) {
             logger.error("[Partner program] getPartnerClients:", error?.message || error);

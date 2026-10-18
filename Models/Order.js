@@ -235,4 +235,7 @@ const OrderSchema = new mongoose.Schema(
     }
 );
 
+// Заказы клиента по дате: ритм заказов клиентов партнёров (utils/partnerClientActivity.js)
+OrderSchema.index({ client: 1, "date.d": -1 });
+
 export default mongoose.model("Order", OrderSchema);
