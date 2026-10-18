@@ -277,6 +277,13 @@ const ClientSchema = new mongoose.Schema(
             ref: "Client",
             default: null,
         },
+        /** Партнёр, по коду которого клиент зарегистрировался (приложение tibetskaya_partner) */
+        referredByPartner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Partner",
+            default: null,
+            index: true,
+        },
         /**
          * У ПРИГЛАШЁННОГО клиента: пригласившему уже начислили бонус за первую доставку этого человека.
          * Каждый приглашённый друг — отдельный документ Client со своим полем → число друзей не ограничено.

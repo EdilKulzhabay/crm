@@ -31,6 +31,8 @@ import {
     OrderChatController,
     AdsAnalyticsController,
     TrackingController,
+    PartnerController,
+    PartnerProgramController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
@@ -49,6 +51,7 @@ import paymentRoutes from "./paymentRoutes.js";
 import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
+import checkAuthPartner from "./utils/checkAuthPartner.js";
 import {
     startWhatsAppWebClient,
     shutdownWhatsAppWeb,
@@ -406,6 +409,20 @@ app.post("/getLastOrderMobile", MobileController.getLastOrderMobile)
 app.post("/requestMasterCallMobile", MobileController.requestMasterCallMobile)
 app.post("/codeConfirmForgotPassword", MobileController.codeConfirmForgotPassword)
 app.post("/sendMailForgotPassword", MobileController.sendMailForgotPassword)
+
+//////PARTNER (приложение tibetskaya_partner, см. Controllers/PartnerController.js)
+app.post("/sendPartnerRegisterOtp", PartnerController.sendPartnerRegisterOtp);
+app.post("/partnerCodeConfirm", PartnerController.partnerCodeConfirm);
+app.post("/partnerRegister", PartnerController.partnerRegister);
+app.post("/sendPartnerLoginOtp", PartnerController.sendPartnerLoginOtp);
+app.post("/partnerLoginOtp", PartnerController.partnerLoginOtp);
+app.post("/getPartnerDataMobile", checkAuthPartner, PartnerController.getPartnerDataMobile);
+app.post("/getPartnerClients", checkAuthPartner, PartnerProgramController.getPartnerClients);
+app.post("/getPartnerTransactions", checkAuthPartner, PartnerProgramController.getPartnerTransactions);
+app.post("/updatePartnerCardData", checkAuthPartner, PartnerProgramController.updatePartnerCardData);
+app.post("/requestPartnerWithdrawal", checkAuthPartner, PartnerProgramController.requestPartnerWithdrawal);
+app.post("/savePartnerPushToken", checkAuthPartner, PartnerProgramController.savePartnerPushToken);
+app.post("/removePartnerPushToken", checkAuthPartner, PartnerProgramController.removePartnerPushToken);
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)

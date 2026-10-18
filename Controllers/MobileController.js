@@ -18,6 +18,8 @@ import {
     buildPhoneSuffixRegex,
 } from "../whatsApp/sendRegistrationOtp.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
+import Partner from "../Models/Partner.js";
+import { applyPartnerReferralBonus, PARTNER_REFERRAL_CLIENT_BONUS } from "../utils/partnerLedger.js";
 import {
     generateUniqueReferralCode,
     normalizeReferralCodeInput,
@@ -777,6 +779,7 @@ export const clientRegister = async (req, res) => {
         }
 
         let referredById = null;
+        let referredByPartnerId = null;
         let signupBalance = 0;
         if (referralCodeRaw && String(referralCodeRaw).trim()) {
             const normalized = normalizeReferralCodeInput(referralCodeRaw);
@@ -787,20 +790,35 @@ export const clientRegister = async (req, res) => {
                 });
             }
             const referrer = await Client.findOne({ referralCode: normalized });
-            if (!referrer) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Реферальный код не найден",
-                });
+            if (referrer) {
+                if (referrer.phone && phone && referrer.phone === phone) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Нельзя указать свой номер как реферальный код",
+                    });
+                }
+                referredById = referrer._id;
+                signupBalance = 1000;
+            } else {
+                // Код партнёра (приложение tibetskaya_partner): формат тот же, что у клиентских кодов
+                const partner = await Partner.findOne({ referralCode: normalized, status: "active" })
+                    .select("_id phoneNormalized")
+                    .lean();
+                if (!partner) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Реферальный код не найден",
+                    });
+                }
+                if (partner.phoneNormalized === phoneNorm) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Нельзя указать свой код партнёра",
+                    });
+                }
+                referredByPartnerId = partner._id;
+                signupBalance = PARTNER_REFERRAL_CLIENT_BONUS;
             }
-            if (referrer.phone && phone && referrer.phone === phone) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Нельзя указать свой номер как реферальный код",
-                });
-            }
-            referredById = referrer._id;
-            signupBalance = 1000;
         }
 
         let hash;
@@ -828,11 +846,28 @@ export const clientRegister = async (req, res) => {
             type: true,
             referralCode: myReferralCode,
             referredBy: referredById || undefined,
+            referredByPartner: referredByPartnerId || undefined,
             balance: signupBalance,
         });
 
         const client = await doc.save();
         delete verifiedPhones[phoneNorm];
+
+        if (referredByPartnerId) {
+            // Клиент уже создан: сбой начисления партнёру не должен ломать регистрацию — логируем для сверки
+            try {
+                await applyPartnerReferralBonus({
+                    partnerId: referredByPartnerId,
+                    clientId: client._id,
+                    clientName: userName,
+                });
+            } catch (partnerBonusError) {
+                console.error(
+                    `[Partner referral] бонус партнёру ${referredByPartnerId} за клиента ${client._id} не начислен:`,
+                    partnerBonusError?.message || partnerBonusError
+                );
+            }
+        }
 
         try {
             await sendCompleteRegistration(client, req, fbclid);

@@ -1,4 +1,5 @@
 import Client from "../Models/Client.js";
+import Partner from "../Models/Partner.js";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -24,13 +25,35 @@ export function normalizeReferralCodeInput(raw) {
     return `${letters.slice(0, 4)}-${letters.slice(4, 8)}-${letters.slice(8, 12)}`;
 }
 
+function randomReferralCode() {
+    return `${randomPart(4)}-${randomPart(4)}-${randomPart(4)}`;
+}
+
 export async function generateUniqueReferralCode() {
     for (let attempt = 0; attempt < 100; attempt++) {
-        const code = `${randomPart(4)}-${randomPart(4)}-${randomPart(4)}`;
+        const code = randomReferralCode();
         const exists = await Client.exists({ referralCode: code });
         if (!exists) {
             return code;
         }
     }
     throw new Error("Не удалось сгенерировать уникальный реферальный код");
+}
+
+/**
+ * Код партнёра в том же формате, что и клиентский, и уникален в обеих коллекциях —
+ * чтобы позже клиентская регистрация могла принимать любой из них в одном поле.
+ */
+export async function generateUniquePartnerReferralCode() {
+    for (let attempt = 0; attempt < 100; attempt++) {
+        const code = randomReferralCode();
+        const [clientHasCode, partnerHasCode] = await Promise.all([
+            Client.exists({ referralCode: code }),
+            Partner.exists({ referralCode: code }),
+        ]);
+        if (!clientHasCode && !partnerHasCode) {
+            return code;
+        }
+    }
+    throw new Error("Не удалось сгенерировать уникальный код партнёра");
 }

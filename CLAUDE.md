@@ -57,10 +57,11 @@ pushNotificationClient.js # Пуши для клиентов
 | `MobileAppSettingsController` | Настройки мобильных приложений |
 | `BussinessCenterController` | Бизнес-центры |
 | `ApiPayController` | Интеграция ApiPay |
+| `PartnerController` | Авторизация приложения партнёров (tibetskaya_partner) |
 
 ## Модели (Mongoose)
 
-`Client`, `Order`, `Courier`, `CourierAggregator`, `User`, `Department`, `DepartmentHistory`, `Subscription`, `Notification`, `ClientNotificationLog`, `AquaMarket`, `AquaMarketHistory`, `PromoCode`, `Accessories`, `MobileAppSettings`, `Faq`, `InvoiceGlobalCounter`, `ClientPayment`, `ApiPayInvoice`, `Pickup`, `Queue`, `SupportContacts`, `CourierRestrictions`
+`Client`, `Order`, `Courier`, `CourierAggregator`, `User`, `Department`, `DepartmentHistory`, `Subscription`, `Notification`, `ClientNotificationLog`, `AquaMarket`, `AquaMarketHistory`, `PromoCode`, `Accessories`, `MobileAppSettings`, `Faq`, `InvoiceGlobalCounter`, `ClientPayment`, `ApiPayInvoice`, `Pickup`, `Queue`, `SupportContacts`, `CourierRestrictions`, `Partner`
 
 ## Бэкенд — технологии
 
@@ -161,3 +162,14 @@ WebRTC P2P, сигналинг через Socket.io namespace `/calls`, TURN —
 - Env пушей: `APNS_KEY_PATH` (.p8, тип «Apple Push Notifications service»), `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID_CLIENT` (com.tibetskayaclientapp), `APNS_BUNDLE_ID_COURIER` (com.tibetskayacourier2.app), `COURIER_FIREBASE_SERVICE_ACCOUNT_PATH` (проект courier-74d57), `CLIENT_FIREBASE_SERVICE_ACCOUNT_PATH` (необязательно: по умолчанию используется firebase-приложение `client-app`). Не заданный канал отключается с предупреждением в логе.
 - Звонок на устройство заказа: клиентское приложение передаёт `deviceId` (UUID установки) при создании заказа (`Order.clientDeviceId`, в т.ч. в `pendingOrderDraft` ApiPay), в `POST /calls/push-token` и в `auth` сокета. Входящий, пуши и все события звонка идут только на это устройство (комната `client:<id>:device:<deviceId>`), принять звонок с другого устройства аккаунта нельзя. Нет `clientDeviceId` (заказ из CRM / старое приложение) или устройство уже не в аккаунте (нет push-токена и сокета) — звонок на все устройства, как раньше.
 - Тесты: `npm run test:calls`.
+
+## Партнёры (`PartnerController`, `PartnerProgramController`, приложение `tibetskaya_partner`)
+
+- Программа: клиент регистрируется в клиентском приложении с кодом партнёра (`Partner.referralCode`, поле «Реферальный код») → клиенту 200 ₸ на `Client.balance`, партнёру 200 ₸ на `Partner.balance` (`MobileController.clientRegister` → `utils/partnerLedger.js#applyPartnerReferralBonus`). У клиента ставится `referredByPartner`. Свой код партнёр использовать не может (сверка по телефону).
+- Журнал: `PartnerTransaction` (`referral_bonus` +200 / `withdrawal` −сумма, статусы `completed`/`pending`/`paid`/`rejected`). Бонус за клиента — не более одного раза (уникальный индекс).
+- Вывод как у курьеров: `POST /requestPartnerWithdrawal {amount, requestId}` — требует реквизиты (`/updatePartnerCardData {accountNumber, IIN, fullName}`), сумма **сразу списывается** с баланса (у партнёров нет страницы в CRM для ручного списания), заявка `pending`, сообщение в Telegram (`telegram/sendPartnerWithdraw.js`, env `TELEGRAM_BOT_TOKEN_SUPPORT` + `TELEGRAM_PARTNER_WITHDRAW_CHAT_ID` или `TELEGRAM_WITHDRAW_CHAT_ID`). Повтор с тем же `requestId` не списывает второй раз.
+- Данные для приложения: `/getPartnerDataMobile` (профиль, баланс, реквизиты), `/getPartnerClients`, `/getPartnerTransactions` — все за `checkAuthPartner`, партнёр только из токена.
+- Вход/регистрация как у клиента, код в WhatsApp: `/sendPartnerRegisterOtp` → `/partnerCodeConfirm` → `/partnerRegister`; вход `/sendPartnerLoginOtp` → `/partnerLoginOtp`.
+- Токен партнёра подписан ключом, производным от `SecretKey` (`utils/partnerToken.js`) — не проходит `checkAuth`/`checkAuthAggregator`, и наоборот.
+- OTP: `utils/phoneOtpStore.js` — TTL 5 мин, cooldown 60 с (отдельно для входа и регистрации), 5 попыток на код и не более 10 неверных вводов на телефон в час; в памяти процесса.
+- Тесты: `npm run test:partner`.

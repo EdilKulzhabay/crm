@@ -13,7 +13,8 @@
         "vrp-api": "node vrp_api.js",
         "setup-python": "./setup-python.sh",
         "recompute-address-order-stats": "node migrations/recompute_client_address_order_stats.js",
-        "test:calls": "node --test \"calls/__tests__/*.test.js\""
+        "test:calls": "node --test \"calls/__tests__/*.test.js\"",
+        "test:partner": "node --test \"utils/__tests__/*.test.js\" \"Controllers/__tests__/*.test.js\""
     },
     "keywords": [],
     "author": "",
