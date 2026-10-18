@@ -7,7 +7,13 @@ describe("clientRhythm", () => {
     test("Абай orders every 3 days and has not ordered for 4 days → lapsed", () => {
         const rhythm = clientRhythm(["2026-10-01", "2026-10-04", "2026-10-07"], "2026-10-11");
 
-        assert.deepEqual(rhythm, { lastOrderDay: "2026-10-07", daysSinceLast: 4, intervalDays: 3, isLapsed: true });
+        assert.deepEqual(rhythm, {
+            lastOrderDay: "2026-10-07",
+            daysSinceLast: 4,
+            intervalDays: 3,
+            isLapsed: true,
+            hasActiveOrder: false,
+        });
     });
 
     test("exactly one interval passed → still in rhythm", () => {

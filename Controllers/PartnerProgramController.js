@@ -32,6 +32,7 @@ export function serializeTransaction(transaction) {
         amount: transaction.amount,
         status: transaction.status,
         clientName: transaction.clientName ?? null,
+        bottles: transaction.bottles ?? null,
         createdAt: transaction.createdAt,
     };
 }
@@ -84,7 +85,9 @@ export function createPartnerProgramController({
                         id: String(client._id),
                         name: shortClientName(client.userName),
                         registeredAt: client.createdAt,
-                        hasOrdered: client.haveCompletedOrder === true || Boolean(rhythm?.lastOrderDay),
+                        // Любой неотменённый заказ, включая только что оформленный
+                        hasOrdered: client.haveCompletedOrder === true || Boolean(rhythm),
+                        hasActiveOrder: rhythm?.hasActiveOrder ?? false,
                         lastOrderDay: rhythm?.lastOrderDay ?? null,
                         intervalDays: rhythm?.intervalDays ?? null,
                         isLapsed: rhythm?.isLapsed ?? false,

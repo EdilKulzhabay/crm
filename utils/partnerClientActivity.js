@@ -26,17 +26,19 @@ export function clientRhythm(deliveredDays, today, hasActiveOrder = false) {
     const daysSinceLast = lastOrderDay ? dayOrdinal(today) - dayOrdinal(lastOrderDay) : null;
 
     if (days.length < RHYTHM_ORDERS) {
-        return { lastOrderDay, daysSinceLast, intervalDays: null, isLapsed: false };
+        return { lastOrderDay, daysSinceLast, intervalDays: null, isLapsed: false, hasActiveOrder };
     }
     const intervals = days.slice(1).map((day, i) => dayOrdinal(days[i]) - dayOrdinal(day));
     // Среднее с округлением вверх: при интервалах 3 и 4 дня ждём 4, а не 3
     const intervalDays = Math.ceil(intervals.reduce((sum, value) => sum + value, 0) / intervals.length);
     const isLapsed = !hasActiveOrder && intervalDays > 0 && daysSinceLast > intervalDays;
-    return { lastOrderDay, daysSinceLast, intervalDays, isLapsed };
+    return { lastOrderDay, daysSinceLast, intervalDays, isLapsed, hasActiveOrder };
 }
 
 /**
  * Ритм для набора клиентов одним агрегирующим запросом (без N+1).
+ * Клиент есть в результате, если у него есть хотя бы один неотменённый заказ за окно — в том числе
+ * ещё не доставленный: партнёр видит заказ сразу после оформления, а не только после доставки.
  * Использует индекс Order { client: 1, "date.d": -1 }.
  * @returns {Promise<Map<string, ReturnType<typeof clientRhythm>>>}
  */

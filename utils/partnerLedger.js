@@ -1,9 +1,13 @@
+import Client from "../Models/Client.js";
+import Order from "../Models/Order.js";
 import Partner from "../Models/Partner.js";
 import PartnerTransaction from "../Models/PartnerTransaction.js";
 import { sendPartnerPush } from "./partnerPush.js";
 
 /** Бонус партнёру за клиента, зарегистрированного по его коду */
 export const PARTNER_REFERRAL_BONUS = 200;
+/** Бонус партнёру за каждую бутыль (12,5 л и 18,9 л) доставленного заказа его клиента */
+export const PARTNER_BOTTLE_BONUS = 200;
 /** Бонус клиенту, зарегистрировавшемуся по коду партнёра (зачисляется на Client.balance при создании) */
 export const PARTNER_REFERRAL_CLIENT_BONUS = 200;
 
@@ -39,6 +43,14 @@ export const defaultLedgerRepository = {
     deleteTransaction: (id) => PartnerTransaction.deleteOne({ _id: id }),
     findWithdrawalByRequestId: (partnerId, requestId) =>
         PartnerTransaction.findOne({ partner: partnerId, type: "withdrawal", requestId }).lean(),
+    /** Заказ с актуальными количествами на момент доставки и партнёр его клиента */
+    findDeliveredOrderWithPartner: async (orderId) => {
+        const order = await Order.findById(orderId).select("client products status").lean();
+        if (!order || order.status !== "delivered" || !order.client) return null;
+        const client = await Client.findById(order.client).select("userName referredByPartner").lean();
+        if (!client?.referredByPartner) return null;
+        return { order, client };
+    },
     /** Push партнёру; sendPartnerPush сам глушит и логирует ошибки */
     notify: (partnerId, message) => sendPartnerPush(partnerId, message),
 };
@@ -77,6 +89,66 @@ export async function applyPartnerReferralBonus({ partnerId, clientId, clientNam
         data: { type: "referral_bonus" },
     });
     return true;
+}
+
+/** Число бутылей в заказе: только целые неотрицательные значения */
+export function orderBottles(products) {
+    return [products?.b12, products?.b19]
+        .map((value) => Number(value))
+        .filter((value) => Number.isSafeInteger(value) && value > 0)
+        .reduce((sum, value) => sum + value, 0);
+}
+
+/**
+ * Начисляет партнёру PARTNER_BOTTLE_BONUS за каждую бутыль доставленного заказа его клиента.
+ * Вызывается во всех местах, где заказ становится «доставлен» (CRM, курьер, курьер-агрегатор).
+ * Количества перечитываются из БД: курьер мог изменить их при доставке.
+ * Идемпотентно: уникальный индекс (order, type) — повторная доставка того же заказа не начислит второй раз.
+ * Никогда не бросает исключение — сбой бонуса не должен ломать доставку.
+ * @returns {Promise<number>} начисленная сумма (0 — не положено или уже начислено)
+ */
+export async function applyPartnerOrderBonus(orderId, repo = defaultLedgerRepository, logger = console) {
+    try {
+        const found = await repo.findDeliveredOrderWithPartner(orderId);
+        if (!found) return 0;
+        const { order, client } = found;
+        const bottles = orderBottles(order.products);
+        if (bottles === 0) return 0;
+        const amount = bottles * PARTNER_BOTTLE_BONUS;
+        const clientName = shortClientName(client.userName);
+
+        let transaction;
+        try {
+            transaction = await repo.createTransaction({
+                partner: client.referredByPartner,
+                type: "order_bonus",
+                amount,
+                status: "completed",
+                client: client._id,
+                clientName,
+                order: order._id,
+                bottles,
+            });
+        } catch (error) {
+            if (isDuplicateKey(error)) return 0;
+            throw error;
+        }
+        try {
+            await repo.addBalance(client.referredByPartner, amount);
+        } catch (error) {
+            await repo.deleteTransaction(transaction._id).catch(() => undefined);
+            throw error;
+        }
+        void repo.notify(client.referredByPartner, {
+            title: `Клиент получил заказ: +${amount} ₸`,
+            body: `${clientName}: ${bottles} бут. × ${PARTNER_BOTTLE_BONUS} ₸. Бонус уже на балансе.`,
+            data: { type: "order_bonus", clientId: String(client._id) },
+        });
+        return amount;
+    } catch (error) {
+        logger.error(`[Partner order bonus] заказ ${orderId}: бонус не начислен:`, error?.message || error);
+        return 0;
+    }
 }
 
 /**

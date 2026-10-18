@@ -36,7 +36,10 @@ describe("PartnerProgramController", () => {
                     { _id: "c2", userName: "Дана", createdAt: "2026-10-02T07:00:00Z" },
                 ],
                 loadRhythm: async () =>
-                    new Map([["c1", { lastOrderDay: "2026-10-07", daysSinceLast: 4, intervalDays: 3, isLapsed: true }]]),
+                    new Map([
+                    ["c1", { lastOrderDay: "2026-10-07", daysSinceLast: 4, intervalDays: 3, isLapsed: true, hasActiveOrder: false }],
+                    ["c2", { lastOrderDay: null, daysSinceLast: null, intervalDays: null, isLapsed: false, hasActiveOrder: true }],
+                ]),
                 listTransactions: async () => [
                     { _id: "t1", type: "referral_bonus", amount: 200, status: "completed", clientName: "Марат К.", createdAt: "x", client: "c1" },
                 ],
@@ -68,6 +71,7 @@ describe("PartnerProgramController", () => {
                 name: "Марат К.",
                 registeredAt: "2026-10-01T07:00:00Z",
                 hasOrdered: true,
+                hasActiveOrder: false,
                 lastOrderDay: "2026-10-07",
                 intervalDays: 3,
                 isLapsed: true,
@@ -76,7 +80,8 @@ describe("PartnerProgramController", () => {
                 id: "c2",
                 name: "Дана",
                 registeredAt: "2026-10-02T07:00:00Z",
-                hasOrdered: false,
+                hasOrdered: true,
+                hasActiveOrder: true,
                 lastOrderDay: null,
                 intervalDays: null,
                 isLapsed: false,
@@ -88,7 +93,7 @@ describe("PartnerProgramController", () => {
         const res = await call("getPartnerTransactions");
 
         assert.deepEqual(res.body.transactions, [
-            { id: "t1", type: "referral_bonus", amount: 200, status: "completed", clientName: "Марат К.", createdAt: "x" },
+            { id: "t1", type: "referral_bonus", amount: 200, status: "completed", clientName: "Марат К.", bottles: null, createdAt: "x" },
         ]);
     });
 

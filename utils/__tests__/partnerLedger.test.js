@@ -1,7 +1,10 @@
 import { describe, test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
+    applyPartnerOrderBonus,
     applyPartnerReferralBonus,
+    orderBottles,
+    PARTNER_BOTTLE_BONUS,
     PARTNER_REFERRAL_BONUS,
     requestPartnerWithdrawal,
     shortClientName,
@@ -136,4 +139,64 @@ test("shortClientName hides the full surname", () => {
     assert.equal(shortClientName("Марат Касымов"), "Марат К.");
     assert.equal(shortClientName("Дана"), "Дана");
     assert.equal(shortClientName(""), "Клиент");
+});
+
+describe("applyPartnerOrderBonus", () => {
+    const silent = { error() {} };
+    const found = (products, partner = "p1") => ({
+        order: { _id: "o1", client: "c1", products, status: "delivered" },
+        client: { _id: "c1", userName: "Абай Серіков", referredByPartner: partner },
+    });
+
+    const repoWith = (lookup) => {
+        const repo = createRepo();
+        repo.findDeliveredOrderWithPartner = async () => lookup;
+        return repo;
+    };
+
+    test("pays 200 ₸ per bottle of both sizes and notifies the partner", async () => {
+        const repo = repoWith(found({ b12: 1, b19: 2 }));
+
+        assert.equal(await applyPartnerOrderBonus("o1", repo, silent), 3 * PARTNER_BOTTLE_BONUS);
+        assert.equal(repo.state.balance, 600);
+        assert.deepEqual(
+            { type: repo.state.transactions[0].type, bottles: repo.state.transactions[0].bottles, order: repo.state.transactions[0].order },
+            { type: "order_bonus", bottles: 3, order: "o1" }
+        );
+        assert.match(repo.state.pushes[0].body, /Абай С\.: 3 бут\. × 200 ₸/);
+    });
+
+    test("delivering the same order twice pays once", async () => {
+        const repo = repoWith(found({ b19: 2 }));
+        const original = repo.createTransaction;
+        repo.createTransaction = async (data) => {
+            if (repo.state.transactions.some((t) => t.type === "order_bonus" && t.order === data.order)) {
+                throw Object.assign(new Error("E11000"), { code: 11000 });
+            }
+            return original(data);
+        };
+
+        await applyPartnerOrderBonus("o1", repo, silent);
+        assert.equal(await applyPartnerOrderBonus("o1", repo, silent), 0);
+        assert.equal(repo.state.balance, 400);
+    });
+
+    test("pays nothing for clients without a partner or empty orders", async () => {
+        assert.equal(await applyPartnerOrderBonus("o1", repoWith(null), silent), 0);
+        assert.equal(await applyPartnerOrderBonus("o1", repoWith(found({ b12: 0, b19: 0 })), silent), 0);
+    });
+
+    test("never throws: a failure only logs and rolls the journal back", async () => {
+        const repo = repoWith(found({ b19: 1 }));
+        repo.state.failAddBalance = true;
+
+        assert.equal(await applyPartnerOrderBonus("o1", repo, silent), 0);
+        assert.equal(repo.state.transactions.length, 0);
+    });
+
+    test("counts only positive whole bottle numbers", () => {
+        assert.equal(orderBottles({ b12: 2, b19: 1 }), 3);
+        assert.equal(orderBottles({ b12: -1, b19: 1.5 }), 0);
+        assert.equal(orderBottles(undefined), 0);
+    });
 });
