@@ -4,11 +4,16 @@ import {
     applyPartnerBindingBonuses,
     applyPartnerOrderBonus,
     applyPartnerReferralBonus,
+    orderBottleBonus,
     orderBottles,
-    PARTNER_BOTTLE_BONUS,
+    PARTNER_BOTTLE_BONUS_B12,
+    PARTNER_BOTTLE_BONUS_B19,
+    PARTNER_MIN_WITHDRAWAL,
+    withdrawalFee,
     PARTNER_REFERRAL_BONUS,
     PARTNER_REFERRAL_CLIENT_BONUS,
     requestPartnerWithdrawal,
+    resolvePartnerWithdrawal,
     shortClientName,
 } from "../partnerLedger.js";
 
@@ -93,59 +98,72 @@ describe("applyPartnerReferralBonus", () => {
 
 describe("requestPartnerWithdrawal", () => {
     test("deducts the amount immediately and records a pending withdrawal", async () => {
-        const repo = createRepo(1000);
+        const repo = createRepo(10000);
 
-        const result = await requestPartnerWithdrawal({ partner: partner(1000), amount: 600, requestId: "req-00001" }, repo);
+        const result = await requestPartnerWithdrawal({ partner: partner(10000), amount: 6000, requestId: "req-00001" }, repo);
 
         assert.equal(result.isNew, true);
-        assert.equal(result.balance, 400);
-        assert.equal(repo.state.balance, 400);
+        assert.equal(result.balance, 4000);
+        assert.equal(repo.state.balance, 4000);
         assert.deepEqual(
             { amount: result.transaction.amount, status: result.transaction.status, cardData: result.transaction.cardData },
-            { amount: -600, status: "pending", cardData: CARD }
+            { amount: -6000, status: "pending", cardData: CARD }
         );
     });
 
     test("a repeated request with the same id does not deduct twice", async () => {
-        const repo = createRepo(1000);
-        await requestPartnerWithdrawal({ partner: partner(1000), amount: 600, requestId: "req-00001" }, repo);
+        const repo = createRepo(10000);
+        await requestPartnerWithdrawal({ partner: partner(10000), amount: 6000, requestId: "req-00001" }, repo);
 
-        const repeat = await requestPartnerWithdrawal({ partner: partner(400), amount: 600, requestId: "req-00001" }, repo);
+        const repeat = await requestPartnerWithdrawal({ partner: partner(4000), amount: 6000, requestId: "req-00001" }, repo);
 
         assert.equal(repeat.isNew, false);
-        assert.equal(repo.state.balance, 400);
+        assert.equal(repo.state.balance, 4000);
         assert.equal(repo.state.transactions.length, 1);
     });
 
     test("refuses an amount above the balance without changing anything", async () => {
-        const repo = createRepo(200);
+        const repo = createRepo(2000);
 
         await assert.rejects(
-            () => requestPartnerWithdrawal({ partner: partner(200), amount: 600, requestId: "req-00002" }, repo),
+            () => requestPartnerWithdrawal({ partner: partner(2000), amount: 6000, requestId: "req-00002" }, repo),
             { code: "INSUFFICIENT_FUNDS" }
         );
-        assert.equal(repo.state.balance, 200);
+        assert.equal(repo.state.balance, 2000);
     });
 
     test("two different requests cannot spend the same balance", async () => {
-        const repo = createRepo(1000);
+        const repo = createRepo(10000);
 
         const results = await Promise.allSettled([
-            requestPartnerWithdrawal({ partner: partner(1000), amount: 700, requestId: "req-a0001" }, repo),
-            requestPartnerWithdrawal({ partner: partner(1000), amount: 700, requestId: "req-b0001" }, repo),
+            requestPartnerWithdrawal({ partner: partner(10000), amount: 7000, requestId: "req-a0001" }, repo),
+            requestPartnerWithdrawal({ partner: partner(10000), amount: 7000, requestId: "req-b0001" }, repo),
         ]);
 
         assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
-        assert.equal(repo.state.balance, 300);
+        assert.equal(repo.state.balance, 3000);
+    });
+
+    test("refuses amounts below the minimum and records the fee", async () => {
+        const repo = createRepo(20000);
+
+        await assert.rejects(
+            () => requestPartnerWithdrawal({ partner: partner(20000), amount: PARTNER_MIN_WITHDRAWAL - 1, requestId: "req-00004" }, repo),
+            { code: "BELOW_MINIMUM" }
+        );
+        const { transaction } = await requestPartnerWithdrawal({ partner: partner(20000), amount: 10000, requestId: "req-00005" }, repo);
+
+        assert.equal(repo.state.balance, 10000);
+        assert.deepEqual([transaction.amount, transaction.fee, transaction.payoutAmount], [-10000, 250, 9750]);
     });
 
     test("returns the money when the withdrawal record cannot be written", async () => {
-        const repo = createRepo(1000);
+        const repo = createRepo(10000);
         repo.state.failCreate = new Error("db down");
 
-        await assert.rejects(() => requestPartnerWithdrawal({ partner: partner(1000), amount: 600, requestId: "req-00003" }, repo));
+        await assert.rejects(() => requestPartnerWithdrawal({ partner: partner(10000), amount: 6000, requestId: "req-00003" }, repo));
 
-        assert.equal(repo.state.balance, 1000);
+        assert.equal(repo.state.balance, 10000);
     });
 });
 
@@ -168,16 +186,16 @@ describe("applyPartnerOrderBonus", () => {
         return repo;
     };
 
-    test("pays 200 ₸ per bottle of both sizes and notifies the partner", async () => {
+    test("pays 100 ₸ per 12.5 l and 200 ₸ per 18.9 l bottle and notifies the partner", async () => {
         const repo = repoWith(found({ b12: 1, b19: 2 }));
 
-        assert.equal(await applyPartnerOrderBonus("o1", repo, silent), 3 * PARTNER_BOTTLE_BONUS);
-        assert.equal(repo.state.balance, 600);
+        assert.equal(await applyPartnerOrderBonus("o1", repo, silent), PARTNER_BOTTLE_BONUS_B12 + 2 * PARTNER_BOTTLE_BONUS_B19);
+        assert.equal(repo.state.balance, 500);
         assert.deepEqual(
             { type: repo.state.transactions[0].type, bottles: repo.state.transactions[0].bottles, order: repo.state.transactions[0].order },
             { type: "order_bonus", bottles: 3, order: "o1" }
         );
-        assert.match(repo.state.pushes[0].body, /Абай С\.: 3 бут\. × 200 ₸/);
+        assert.match(repo.state.pushes[0].body, /Абай С\.: 3 бут\./);
     });
 
     test("delivering the same order twice pays once", async () => {
@@ -212,6 +230,15 @@ describe("applyPartnerOrderBonus", () => {
         assert.equal(orderBottles({ b12: 2, b19: 1 }), 3);
         assert.equal(orderBottles({ b12: -1, b19: 1.5 }), 0);
         assert.equal(orderBottles(undefined), 0);
+        assert.equal(orderBottleBonus({ b12: 3, b19: 0 }), 300);
+        assert.equal(orderBottleBonus({ b12: -1, b19: "x" }), 0);
+    });
+
+    test("withdrawal fee is 2.5% but at least 200 ₸, rounded up", () => {
+        assert.equal(withdrawalFee(5000), 200);
+        assert.equal(withdrawalFee(8000), 200);
+        assert.equal(withdrawalFee(10000), 250);
+        assert.equal(withdrawalFee(10001), 251);
     });
 });
 
@@ -267,5 +294,54 @@ describe("applyPartnerBindingBonuses", () => {
         const result = await bind(repo, PARTNER_ID);
 
         assert.deepEqual(result, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
+    });
+});
+
+describe("resolvePartnerWithdrawal", () => {
+    const setup = () => {
+        const repo = createRepo();
+        repo.state.transactions.push({ _id: "w1", partner: PARTNER_ID, type: "withdrawal", amount: -500, status: "pending" });
+        repo.updateWithdrawalStatus = async (id, fromStatus, update) => {
+            const row = repo.state.transactions.find((t) => t._id === id && t.type === "withdrawal" && t.status === fromStatus);
+            if (!row) return null;
+            Object.assign(row, update);
+            return { ...row };
+        };
+        return repo;
+    };
+
+    test("paid keeps the balance, rejected refunds it", async () => {
+        const paidRepo = setup();
+        const rejectedRepo = setup();
+
+        await resolvePartnerWithdrawal({ transactionId: "w1", status: "paid", userId: "u1" }, paidRepo);
+        await resolvePartnerWithdrawal({ transactionId: "w1", status: "rejected", userId: "u1" }, rejectedRepo);
+
+        assert.equal(paidRepo.state.balance, 0);
+        assert.equal(rejectedRepo.state.balance, 500);
+        assert.equal(rejectedRepo.state.transactions[0].status, "rejected");
+        assert.equal(rejectedRepo.state.pushes.length, 1);
+    });
+
+    test("a request is resolved only once", async () => {
+        const repo = setup();
+        await resolvePartnerWithdrawal({ transactionId: "w1", status: "rejected" }, repo);
+
+        await assert.rejects(resolvePartnerWithdrawal({ transactionId: "w1", status: "rejected" }, repo), { code: "NOT_PENDING" });
+        assert.equal(repo.state.balance, 500);
+    });
+
+    test("a failed refund returns the request to pending", async () => {
+        const repo = setup();
+        repo.state.failAddBalance = true;
+
+        await assert.rejects(resolvePartnerWithdrawal({ transactionId: "w1", status: "rejected" }, repo));
+        assert.equal(repo.state.transactions[0].status, "pending");
+    });
+
+    test("rejects unknown statuses", async () => {
+        await assert.rejects(resolvePartnerWithdrawal({ transactionId: "w1", status: "completed" }, setup()), {
+            code: "INVALID_STATUS",
+        });
     });
 });

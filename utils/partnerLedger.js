@@ -6,8 +6,13 @@ import { sendPartnerPush } from "./partnerPush.js";
 
 /** Бонус партнёру за клиента, зарегистрированного по его коду */
 export const PARTNER_REFERRAL_BONUS = 200;
-/** Бонус партнёру за каждую бутыль (12,5 л и 18,9 л) доставленного заказа его клиента */
-export const PARTNER_BOTTLE_BONUS = 200;
+/** Бонус партнёру за каждую бутыль доставленного заказа его клиента: 18,9 л (b19) и 12,5 л (b12) */
+export const PARTNER_BOTTLE_BONUS_B19 = 200;
+export const PARTNER_BOTTLE_BONUS_B12 = 100;
+/** Вывод: минимальная сумма запроса и комиссия (удерживается из суммы, к переводу — сумма минус комиссия) */
+export const PARTNER_MIN_WITHDRAWAL = 5000;
+export const PARTNER_WITHDRAWAL_FEE_RATE = 0.025;
+export const PARTNER_WITHDRAWAL_MIN_FEE = 200;
 /** Бонус клиенту, зарегистрировавшемуся по коду партнёра (зачисляется на Client.balance при создании) */
 export const PARTNER_REFERRAL_CLIENT_BONUS = 200;
 
@@ -64,6 +69,13 @@ export const defaultLedgerRepository = {
         )
             .select("_id")
             .lean(),
+    /** Атомарный переход статуса заявки на вывод: только из fromStatus, иначе null */
+    updateWithdrawalStatus: (transactionId, fromStatus, update) =>
+        PartnerTransaction.findOneAndUpdate(
+            { _id: transactionId, type: "withdrawal", status: fromStatus },
+            { $set: update },
+            { new: true }
+        ).lean(),
     /** Push партнёру; sendPartnerPush сам глушит и логирует ошибки */
     notify: (partnerId, message) => sendPartnerPush(partnerId, message),
 };
@@ -122,16 +134,28 @@ export async function applyPartnerBindingBonuses({ partnerId, clientId, clientNa
     };
 }
 
+const bottleCount = (value) => {
+    const count = Number(value);
+    return Number.isSafeInteger(count) && count > 0 ? count : 0;
+};
+
 /** Число бутылей в заказе: только целые неотрицательные значения */
 export function orderBottles(products) {
-    return [products?.b12, products?.b19]
-        .map((value) => Number(value))
-        .filter((value) => Number.isSafeInteger(value) && value > 0)
-        .reduce((sum, value) => sum + value, 0);
+    return bottleCount(products?.b12) + bottleCount(products?.b19);
+}
+
+/** Бонус за заказ: 12,5 л и 18,9 л оплачиваются по разным ставкам */
+export function orderBottleBonus(products) {
+    return bottleCount(products?.b12) * PARTNER_BOTTLE_BONUS_B12 + bottleCount(products?.b19) * PARTNER_BOTTLE_BONUS_B19;
+}
+
+/** Комиссия за вывод: 2,5% от суммы, но не меньше 200 ₸; целые тенге, округление вверх */
+export function withdrawalFee(amount) {
+    return Math.max(PARTNER_WITHDRAWAL_MIN_FEE, Math.ceil(amount * PARTNER_WITHDRAWAL_FEE_RATE));
 }
 
 /**
- * Начисляет партнёру PARTNER_BOTTLE_BONUS за каждую бутыль доставленного заказа его клиента.
+ * Начисляет партнёру бонус за бутыли доставленного заказа его клиента (orderBottleBonus).
  * Вызывается во всех местах, где заказ становится «доставлен» (CRM, курьер, курьер-агрегатор).
  * Количества перечитываются из БД: курьер мог изменить их при доставке.
  * Идемпотентно: уникальный индекс (order, type) — повторная доставка того же заказа не начислит второй раз.
@@ -145,7 +169,7 @@ export async function applyPartnerOrderBonus(orderId, repo = defaultLedgerReposi
         const { order, client } = found;
         const bottles = orderBottles(order.products);
         if (bottles === 0) return 0;
-        const amount = bottles * PARTNER_BOTTLE_BONUS;
+        const amount = orderBottleBonus(order.products);
         const clientName = shortClientName(client.userName);
 
         let transaction;
@@ -172,7 +196,7 @@ export async function applyPartnerOrderBonus(orderId, repo = defaultLedgerReposi
         }
         void repo.notify(client.referredByPartner, {
             title: `Клиент получил заказ: +${amount} ₸`,
-            body: `${clientName}: ${bottles} бут. × ${PARTNER_BOTTLE_BONUS} ₸. Бонус уже на балансе.`,
+            body: `${clientName}: ${bottles} бут. Бонус уже на балансе.`,
             data: { type: "order_bonus", clientId: String(client._id) },
         });
         return amount;
@@ -187,6 +211,7 @@ export async function applyPartnerOrderBonus(orderId, repo = defaultLedgerReposi
  * У курьеров списание делает менеджер в CRM, но для партнёров такой страницы нет — без
  * немедленного списания один остаток можно было бы запросить несколько раз.
  * Повтор с тем же requestId возвращает ту же заявку, ничего не списывая.
+ * Списывается вся сумма; к переводу — сумма минус комиссия (fee, payoutAmount в заявке).
  * @returns {Promise<{ transaction: object, balance: number, isNew: boolean }>}
  */
 export async function requestPartnerWithdrawal({ partner, amount, requestId }, repo = defaultLedgerRepository) {
@@ -194,6 +219,10 @@ export async function requestPartnerWithdrawal({ partner, amount, requestId }, r
     if (existing) {
         return { transaction: existing, balance: partner.balance, isNew: false };
     }
+    if (amount < PARTNER_MIN_WITHDRAWAL) {
+        throw new PartnerLedgerError("BELOW_MINIMUM", `Минимальная сумма вывода — ${PARTNER_MIN_WITHDRAWAL} ₸`);
+    }
+    const fee = withdrawalFee(amount);
 
     const updated = await repo.reserveBalance(partner._id, amount);
     if (!updated) {
@@ -207,6 +236,8 @@ export async function requestPartnerWithdrawal({ partner, amount, requestId }, r
             amount: -amount,
             status: "pending",
             requestId,
+            fee,
+            payoutAmount: amount - fee,
             cardData: {
                 accountNumber: partner.cardData.accountNumber,
                 IIN: partner.cardData.IIN,
@@ -224,4 +255,51 @@ export async function requestPartnerWithdrawal({ partner, amount, requestId }, r
         }
         throw error;
     }
+}
+
+export const WITHDRAWAL_RESOLUTIONS = Object.freeze(["paid", "rejected"]);
+
+/**
+ * Менеджер в CRM закрывает заявку на вывод. Сумма списана ещё при запросе (requestPartnerWithdrawal),
+ * поэтому «выплачено» баланс не меняет, а «отклонено» возвращает сумму на баланс.
+ * Статус меняется атомарно только из pending — два менеджера не вернут деньги дважды.
+ * @returns {Promise<object>} обновлённая заявка
+ */
+export async function resolvePartnerWithdrawal({ transactionId, status, userId }, repo = defaultLedgerRepository) {
+    if (!WITHDRAWAL_RESOLUTIONS.includes(status)) {
+        throw new PartnerLedgerError("INVALID_STATUS", "Некорректный статус заявки");
+    }
+    const resolved = await repo.updateWithdrawalStatus(transactionId, "pending", {
+        status,
+        resolvedAt: new Date(),
+        resolvedBy: userId ?? null,
+    });
+    if (!resolved) {
+        throw new PartnerLedgerError("NOT_PENDING", "Заявка не найдена или уже обработана");
+    }
+    const amount = Math.abs(resolved.amount);
+
+    if (status === "rejected") {
+        try {
+            await repo.addBalance(resolved.partner, amount);
+        } catch (error) {
+            // Деньги не вернулись — возвращаем заявку в ожидание, чтобы её можно было обработать снова
+            await repo
+                .updateWithdrawalStatus(transactionId, "rejected", { status: "pending", resolvedAt: null, resolvedBy: null })
+                .catch(() => undefined);
+            throw error;
+        }
+    }
+
+    void repo.notify(
+        resolved.partner,
+        status === "paid"
+            ? { title: `Выплата отправлена: ${amount} ₸`, body: "Деньги переведены на ваш счёт.", data: { type: "withdrawal" } }
+            : {
+                  title: "Заявка на вывод отклонена",
+                  body: `${amount} ₸ вернули на баланс. Проверьте реквизиты или свяжитесь с поддержкой.`,
+                  data: { type: "withdrawal" },
+              }
+    );
+    return resolved;
 }

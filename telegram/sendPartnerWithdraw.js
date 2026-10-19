@@ -5,12 +5,14 @@ import axios from "axios";
  * Env: TELEGRAM_BOT_TOKEN_SUPPORT; TELEGRAM_PARTNER_WITHDRAW_CHAT_ID (необязательно,
  * отдельная группа для партнёров), иначе TELEGRAM_WITHDRAW_CHAT_ID.
  */
-export function buildPartnerWithdrawMessage({ partner, amount, transactionId, balanceAfter }) {
+export function buildPartnerWithdrawMessage({ partner, amount, fee, payoutAmount, transactionId, balanceAfter }) {
     const { cardData = {} } = partner;
+    const feeLines = fee != null ? [`Комиссия: ${fee} ₸`, `К переводу: ${payoutAmount} ₸`] : [];
     return [
         `Запрос на вывод средств — партнёр ${partner.userName}`,
         "",
         `Партнёр ${partner.userName} хочет вывести деньги на карту.\n\nСумма: ${amount} ₸`,
+        ...feeLines,
         `Сумма уже списана с баланса партнёра. Остаток: ${balanceAfter} ₸`,
         "",
         `Телефон партнёра: ${partner.phone || "—"}`,

@@ -80,6 +80,8 @@ import SuperAdminCourierQrPayments from "./Pages/SuperAdmin/SuperAdminCourierQrP
 import SuperAdminInvoiceCounter from "./Pages/SuperAdmin/SuperAdminInvoiceCounter";
 import SuperAdminMobileOrderCutoff from "./Pages/SuperAdmin/SuperAdminMobileOrderCutoff";
 import SuperAdminAppVersion from "./Pages/SuperAdmin/SuperAdminAppVersion";
+import SuperAdminPartners from "./Pages/SuperAdmin/SuperAdminPartners";
+import SuperAdminPartnerPage from "./Pages/SuperAdmin/SuperAdminPartnerPage";
 import DistributeOrders from "./Pages/DistributeOrders";
 import BusinessCenterCourierAggregatorPage from "./Pages/BusinessCenterCourierAggregatorPage";
 
@@ -148,6 +150,8 @@ export const router = createBrowserRouter([
     { path: "/superAdminInvoiceCounter", element: <SuperAdminInvoiceCounter /> },
     { path: "/superAdminMobileOrderCutoff", element: <SuperAdminMobileOrderCutoff /> },
     { path: "/superAdminAppVersion", element: <SuperAdminAppVersion /> },
+    { path: "/superAdminPartners", element: <SuperAdminPartners /> },
+    { path: "/superAdminPartner/:id", element: <SuperAdminPartnerPage /> },
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },

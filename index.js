@@ -34,6 +34,7 @@ import {
     PartnerController,
     PartnerProgramController,
     PartnerAdminController,
+    PartnerManagementController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
@@ -53,6 +54,7 @@ import { processExcelFile } from "./excelProcessor.js";
 import checkRole from "./utils/checkRole.js";
 import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 import checkAuthPartner from "./utils/checkAuthPartner.js";
+import requireVerifiedPartner from "./utils/requireVerifiedPartner.js";
 import requireSuperAdmin from "./utils/requireSuperAdmin.js";
 import { startPartnerLapseCheck } from "./utils/partnerLapseCheck.js";
 import {
@@ -420,16 +422,21 @@ app.post("/partnerRegister", PartnerController.partnerRegister);
 app.post("/sendPartnerLoginOtp", PartnerController.sendPartnerLoginOtp);
 app.post("/partnerLoginOtp", PartnerController.partnerLoginOtp);
 app.post("/getPartnerDataMobile", checkAuthPartner, PartnerController.getPartnerDataMobile);
-app.post("/getPartnerClients", checkAuthPartner, PartnerProgramController.getPartnerClients);
-app.post("/getPartnerTransactions", checkAuthPartner, PartnerProgramController.getPartnerTransactions);
-app.post("/updatePartnerCardData", checkAuthPartner, PartnerProgramController.updatePartnerCardData);
-app.post("/requestPartnerWithdrawal", checkAuthPartner, PartnerProgramController.requestPartnerWithdrawal);
+app.post("/getPartnerClients", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.getPartnerClients);
+app.post("/getPartnerTransactions", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.getPartnerTransactions);
+app.post("/updatePartnerCardData", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.updatePartnerCardData);
+app.post("/requestPartnerWithdrawal", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.requestPartnerWithdrawal);
 app.post("/savePartnerPushToken", checkAuthPartner, PartnerProgramController.savePartnerPushToken);
 app.post("/removePartnerPushToken", checkAuthPartner, PartnerProgramController.removePartnerPushToken);
 // CRM: привязка клиента к партнёру (страница клиента, суперадмин)
 app.post("/searchPartnersAdmin", checkAuth, requireSuperAdmin, PartnerAdminController.searchPartnersAdmin);
 app.post("/getClientPartnerAdmin", checkAuth, requireSuperAdmin, PartnerAdminController.getClientPartnerAdmin);
 app.post("/setClientPartner", checkAuth, requireSuperAdmin, PartnerAdminController.setClientPartner);
+app.post("/getPartnersAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.getPartnersAdmin);
+app.post("/getPartnerDetailsAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.getPartnerDetailsAdmin);
+app.post("/setPartnerStatusAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerStatusAdmin);
+app.post("/resolvePartnerWithdrawalAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.resolvePartnerWithdrawalAdmin);
+app.post("/setPartnerVerificationAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerVerificationAdmin);
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)

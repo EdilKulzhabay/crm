@@ -89,6 +89,8 @@ describe("PartnerController", () => {
                     status: "active",
                     balance: 0,
                     cardData: { accountNumber: "", IIN: "", fullName: "" },
+                    // Новый партнёр сразу на проверке
+                    verification: { status: "waiting", message: "" },
                     createdAt: undefined,
                 }
             );

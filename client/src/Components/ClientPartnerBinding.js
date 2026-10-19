@@ -3,6 +3,7 @@ import api from "../api";
 import Div from "./Div";
 import Li from "./Li";
 import MyButton from "./MyButton";
+import MyInput from "./MyInput";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const SEARCH_MIN_LENGTH = 2;
@@ -30,6 +31,10 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoadFailed, setIsLoadFailed] = useState(false);
+    /** Партнёр, к которому привязываем: ждём код подтверждения, как при изменении баланса */
+    const [pendingPartner, setPendingPartner] = useState(null);
+    const [secretCode, setSecretCode] = useState("");
 
     useEffect(() => {
         let cancelled = false;
@@ -38,7 +43,8 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
                 if (!cancelled) setPartner(data.partner);
             })
             .catch(() => {
-                if (!cancelled) onMessage("Не удалось загрузить партнёра клиента", "error");
+                // Без всплывающего уведомления: блок просто не показывается
+                if (!cancelled) setIsLoadFailed(true);
             })
             .finally(() => {
                 if (!cancelled) setIsLoaded(true);
@@ -46,7 +52,7 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
         return () => {
             cancelled = true;
         };
-    }, [clientId, onMessage]);
+    }, [clientId]);
 
     useEffect(() => {
         const trimmed = query.trim();
@@ -78,6 +84,7 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
             setPartner(data.partner);
             setQuery("");
             setResults([]);
+            setPendingPartner(null);
             if (partnerId) {
                 onMessage(...bindingMessage(data.bonuses));
                 if (data.bonuses?.clientBonus > 0) onClientUpdated?.();
@@ -91,7 +98,22 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
         }
     };
 
-    if (!isLoaded) return null;
+    const confirmBinding = () => {
+        if (secretCode !== process.env.REACT_APP_SECRET_CODE) {
+            onMessage("Неверный код", "error");
+            setSecretCode("");
+            return;
+        }
+        setSecretCode("");
+        save(pendingPartner.id);
+    };
+
+    const cancelBinding = () => {
+        setPendingPartner(null);
+        setSecretCode("");
+    };
+
+    if (!isLoaded || isLoadFailed) return null;
 
     return (
         <>
@@ -121,8 +143,16 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
                     {results.map((item) => (
                         <div key={item.id} className="flex items-center gap-x-3 flex-wrap">
                             <div>{partnerLabel(item)}</div>
-                            {item.id !== partner?.id && !isSaving && (
-                                <MyButton click={() => save(item.id)}>Привязать</MyButton>
+                            {item.id !== partner?.id && !isSaving && pendingPartner?.id !== item.id && (
+                                <MyButton click={() => setPendingPartner(item)}>Привязать</MyButton>
+                            )}
+                            {pendingPartner?.id === item.id && !isSaving && (
+                                <div className="flex items-center gap-x-2 flex-wrap">
+                                    <span className="text-sm">Код подтверждения:</span>
+                                    <MyInput value={secretCode} change={(e) => setSecretCode(e.target.value)} color="white" />
+                                    <MyButton click={confirmBinding}>Подтвердить</MyButton>
+                                    <MyButton click={cancelBinding}>Отмена</MyButton>
+                                </div>
                             )}
                         </div>
                     ))}

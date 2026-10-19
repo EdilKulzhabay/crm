@@ -33,6 +33,8 @@ export function serializeTransaction(transaction) {
         status: transaction.status,
         clientName: transaction.clientName ?? null,
         bottles: transaction.bottles ?? null,
+        fee: transaction.fee ?? null,
+        payoutAmount: transaction.payoutAmount ?? null,
         createdAt: transaction.createdAt,
     };
 }
@@ -151,6 +153,8 @@ export function createPartnerProgramController({
                 void notifyWithdraw({
                     partner: req.partner,
                     amount,
+                    fee: transaction.fee,
+                    payoutAmount: transaction.payoutAmount,
                     transactionId: String(transaction._id),
                     balanceAfter: balance,
                 }).catch((error) => logger.error("[Partner program] telegram:", error?.message || error));

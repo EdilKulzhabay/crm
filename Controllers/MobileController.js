@@ -801,7 +801,8 @@ export const clientRegister = async (req, res) => {
                 signupBalance = 1000;
             } else {
                 // Код партнёра (приложение tibetskaya_partner): формат тот же, что у клиентских кодов
-                const partner = await Partner.findOne({ referralCode: normalized, status: "active" })
+                // Код работает только у активного партнёра, одобренного в CRM
+                const partner = await Partner.findOne({ referralCode: normalized, status: "active", "verification.status": "verified" })
                     .select("_id phoneNormalized")
                     .lean();
                 if (!partner) {

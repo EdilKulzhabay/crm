@@ -1,4 +1,4 @@
-import Partner from "../Models/Partner.js";
+import Partner, { partnerVerificationStatus } from "../Models/Partner.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
 import { createPhoneOtpStore, OTP_VERIFY_RESULT } from "../utils/phoneOtpStore.js";
 import { signPartnerToken } from "../utils/partnerToken.js";
@@ -54,6 +54,10 @@ export function serializePartner(partner) {
             accountNumber: partner.cardData?.accountNumber ?? "",
             IIN: partner.cardData?.IIN ?? "",
             fullName: partner.cardData?.fullName ?? "",
+        },
+        verification: {
+            status: partnerVerificationStatus(partner),
+            message: partner.verification?.message ?? "",
         },
         createdAt: partner.createdAt,
     };

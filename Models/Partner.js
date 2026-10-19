@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 export const PARTNER_STATUSES = Object.freeze(["active", "blocked"]);
+/** Проверка партнёра суперадмином в CRM; до verified приложение показывает только экран ожидания */
+export const PARTNER_VERIFICATION_STATUSES = Object.freeze(["waiting", "verified", "denied"]);
+
+/** Статус проверки; у партнёров, созданных до введения проверки, поля нет — они тоже на проверке */
+export const partnerVerificationStatus = (partner) => partner?.verification?.status ?? "waiting";
 
 /**
  * Партнёр «Тибетской» (приложение tibetskaya_partner).
@@ -65,6 +70,13 @@ const PartnerSchema = new mongoose.Schema(
         lastLoginAt: {
             type: Date,
             default: null,
+        },
+        verification: {
+            status: { type: String, enum: PARTNER_VERIFICATION_STATUSES, default: "waiting" },
+            /** Причина отказа — показывается партнёру */
+            message: { type: String, default: "", maxlength: 500 },
+            resolvedAt: { type: Date, default: null },
+            resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
         },
     },
     {

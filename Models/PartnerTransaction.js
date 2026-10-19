@@ -28,6 +28,12 @@ const PartnerTransactionSchema = new mongoose.Schema(
             fullName: String,
         },
         balanceAfter: { type: Number, default: null },
+        /** Для вывода: комиссия и сумма к переводу (|amount| − fee). У заявок до введения комиссии — null */
+        fee: { type: Number, default: null },
+        payoutAmount: { type: Number, default: null },
+        /** Для вывода: кто и когда в CRM отметил заявку выплаченной или отклонённой */
+        resolvedAt: { type: Date, default: null },
+        resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     },
     { timestamps: true }
 );

@@ -93,7 +93,7 @@ describe("PartnerProgramController", () => {
         const res = await call("getPartnerTransactions");
 
         assert.deepEqual(res.body.transactions, [
-            { id: "t1", type: "referral_bonus", amount: 200, status: "completed", clientName: "Марат К.", bottles: null, createdAt: "x" },
+            { id: "t1", type: "referral_bonus", amount: 200, status: "completed", clientName: "Марат К.", bottles: null, fee: null, payoutAmount: null, createdAt: "x" },
         ]);
     });
 

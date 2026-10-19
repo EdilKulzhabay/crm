@@ -21,21 +21,25 @@ const serializePartnerForAdmin = (partner) => ({
     status: partner.status,
 });
 
+/** Фильтр поиска партнёра по имени, коду или цифрам телефона (также страница «Партнёры») */
+export function buildPartnerSearchFilter(query) {
+    const pattern = new RegExp(escapeRegex(query), "i");
+    const digits = query.replace(/\D/g, "");
+    return {
+        $or: [
+            { userName: pattern },
+            { referralCode: pattern },
+            ...(digits.length >= SEARCH_MIN_LENGTH ? [{ phoneNormalized: new RegExp(escapeRegex(digits)) }] : []),
+        ],
+    };
+}
+
 const defaultRepo = {
-    searchPartners: (query) => {
-        const pattern = new RegExp(escapeRegex(query), "i");
-        const digits = query.replace(/\D/g, "");
-        return Partner.find({
-            $or: [
-                { userName: pattern },
-                { referralCode: pattern },
-                ...(digits.length >= SEARCH_MIN_LENGTH ? [{ phoneNormalized: new RegExp(escapeRegex(digits)) }] : []),
-            ],
-        })
+    searchPartners: (query) =>
+        Partner.find(buildPartnerSearchFilter(query))
             .select("userName phone referralCode status")
             .limit(SEARCH_LIMIT)
-            .lean();
-    },
+            .lean(),
     findClientPartnerId: async (clientId) =>
         (await Client.findById(clientId).select("referredByPartner").lean())?.referredByPartner ?? undefined,
     findPartner: (partnerId) => Partner.findById(partnerId).select("userName phone referralCode status").lean(),
