@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
 import Client from "../Models/Client.js";
 import Partner from "../Models/Partner.js";
+import { applyPartnerBindingBonuses } from "../utils/partnerLedger.js";
 
 /**
  * Привязка клиента к партнёру из CRM (страница клиента, только суперадмин).
- * Ручная привязка бонусы не начисляет: 200 ₸ + 200 ₸ даются только при регистрации по коду.
+ * Привязка работает так, будто клиент зарегистрировался по коду партнёра: партнёру +200 ₸
+ * (при смене партнёра — новому тоже), клиенту +200 ₸ один раз. Подробности — applyPartnerBindingBonuses.
  */
 
 const SEARCH_LIMIT = 20;
@@ -42,10 +44,16 @@ const defaultRepo = {
             clientId,
             { referredByPartner: partnerId, partnerLapseNotifiedDay: null },
             { new: true }
-        ).select("_id referredByPartner").lean(),
+        ).select("_id userName referredByPartner").lean(),
 };
 
-export function createPartnerAdminController({ repo = defaultRepo, logger = console } = {}) {
+const NO_BONUSES = Object.freeze({ partnerBonus: 0, clientBonus: 0 });
+
+export function createPartnerAdminController({
+    repo = defaultRepo,
+    applyBonuses = applyPartnerBindingBonuses,
+    logger = console,
+} = {}) {
     const fail = (res, status, message) => res.status(status).json({ success: false, message });
     const isId = (value) => typeof value === "string" && mongoose.isValidObjectId(value);
 
@@ -86,10 +94,25 @@ export function createPartnerAdminController({ repo = defaultRepo, logger = cons
             const client = await repo.setClientPartner(clientId, partnerId);
             if (!client) return fail(res, 404, "Клиент не найден");
             logger.log(`[Partner admin] клиент ${clientId} → партнёр ${partnerId ?? "нет"} (пользователь ${req.userId})`);
-            return res.status(200).json({ success: true, partner: partner ? serializePartnerForAdmin(partner) : null });
+            const bonuses = partner ? await applyBindingBonuses(partner, client) : NO_BONUSES;
+            return res.status(200).json({
+                success: true,
+                partner: partner ? serializePartnerForAdmin(partner) : null,
+                bonuses,
+            });
         } catch (error) {
             logger.error("[Partner admin] setClientPartner:", error?.message || error);
             return fail(res, 500, "Не удалось изменить партнёра клиента");
+        }
+    }
+
+    /** Привязка уже сохранена: сбой начисления не откатывает её, а возвращается в ответе для менеджера */
+    async function applyBindingBonuses(partner, client) {
+        try {
+            return await applyBonuses({ partnerId: partner._id, clientId: client._id, clientName: client.userName });
+        } catch (error) {
+            logger.error(`[Partner admin] бонусы за привязку клиента ${client._id} не начислены:`, error?.message || error);
+            return { ...NO_BONUSES, isFailed: true };
         }
     }
 

@@ -1648,7 +1648,7 @@ export default function ClientPage() {
                 </Li>
 
                 {userData?.role === "superAdmin" && (
-                    <ClientPartnerBinding clientId={id} onMessage={showPartnerMessage} />
+                    <ClientPartnerBinding clientId={id} onMessage={showPartnerMessage} onClientUpdated={getClientData} />
                 )}
 
                 <Div />

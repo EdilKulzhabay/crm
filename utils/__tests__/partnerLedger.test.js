@@ -1,11 +1,13 @@
 import { describe, test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
+    applyPartnerBindingBonuses,
     applyPartnerOrderBonus,
     applyPartnerReferralBonus,
     orderBottles,
     PARTNER_BOTTLE_BONUS,
     PARTNER_REFERRAL_BONUS,
+    PARTNER_REFERRAL_CLIENT_BONUS,
     requestPartnerWithdrawal,
     shortClientName,
 } from "../partnerLedger.js";
@@ -15,7 +17,8 @@ const CARD = { accountNumber: "KZ123456789012345678", IIN: "900101300123", fullN
 
 /** In-memory репозиторий с уникальными ограничениями как у PartnerTransaction */
 const createRepo = (initialBalance = 0) => {
-    const state = { balance: initialBalance, transactions: [], failAddBalance: false, failCreate: null, pushes: [] };
+    const state = { balance: initialBalance, transactions: [], failAddBalance: false, failCreate: null, pushes: [],
+        clientBalance: 0, clientBonusPaid: new Set(), clientsReferredByClient: new Set() };
     const duplicate = () => Object.assign(new Error("E11000"), { code: 11000 });
     return {
         state,
@@ -33,7 +36,10 @@ const createRepo = (initialBalance = 0) => {
             if (state.failCreate) throw state.failCreate;
             const clash = state.transactions.find(
                 (t) =>
-                    (data.type === "referral_bonus" && t.type === "referral_bonus" && t.client === data.client) ||
+                    (data.type === "referral_bonus" &&
+                        t.type === "referral_bonus" &&
+                        t.client === data.client &&
+                        t.partner === data.partner) ||
                     (data.type === "withdrawal" && t.type === "withdrawal" && t.requestId === data.requestId)
             );
             if (clash) throw duplicate();
@@ -47,6 +53,14 @@ const createRepo = (initialBalance = 0) => {
         findWithdrawalByRequestId: async (_partner, requestId) =>
             state.transactions.find((t) => t.type === "withdrawal" && t.requestId === requestId) ?? null,
         notify: async (partnerId, message) => state.pushes.push({ partnerId, ...message }),
+        hasReferralBonus: async (clientId) =>
+            state.transactions.some((t) => t.type === "referral_bonus" && t.client === clientId),
+        creditClientSignupBonus: async (clientId, amount) => {
+            if (state.clientBonusPaid.has(clientId) || state.clientsReferredByClient.has(clientId)) return null;
+            state.clientBonusPaid.add(clientId);
+            state.clientBalance += amount;
+            return { _id: clientId };
+        },
     };
 };
 
@@ -198,5 +212,60 @@ describe("applyPartnerOrderBonus", () => {
         assert.equal(orderBottles({ b12: 2, b19: 1 }), 3);
         assert.equal(orderBottles({ b12: -1, b19: 1.5 }), 0);
         assert.equal(orderBottles(undefined), 0);
+    });
+});
+
+describe("applyPartnerBindingBonuses", () => {
+    const bind = (repo, partnerId, clientId = "c1") =>
+        applyPartnerBindingBonuses({ partnerId, clientId, clientName: "Марат Касымов" }, repo);
+
+    test("credits partner and client like a signup by code", async () => {
+        const repo = createRepo();
+
+        const result = await bind(repo, PARTNER_ID);
+
+        assert.deepEqual(result, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: PARTNER_REFERRAL_CLIENT_BONUS });
+        assert.equal(repo.state.balance, PARTNER_REFERRAL_BONUS);
+        assert.equal(repo.state.clientBalance, PARTNER_REFERRAL_CLIENT_BONUS);
+        assert.equal(repo.state.transactions[0].type, "referral_bonus");
+        assert.equal(repo.state.pushes.length, 1);
+    });
+
+    test("rebinding to the same partner credits nothing", async () => {
+        const repo = createRepo();
+        await bind(repo, PARTNER_ID);
+
+        const again = await bind(repo, PARTNER_ID);
+
+        assert.deepEqual(again, { partnerBonus: 0, clientBonus: 0 });
+        assert.equal(repo.state.transactions.length, 1);
+    });
+
+    test("a new partner is credited, the client only once", async () => {
+        const repo = createRepo();
+        await bind(repo, PARTNER_ID);
+
+        const second = await bind(repo, "p2");
+
+        assert.deepEqual(second, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
+        assert.equal(repo.state.clientBalance, PARTNER_REFERRAL_CLIENT_BONUS);
+    });
+
+    test("a client registered by code before the flag existed gets no second client bonus", async () => {
+        const repo = createRepo();
+        repo.state.transactions.push({ _id: "legacy", type: "referral_bonus", client: "c1", partner: "p0" });
+
+        const result = await bind(repo, PARTNER_ID);
+
+        assert.deepEqual(result, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
+    });
+
+    test("a client invited by another client gets no partner client bonus", async () => {
+        const repo = createRepo();
+        repo.state.clientsReferredByClient.add("c1");
+
+        const result = await bind(repo, PARTNER_ID);
+
+        assert.deepEqual(result, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
     });
 });

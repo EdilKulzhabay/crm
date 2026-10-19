@@ -9,12 +9,22 @@ const SEARCH_MIN_LENGTH = 2;
 
 const partnerLabel = (partner) => `${partner.userName} · ${partner.phone} · ${partner.referralCode}`;
 
+const bindingMessage = ({ partnerBonus = 0, clientBonus = 0, isFailed = false } = {}) => {
+    if (isFailed) return ["Клиент привязан, но бонусы не начислены — сообщите разработчику", "error"];
+    const credited = [
+        partnerBonus > 0 && `партнёру +${partnerBonus} ₸`,
+        clientBonus > 0 && `клиенту +${clientBonus} ₸`,
+    ].filter(Boolean);
+    const suffix = credited.length ? `: ${credited.join(", ")}` : " (бонусы уже были начислены ранее)";
+    return [`Клиент привязан к партнёру${suffix}`, "success"];
+};
+
 /**
  * Партнёр клиента (приложение «Тибетская Партнёр»): показать, привязать, отвязать.
  * Только для суперадмина — сервер проверяет роль сам (utils/requireSuperAdmin.js).
- * Ручная привязка бонусы не начисляет: 200 ₸ + 200 ₸ даются только при регистрации по коду.
+ * Привязка — как регистрация по коду: партнёру +200 ₸ (новому — и при смене), клиенту +200 ₸ один раз.
  */
-export default function ClientPartnerBinding({ clientId, onMessage }) {
+export default function ClientPartnerBinding({ clientId, onMessage, onClientUpdated }) {
     const [partner, setPartner] = useState(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [query, setQuery] = useState("");
@@ -68,7 +78,12 @@ export default function ClientPartnerBinding({ clientId, onMessage }) {
             setPartner(data.partner);
             setQuery("");
             setResults([]);
-            onMessage(partnerId ? "Клиент привязан к партнёру" : "Клиент отвязан от партнёра", "success");
+            if (partnerId) {
+                onMessage(...bindingMessage(data.bonuses));
+                if (data.bonuses?.clientBonus > 0) onClientUpdated?.();
+            } else {
+                onMessage("Клиент отвязан от партнёра", "success");
+            }
         } catch (error) {
             onMessage(error?.response?.data?.message || "Не удалось изменить партнёра", "error");
         } finally {
@@ -112,7 +127,9 @@ export default function ClientPartnerBinding({ clientId, onMessage }) {
                         </div>
                     ))}
                     {query.trim().length >= SEARCH_MIN_LENGTH && results.length === 0 && <div>Партнёры не найдены</div>}
-                    <div className="text-sm opacity-70">Ручная привязка бонусы не начисляет.</div>
+                    <div className="text-sm opacity-70">
+                        Как регистрация по коду: партнёру +200 ₸, клиенту +200 ₸ (один раз). Прошлые заказы не учитываются.
+                    </div>
                 </div>
             </Li>
         </>

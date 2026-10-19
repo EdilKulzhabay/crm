@@ -18,15 +18,25 @@ const createRes = () => {
 describe("PartnerAdminController", () => {
     let binding;
     let controller;
+    let bonusCalls;
+    let bonusError;
 
     beforeEach(() => {
         binding = null;
+        bonusCalls = [];
+        bonusError = null;
         controller = createPartnerAdminController({
             repo: {
                 searchPartners: async () => [PARTNER],
                 findClientPartnerId: async (id) => (id === CLIENT_ID ? binding : undefined),
                 findPartner: async (id) => (id === PARTNER_ID ? PARTNER : null),
-                setClientPartner: async (id, partnerId) => (id === CLIENT_ID ? ((binding = partnerId), { _id: id }) : null),
+                setClientPartner: async (id, partnerId) =>
+                    id === CLIENT_ID ? ((binding = partnerId), { _id: id, userName: "Марат" }) : null,
+            },
+            applyBonuses: async (args) => {
+                if (bonusError) throw bonusError;
+                bonusCalls.push(args);
+                return { partnerBonus: 200, clientBonus: 200 };
             },
             logger: silentLogger,
         });
@@ -47,6 +57,25 @@ describe("PartnerAdminController", () => {
         assert.equal(current.body.partner.id, PARTNER_ID);
         assert.equal(unbound.body.partner, null);
         assert.equal(binding, null);
+    });
+
+    test("binding applies signup bonuses, unbinding does not", async () => {
+        const bound = await call("setClientPartner", { clientId: CLIENT_ID, partnerId: PARTNER_ID });
+        const unbound = await call("setClientPartner", { clientId: CLIENT_ID, partnerId: null });
+
+        assert.deepEqual(bound.body.bonuses, { partnerBonus: 200, clientBonus: 200 });
+        assert.deepEqual(bonusCalls, [{ partnerId: PARTNER_ID, clientId: CLIENT_ID, clientName: "Марат" }]);
+        assert.deepEqual(unbound.body.bonuses, { partnerBonus: 0, clientBonus: 0 });
+    });
+
+    test("a bonus failure keeps the binding and is reported", async () => {
+        bonusError = new Error("db down");
+
+        const res = await call("setClientPartner", { clientId: CLIENT_ID, partnerId: PARTNER_ID });
+
+        assert.equal(res.statusCode, 200);
+        assert.equal(binding, PARTNER_ID);
+        assert.equal(res.body.bonuses.isFailed, true);
     });
 
     test("rejects unknown partners and malformed ids", async () => {

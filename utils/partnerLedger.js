@@ -51,13 +51,26 @@ export const defaultLedgerRepository = {
         if (!client?.referredByPartner) return null;
         return { order, client };
     },
+    hasReferralBonus: async (clientId) => Boolean(await PartnerTransaction.exists({ client: clientId, type: "referral_bonus" })),
+    /**
+     * Бонус клиенту за код партнёра — атомарно и один раз за всё время. Клиенту, пришедшему по коду
+     * другого клиента (referredBy, 1000 ₸), не положен: два кода при регистрации ввести нельзя.
+     */
+    creditClientSignupBonus: (clientId, amount) =>
+        Client.findOneAndUpdate(
+            { _id: clientId, partnerSignupBonusPaid: { $ne: true }, referredBy: null },
+            { $set: { partnerSignupBonusPaid: true }, $inc: { balance: amount } },
+            { new: true }
+        )
+            .select("_id")
+            .lean(),
     /** Push партнёру; sendPartnerPush сам глушит и логирует ошибки */
     notify: (partnerId, message) => sendPartnerPush(partnerId, message),
 };
 
 /**
  * Начисляет партнёру бонус за зарегистрированного клиента. Идемпотентно: уникальный индекс
- * (client, type) не даст начислить дважды. Сначала журнал, потом баланс — при сбое между шагами
+ * (client, partner, type) не даст начислить одному партнёру дважды. Сначала журнал, потом баланс — при сбое между шагами
  * в журнале остаётся запись без пополнения (видно при сверке), но не пополнение без записи.
  * @returns {Promise<boolean>} true — начислено сейчас, false — уже было начислено
  */
@@ -89,6 +102,24 @@ export async function applyPartnerReferralBonus({ partnerId, clientId, clientNam
         data: { type: "referral_bonus" },
     });
     return true;
+}
+
+/**
+ * Привязка клиента к партнёру в CRM — с теми же начислениями, что и регистрация по коду:
+ * партнёру PARTNER_REFERRAL_BONUS (один раз на пару клиент–партнёр, с записью в журнале и push),
+ * клиенту PARTNER_REFERRAL_CLIENT_BONUS (один раз за всё время). Прошлые доставки не пересчитываются.
+ * @returns {Promise<{ partnerBonus: number, clientBonus: number }>}
+ */
+export async function applyPartnerBindingBonuses({ partnerId, clientId, clientName }, repo = defaultLedgerRepository) {
+    // Клиенты, зарегистрированные по коду до появления partnerSignupBonusPaid, видны только по журналу
+    const hadReferralBonus = await repo.hasReferralBonus(clientId);
+    const isPartnerCredited = await applyPartnerReferralBonus({ partnerId, clientId, clientName }, repo);
+    const isClientCredited =
+        !hadReferralBonus && Boolean(await repo.creditClientSignupBonus(clientId, PARTNER_REFERRAL_CLIENT_BONUS));
+    return {
+        partnerBonus: isPartnerCredited ? PARTNER_REFERRAL_BONUS : 0,
+        clientBonus: isClientCredited ? PARTNER_REFERRAL_CLIENT_BONUS : 0,
+    };
 }
 
 /** Число бутылей в заказе: только целые неотрицательные значения */

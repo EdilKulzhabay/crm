@@ -33,9 +33,10 @@ const PartnerTransactionSchema = new mongoose.Schema(
 );
 
 PartnerTransactionSchema.index({ partner: 1, createdAt: -1 });
-// Бонус за одного клиента начисляется не более одного раза
+// Бонус за одного клиента — не более одного раза на партнёра (при смене партнёра в CRM новый тоже получает).
+// Прежний индекс { client, type } снимается миграцией migrations/drop_partner_referral_client_index.js
 PartnerTransactionSchema.index(
-    { client: 1, type: 1 },
+    { client: 1, partner: 1, type: 1 },
     { unique: true, partialFilterExpression: { type: "referral_bonus" } }
 );
 // Бонус за один заказ — не более одного раза, даже если статус «доставлен» выставят повторно

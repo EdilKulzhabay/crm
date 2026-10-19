@@ -284,6 +284,11 @@ const ClientSchema = new mongoose.Schema(
             default: null,
             index: true,
         },
+        /** Клиент уже получил PARTNER_REFERRAL_CLIENT_BONUS (регистрация по коду или привязка в CRM) — даётся один раз */
+        partnerSignupBonusPaid: {
+            type: Boolean,
+            default: false,
+        },
         /** День последнего заказа, за перерыв после которого партнёр уже уведомлён (utils/partnerLapseCheck.js) */
         partnerLapseNotifiedDay: {
             type: String,

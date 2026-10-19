@@ -847,6 +847,7 @@ export const clientRegister = async (req, res) => {
             referralCode: myReferralCode,
             referredBy: referredById || undefined,
             referredByPartner: referredByPartnerId || undefined,
+            partnerSignupBonusPaid: Boolean(referredByPartnerId),
             balance: signupBalance,
         });
 
