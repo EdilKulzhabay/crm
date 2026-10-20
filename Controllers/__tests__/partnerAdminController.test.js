@@ -20,31 +20,35 @@ describe("PartnerAdminController", () => {
     let controller;
     let bonusCalls;
     let bonusError;
+    let operationLog;
 
     beforeEach(() => {
+        operationLog = [];
         binding = null;
         bonusCalls = [];
         bonusError = null;
         controller = createPartnerAdminController({
             repo: {
                 searchPartners: async () => [PARTNER],
-                findClientPartnerId: async (id) => (id === CLIENT_ID ? binding : undefined),
+                findClientPartnerId: async (id) => (id === CLIENT_ID ? { partnerId: binding } : null),
                 findPartner: async (id) => (id === PARTNER_ID ? PARTNER : null),
                 setClientPartner: async (id, partnerId) =>
                     id === CLIENT_ID ? ((binding = partnerId), { _id: id, userName: "Марат" }) : null,
+                logOperation: async (entry) => operationLog.push(entry),
             },
             applyBonuses: async (args) => {
                 if (bonusError) throw bonusError;
                 bonusCalls.push(args);
-                return { partnerBonus: 200, clientBonus: 200 };
+                return { partnerBonus: 200, clientBonus: 200, clientBalance: 700 };
             },
             logger: silentLogger,
         });
     });
 
+    const AUTHOR = { changedBy: "Менеджер Аня", reason: "Клиент пришёл от партнёра" };
     const call = async (handler, body) => {
         const res = createRes();
-        await controller[handler]({ body, userId: "admin" }, res);
+        await controller[handler]({ body: { ...AUTHOR, ...body }, userId: "admin" }, res);
         return res;
     };
 
@@ -63,9 +67,30 @@ describe("PartnerAdminController", () => {
         const bound = await call("setClientPartner", { clientId: CLIENT_ID, partnerId: PARTNER_ID });
         const unbound = await call("setClientPartner", { clientId: CLIENT_ID, partnerId: null });
 
-        assert.deepEqual(bound.body.bonuses, { partnerBonus: 200, clientBonus: 200 });
+        assert.deepEqual(bound.body.bonuses, { partnerBonus: 200, clientBonus: 200, clientBalance: 700 });
         assert.deepEqual(bonusCalls, [{ partnerId: PARTNER_ID, clientId: CLIENT_ID, clientName: "Марат" }]);
         assert.deepEqual(unbound.body.bonuses, { partnerBonus: 0, clientBonus: 0 });
+    });
+
+    test("a client without a partner is not an error", async () => {
+        const res = await call("getClientPartnerAdmin", { clientId: CLIENT_ID });
+
+        assert.equal(res.statusCode, 200);
+        assert.equal(res.body.partner, null);
+    });
+
+    test("binding requires who and why and is written to the client operation log", async () => {
+        const missing = await call("setClientPartner", { clientId: CLIENT_ID, partnerId: PARTNER_ID, reason: "" });
+        await call("setClientPartner", { clientId: CLIENT_ID, partnerId: PARTNER_ID });
+
+        assert.equal(missing.statusCode, 400);
+        assert.deepEqual(
+            operationLog.map(({ field, oldValue, newValue, changedBy }) => [field, oldValue, newValue, changedBy]),
+            [
+                ["partner", "нет", "Алия · ABCD-EFGH-IJKL", "Менеджер Аня"],
+                ["balance", 500, 700, "Менеджер Аня"],
+            ]
+        );
     });
 
     test("a bonus failure keeps the binding and is reported", async () => {

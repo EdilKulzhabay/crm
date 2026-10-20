@@ -48,9 +48,10 @@ describe("PartnerManagementController", () => {
         });
     });
 
+    const AUTHOR = { changedBy: "Менеджер Аня", reason: "Звонок партнёра" };
     const call = async (handler, body) => {
         const res = createRes();
-        await controller[handler]({ body, userId: "admin" }, res);
+        await controller[handler]({ body: { ...AUTHOR, ...body }, userId: "admin" }, res);
         return res;
     };
 
@@ -86,6 +87,17 @@ describe("PartnerManagementController", () => {
         const res = await call("getPartnerDetailsAdmin", { partnerId: "d".repeat(24) });
 
         assert.equal(res.statusCode, 404);
+    });
+
+    test("actions require who and why", async () => {
+        const responses = await Promise.all([
+            call("setPartnerStatusAdmin", { partnerId: PARTNER_ID, status: "blocked", changedBy: "" }),
+            call("setPartnerVerificationAdmin", { partnerId: PARTNER_ID, status: "verified", reason: " " }),
+            call("resolvePartnerWithdrawalAdmin", { transactionId: TX_ID, status: "paid", reason: undefined, changedBy: undefined }),
+        ]);
+
+        assert.deepEqual(responses.map((res) => res.statusCode), [400, 400, 400]);
+        assert.deepEqual(calls.statuses, []);
     });
 
     test("blocks and unblocks, rejecting other statuses", async () => {

@@ -30,13 +30,20 @@ export async function sendPartnerPush(partnerId, { title, body, data = {} }, dep
         const tokens = (await deps.findTokens(partnerId)).filter((token) => Expo.isExpoPushToken(token));
         if (tokens.length === 0) return { sent: 0 };
 
-        const messages = tokens.map((to) => ({ to, title, body, data, sound: "default", channelId: "default" }));
+        // priority high — Android доставляет сразу, а не откладывает в Doze
+        const messages = tokens.map((to) => ({ to, title, body, data, sound: "default", channelId: "default", priority: "high" }));
         const tickets = await deps.send(messages);
 
         const stale = tickets
             .map((ticket, index) => (ticket.details?.error === "DeviceNotRegistered" ? tokens[index] : null))
             .filter(Boolean);
         if (stale.length) await deps.removeTokens(partnerId, stale);
+        // Остальные ошибки (InvalidCredentials — нет ключа APNs/FCM в EAS, MessageRateExceeded и т.п.) — в лог
+        tickets
+            .filter((ticket) => ticket.status === "error" && ticket.details?.error !== "DeviceNotRegistered")
+            .forEach((ticket) =>
+                deps.logger.error(`[Partner push] партнёр ${partnerId}: ${ticket.details?.error ?? "error"} — ${ticket.message ?? ""}`)
+            );
 
         return { sent: tickets.filter((ticket) => ticket.status === "ok").length };
     } catch (error) {

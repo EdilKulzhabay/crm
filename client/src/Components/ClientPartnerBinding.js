@@ -3,7 +3,7 @@ import api from "../api";
 import Div from "./Div";
 import Li from "./Li";
 import MyButton from "./MyButton";
-import MyInput from "./MyInput";
+import ConfirmChangeModal from "./ConfirmChangeModal";
 
 const SEARCH_DEBOUNCE_MS = 300;
 const SEARCH_MIN_LENGTH = 2;
@@ -32,9 +32,8 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
     const [results, setResults] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isLoadFailed, setIsLoadFailed] = useState(false);
-    /** Партнёр, к которому привязываем: ждём код подтверждения, как при изменении баланса */
-    const [pendingPartner, setPendingPartner] = useState(null);
-    const [secretCode, setSecretCode] = useState("");
+    /** Изменение, ждущее кода и «кто / зачем», как при изменении баланса: { partnerId: string | null, title } */
+    const [pendingChange, setPendingChange] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -43,7 +42,7 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
                 if (!cancelled) setPartner(data.partner);
             })
             .catch(() => {
-                // Без всплывающего уведомления: блок просто не показывается
+                // Без всплывающего уведомления — пометка прямо в блоке
                 if (!cancelled) setIsLoadFailed(true);
             })
             .finally(() => {
@@ -76,21 +75,19 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
         };
     }, [query, onMessage]);
 
-    const save = async (partnerId) => {
-        if (partnerId === null && !window.confirm("Отвязать клиента от партнёра?")) return;
+    const save = async ({ changedBy, reason }) => {
+        const { partnerId } = pendingChange;
+        setPendingChange(null);
         setIsSaving(true);
         try {
-            const { data } = await api.post("/setClientPartner", { clientId, partnerId });
+            const { data } = await api.post("/setClientPartner", { clientId, partnerId, changedBy, reason });
             setPartner(data.partner);
+            setIsLoadFailed(false);
             setQuery("");
             setResults([]);
-            setPendingPartner(null);
-            if (partnerId) {
-                onMessage(...bindingMessage(data.bonuses));
-                if (data.bonuses?.clientBonus > 0) onClientUpdated?.();
-            } else {
-                onMessage("Клиент отвязан от партнёра", "success");
-            }
+            onMessage(...(partnerId ? bindingMessage(data.bonuses) : ["Клиент отвязан от партнёра", "success"]));
+            // Баланс (бонус) и журнал операций изменились
+            onClientUpdated?.();
         } catch (error) {
             onMessage(error?.response?.data?.message || "Не удалось изменить партнёра", "error");
         } finally {
@@ -98,36 +95,28 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
         }
     };
 
-    const confirmBinding = () => {
-        if (secretCode !== process.env.REACT_APP_SECRET_CODE) {
-            onMessage("Неверный код", "error");
-            setSecretCode("");
-            return;
-        }
-        setSecretCode("");
-        save(pendingPartner.id);
-    };
-
-    const cancelBinding = () => {
-        setPendingPartner(null);
-        setSecretCode("");
-    };
-
-    if (!isLoaded || isLoadFailed) return null;
+    if (!isLoaded) return null;
 
     return (
         <>
             <Div />
+            {pendingChange && (
+                <ConfirmChangeModal title={pendingChange.title} onConfirm={save} onCancel={() => setPendingChange(null)} />
+            )}
             <Div>Партнёр (приложение «Тибетская Партнёр»):</Div>
             <Li>
                 <div className="flex items-center gap-x-3 flex-wrap">
                     {partner ? (
                         <>
                             <div className="text-red">{partnerLabel(partner)}</div>
-                            {!isSaving && <MyButton click={() => save(null)}>Отвязать</MyButton>}
+                            {!isSaving && (
+                                <MyButton click={() => setPendingChange({ partnerId: null, title: "Отвязать клиента от партнёра" })}>
+                                    Отвязать
+                                </MyButton>
+                            )}
                         </>
                     ) : (
-                        <div>Не привязан</div>
+                        <div>{isLoadFailed ? "Не удалось загрузить партнёра — обновите страницу" : "Не привязан"}</div>
                     )}
                 </div>
             </Li>
@@ -143,16 +132,10 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
                     {results.map((item) => (
                         <div key={item.id} className="flex items-center gap-x-3 flex-wrap">
                             <div>{partnerLabel(item)}</div>
-                            {item.id !== partner?.id && !isSaving && pendingPartner?.id !== item.id && (
-                                <MyButton click={() => setPendingPartner(item)}>Привязать</MyButton>
-                            )}
-                            {pendingPartner?.id === item.id && !isSaving && (
-                                <div className="flex items-center gap-x-2 flex-wrap">
-                                    <span className="text-sm">Код подтверждения:</span>
-                                    <MyInput value={secretCode} change={(e) => setSecretCode(e.target.value)} color="white" />
-                                    <MyButton click={confirmBinding}>Подтвердить</MyButton>
-                                    <MyButton click={cancelBinding}>Отмена</MyButton>
-                                </div>
+                            {item.id !== partner?.id && !isSaving && (
+                                <MyButton click={() => setPendingChange({ partnerId: item.id, title: `Привязать к партнёру ${item.userName}` })}>
+                                    Привязать
+                                </MyButton>
                             )}
                         </div>
                     ))}

@@ -67,7 +67,7 @@ export const defaultLedgerRepository = {
             { $set: { partnerSignupBonusPaid: true }, $inc: { balance: amount } },
             { new: true }
         )
-            .select("_id")
+            .select("_id balance")
             .lean(),
     /** Атомарный переход статуса заявки на вывод: только из fromStatus, иначе null */
     updateWithdrawalStatus: (transactionId, fromStatus, update) =>
@@ -120,17 +120,17 @@ export async function applyPartnerReferralBonus({ partnerId, clientId, clientNam
  * Привязка клиента к партнёру в CRM — с теми же начислениями, что и регистрация по коду:
  * партнёру PARTNER_REFERRAL_BONUS (один раз на пару клиент–партнёр, с записью в журнале и push),
  * клиенту PARTNER_REFERRAL_CLIENT_BONUS (один раз за всё время). Прошлые доставки не пересчитываются.
- * @returns {Promise<{ partnerBonus: number, clientBonus: number }>}
+ * @returns {Promise<{ partnerBonus: number, clientBonus: number, clientBalance: number | null }>} clientBalance — после бонуса
  */
 export async function applyPartnerBindingBonuses({ partnerId, clientId, clientName }, repo = defaultLedgerRepository) {
     // Клиенты, зарегистрированные по коду до появления partnerSignupBonusPaid, видны только по журналу
     const hadReferralBonus = await repo.hasReferralBonus(clientId);
     const isPartnerCredited = await applyPartnerReferralBonus({ partnerId, clientId, clientName }, repo);
-    const isClientCredited =
-        !hadReferralBonus && Boolean(await repo.creditClientSignupBonus(clientId, PARTNER_REFERRAL_CLIENT_BONUS));
+    const credited = hadReferralBonus ? null : await repo.creditClientSignupBonus(clientId, PARTNER_REFERRAL_CLIENT_BONUS);
     return {
         partnerBonus: isPartnerCredited ? PARTNER_REFERRAL_BONUS : 0,
-        clientBonus: isClientCredited ? PARTNER_REFERRAL_CLIENT_BONUS : 0,
+        clientBonus: credited ? PARTNER_REFERRAL_CLIENT_BONUS : 0,
+        clientBalance: credited?.balance ?? null,
     };
 }
 

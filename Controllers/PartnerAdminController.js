@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import Client from "../Models/Client.js";
+import ClientOperationLog from "../Models/ClientOperationLog.js";
 import Partner from "../Models/Partner.js";
+import { CHANGE_AUTHOR_REQUIRED_MESSAGE, readChangeAuthor } from "../utils/changeAuthor.js";
 import { applyPartnerBindingBonuses } from "../utils/partnerLedger.js";
 
 /**
@@ -40,8 +42,11 @@ const defaultRepo = {
             .select("userName phone referralCode status")
             .limit(SEARCH_LIMIT)
             .lean(),
-    findClientPartnerId: async (clientId) =>
-        (await Client.findById(clientId).select("referredByPartner").lean())?.referredByPartner ?? undefined,
+    /** null — клиента нет; { partnerId: null } — клиент без партнёра (в т.ч. без поля в старых документах) */
+    findClientPartnerId: async (clientId) => {
+        const client = await Client.findById(clientId).select("referredByPartner").lean();
+        return client ? { partnerId: client.referredByPartner ?? null } : null;
+    },
     findPartner: (partnerId) => Partner.findById(partnerId).select("userName phone referralCode status").lean(),
     setClientPartner: (clientId, partnerId) =>
         Client.findByIdAndUpdate(
@@ -49,7 +54,11 @@ const defaultRepo = {
             { referredByPartner: partnerId, partnerLapseNotifiedDay: null },
             { new: true }
         ).select("_id userName referredByPartner").lean(),
+    logOperation: (entry) => ClientOperationLog.create(entry),
 };
+
+/** Партнёр в журнале операций клиента: «Алия · ABCD-EFGH-IJKL» */
+const partnerLogLabel = (partner) => (partner ? `${partner.userName} · ${partner.referralCode}` : "нет");
 
 const NO_BONUSES = Object.freeze({ partnerBonus: 0, clientBonus: 0 });
 
@@ -77,9 +86,9 @@ export function createPartnerAdminController({
         const { clientId } = req.body ?? {};
         if (!isId(clientId)) return fail(res, 400, "Некорректный клиент");
         try {
-            const partnerId = await repo.findClientPartnerId(clientId);
-            if (partnerId === undefined) return fail(res, 404, "Клиент не найден");
-            const partner = partnerId ? await repo.findPartner(partnerId) : null;
+            const found = await repo.findClientPartnerId(clientId);
+            if (!found) return fail(res, 404, "Клиент не найден");
+            const partner = found.partnerId ? await repo.findPartner(found.partnerId) : null;
             return res.status(200).json({ success: true, partner: partner ? serializePartnerForAdmin(partner) : null });
         } catch (error) {
             logger.error("[Partner admin] getClientPartnerAdmin:", error?.message || error);
@@ -92,13 +101,21 @@ export function createPartnerAdminController({
         const { clientId, partnerId } = req.body ?? {};
         if (!isId(clientId)) return fail(res, 400, "Некорректный клиент");
         if (partnerId !== null && !isId(partnerId)) return fail(res, 400, "Некорректный партнёр");
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
         try {
             const partner = partnerId ? await repo.findPartner(partnerId) : null;
             if (partnerId && !partner) return fail(res, 404, "Партнёр не найден");
+            const previous = await repo.findClientPartnerId(clientId);
+            if (!previous) return fail(res, 404, "Клиент не найден");
+            const previousPartner = previous.partnerId ? await repo.findPartner(String(previous.partnerId)) : null;
             const client = await repo.setClientPartner(clientId, partnerId);
             if (!client) return fail(res, 404, "Клиент не найден");
-            logger.log(`[Partner admin] клиент ${clientId} → партнёр ${partnerId ?? "нет"} (пользователь ${req.userId})`);
+            logger.log(
+                `[Partner admin] клиент ${clientId} → партнёр ${partnerId ?? "нет"} (пользователь ${req.userId}, ${author.changedBy}: ${author.reason})`
+            );
             const bonuses = partner ? await applyBindingBonuses(partner, client) : NO_BONUSES;
+            await writeOperationLog(clientId, author, { previousPartner, partner, bonuses });
             return res.status(200).json({
                 success: true,
                 partner: partner ? serializePartnerForAdmin(partner) : null,
@@ -107,6 +124,28 @@ export function createPartnerAdminController({
         } catch (error) {
             logger.error("[Partner admin] setClientPartner:", error?.message || error);
             return fail(res, 500, "Не удалось изменить партнёра клиента");
+        }
+    }
+
+    /** Журнал операций клиента (как у баланса): смена партнёра и бонус клиенту. Сбой журнала не отменяет привязку */
+    async function writeOperationLog(clientId, author, { previousPartner, partner, bonuses }) {
+        const entries = [
+            { client: clientId, field: "partner", oldValue: partnerLogLabel(previousPartner), newValue: partnerLogLabel(partner), ...author },
+        ];
+        if (bonuses.clientBonus > 0 && bonuses.clientBalance != null) {
+            entries.push({
+                client: clientId,
+                field: "balance",
+                oldValue: bonuses.clientBalance - bonuses.clientBonus,
+                newValue: bonuses.clientBalance,
+                changedBy: author.changedBy,
+                reason: `Бонус за привязку к партнёру. ${author.reason}`,
+            });
+        }
+        try {
+            for (const entry of entries) await repo.logOperation(entry);
+        } catch (error) {
+            logger.error(`[Partner admin] журнал операций клиента ${clientId} не записан:`, error?.message || error);
         }
     }
 

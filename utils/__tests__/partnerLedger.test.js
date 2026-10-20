@@ -64,7 +64,7 @@ const createRepo = (initialBalance = 0) => {
             if (state.clientBonusPaid.has(clientId) || state.clientsReferredByClient.has(clientId)) return null;
             state.clientBonusPaid.add(clientId);
             state.clientBalance += amount;
-            return { _id: clientId };
+            return { _id: clientId, balance: state.clientBalance };
         },
     };
 };
@@ -243,6 +243,7 @@ describe("applyPartnerOrderBonus", () => {
 });
 
 describe("applyPartnerBindingBonuses", () => {
+    const bonusesOf = ({ partnerBonus, clientBonus }) => ({ partnerBonus, clientBonus });
     const bind = (repo, partnerId, clientId = "c1") =>
         applyPartnerBindingBonuses({ partnerId, clientId, clientName: "Марат Касымов" }, repo);
 
@@ -251,9 +252,10 @@ describe("applyPartnerBindingBonuses", () => {
 
         const result = await bind(repo, PARTNER_ID);
 
-        assert.deepEqual(result, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: PARTNER_REFERRAL_CLIENT_BONUS });
+        assert.deepEqual(bonusesOf(result), { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: PARTNER_REFERRAL_CLIENT_BONUS });
         assert.equal(repo.state.balance, PARTNER_REFERRAL_BONUS);
         assert.equal(repo.state.clientBalance, PARTNER_REFERRAL_CLIENT_BONUS);
+        assert.equal(result.clientBalance, PARTNER_REFERRAL_CLIENT_BONUS);
         assert.equal(repo.state.transactions[0].type, "referral_bonus");
         assert.equal(repo.state.pushes.length, 1);
     });
@@ -264,7 +266,7 @@ describe("applyPartnerBindingBonuses", () => {
 
         const again = await bind(repo, PARTNER_ID);
 
-        assert.deepEqual(again, { partnerBonus: 0, clientBonus: 0 });
+        assert.deepEqual(bonusesOf(again), { partnerBonus: 0, clientBonus: 0 });
         assert.equal(repo.state.transactions.length, 1);
     });
 
@@ -274,7 +276,7 @@ describe("applyPartnerBindingBonuses", () => {
 
         const second = await bind(repo, "p2");
 
-        assert.deepEqual(second, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
+        assert.deepEqual(bonusesOf(second), { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
         assert.equal(repo.state.clientBalance, PARTNER_REFERRAL_CLIENT_BONUS);
     });
 
@@ -284,7 +286,7 @@ describe("applyPartnerBindingBonuses", () => {
 
         const result = await bind(repo, PARTNER_ID);
 
-        assert.deepEqual(result, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
+        assert.deepEqual(bonusesOf(result), { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
     });
 
     test("a client invited by another client gets no partner client bonus", async () => {
@@ -293,7 +295,7 @@ describe("applyPartnerBindingBonuses", () => {
 
         const result = await bind(repo, PARTNER_ID);
 
-        assert.deepEqual(result, { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
+        assert.deepEqual(bonusesOf(result), { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 0 });
     });
 });
 

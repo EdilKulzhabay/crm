@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api";
 import ChooseClientModal from "../ChooseClientModal";
+import ConfirmChangeModal from "../ConfirmChangeModal";
 import Div from "../Div";
 import Li from "../Li";
 import MyButton from "../MyButton";
@@ -26,11 +27,15 @@ const bonusText = ({ partnerBonus = 0, clientBonus = 0, isFailed = false } = {})
 export default function PartnerClients({ partnerId, clients, role, onChanged, onMessage }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    /** { clientId, targetPartnerId, title } — ждёт кода и «кто / зачем» */
+    const [pendingChange, setPendingChange] = useState(null);
 
-    const setPartner = async (clientId, targetPartnerId) => {
+    const setPartner = async ({ changedBy, reason }) => {
+        const { clientId, targetPartnerId } = pendingChange;
+        setPendingChange(null);
         setIsSaving(true);
         try {
-            const { data } = await api.post("/setClientPartner", { clientId, partnerId: targetPartnerId });
+            const { data } = await api.post("/setClientPartner", { clientId, partnerId: targetPartnerId, changedBy, reason });
             onMessage(
                 targetPartnerId ? `Клиент привязан: ${bonusText(data.bonuses)}` : "Клиент отвязан",
                 data.bonuses?.isFailed ? "error" : "success"
@@ -45,20 +50,27 @@ export default function PartnerClients({ partnerId, clients, role, onChanged, on
 
     const bind = (client) => {
         setIsModalOpen(false);
-        const question =
-            `Привязать «${client.userName || client.fullName}» к партнёру? ` +
-            "Начислится бонус как при регистрации по коду. Если клиент привязан к другому партнёру — он будет перепривязан.";
-        if (window.confirm(question)) setPartner(client._id, partnerId);
+        setPendingChange({
+            clientId: client._id,
+            targetPartnerId: partnerId,
+            title:
+                `Привязать «${client.userName || client.fullName}» к партнёру? Начислится бонус как при регистрации по коду. ` +
+                "Если клиент привязан к другому партнёру — он будет перепривязан.",
+        });
     };
 
-    const unbind = (client) => {
-        if (window.confirm(`Отвязать «${client.name}» от партнёра? Начисленные бонусы не списываются.`)) {
-            setPartner(client.id, null);
-        }
-    };
+    const unbind = (client) =>
+        setPendingChange({
+            clientId: client.id,
+            targetPartnerId: null,
+            title: `Отвязать «${client.name}» от партнёра? Начисленные бонусы не списываются.`,
+        });
 
     return (
         <>
+            {pendingChange && (
+                <ConfirmChangeModal title={pendingChange.title} onConfirm={setPartner} onCancel={() => setPendingChange(null)} />
+            )}
             {isModalOpen && (
                 <ChooseClientModal closeClientsModal={() => setIsModalOpen(false)} chooseClient={bind} role={role} />
             )}

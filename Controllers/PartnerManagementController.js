@@ -3,6 +3,7 @@ import Client from "../Models/Client.js";
 import Partner, { PARTNER_STATUSES, PARTNER_VERIFICATION_STATUSES } from "../Models/Partner.js";
 import PartnerTransaction from "../Models/PartnerTransaction.js";
 import { buildPartnerSearchFilter } from "./PartnerAdminController.js";
+import { CHANGE_AUTHOR_REQUIRED_MESSAGE, readChangeAuthor } from "../utils/changeAuthor.js";
 import { getTodayAlmaty } from "../utils/dateUtils.js";
 import { loadClientsRhythm } from "../utils/partnerClientActivity.js";
 import { PartnerLedgerError, resolvePartnerWithdrawal } from "../utils/partnerLedger.js";
@@ -128,6 +129,7 @@ export function createPartnerManagementController({
 } = {}) {
     const fail = (res, status, message) => res.status(status).json({ success: false, message });
     const isId = (value) => typeof value === "string" && mongoose.isValidObjectId(value);
+    const describeAuthor = (req, { changedBy, reason }) => `пользователь ${req.userId}, ${changedBy}: ${reason}`;
 
     async function loadRows(partners, period) {
         const ids = partners.map((partner) => partner._id);
@@ -221,10 +223,12 @@ export function createPartnerManagementController({
         const { partnerId, status } = req.body ?? {};
         if (!isId(partnerId)) return fail(res, 400, "Некорректный партнёр");
         if (!PARTNER_STATUSES.includes(status)) return fail(res, 400, "Некорректный статус");
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
         try {
             const partner = await repo.setPartnerStatus(partnerId, status);
             if (!partner) return fail(res, 404, "Партнёр не найден");
-            logger.log(`[Partner management] партнёр ${partnerId} → ${status} (пользователь ${req.userId})`);
+            logger.log(`[Partner management] партнёр ${partnerId} → ${status} (${describeAuthor(req, author)})`);
             return res.status(200).json({ success: true, status: partner.status });
         } catch (error) {
             logger.error("[Partner management] setPartnerStatusAdmin:", error?.message || error);
@@ -240,6 +244,8 @@ export function createPartnerManagementController({
         if (!VERIFICATION_DECISIONS.includes(status)) return fail(res, 400, "Некорректный статус проверки");
         if (status === "denied" && !message) return fail(res, 400, "Укажите причину отказа");
         if (message.length > VERIFICATION_MESSAGE_MAX) return fail(res, 400, "Причина слишком длинная");
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
         try {
             const partner = await repo.setPartnerVerification(partnerId, {
                 status,
@@ -248,7 +254,7 @@ export function createPartnerManagementController({
                 resolvedBy: req.userId ?? null,
             });
             if (!partner) return fail(res, 404, "Партнёр не найден");
-            logger.log(`[Partner management] проверка партнёра ${partnerId} → ${status} (пользователь ${req.userId})`);
+            logger.log(`[Partner management] проверка партнёра ${partnerId} → ${status} (${describeAuthor(req, author)})`);
             void repo.notify(
                 partnerId,
                 status === "verified"
@@ -265,9 +271,11 @@ export function createPartnerManagementController({
     async function resolvePartnerWithdrawalAdmin(req, res) {
         const { transactionId, status } = req.body ?? {};
         if (!isId(transactionId)) return fail(res, 400, "Некорректная заявка");
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
         try {
             const transaction = await resolveWithdrawal({ transactionId, status, userId: req.userId });
-            logger.log(`[Partner management] заявка ${transactionId} → ${status} (пользователь ${req.userId})`);
+            logger.log(`[Partner management] заявка ${transactionId} → ${status} (${describeAuthor(req, author)})`);
             return res.status(200).json({ success: true, transaction: serializeTransaction(transaction) });
         } catch (error) {
             if (error instanceof PartnerLedgerError) {

@@ -19,6 +19,7 @@ import ClientPartnerBinding from "../Components/ClientPartnerBinding";
 
 const OPERATION_LOG_FIELD_LABELS = {
     balance: "Баланс",
+    partner: "Партнёр",
     paidBootlesFor12: "Оплаченные талоны 12-литровых бутылей",
     paidBootlesFor19: "Оплаченные талоны 19-литровых бутылей",
 };
@@ -1008,7 +1009,7 @@ export default function ClientPage() {
                         </div>
                     </Li>
                     <Li>
-                        <div>Журнал операций (баланс / талоны):</div>
+                        <div>Журнал операций (баланс / талоны / партнёр):</div>
                         <div className="flex flex-col gap-y-2 text-sm">
                             {operationLog.length === 0 && (
                                 <div className="text-gray-400">Изменений не было</div>
@@ -1648,7 +1649,14 @@ export default function ClientPage() {
                 </Li>
 
                 {userData?.role === "superAdmin" && (
-                    <ClientPartnerBinding clientId={id} onMessage={showPartnerMessage} onClientUpdated={getClientData} />
+                    <ClientPartnerBinding
+                        clientId={id}
+                        onMessage={showPartnerMessage}
+                        onClientUpdated={() => {
+                            getClientData();
+                            getOperationLog();
+                        }}
+                    />
                 )}
 
                 <Div />

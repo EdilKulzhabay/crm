@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../../api";
+import ConfirmChangeModal from "../../Components/ConfirmChangeModal";
 import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import Li from "../../Components/Li";
@@ -22,6 +23,7 @@ export default function SuperAdminPartnerPage() {
     const [period, setPeriod] = useState({ startDate: "", endDate: "" });
     const [details, setDetails] = useState(null);
     const [snack, setSnack] = useState({ text: "", status: "success" });
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
     const showMessage = useCallback((text, status) => setSnack({ text, status }), []);
 
@@ -35,14 +37,16 @@ export default function SuperAdminPartnerPage() {
         load();
     }, [load]);
 
-    const toggleStatus = async () => {
+    const toggleStatus = async ({ changedBy, reason }) => {
+        setIsStatusModalOpen(false);
         const isBlocking = details.partner.status === "active";
-        const question = isBlocking
-            ? "Заблокировать партнёра? Он не сможет войти в приложение и вывести деньги, его код перестанет работать при регистрации. Клиенты и история сохранятся."
-            : "Разблокировать партнёра?";
-        if (!window.confirm(question)) return;
         try {
-            await api.post("/setPartnerStatusAdmin", { partnerId: id, status: isBlocking ? "blocked" : "active" });
+            await api.post("/setPartnerStatusAdmin", {
+                partnerId: id,
+                status: isBlocking ? "blocked" : "active",
+                changedBy,
+                reason,
+            });
             showMessage(isBlocking ? "Партнёр заблокирован" : "Партнёр разблокирован", "success");
             load();
         } catch (e) {
@@ -73,6 +77,17 @@ export default function SuperAdminPartnerPage() {
 
     return (
         <Container role={userData?.role}>
+            {isStatusModalOpen && (
+                <ConfirmChangeModal
+                    title={
+                        isBlocked
+                            ? "Разблокировать партнёра?"
+                            : "Заблокировать партнёра? Он не сможет войти и вывести деньги, его код перестанет работать. Клиенты и история сохранятся."
+                    }
+                    onConfirm={toggleStatus}
+                    onCancel={() => setIsStatusModalOpen(false)}
+                />
+            )}
             <Div>
                 <LinkButton href="/superAdminPartners">Все партнёры</LinkButton>
             </Div>
@@ -85,7 +100,7 @@ export default function SuperAdminPartnerPage() {
                     <span className={isBlocked ? "text-red" : "text-green-400"}>
                         {PARTNER_STATUS_LABELS[partner.status] ?? partner.status}
                     </span>
-                    <button className={isBlocked ? "text-green-400 hover:text-blue-500" : "text-red hover:text-blue-500"} onClick={toggleStatus}>
+                    <button className={isBlocked ? "text-green-400 hover:text-blue-500" : "text-red hover:text-blue-500"} onClick={() => setIsStatusModalOpen(true)}>
                         [ {isBlocked ? "Разблокировать" : "Заблокировать"} ]
                     </button>
                 </div>

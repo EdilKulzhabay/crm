@@ -2,6 +2,7 @@ import { useState } from "react";
 import api from "../../api";
 import Div from "../Div";
 import Li from "../Li";
+import ConfirmChangeModal from "../ConfirmChangeModal";
 import MyButton from "../MyButton";
 import { formatDateTime, formatTenge } from "./partnerFormat";
 
@@ -14,16 +15,20 @@ const payoutOf = (withdrawal) => withdrawal.payoutAmount ?? Math.abs(withdrawal.
  */
 export default function PartnerWithdrawals({ withdrawals, onResolved, onMessage }) {
     const [busyId, setBusyId] = useState(null);
+    /** { withdrawal, status } — ждёт кода и «кто / зачем» */
+    const [pending, setPending] = useState(null);
 
-    const resolve = async (withdrawal, status) => {
-        const question =
-            status === "paid"
-                ? `Подтвердить, что ${formatTenge(payoutOf(withdrawal))} переведены на счёт партнёра?`
-                : `Отклонить заявку? ${formatTenge(Math.abs(withdrawal.amount))} вернутся на баланс партнёра.`;
-        if (!window.confirm(question)) return;
+    const questionFor = ({ withdrawal, status }) =>
+        status === "paid"
+            ? `Подтвердить, что ${formatTenge(payoutOf(withdrawal))} переведены на счёт партнёра?`
+            : `Отклонить заявку? ${formatTenge(Math.abs(withdrawal.amount))} вернутся на баланс партнёра.`;
+
+    const resolve = async ({ changedBy, reason }) => {
+        const { withdrawal, status } = pending;
+        setPending(null);
         setBusyId(withdrawal.id);
         try {
-            await api.post("/resolvePartnerWithdrawalAdmin", { transactionId: withdrawal.id, status });
+            await api.post("/resolvePartnerWithdrawalAdmin", { transactionId: withdrawal.id, status, changedBy, reason });
             onMessage(status === "paid" ? "Заявка отмечена выплаченной" : "Заявка отклонена, сумма возвращена", "success");
             onResolved();
         } catch (error) {
@@ -35,7 +40,10 @@ export default function PartnerWithdrawals({ withdrawals, onResolved, onMessage 
 
     if (withdrawals.length === 0) return <Li>Заявок нет</Li>;
 
-    return withdrawals.map((withdrawal) => (
+    return (
+        <>
+            {pending && <ConfirmChangeModal title={questionFor(pending)} onConfirm={resolve} onCancel={() => setPending(null)} />}
+            {withdrawals.map((withdrawal) => (
         <Div key={withdrawal.id}>
             <div className="flex flex-col gap-y-1 border border-yellow-400/50 p-3">
                 <div className="text-yellow-400">
@@ -51,13 +59,15 @@ export default function PartnerWithdrawals({ withdrawals, onResolved, onMessage 
                 <div className="text-sm">ФИО: {withdrawal.cardData?.fullName || "—"}</div>
                 {busyId !== withdrawal.id && (
                     <div className="flex gap-x-4">
-                        <MyButton click={() => resolve(withdrawal, "paid")}>Выплачено</MyButton>
-                        <button className="text-red hover:text-blue-500" onClick={() => resolve(withdrawal, "rejected")}>
+                        <MyButton click={() => setPending({ withdrawal, status: "paid" })}>Выплачено</MyButton>
+                        <button className="text-red hover:text-blue-500" onClick={() => setPending({ withdrawal, status: "rejected" })}>
                             [ Отклонить ]
                         </button>
                     </div>
                 )}
             </div>
         </Div>
-    ));
+    ))}
+        </>
+    );
 }
