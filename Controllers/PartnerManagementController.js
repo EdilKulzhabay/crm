@@ -120,6 +120,7 @@ const serializeClient = (client, rhythm) => ({
     hasActiveOrder: rhythm?.hasActiveOrder ?? false,
     lastOrderDay: rhythm?.lastOrderDay ?? null,
     intervalDays: rhythm?.intervalDays ?? null,
+    rhythmDays: rhythm?.rhythmDays ?? [],
     isLapsed: rhythm?.isLapsed ?? false,
 });
 

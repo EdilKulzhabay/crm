@@ -26,13 +26,14 @@ export function clientRhythm(deliveredDays, today, hasActiveOrder = false) {
     const daysSinceLast = lastOrderDay ? dayOrdinal(today) - dayOrdinal(lastOrderDay) : null;
 
     if (days.length < RHYTHM_ORDERS) {
-        return { lastOrderDay, daysSinceLast, intervalDays: null, isLapsed: false, hasActiveOrder };
+        return { lastOrderDay, daysSinceLast, intervalDays: null, isLapsed: false, hasActiveOrder, rhythmDays: days };
     }
     const intervals = days.slice(1).map((day, i) => dayOrdinal(days[i]) - dayOrdinal(day));
     // Среднее с округлением вверх: при интервалах 3 и 4 дня ждём 4, а не 3
     const intervalDays = Math.ceil(intervals.reduce((sum, value) => sum + value, 0) / intervals.length);
     const isLapsed = !hasActiveOrder && intervalDays > 0 && daysSinceLast > intervalDays;
-    return { lastOrderDay, daysSinceLast, intervalDays, isLapsed, hasActiveOrder };
+    // rhythmDays — по каким дням доставки посчитан ритм (видно в CRM для проверки)
+    return { lastOrderDay, daysSinceLast, intervalDays, isLapsed, hasActiveOrder, rhythmDays: days };
 }
 
 /**
@@ -52,11 +53,19 @@ export async function loadClientsRhythm(clientIds, today) {
         {
             $group: {
                 _id: "$client",
-                delivered: { $push: { $cond: [{ $eq: ["$status", "delivered"] }, "$date.d", "$$REMOVE"] } },
+                delivered: { $push: { $cond: [{ $eq: ["$status", "delivered"] }, "$date.d", null] } },
                 activeCount: { $sum: { $cond: [{ $in: ["$status", ACTIVE_ORDER_STATUSES] }, 1, 0] } },
             },
         },
-        { $project: { activeCount: 1, delivered: { $slice: ["$delivered", RECENT_DELIVERY_DAYS] } } },
+        // null — недоставленные заказы; убираем явно, до среза
+        {
+            $project: {
+                activeCount: 1,
+                delivered: {
+                    $slice: [{ $filter: { input: "$delivered", cond: { $ne: ["$$this", null] } } }, RECENT_DELIVERY_DAYS],
+                },
+            },
+        },
     ]).allowDiskUse(true);
     const result = new Map();
     for (const row of rows) {

@@ -4,6 +4,21 @@ import { clientRhythm, shiftDay } from "../partnerClientActivity.js";
 import { checkPartnerClientLapses } from "../partnerLapseCheck.js";
 
 describe("clientRhythm", () => {
+    test("orders on Oct 5, 10 and 14 give a 5-day rhythm and lapse after the 19th", () => {
+        const rhythm = clientRhythm(["2026-10-14", "2026-10-10", "2026-10-05"], "2026-10-19");
+
+        assert.equal(rhythm.intervalDays, 5);
+        assert.equal(rhythm.isLapsed, false);
+        assert.deepEqual(rhythm.rhythmDays, ["2026-10-14", "2026-10-10", "2026-10-05"]);
+        assert.equal(clientRhythm(["2026-10-14", "2026-10-10", "2026-10-05"], "2026-10-20").isLapsed, true);
+    });
+
+    test("only the three latest delivery days count, older history is ignored", () => {
+        const rhythm = clientRhythm(["2026-01-01", "2026-06-01", "2026-10-05", "2026-10-10", "2026-10-14"], "2026-10-16");
+
+        assert.equal(rhythm.intervalDays, 5);
+    });
+
     test("Абай orders every 3 days and has not ordered for 4 days → lapsed", () => {
         const rhythm = clientRhythm(["2026-10-01", "2026-10-04", "2026-10-07"], "2026-10-11");
 
@@ -13,6 +28,7 @@ describe("clientRhythm", () => {
             intervalDays: 3,
             isLapsed: true,
             hasActiveOrder: false,
+            rhythmDays: ["2026-10-07", "2026-10-04", "2026-10-01"],
         });
     });
 

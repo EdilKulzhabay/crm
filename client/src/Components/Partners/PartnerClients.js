@@ -89,7 +89,9 @@ export default function PartnerClients({ partnerId, clients, role, onChanged, on
                             <span className="text-sm opacity-70">{client.phone}</span>
                             <span className="text-sm opacity-70">с {formatDate(client.registeredAt)}</span>
                             <span className={`text-sm ${className}`}>{label}</span>
-                            {client.lastOrderDay && <span className="text-sm opacity-70">последний: {client.lastOrderDay}</span>}
+                            {client.rhythmDays?.length > 0 && (
+                                <span className="text-sm opacity-70">доставки: {client.rhythmDays.join(", ")}</span>
+                            )}
                             {!isSaving && (
                                 <button className="text-sm text-red hover:text-blue-500" onClick={() => unbind(client)}>
                                     [ Отвязать ]
