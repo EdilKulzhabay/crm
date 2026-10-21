@@ -194,6 +194,7 @@ export async function applyPartnerOrderBonus(orderId, repo = defaultLedgerReposi
             await repo.deleteTransaction(transaction._id).catch(() => undefined);
             throw error;
         }
+        logger.log?.(`[Partner order bonus] заказ ${orderId}: +${amount} ₸ партнёру ${client.referredByPartner}`);
         void repo.notify(client.referredByPartner, {
             title: `Клиент получил заказ: +${amount} ₸`,
             body: `${clientName}: ${bottles} бут. Бонус уже на балансе.`,

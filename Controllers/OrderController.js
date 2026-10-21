@@ -501,12 +501,13 @@ export const updateOrder = async (req, res) => {
                     await Order.updateOne({_id: orderId}, { $set: { deliveredTime: new Date() } })
                     const { applyReferrerBonusOnFirstDeliveredOrder } = await import("../utils/referralRewards.js");
                     await applyReferrerBonusOnFirstDeliveredOrder(order.client);
-                    // Партнёру — 200 ₸ за бутыль (сам ловит свои ошибки)
-                    const { applyPartnerOrderBonus } = await import("../utils/partnerLedger.js");
-                    await applyPartnerOrderBonus(order._id);
                 } catch (refErr) {
                     console.error("Реферальный бонус (не критично):", refErr);
                 }
+                // Отдельно от реферального бонуса: его сбой не должен оставить партнёра без начисления и push.
+                // Бонус партнёру за бутыли + push «Клиент получил заказ» (сам ловит и логирует свои ошибки)
+                const { applyPartnerOrderBonus } = await import("../utils/partnerLedger.js");
+                await applyPartnerOrderBonus(order._id);
 
                 try {
                     const { sendFirstPurchaseIfApplicable } = await import("../utils/metaConversionsApi.js");
