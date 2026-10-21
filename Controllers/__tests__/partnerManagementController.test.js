@@ -40,6 +40,7 @@ describe("PartnerManagementController", () => {
                 notify: async (id, message) => calls.pushes.push(message),
                 setPartnerStatus: async (id, status) => (calls.statuses.push(status), id === PARTNER_ID ? { status } : null),
             },
+            runLapseCheck: async () => 3,
             resolveWithdrawal: async ({ status }) => {
                 if (status === "again") throw new PartnerLedgerError("NOT_PENDING", "уже обработана");
                 return { _id: TX_ID, type: "withdrawal", amount: -200, status };
@@ -125,6 +126,14 @@ describe("PartnerManagementController", () => {
         assert.deepEqual([noReason.statusCode, invalid.statusCode], [400, 400]);
         assert.equal(denied.body.verificationMessage, "Нет фото");
         assert.deepEqual(calls.pushes.map((push) => push.title), ["Аккаунт подтверждён", "Проверка не пройдена"]);
+    });
+
+    test("manual lapse check requires who and why and reports sent notifications", async () => {
+        const missing = await call("runPartnerLapseCheckAdmin", { changedBy: "" });
+        const ok = await call("runPartnerLapseCheckAdmin", {});
+
+        assert.equal(missing.statusCode, 400);
+        assert.equal(ok.body.notified, 3);
     });
 
     test("resolving a withdrawal twice answers 409", async () => {

@@ -7,6 +7,7 @@ import { CHANGE_AUTHOR_REQUIRED_MESSAGE, readChangeAuthor } from "../utils/chang
 import { getTodayAlmaty } from "../utils/dateUtils.js";
 import { loadClientsRhythm } from "../utils/partnerClientActivity.js";
 import { PartnerLedgerError, resolvePartnerWithdrawal } from "../utils/partnerLedger.js";
+import { runPartnerLapseCheck } from "../utils/partnerLapseCheck.js";
 import { sendPartnerPush } from "../utils/partnerPush.js";
 import {
     ALMATY_OFFSET,
@@ -125,6 +126,7 @@ const serializeClient = (client, rhythm) => ({
 export function createPartnerManagementController({
     repo = defaultRepo,
     resolveWithdrawal = resolvePartnerWithdrawal,
+    runLapseCheck = runPartnerLapseCheck,
     logger = console,
 } = {}) {
     const fail = (res, status, message) => res.status(status).json({ success: false, message });
@@ -268,6 +270,20 @@ export function createPartnerManagementController({
         }
     }
 
+    /** Ручной запуск ежедневной проверки ритма (utils/partnerLapseCheck.js) — та же логика, что в cron 11:00 */
+    async function runPartnerLapseCheckAdmin(req, res) {
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
+        try {
+            const notified = await runLapseCheck();
+            logger.log(`[Partner management] ручная проверка ритма: уведомлений ${notified} (${describeAuthor(req, author)})`);
+            return res.status(200).json({ success: true, notified });
+        } catch (error) {
+            logger.error("[Partner management] runPartnerLapseCheckAdmin:", error?.message || error);
+            return fail(res, 500, "Не удалось выполнить проверку");
+        }
+    }
+
     async function resolvePartnerWithdrawalAdmin(req, res) {
         const { transactionId, status } = req.body ?? {};
         if (!isId(transactionId)) return fail(res, 400, "Некорректная заявка");
@@ -292,6 +308,7 @@ export function createPartnerManagementController({
         setPartnerStatusAdmin,
         setPartnerVerificationAdmin,
         resolvePartnerWithdrawalAdmin,
+        runPartnerLapseCheckAdmin,
     };
 }
 
@@ -301,4 +318,5 @@ export const {
     setPartnerStatusAdmin,
     setPartnerVerificationAdmin,
     resolvePartnerWithdrawalAdmin,
+    runPartnerLapseCheckAdmin,
 } = createPartnerManagementController();

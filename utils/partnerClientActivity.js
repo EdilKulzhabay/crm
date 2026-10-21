@@ -2,8 +2,8 @@ import Order from "../Models/Order.js";
 
 /** Ритм заказов считается по последним RHYTHM_ORDERS доставленным заказам (два интервала) */
 export const RHYTHM_ORDERS = 3;
-/** Насколько далеко в прошлое смотреть: старше — ритм уже не актуален */
-export const ACTIVITY_WINDOW_DAYS = 180;
+/** Сколько последних дней доставки берём из БД: с запасом на несколько заказов в один день */
+const RECENT_DELIVERY_DAYS = 10;
 const ACTIVE_ORDER_STATUSES = ["awaitingOrder", "onTheWay"];
 const MS_PER_DAY = 86400000;
 
@@ -37,30 +37,27 @@ export function clientRhythm(deliveredDays, today, hasActiveOrder = false) {
 
 /**
  * Ритм для набора клиентов одним агрегирующим запросом (без N+1).
- * Клиент есть в результате, если у него есть хотя бы один неотменённый заказ за окно — в том числе
- * ещё не доставленный: партнёр видит заказ сразу после оформления, а не только после доставки.
- * Использует индекс Order { client: 1, "date.d": -1 }.
+ * Берутся последние доставленные заказы клиента без ограничения давности — ритм всегда строится
+ * по RHYTHM_ORDERS последним доставкам. Клиент есть в результате, если у него есть хотя бы
+ * один неотменённый заказ — в том числе ещё не доставленный: партнёр видит заказ сразу после оформления.
+ * Сортировка идёт по индексу Order { client: 1, "date.d": -1 }.
  * @returns {Promise<Map<string, ReturnType<typeof clientRhythm>>>}
  */
 export async function loadClientsRhythm(clientIds, today) {
     if (clientIds.length === 0) return new Map();
-    const since = shiftDay(today, -ACTIVITY_WINDOW_DAYS);
     const rows = await Order.aggregate([
-        {
-            $match: {
-                client: { $in: clientIds },
-                status: { $in: ["delivered", ...ACTIVE_ORDER_STATUSES] },
-                "date.d": { $gte: since },
-            },
-        },
+        { $match: { client: { $in: clientIds }, status: { $in: ["delivered", ...ACTIVE_ORDER_STATUSES] } } },
+        // $push в $group сохраняет порядок после $sort: дни доставки — от новых к старым
+        { $sort: { client: 1, "date.d": -1 } },
         {
             $group: {
                 _id: "$client",
-                delivered: { $push: { $cond: [{ $eq: ["$status", "delivered"] }, "$date.d", null] } },
+                delivered: { $push: { $cond: [{ $eq: ["$status", "delivered"] }, "$date.d", "$$REMOVE"] } },
                 activeCount: { $sum: { $cond: [{ $in: ["$status", ACTIVE_ORDER_STATUSES] }, 1, 0] } },
             },
         },
-    ]);
+        { $project: { activeCount: 1, delivered: { $slice: ["$delivered", RECENT_DELIVERY_DAYS] } } },
+    ]).allowDiskUse(true);
     const result = new Map();
     for (const row of rows) {
         result.set(String(row._id), clientRhythm(row.delivered, today, row.activeCount > 0));

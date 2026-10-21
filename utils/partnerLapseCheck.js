@@ -48,11 +48,25 @@ export async function checkPartnerClientLapses(deps = defaultDeps) {
     return notified;
 }
 
+let runningCheck = null;
+
+/**
+ * Запуск без параллельных копий (cron и кнопка в CRM): пока проверка идёт, второй вызов
+ * получает тот же результат, а не рассылает уведомления повторно.
+ * @returns {Promise<number>} сколько уведомлений отправлено
+ */
+export function runPartnerLapseCheck(deps = defaultDeps) {
+    runningCheck ??= checkPartnerClientLapses(deps).finally(() => {
+        runningCheck = null;
+    });
+    return runningCheck;
+}
+
 export function startPartnerLapseCheck() {
     cron.schedule(
         CHECK_CRON_EXPRESSION,
         () => {
-            checkPartnerClientLapses().catch((error) =>
+            runPartnerLapseCheck().catch((error) =>
                 console.error("[partnerLapseCheck] ошибка проверки:", error?.message || error)
             );
         },

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api";
+import ConfirmChangeModal from "../../Components/ConfirmChangeModal";
 import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import LinkButton from "../../Components/LinkButton";
@@ -50,6 +51,27 @@ export default function SuperAdminPartners() {
     const [period, setPeriod] = useState({ startDate: "", endDate: "" });
     const [data, setData] = useState(null);
     const [error, setError] = useState("");
+    const [notice, setNotice] = useState("");
+    const [isLapseModalOpen, setIsLapseModalOpen] = useState(false);
+    const [isLapseRunning, setIsLapseRunning] = useState(false);
+
+    /** Та же проверка ритма, что ежедневно в 11:00: за один перерыв клиента партнёр получает одно уведомление */
+    const runLapseCheck = async ({ changedBy, reason }) => {
+        setIsLapseModalOpen(false);
+        setIsLapseRunning(true);
+        try {
+            const { data: response } = await api.post("/runPartnerLapseCheckAdmin", { changedBy, reason });
+            setNotice(
+                response.notified > 0
+                    ? `Проверка выполнена: отправлено уведомлений — ${response.notified}`
+                    : "Проверка выполнена: новых перерывов нет, уведомления не отправлялись"
+            );
+        } catch (e) {
+            setError(e?.response?.data?.message || "Не удалось выполнить проверку");
+        } finally {
+            setIsLapseRunning(false);
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -79,7 +101,26 @@ export default function SuperAdminPartners() {
 
     return (
         <Container role={userData?.role}>
+            {isLapseModalOpen && (
+                <ConfirmChangeModal
+                    title="Запустить проверку ритма заказов? Партнёры получат уведомления о клиентах, которые перестали заказывать."
+                    onConfirm={runLapseCheck}
+                    onCancel={() => setIsLapseModalOpen(false)}
+                />
+            )}
             <Div>Партнёры (приложение «Тибетская Партнёр»)</Div>
+            <Div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    {isLapseRunning ? (
+                        <span className="opacity-70">Проверка ритма выполняется…</span>
+                    ) : (
+                        <button className="text-green-400 hover:text-blue-500" onClick={() => setIsLapseModalOpen(true)}>
+                            [ Проверить ритм клиентов сейчас ]
+                        </button>
+                    )}
+                    <span className="text-sm opacity-70">Автоматически — каждый день в 11:00</span>
+                </div>
+            </Div>
             <Div />
             <Div>
                 <PartnerPeriodFilter period={period} onChange={setPeriod} />
@@ -115,6 +156,7 @@ export default function SuperAdminPartners() {
             {data && <PartnersTable partners={data.partners} />}
             {data?.isTruncated && <Div>Показаны первые 500 партнёров — уточните поиск.</Div>}
             <MySnackBar open={Boolean(error)} status="error" text={error} close={() => setError("")} />
+            <MySnackBar open={Boolean(notice)} status="success" text={notice} close={() => setNotice("")} />
         </Container>
     );
 }

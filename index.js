@@ -437,6 +437,7 @@ app.post("/getPartnerDetailsAdmin", checkAuth, requireSuperAdmin, PartnerManagem
 app.post("/setPartnerStatusAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerStatusAdmin);
 app.post("/resolvePartnerWithdrawalAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.resolvePartnerWithdrawalAdmin);
 app.post("/setPartnerVerificationAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerVerificationAdmin);
+app.post("/runPartnerLapseCheckAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.runPartnerLapseCheckAdmin);
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)
