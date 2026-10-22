@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Client from "../Models/Client.js";
-import Partner, { PARTNER_STATUSES, PARTNER_VERIFICATION_STATUSES } from "../Models/Partner.js";
+import Partner, { ADMIN_SETTABLE_PARTNER_STATUSES, PARTNER_STATUSES, PARTNER_VERIFICATION_STATUSES } from "../Models/Partner.js";
 import PartnerTransaction from "../Models/PartnerTransaction.js";
 import { buildPartnerSearchFilter } from "./PartnerAdminController.js";
 import { CHANGE_AUTHOR_REQUIRED_MESSAGE, readChangeAuthor } from "../utils/changeAuthor.js";
@@ -31,6 +31,9 @@ const TRANSACTIONS_LIMIT = 200;
 const SEARCH_MIN_LENGTH = 2;
 const PARTNER_LIST_FIELDS = "userName phone referralCode status verification balance createdAt lastLoginAt";
 const VERIFICATION_MESSAGE_MAX = 500;
+/** Лимиты push-уведомления от администратора: заголовок и текст видны целиком на экране блокировки */
+const PUSH_TITLE_MAX = 100;
+const PUSH_BODY_MAX = 500;
 const VERIFICATION_DECISIONS = Object.freeze(["verified", "denied"]);
 
 /** Фильтр по проверке: у партнёров без поля verification статус считается waiting */
@@ -225,7 +228,7 @@ export function createPartnerManagementController({
     async function setPartnerStatusAdmin(req, res) {
         const { partnerId, status } = req.body ?? {};
         if (!isId(partnerId)) return fail(res, 400, "Некорректный партнёр");
-        if (!PARTNER_STATUSES.includes(status)) return fail(res, 400, "Некорректный статус");
+        if (!ADMIN_SETTABLE_PARTNER_STATUSES.includes(status)) return fail(res, 400, "Некорректный статус");
         const author = readChangeAuthor(req.body);
         if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
         try {
@@ -271,6 +274,36 @@ export function createPartnerManagementController({
         }
     }
 
+    /**
+     * Произвольное push-уведомление партнёру от администратора (без страницы в CRM — вызывается через API).
+     * Отвечает числом устройств, на которые Expo принял уведомление: 0 — у партнёра нет зарегистрированных устройств.
+     */
+    async function sendPartnerNotificationAdmin(req, res) {
+        const { partnerId } = req.body ?? {};
+        const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+        const body = typeof req.body?.body === "string" ? req.body.body.trim() : "";
+        if (!isId(partnerId)) return fail(res, 400, "Некорректный партнёр");
+        if (!title || title.length > PUSH_TITLE_MAX) return fail(res, 400, `Заголовок — от 1 до ${PUSH_TITLE_MAX} символов`);
+        if (!body || body.length > PUSH_BODY_MAX) return fail(res, 400, `Текст — от 1 до ${PUSH_BODY_MAX} символов`);
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
+        try {
+            const partner = await repo.findPartner(partnerId);
+            if (!partner) return fail(res, 404, "Партнёр не найден");
+            if (partner.status !== "active") return fail(res, 409, "Партнёр заблокирован или удалил аккаунт");
+            const { sent } = await repo.notify(partnerId, { title, body, data: { type: "admin_message" } });
+            logger.log(`[Partner management] уведомление партнёру ${partnerId}, устройств: ${sent} (${describeAuthor(req, author)})`);
+            return res.status(200).json({
+                success: true,
+                sent,
+                message: sent > 0 ? "Уведомление отправлено" : "У партнёра нет устройств с включёнными уведомлениями",
+            });
+        } catch (error) {
+            logger.error("[Partner management] sendPartnerNotificationAdmin:", error?.message || error);
+            return fail(res, 500, "Не удалось отправить уведомление");
+        }
+    }
+
     /** Ручной запуск ежедневной проверки ритма (utils/partnerLapseCheck.js) — та же логика, что в cron 11:00 */
     async function runPartnerLapseCheckAdmin(req, res) {
         const author = readChangeAuthor(req.body);
@@ -310,6 +343,7 @@ export function createPartnerManagementController({
         setPartnerVerificationAdmin,
         resolvePartnerWithdrawalAdmin,
         runPartnerLapseCheckAdmin,
+        sendPartnerNotificationAdmin,
     };
 }
 
@@ -320,4 +354,5 @@ export const {
     setPartnerVerificationAdmin,
     resolvePartnerWithdrawalAdmin,
     runPartnerLapseCheckAdmin,
+    sendPartnerNotificationAdmin,
 } = createPartnerManagementController();

@@ -22,8 +22,10 @@ describe("PartnerProgramController", () => {
     let savedCard;
     let savedTokens;
     let removedTokens;
+    let hiddenClients;
 
     beforeEach(() => {
+        hiddenClients = [];
         notifications = [];
         withdrawCalls = [];
         savedCard = null;
@@ -34,12 +36,20 @@ describe("PartnerProgramController", () => {
                 listReferredClients: async () => [
                     { _id: "c1", userName: "Марат Касымов", createdAt: "2026-10-01T07:00:00Z", haveCompletedOrder: true },
                     { _id: "c2", userName: "Дана", createdAt: "2026-10-02T07:00:00Z" },
+                    // Партнёр уже убрал его из списка, новых заказов не было
+                    { _id: "c3", userName: "Ержан", createdAt: "2026-09-01T07:00:00Z", partnerHiddenOrderDay: "2026-09-10" },
                 ],
-                loadRhythm: async () =>
-                    new Map([
-                    ["c1", { lastOrderDay: "2026-10-07", daysSinceLast: 4, intervalDays: 3, isLapsed: true, hasActiveOrder: false }],
-                    ["c2", { lastOrderDay: null, daysSinceLast: null, intervalDays: null, isLapsed: false, hasActiveOrder: true }],
-                ]),
+                loadRhythm: async (ids) =>
+                    new Map(
+                        [
+                            ["c1", { lastOrderDay: "2026-10-07", daysSinceLast: 4, intervalDays: 3, isLapsed: true, isChurned: false, hasActiveOrder: false }],
+                            ["c2", { lastOrderDay: null, daysSinceLast: null, intervalDays: null, isLapsed: false, hasActiveOrder: true }],
+                            ["c3", { lastOrderDay: "2026-09-10", daysSinceLast: 40, intervalDays: 3, isLapsed: true, isChurned: true, hasActiveOrder: false }],
+                        ].filter(([id]) => ids.map(String).includes(id))
+                    ),
+                findReferredClient: async (_partnerId, clientId) =>
+                    ["c1", "c3"].includes(clientId) ? { _id: clientId } : null,
+                hideClient: async (_partnerId, clientId, day) => hiddenClients.push({ clientId, day }),
                 listTransactions: async () => [
                     { _id: "t1", type: "referral_bonus", amount: 200, status: "completed", clientName: "Марат К.", createdAt: "x", client: "c1" },
                 ],
@@ -75,6 +85,7 @@ describe("PartnerProgramController", () => {
                 lastOrderDay: "2026-10-07",
                 intervalDays: 3,
                 isLapsed: true,
+                isChurned: false,
             },
             {
                 id: "c2",
@@ -85,8 +96,56 @@ describe("PartnerProgramController", () => {
                 lastOrderDay: null,
                 intervalDays: null,
                 isLapsed: false,
+                isChurned: false,
             },
         ]);
+    });
+
+    describe("hidePartnerClient", () => {
+        // Реальные ObjectId: обработчик проверяет формат до обращения к репозиторию
+        const CHURNED_ID = "65f000000000000000000003";
+        const LAPSED_ID = "65f000000000000000000001";
+
+        const withIds = (map) =>
+            createPartnerProgramController({
+                repo: {
+                    findReferredClient: async (_p, id) => (map[id] ? { _id: id } : null),
+                    loadRhythm: async ([id]) => new Map([[String(id), map[id]]]),
+                    hideClient: async (_p, clientId, day) => hiddenClients.push({ clientId, day }),
+                },
+                logger: silentLogger,
+            });
+
+        const hide = async (ctrl, clientId) => {
+            const res = createRes();
+            await ctrl.hidePartnerClient({ body: { clientId }, partner: PARTNER, partnerId: PARTNER._id }, res);
+            return res;
+        };
+
+        const RHYTHMS = {
+            [CHURNED_ID]: { lastOrderDay: "2026-09-10", isChurned: true },
+            [LAPSED_ID]: { lastOrderDay: "2026-10-07", isChurned: false },
+        };
+
+        test("hides a churned client and remembers the last order day", async () => {
+            const res = await hide(withIds(RHYTHMS), CHURNED_ID);
+
+            assert.equal(res.statusCode, 200);
+            assert.deepEqual(hiddenClients, [{ clientId: CHURNED_ID, day: "2026-09-10" }]);
+        });
+
+        test("refuses a client that is not churned", async () => {
+            const res = await hide(withIds(RHYTHMS), LAPSED_ID);
+
+            assert.equal(res.statusCode, 409);
+            assert.equal(hiddenClients.length, 0);
+        });
+
+        test("returns 404 for a client of another partner and 400 for a bad id", async () => {
+            assert.equal((await hide(withIds(RHYTHMS), "65f000000000000000000009")).statusCode, 404);
+            assert.equal((await hide(withIds(RHYTHMS), "not-an-id")).statusCode, 400);
+            assert.equal(hiddenClients.length, 0);
+        });
     });
 
     test("serializes transactions without internal references", async () => {

@@ -422,7 +422,9 @@ app.post("/partnerRegister", PartnerController.partnerRegister);
 app.post("/sendPartnerLoginOtp", PartnerController.sendPartnerLoginOtp);
 app.post("/partnerLoginOtp", PartnerController.partnerLoginOtp);
 app.post("/getPartnerDataMobile", checkAuthPartner, PartnerController.getPartnerDataMobile);
+app.post("/deletePartnerAccount", checkAuthPartner, PartnerController.deletePartnerAccount);
 app.post("/getPartnerClients", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.getPartnerClients);
+app.post("/hidePartnerClient", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.hidePartnerClient);
 app.post("/getPartnerTransactions", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.getPartnerTransactions);
 app.post("/updatePartnerCardData", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.updatePartnerCardData);
 app.post("/requestPartnerWithdrawal", checkAuthPartner, requireVerifiedPartner, PartnerProgramController.requestPartnerWithdrawal);
@@ -438,6 +440,7 @@ app.post("/setPartnerStatusAdmin", checkAuth, requireSuperAdmin, PartnerManageme
 app.post("/resolvePartnerWithdrawalAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.resolvePartnerWithdrawalAdmin);
 app.post("/setPartnerVerificationAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerVerificationAdmin);
 app.post("/runPartnerLapseCheckAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.runPartnerLapseCheckAdmin);
+app.post("/sendPartnerNotificationAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.sendPartnerNotificationAdmin);
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)

@@ -1,10 +1,11 @@
+import mongoose from "mongoose";
 import Client from "../Models/Client.js";
 import Partner from "../Models/Partner.js";
 import PartnerTransaction from "../Models/PartnerTransaction.js";
 import { sendPartnerWithdrawTelegram } from "../telegram/sendPartnerWithdraw.js";
 import { MAX_PUSH_TOKENS } from "../utils/partnerPush.js";
 import { getTodayAlmaty } from "../utils/dateUtils.js";
-import { loadClientsRhythm } from "../utils/partnerClientActivity.js";
+import { isHiddenFromPartner, loadClientsRhythm } from "../utils/partnerClientActivity.js";
 import {
     PartnerLedgerError,
     requestPartnerWithdrawal as requestWithdrawal,
@@ -46,11 +47,15 @@ export function hasCompleteCardData(cardData) {
 const defaultRepository = {
     listReferredClients: (partnerId) =>
         Client.find({ referredByPartner: partnerId })
-            .select("userName createdAt haveCompletedOrder")
+            .select("userName createdAt haveCompletedOrder partnerHiddenOrderDay")
             .sort({ createdAt: -1 })
             .limit(CLIENTS_LIMIT)
             .lean(),
     loadRhythm: (clientIds) => loadClientsRhythm(clientIds, getTodayAlmaty()),
+    findReferredClient: (partnerId, clientId) =>
+        Client.findOne({ _id: clientId, referredByPartner: partnerId }).select("_id").lean(),
+    hideClient: (partnerId, clientId, orderDay) =>
+        Client.updateOne({ _id: clientId, referredByPartner: partnerId }, { partnerHiddenOrderDay: orderDay }),
     listTransactions: (partnerId) =>
         PartnerTransaction.find({ partner: partnerId }).sort({ createdAt: -1 }).limit(TRANSACTIONS_LIMIT).lean(),
     updateCardData: (partnerId, cardData) =>
@@ -58,8 +63,9 @@ const defaultRepository = {
     /** Токен в конец списка без дублей; хранятся последние MAX_PUSH_TOKENS устройств */
     addPushToken: async (partnerId, token) => {
         await Partner.updateOne({ _id: partnerId }, { $pull: { expoPushTokens: token } });
+        // Только активному: запрос, прошедший авторизацию до удаления аккаунта, не вернёт токен
         await Partner.updateOne(
-            { _id: partnerId },
+            { _id: partnerId, status: "active" },
             { $push: { expoPushTokens: { $each: [token], $slice: -MAX_PUSH_TOKENS } } }
         );
     },
@@ -79,9 +85,10 @@ export function createPartnerProgramController({
         try {
             const clients = await repo.listReferredClients(req.partnerId);
             const rhythms = await repo.loadRhythm(clients.map((client) => client._id));
+            const visible = clients.filter((client) => !isHiddenFromPartner(client, rhythms.get(String(client._id))));
             return res.status(200).json({
                 success: true,
-                clients: clients.map((client) => {
+                clients: visible.map((client) => {
                     const rhythm = rhythms.get(String(client._id));
                     return {
                         id: String(client._id),
@@ -93,12 +100,37 @@ export function createPartnerProgramController({
                         lastOrderDay: rhythm?.lastOrderDay ?? null,
                         intervalDays: rhythm?.intervalDays ?? null,
                         isLapsed: rhythm?.isLapsed ?? false,
+                        isChurned: rhythm?.isChurned ?? false,
                     };
                 }),
             });
         } catch (error) {
             logger.error("[Partner program] getPartnerClients:", error?.message || error);
             return fail(res, 500, "Не удалось загрузить клиентов");
+        }
+    }
+
+    /**
+     * Убирает «ушедшего» клиента из списка партнёра. Только для isChurned — статус пересчитывается
+     * на сервере, приложению не доверяем. Привязка и будущие начисления не меняются.
+     */
+    async function hidePartnerClient(req, res) {
+        const clientId = req.body?.clientId;
+        if (typeof clientId !== "string" || !mongoose.isValidObjectId(clientId)) {
+            return fail(res, 400, "Некорректный клиент");
+        }
+        try {
+            const client = await repo.findReferredClient(req.partnerId, clientId);
+            if (!client) return fail(res, 404, "Клиент не найден");
+            const rhythm = (await repo.loadRhythm([client._id])).get(String(client._id));
+            if (!rhythm?.isChurned) {
+                return fail(res, 409, "Удалить можно только ушедшего клиента. Обновите список.");
+            }
+            await repo.hideClient(req.partnerId, clientId, rhythm.lastOrderDay);
+            return res.status(200).json({ success: true });
+        } catch (error) {
+            logger.error("[Partner program] hidePartnerClient:", error?.message || error);
+            return fail(res, 500, "Не удалось удалить клиента");
         }
     }
 
@@ -207,6 +239,7 @@ export function createPartnerProgramController({
 
     return {
         getPartnerClients,
+        hidePartnerClient,
         getPartnerTransactions,
         updatePartnerCardData,
         requestPartnerWithdrawal,
@@ -217,6 +250,7 @@ export function createPartnerProgramController({
 
 export const {
     getPartnerClients,
+    hidePartnerClient,
     getPartnerTransactions,
     updatePartnerCardData,
     requestPartnerWithdrawal,

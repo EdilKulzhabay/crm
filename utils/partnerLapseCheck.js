@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import Client from "../Models/Client.js";
 import { getTodayAlmaty } from "./dateUtils.js";
-import { loadClientsRhythm } from "./partnerClientActivity.js";
+import { isHiddenFromPartner, loadClientsRhythm } from "./partnerClientActivity.js";
 import { shortClientName } from "./partnerLedger.js";
 import { sendPartnerPush } from "./partnerPush.js";
 
@@ -12,7 +12,7 @@ const defaultDeps = {
     today: getTodayAlmaty,
     listPartnerClients: () =>
         Client.find({ referredByPartner: { $ne: null } })
-            .select("_id userName referredByPartner partnerLapseNotifiedDay")
+            .select("_id userName referredByPartner partnerLapseNotifiedDay partnerHiddenOrderDay")
             .lean(),
     loadRhythm: loadClientsRhythm,
     markNotified: (clientId, day) => Client.updateOne({ _id: clientId }, { partnerLapseNotifiedDay: day }),
@@ -34,6 +34,7 @@ export async function checkPartnerClientLapses(deps = defaultDeps) {
     for (const client of clients) {
         const rhythm = rhythms.get(String(client._id));
         if (!rhythm?.isLapsed || client.partnerLapseNotifiedDay === rhythm.lastOrderDay) continue;
+        if (isHiddenFromPartner(client, rhythm)) continue;
         const name = shortClientName(client.userName);
         // Сначала отмечаем, потом шлём: сбой отправки не приведёт к повторным уведомлениям каждый день
         await deps.markNotified(client._id, rhythm.lastOrderDay);

@@ -6,6 +6,8 @@ export const RHYTHM_ORDERS = 3;
 const RECENT_DELIVERY_DAYS = 10;
 const ACTIVE_ORDER_STATUSES = ["awaitingOrder", "onTheWay"];
 const MS_PER_DAY = 86400000;
+/** «Ушедший» клиент: без заказа дольше, чем CHURN_INTERVAL_MULTIPLIER обычных интервалов */
+export const CHURN_INTERVAL_MULTIPLIER = 3;
 
 const dayOrdinal = (day) => Math.floor(Date.parse(`${day}T12:00:00Z`) / MS_PER_DAY);
 
@@ -18,7 +20,8 @@ export function shiftDay(day, days) {
  * @param {string[]} deliveredDays дни доставленных заказов YYYY-MM-DD (в любом порядке, с повторами)
  * @param {string} today сегодняшний день по Алматы YYYY-MM-DD
  * @param {boolean} hasActiveOrder у клиента есть заказ в работе — значит, он не «пропал»
- * Пример: заказы 1, 4, 7 числа → интервал 3 дня; 11-го прошло 4 дня > 3 → isLapsed.
+ * Пример: заказы 1, 4, 7 числа → интервал 3 дня; 11-го прошло 4 дня > 3 → isLapsed;
+ * 17-го прошло 10 дней > 3 × 3 → isChurned («ушедший», партнёр может убрать его из списка).
  */
 export function clientRhythm(deliveredDays, today, hasActiveOrder = false) {
     const days = [...new Set(deliveredDays.filter(Boolean))].sort().reverse().slice(0, RHYTHM_ORDERS);
@@ -26,14 +29,34 @@ export function clientRhythm(deliveredDays, today, hasActiveOrder = false) {
     const daysSinceLast = lastOrderDay ? dayOrdinal(today) - dayOrdinal(lastOrderDay) : null;
 
     if (days.length < RHYTHM_ORDERS) {
-        return { lastOrderDay, daysSinceLast, intervalDays: null, isLapsed: false, hasActiveOrder, rhythmDays: days };
+        return {
+            lastOrderDay,
+            daysSinceLast,
+            intervalDays: null,
+            isLapsed: false,
+            isChurned: false,
+            hasActiveOrder,
+            rhythmDays: days,
+        };
     }
     const intervals = days.slice(1).map((day, i) => dayOrdinal(days[i]) - dayOrdinal(day));
     // Среднее с округлением вверх: при интервалах 3 и 4 дня ждём 4, а не 3
     const intervalDays = Math.ceil(intervals.reduce((sum, value) => sum + value, 0) / intervals.length);
     const isLapsed = !hasActiveOrder && intervalDays > 0 && daysSinceLast > intervalDays;
+    const isChurned = isLapsed && daysSinceLast > intervalDays * CHURN_INTERVAL_MULTIPLIER;
     // rhythmDays — по каким дням доставки посчитан ритм (видно в CRM для проверки)
-    return { lastOrderDay, daysSinceLast, intervalDays, isLapsed, hasActiveOrder, rhythmDays: days };
+    return { lastOrderDay, daysSinceLast, intervalDays, isLapsed, isChurned, hasActiveOrder, rhythmDays: days };
+}
+
+/**
+ * Партнёр убрал «ушедшего» клиента из своего списка (Client.partnerHiddenOrderDay — день последнего
+ * заказа на момент удаления). Привязка к партнёру и начисления сохраняются (оферта, п. 4.8):
+ * как только клиент оформляет новый заказ, он снова появляется в списке.
+ */
+export function isHiddenFromPartner(client, rhythm) {
+    const hiddenOrderDay = client?.partnerHiddenOrderDay;
+    if (!hiddenOrderDay) return false;
+    return !rhythm?.hasActiveOrder && (rhythm?.lastOrderDay ?? null) === hiddenOrderDay;
 }
 
 /**

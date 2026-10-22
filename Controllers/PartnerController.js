@@ -20,6 +20,28 @@ const USER_NAME_MAX = 100;
 const MONGO_DUPLICATE_KEY = 11000;
 const PHONE_TAKEN_MESSAGE = "Партнёр с таким номером телефона уже зарегистрирован";
 const PHONE_NOT_FOUND_MESSAGE = "Партнёр с таким номером телефона не найден";
+const BLOCKED_MESSAGE = "Аккаунт партнёра заблокирован. Свяжитесь с поддержкой.";
+const DELETED_MESSAGE = "Аккаунт с этим номером удалён. Чтобы восстановить его, напишите на info@tibetskaya.kz.";
+
+/**
+ * Номера, которые входят без кода из WhatsApp — тестовый аккаунт для проверки App Store / Google Play.
+ * Переопределяется env PARTNER_LOGIN_WITHOUT_OTP_PHONES (через запятую, формат 7XXXXXXXXXX; пусто — выключено).
+ * Работает только для входа в существующий активный аккаунт; регистрация — как обычно, с кодом.
+ */
+const DEFAULT_LOGIN_WITHOUT_OTP_PHONES = "77006837203";
+
+export function parseOtpFreePhones(raw = process.env.PARTNER_LOGIN_WITHOUT_OTP_PHONES ?? DEFAULT_LOGIN_WITHOUT_OTP_PHONES) {
+    return new Set(
+        String(raw)
+            .split(",")
+            .map((phone) => phone.trim())
+            .filter((phone) => /^7\d{10}$/.test(phone))
+    );
+}
+
+/** Ошибка для уже существующего партнёра при регистрации: удалённый номер повторно не регистрируется */
+const takenPhoneMessage = (partner) => (partner.status === "deleted" ? DELETED_MESSAGE : PHONE_TAKEN_MESSAGE);
+const inactiveMessage = (partner) => (partner.status === "deleted" ? DELETED_MESSAGE : BLOCKED_MESSAGE);
 
 const SEND_DENIED_MESSAGES = Object.freeze({
     cooldown: (sec) => `Повторная отправка возможна через ${sec} секунд`,
@@ -68,6 +90,12 @@ const defaultPartnerRepository = {
     create: async (data) => (await Partner.create(data)).toObject(),
     touchLogin: (id) =>
         Partner.findByIdAndUpdate(id, { lastLoginAt: new Date() }, { new: true }).lean(),
+    /** Мягкое удаление: данные остаются для расчётов, push на устройства больше не уходят */
+    markDeleted: (id) =>
+        Partner.updateOne(
+            { _id: id, status: "active" },
+            { status: "deleted", deletedAt: new Date(), expoPushTokens: [] }
+        ),
 };
 
 export function createPartnerController({
@@ -76,6 +104,7 @@ export function createPartnerController({
     sendOtp = sendWhatsAppOtp,
     generateReferralCode = generateUniquePartnerReferralCode,
     signToken = signPartnerToken,
+    otpFreePhones = parseOtpFreePhones(),
     logger = console,
 } = {}) {
     const fail = (res, status, message) => res.status(status).json({ success: false, message });
@@ -130,7 +159,8 @@ export function createPartnerController({
         const phone = parsePhone(req.body?.phone);
         if (!phone) return fail(res, 400, "Некорректный номер телефона");
         try {
-            if (await partners.findByPhone(phone)) return fail(res, 409, PHONE_TAKEN_MESSAGE);
+            const existing = await partners.findByPhone(phone);
+            if (existing) return fail(res, 409, takenPhoneMessage(existing));
             return await deliverCode(res, OTP_PURPOSE.REGISTER, phone, req.body.phone);
         } catch (error) {
             logger.error("[Partner OTP] sendPartnerRegisterOtp:", error?.message || error);
@@ -158,7 +188,8 @@ export function createPartnerController({
         }
 
         try {
-            if (await partners.findByPhone(phone)) return fail(res, 409, PHONE_TAKEN_MESSAGE);
+            const existing = await partners.findByPhone(phone);
+            if (existing) return fail(res, 409, takenPhoneMessage(existing));
             const partner = await partners.create({
                 userName,
                 phone: req.body.phone.trim(),
@@ -184,12 +215,29 @@ export function createPartnerController({
         const phone = parsePhone(req.body?.phone);
         if (!phone) return fail(res, 400, "Некорректный номер телефона");
         try {
-            if (!(await partners.findByPhone(phone))) return fail(res, 404, PHONE_NOT_FOUND_MESSAGE);
+            const partner = await partners.findByPhone(phone);
+            if (!partner) return fail(res, 404, PHONE_NOT_FOUND_MESSAGE);
+            // Код удалённому аккаунту не отправляем. Заблокированному отправляем — как раньше,
+            // причину он увидит после ввода кода.
+            if (partner.status === "deleted") return fail(res, 403, DELETED_MESSAGE);
+            if (otpFreePhones.has(phone)) return await signInWithoutCode(res, partner, phone);
             return await deliverCode(res, OTP_PURPOSE.LOGIN, phone, req.body.phone);
         } catch (error) {
             logger.error("[Partner OTP] sendPartnerLoginOtp:", error?.message || error);
             return serverError(res);
         }
+    }
+
+    /** Вход тестового аккаунта без кода: ответ как у partnerLoginOtp, приложение сразу открывает сессию */
+    async function signInWithoutCode(res, partner, phone) {
+        if (partner.status !== "active") return fail(res, 403, inactiveMessage(partner));
+        const updated = (await partners.touchLogin(partner._id)) ?? partner;
+        logger.log(`[Partner auth] вход без кода (тестовый номер), phone=${maskPhoneForLog(phone)}`);
+        return res.status(200).json({
+            success: true,
+            accessToken: signToken(partner._id),
+            partnerData: serializePartner(updated),
+        });
     }
 
     async function partnerLoginOtp(req, res) {
@@ -200,9 +248,7 @@ export function createPartnerController({
         try {
             const partner = await partners.findByPhone(phone);
             if (!partner) return fail(res, 404, PHONE_NOT_FOUND_MESSAGE);
-            if (partner.status !== "active") {
-                return fail(res, 403, "Аккаунт партнёра заблокирован. Свяжитесь с поддержкой.");
-            }
+            if (partner.status !== "active") return fail(res, 403, inactiveMessage(partner));
             const updated = (await partners.touchLogin(partner._id)) ?? partner;
             return res.status(200).json({
                 success: true,
@@ -220,7 +266,24 @@ export function createPartnerController({
         return res.status(200).json({ success: true, partnerData: serializePartner(req.partner) });
     }
 
+    /**
+     * Удаление аккаунта из приложения (требует checkAuthPartner). Данные не стираются: после смены
+     * статуса checkAuthPartner отвечает 401 на любой токен партнёра — выход на всех устройствах,
+     * а вход и регистрация с этим номером запрещены.
+     */
+    async function deletePartnerAccount(req, res) {
+        try {
+            await partners.markDeleted(req.partnerId);
+            logger.log(`[Partner auth] партнёр ${req.partnerId} удалил аккаунт`);
+            return res.status(200).json({ success: true });
+        } catch (error) {
+            logger.error("[Partner auth] deletePartnerAccount:", error?.message || error);
+            return fail(res, 500, "Не удалось удалить аккаунт. Попробуйте позже.");
+        }
+    }
+
     return {
+        deletePartnerAccount,
         sendPartnerRegisterOtp,
         partnerCodeConfirm,
         partnerRegister,
@@ -231,6 +294,7 @@ export function createPartnerController({
 }
 
 export const {
+    deletePartnerAccount,
     sendPartnerRegisterOtp,
     partnerCodeConfirm,
     partnerRegister,

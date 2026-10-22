@@ -91,6 +91,16 @@ describe("checkAuthPartner", () => {
         assert.equal(res.statusCode, 401);
     });
 
+    test("returns 401 for a deleted account so every device signs out", async () => {
+        const { res, nextCalled } = await run({
+            authorization: "Bearer token",
+            partner: { _id: PARTNER_ID, status: "deleted" },
+        });
+
+        assert.equal(nextCalled, false);
+        assert.equal(res.statusCode, 401);
+    });
+
     test("returns 403 for a blocked partner", async () => {
         const { res, nextCalled } = await run({
             authorization: "Bearer token",

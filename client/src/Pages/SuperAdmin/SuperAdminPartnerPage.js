@@ -47,7 +47,7 @@ export default function SuperAdminPartnerPage() {
                 changedBy,
                 reason,
             });
-            showMessage(isBlocking ? "Партнёр заблокирован" : "Партнёр разблокирован", "success");
+            showMessage(isBlocking ? "Партнёр заблокирован" : "Партнёр снова активен", "success");
             load();
         } catch (e) {
             showMessage(e?.response?.data?.message || "Не удалось изменить статус", "error");
@@ -73,14 +73,18 @@ export default function SuperAdminPartnerPage() {
     }
 
     const { partner } = details;
-    const isBlocked = partner.status === "blocked";
+    // Заблокированного или удалившего аккаунт партнёра можно вернуть в active
+    const isBlocked = partner.status !== "active";
+    const isDeleted = partner.status === "deleted";
 
     return (
         <Container role={userData?.role}>
             {isStatusModalOpen && (
                 <ConfirmChangeModal
                     title={
-                        isBlocked
+                        isDeleted
+                            ? "Восстановить аккаунт? Партнёр сам удалил его в приложении. После восстановления он снова сможет войти по своему номеру."
+                            : isBlocked
                             ? "Разблокировать партнёра?"
                             : "Заблокировать партнёра? Он не сможет войти и вывести деньги, его код перестанет работать. Клиенты и история сохранятся."
                     }
@@ -101,7 +105,7 @@ export default function SuperAdminPartnerPage() {
                         {PARTNER_STATUS_LABELS[partner.status] ?? partner.status}
                     </span>
                     <button className={isBlocked ? "text-green-400 hover:text-blue-500" : "text-red hover:text-blue-500"} onClick={() => setIsStatusModalOpen(true)}>
-                        [ {isBlocked ? "Разблокировать" : "Заблокировать"} ]
+                        [ {isDeleted ? "Восстановить" : isBlocked ? "Разблокировать" : "Заблокировать"} ]
                     </button>
                 </div>
             </Li>

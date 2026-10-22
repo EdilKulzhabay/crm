@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
-export const PARTNER_STATUSES = Object.freeze(["active", "blocked"]);
+/**
+ * deleted — партнёр удалил аккаунт в приложении. Данные не стираются (расчёты по оферте, п. 7.6–7.7),
+ * но все сессии недействительны, вход и повторная регистрация с этим номером запрещены.
+ * Восстановить может суперадмин в CRM (статус active).
+ */
+export const PARTNER_STATUSES = Object.freeze(["active", "blocked", "deleted"]);
+/** Суперадмин блокирует и восстанавливает; удалить аккаунт может только сам партнёр */
+export const ADMIN_SETTABLE_PARTNER_STATUSES = Object.freeze(["active", "blocked"]);
 /** Проверка партнёра суперадмином в CRM; до verified приложение показывает только экран ожидания */
 export const PARTNER_VERIFICATION_STATUSES = Object.freeze(["waiting", "verified", "denied"]);
 
@@ -68,6 +75,10 @@ const PartnerSchema = new mongoose.Schema(
             default: [],
         },
         lastLoginAt: {
+            type: Date,
+            default: null,
+        },
+        deletedAt: {
             type: Date,
             default: null,
         },

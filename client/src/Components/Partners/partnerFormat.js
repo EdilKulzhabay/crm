@@ -16,7 +16,7 @@ export const formatDateTime = (value) =>
 export const formatMonth = (month) =>
     new Date(`${month}-15T00:00:00Z`).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
 
-export const PARTNER_STATUS_LABELS = Object.freeze({ active: "Активен", blocked: "Заблокирован" });
+export const PARTNER_STATUS_LABELS = Object.freeze({ active: "Активен", blocked: "Заблокирован", deleted: "Удалён партнёром" });
 
 export const VERIFICATION_LABELS = Object.freeze({ waiting: "На проверке", verified: "Подтверждён", denied: "Отклонён" });
 export const VERIFICATION_CLASSES = Object.freeze({ waiting: "text-yellow-400", verified: "text-green-400", denied: "text-red" });

@@ -6,7 +6,7 @@ import { verifyPartnerToken } from "./partnerToken.js";
  * Middleware авторизации партнёра. Партнёр определяется только по токену —
  * id из тела запроса не принимается (в отличие от клиентских /get…Mobile эндпоинтов).
  *
- * 401 — нет действующей сессии (приложение очищает токен и открывает вход),
+ * 401 — нет действующей сессии или аккаунт удалён (приложение очищает токен и открывает вход),
  * 403 — партнёр заблокирован.
  */
 export function createCheckAuthPartner({
@@ -23,7 +23,8 @@ export function createCheckAuthPartner({
 
         try {
             const partner = await findPartnerById(partnerId);
-            if (!partner) {
+            // Удалённый аккаунт — как отсутствующая сессия: приложение выходит на всех устройствах
+            if (!partner || partner.status === "deleted") {
                 return res.status(401).json({ success: false, message: "Требуется вход" });
             }
             if (partner.status !== "active") {

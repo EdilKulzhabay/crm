@@ -22,6 +22,7 @@ const STATUS_FILTERS = [
     ["", "Все"],
     ["active", "Активные"],
     ["blocked", "Заблокированные"],
+    ["deleted", "Удалённые"],
 ];
 const VERIFICATION_FILTERS = [
     ["", "Любая проверка"],
@@ -187,7 +188,7 @@ function PartnersTable({ partners }) {
                                 <div className="text-sm opacity-70">{partner.phone}</div>
                             </td>
                             <td className="pr-4 py-2 whitespace-nowrap">{partner.referralCode}</td>
-                            <td className={`pr-4 py-2 ${partner.status === "blocked" ? "text-red" : ""}`}>
+                            <td className={`pr-4 py-2 ${partner.status !== "active" ? "text-red" : ""}`}>
                                 {PARTNER_STATUS_LABELS[partner.status] ?? partner.status}
                             </td>
                             <td className={`pr-4 py-2 whitespace-nowrap ${VERIFICATION_CLASSES[partner.verificationStatus] ?? ""}`}>

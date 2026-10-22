@@ -51,7 +51,8 @@ const defaultRepo = {
     setClientPartner: (clientId, partnerId) =>
         Client.findByIdAndUpdate(
             clientId,
-            { referredByPartner: partnerId, partnerLapseNotifiedDay: null },
+            // Отметки прежнего партнёра (уведомление, удаление из списка) новому не переносятся
+            { referredByPartner: partnerId, partnerLapseNotifiedDay: null, partnerHiddenOrderDay: null },
             { new: true }
         ).select("_id userName referredByPartner").lean(),
     logOperation: (entry) => ClientOperationLog.create(entry),
@@ -106,6 +107,8 @@ export function createPartnerAdminController({
         try {
             const partner = partnerId ? await repo.findPartner(partnerId) : null;
             if (partnerId && !partner) return fail(res, 404, "Партнёр не найден");
+            // Бонусы удалённому аккаунту начислять некому: он не может войти и вывести деньги
+            if (partner?.status === "deleted") return fail(res, 400, "Партнёр удалил аккаунт — привязать клиента нельзя");
             const previous = await repo.findClientPartnerId(clientId);
             if (!previous) return fail(res, 404, "Клиент не найден");
             const previousPartner = previous.partnerId ? await repo.findPartner(String(previous.partnerId)) : null;

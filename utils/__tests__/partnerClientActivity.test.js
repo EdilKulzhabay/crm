@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { clientRhythm, shiftDay } from "../partnerClientActivity.js";
+import { clientRhythm, isHiddenFromPartner, shiftDay } from "../partnerClientActivity.js";
 import { checkPartnerClientLapses } from "../partnerLapseCheck.js";
 
 describe("clientRhythm", () => {
@@ -27,6 +27,7 @@ describe("clientRhythm", () => {
             daysSinceLast: 4,
             intervalDays: 3,
             isLapsed: true,
+            isChurned: false,
             hasActiveOrder: false,
             rhythmDays: ["2026-10-07", "2026-10-04", "2026-10-01"],
         });
@@ -54,8 +55,34 @@ describe("clientRhythm", () => {
         assert.equal(clientRhythm(["2026-10-01", "2026-10-04", "2026-10-07"], "2026-10-11", true).isLapsed, false);
     });
 
+    test("churned only when more than three intervals passed without an order", () => {
+        const days = ["2026-10-01", "2026-10-04", "2026-10-07"]; // интервал 3 дня → порог 9 дней
+
+        assert.equal(clientRhythm(days, "2026-10-16").isChurned, false); // ровно 9 дней
+        assert.equal(clientRhythm(days, "2026-10-17").isChurned, true); // 10 дней
+        assert.equal(clientRhythm(days, "2026-10-17", true).isChurned, false); // заказ в работе
+        assert.equal(clientRhythm(["2026-10-01", "2026-10-04"], "2026-12-01").isChurned, false); // ритма нет
+    });
+
     test("shiftDay crosses month boundaries", () => {
         assert.equal(shiftDay("2026-03-01", -1), "2026-02-28");
+    });
+});
+
+describe("isHiddenFromPartner", () => {
+    const hidden = { partnerHiddenOrderDay: "2026-10-07" };
+
+    test("stays hidden while there is no new order", () => {
+        assert.equal(isHiddenFromPartner(hidden, { lastOrderDay: "2026-10-07", hasActiveOrder: false }), true);
+    });
+
+    test("a new delivered or active order returns the client to the list", () => {
+        assert.equal(isHiddenFromPartner(hidden, { lastOrderDay: "2026-11-01", hasActiveOrder: false }), false);
+        assert.equal(isHiddenFromPartner(hidden, { lastOrderDay: "2026-10-07", hasActiveOrder: true }), false);
+    });
+
+    test("a client never hidden is visible", () => {
+        assert.equal(isHiddenFromPartner({ partnerHiddenOrderDay: null }, { lastOrderDay: "2026-10-07" }), false);
     });
 });
 

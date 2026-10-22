@@ -1,6 +1,6 @@
 import { describe, test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { createPartnerController } from "../PartnerController.js";
+import { createPartnerController, parseOtpFreePhones } from "../PartnerController.js";
 import { createPhoneOtpStore } from "../../utils/phoneOtpStore.js";
 
 const RAW_PHONE = "+7 (700) 123-45-67";
@@ -35,6 +35,10 @@ const createPartnerRepo = () => {
             return row;
         },
         touchLogin: async (id) => rows.find((p) => p._id === id) ?? null,
+        markDeleted: async (id) => {
+            const row = rows.find((p) => p._id === id && p.status === "active");
+            if (row) Object.assign(row, { status: "deleted", deletedAt: new Date() });
+        },
     };
 };
 
@@ -57,6 +61,7 @@ describe("PartnerController", () => {
             },
             generateReferralCode: async () => "ABCD-EFGH-IJKL",
             signToken: (id) => `token-for-${id}`,
+            otpFreePhones: new Set(),
             logger: silentLogger,
         });
     });
@@ -213,6 +218,90 @@ describe("PartnerController", () => {
             const res = await call("partnerLoginOtp", { phone: RAW_PHONE, code: CODE });
 
             assert.equal(res.statusCode, 400);
+        });
+    });
+
+    describe("login without a code (store review number)", () => {
+        const createWithOtpFree = () =>
+            createPartnerController({
+                partners,
+                otpStore: createPhoneOtpStore({ generateCode: () => CODE }),
+                sendOtp: async (phone, code) => sentCodes.push({ phone, code }),
+                generateReferralCode: async () => "ABCD-EFGH-IJKL",
+                signToken: (id) => `token-for-${id}`,
+                otpFreePhones: new Set([PHONE]),
+                logger: silentLogger,
+            });
+
+        test("returns a session right away and sends no WhatsApp code", async () => {
+            await partners.create({ userName: "Тест", phone: RAW_PHONE, phoneNormalized: PHONE });
+            const res = createRes();
+
+            await createWithOtpFree().sendPartnerLoginOtp({ body: { phone: RAW_PHONE } }, res);
+
+            assert.equal(res.statusCode, 200);
+            assert.equal(res.body.accessToken, "token-for-id-1");
+            assert.equal(sentCodes.length, 0);
+        });
+
+        test("still refuses a blocked or unknown number", async () => {
+            const unknown = createRes();
+            await createWithOtpFree().sendPartnerLoginOtp({ body: { phone: RAW_PHONE } }, unknown);
+            await partners.create({ userName: "Тест", phone: RAW_PHONE, phoneNormalized: PHONE, status: "blocked" });
+            const blocked = createRes();
+            await createWithOtpFree().sendPartnerLoginOtp({ body: { phone: RAW_PHONE } }, blocked);
+
+            assert.equal(unknown.statusCode, 404);
+            assert.equal(blocked.statusCode, 403);
+            assert.equal(blocked.body.accessToken, undefined);
+        });
+
+        test("parses the env list and ignores malformed numbers", () => {
+            assert.deepEqual([...parseOtpFreePhones(" 77006837203, 123, ")], ["77006837203"]);
+            assert.equal(parseOtpFreePhones("").size, 0);
+        });
+    });
+
+    describe("account deletion", () => {
+        const deleteAccount = async (partnerId) => {
+            const res = createRes();
+            await controller.deletePartnerAccount({ partnerId }, res);
+            return res;
+        };
+
+        test("marks the account deleted without removing it", async () => {
+            const partner = await partners.create({ userName: "Алия", phone: RAW_PHONE, phoneNormalized: PHONE });
+
+            const res = await deleteAccount(partner._id);
+
+            assert.equal(res.statusCode, 200);
+            assert.equal(partners.rows.length, 1);
+            assert.equal(partners.rows[0].status, "deleted");
+        });
+
+        test("a deleted account cannot get a login code or log in", async () => {
+            const partner = await partners.create({ userName: "Алия", phone: RAW_PHONE, phoneNormalized: PHONE });
+            await call("sendPartnerLoginOtp", { phone: RAW_PHONE });
+            await deleteAccount(partner._id);
+
+            const sent = await call("sendPartnerLoginOtp", { phone: RAW_PHONE });
+            const login = await call("partnerLoginOtp", { phone: RAW_PHONE, code: CODE });
+
+            assert.equal(sent.statusCode, 403);
+            assert.match(sent.body.message, /удалён/);
+            assert.equal(login.statusCode, 403);
+            assert.equal(sentCodes.length, 1); // только код до удаления
+        });
+
+        test("the phone of a deleted account cannot be registered again", async () => {
+            const partner = await partners.create({ userName: "Алия", phone: RAW_PHONE, phoneNormalized: PHONE });
+            await deleteAccount(partner._id);
+
+            const res = await call("sendPartnerRegisterOtp", { phone: RAW_PHONE });
+
+            assert.equal(res.statusCode, 409);
+            assert.match(res.body.message, /удалён/);
+            assert.equal(sentCodes.length, 0);
         });
     });
 
