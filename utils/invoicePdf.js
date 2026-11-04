@@ -454,6 +454,9 @@ export function buildInvoicePdfBuffer(params) {
         y = doc.y + 6;
         doc.font("mainBold").fillColor("#000000");
         doc.text(`Всего к оплате: ${words} 00 тиын`, left, y, { width: pageW });
+        y = doc.y + 6;
+        // По номеру в назначении сверка с выпиской Forte сама закрывает счёт (utils/bankStatementSync.js)
+        doc.text(`Назначение платежа: Оплата по счёту № ${invoiceNumber}`, left, y, { width: pageW });
         y = doc.y + 10;
 
         // Нарисовать разделитель — тонкая линия через всю ширину страницы

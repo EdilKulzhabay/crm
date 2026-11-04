@@ -15,6 +15,11 @@ import { createQrInvoice as apipayCreateQrInvoice, getInvoice as apipayGetInvoic
 import { sendWithdrawTelegram, sendVerificationTelegram } from "../telegram/sendSupport.js";
 import { normalizePhoneForWhatsApp, phonesMatch, maskPhoneForLog, buildPhoneSuffixRegex } from "../whatsApp/normalizePhone.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
+import {
+    calculateBottleEarnings,
+    getCourierPayoutRates,
+    getOrderPayoutRates,
+} from "../utils/courierPayout.js";
 
 const transporter = nodemailer.createTransport({
     host: "smtp.mail.ru",
@@ -26,40 +31,29 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const getCourierPayoutRates = (courier) => ({
-    price12: courier?.price12 || 300,
-    price19: courier?.price19 || 500,
-});
-
 const calculateAvailablePayout = (orders, courier) => {
-    const { price12, price19 } = getCourierPayoutRates(courier);
-
     let bottleEarnings = 0;
     let faktSum = 0;
 
     for (const order of orders) {
-        const b12 = Number(order.products?.b12) || 0;
-        const b19 = Number(order.products?.b19) || 0;
-
         if (order.opForm === "fakt") {
             faktSum += Number(order.sum) || 0;
             continue;
         }
 
-        bottleEarnings += b12 * price12 + b19 * price19;
+        bottleEarnings += calculateBottleEarnings(order.products, getOrderPayoutRates(order, courier));
     }
 
     return Math.max(0, bottleEarnings - faktSum);
 };
 
-const getOrderIncomeDelta = (courier, products, orderSum, opForm) => {
-    const { price12, price19 } = getCourierPayoutRates(courier);
-    const b12 = Number(products?.b12) || 0;
-    const b19 = Number(products?.b19) || 0;
+/** Изменение баланса курьера за заказ; rates — тариф, зафиксированный для этого заказа */
+const getOrderIncomeDelta = (rates, products, orderSum, opForm) => {
+    const bottleEarnings = calculateBottleEarnings(products, rates);
     if (opForm === "fakt") {
-        return -(Number(orderSum) || 0) + b12 * price12 + b19 * price19;
+        return bottleEarnings - (Number(orderSum) || 0);
     }
-    return b12 * price12 + b19 * price19;
+    return bottleEarnings;
 };
 
 // Списывает доставленные бутыли из FIFO-очереди курьера.
@@ -128,15 +122,12 @@ const logCourierIncomeChange = async ({
     });
 };
 
-const calculateTodayEarnings = (orders, courier) => {
-    const { price12, price19 } = getCourierPayoutRates(courier);
-
-    return orders.reduce((acc, order) => {
-        const b12 = Number(order.products?.b12) || 0;
-        const b19 = Number(order.products?.b19) || 0;
-        return acc + b12 * price12 + b19 * price19;
-    }, 0);
-};
+// Каждый заказ — по тарифу на момент его доставки: смена тарифа не пересчитывает уже доставленные.
+const calculateTodayEarnings = (orders, courier) =>
+    orders.reduce(
+        (acc, order) => acc + calculateBottleEarnings(order.products, getOrderPayoutRates(order, courier)),
+        0
+    );
 
 const generateCode = () => {
     const characters = "0123456789";
@@ -899,13 +890,17 @@ export const completeOrderCourierAggregator = async (req, res) => {
             sum += products.b19 > 0 ? products.b19 * order.client.price19 : 0;
         }
 
-        await Order.updateOne({_id: orderId}, { 
+        // Фиксируем тариф курьера на момент доставки: последующая смена тарифа не меняет этот заказ
+        const courierPayoutRates = getCourierPayoutRates(courier1);
+
+        await Order.updateOne({_id: orderId}, {
             $set: {
                 status: "delivered",
                 courierAggregator: courierId,
                 products: products,
                 sum: sum,
                 income: sum,
+                courierPayoutRates,
                 emptyBottles: {
                     b12: emptyb12 || 0,
                     b19: emptyb19 || 0
@@ -958,7 +953,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
 
         const effectiveOpForm = opForm || order.opForm || "fakt";
         const incomeBefore = Number(courier1.income) || 0;
-        const incomeDelta = getOrderIncomeDelta(courier1, products, sum, effectiveOpForm);
+        const incomeDelta = getOrderIncomeDelta(courierPayoutRates, products, sum, effectiveOpForm);
         const incomeAfter = incomeBefore + incomeDelta;
 
         // Списываем доставленные бутыли из FIFO-очереди и собираем реализацию по аквамаркетам
@@ -1357,7 +1352,7 @@ export const getCourierAggregatorIncome = async (req, res) => {
             "date.d": today,
             status: "delivered",
             courierAggregator: courier._id
-        }).select("products opForm sum")
+        }).select("products opForm sum courierPayoutRates")
 
         const income = calculateTodayEarnings(orders, courier);
         
@@ -1671,7 +1666,7 @@ export const updateCourierAggregatorIncomeLogOpForm = async (req, res) => {
         const products = order.products;
         const orderSum = order.sum;
         const oldDelta = Number(log.amount) || 0;
-        const newDelta = getOrderIncomeDelta(courier, products, orderSum, newOpForm);
+        const newDelta = getOrderIncomeDelta(getOrderPayoutRates(order, courier), products, orderSum, newOpForm);
         const adjustment = newDelta - oldDelta;
 
         const incomeBefore = Number(courier.income) || 0;

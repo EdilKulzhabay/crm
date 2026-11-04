@@ -17,6 +17,8 @@ import PaymentSession from "../PaymentSession.js";
 import User from "../Models/User.js";
 import { buildPaymentFormSign, verifyCallbackSign } from "../utils/payplusUtils.js";
 import { extractPayplusCardLast4 } from "../utils/extractPayplusCardLast4.js";
+import { ClientAccessError, loadAccessibleClient } from "../utils/crmClientAccess.js";
+import { INVOICE_PAYMENT_ORDER_PREFIX } from "../utils/invoicePayment.js";
 
 const ALMATY_UTC_OFFSET = "+05:00";
 
@@ -659,5 +661,80 @@ export const getClientPaymentsForSuperAdmin = async (req, res) => {
             success: false,
             message: "Ошибка сервера",
         });
+    }
+};
+
+const CLIENT_PAYMENT_HISTORY_PAGE_SIZE = 20;
+/** Номер заказа сессии Pay Plus (generateOrderId); остальные записи — пополнения через Kaspi QR (ApiPay) */
+const PAYPLUS_ORDER_PREFIX = "PP";
+
+/** @param {{ cardLast4?: string | null, sessionOrderId?: string }} payment */
+function getClientPaymentMethod(payment) {
+    if (String(payment.sessionOrderId || "").startsWith(INVOICE_PAYMENT_ORDER_PREFIX)) {
+        return "invoice";
+    }
+    if (payment.cardLast4 || String(payment.sessionOrderId || "").startsWith(PAYPLUS_ORDER_PREFIX)) {
+        return "card";
+    }
+    return "kaspi";
+}
+
+/**
+ * POST /getClientPaymentHistory { clientId, page? }
+ * История оплат клиента для карточки клиента в CRM (суперадмин — любой клиент, франчайзи — свои).
+ */
+export const getClientPaymentHistory = async (req, res) => {
+    try {
+        const { clientId, page: rawPage } = req.body || {};
+        const client = await loadAccessibleClient(req, clientId, "_id");
+        const page = Math.max(1, Number.parseInt(rawPage, 10) || 1);
+
+        const [payments, [summary]] = await Promise.all([
+            ClientPayment.find({ client: client._id })
+                .sort({ paidAt: -1 })
+                .skip((page - 1) * CLIENT_PAYMENT_HISTORY_PAGE_SIZE)
+                .limit(CLIENT_PAYMENT_HISTORY_PAGE_SIZE + 1)
+                .select("paidAt amount currency status cardLast4 sessionOrderId")
+                .lean(),
+            ClientPayment.aggregate([
+                { $match: { client: client._id } },
+                {
+                    $group: {
+                        _id: null,
+                        totalCount: { $sum: 1 },
+                        successCount: { $sum: { $cond: [{ $eq: ["$status", "success"] }, 1, 0] } },
+                        totalAmountSuccess: {
+                            $sum: { $cond: [{ $eq: ["$status", "success"] }, "$amount", 0] },
+                        },
+                    },
+                },
+            ]),
+        ]);
+
+        const hasMore = payments.length > CLIENT_PAYMENT_HISTORY_PAGE_SIZE;
+        return res.json({
+            success: true,
+            payments: payments.slice(0, CLIENT_PAYMENT_HISTORY_PAGE_SIZE).map((p) => ({
+                _id: p._id,
+                paidAt: p.paidAt,
+                amount: p.amount,
+                currency: p.currency,
+                status: p.status,
+                cardLast4: p.cardLast4,
+                method: getClientPaymentMethod(p),
+            })),
+            hasMore,
+            summary: {
+                totalCount: summary?.totalCount || 0,
+                successCount: summary?.successCount || 0,
+                totalAmountSuccess: summary?.totalAmountSuccess || 0,
+            },
+        });
+    } catch (error) {
+        if (error instanceof ClientAccessError) {
+            return res.status(error.status).json({ success: false, message: error.message });
+        }
+        console.error("[getClientPaymentHistory]", error?.message || error);
+        return res.status(500).json({ success: false, message: "Ошибка сервера" });
     }
 };

@@ -16,6 +16,9 @@ import useFetchUserData from "../customHooks/useFetchUserData";
 import DataInput from "../Components/DataInput";
 import Li2 from "../Components/Li2";
 import ClientPartnerBinding from "../Components/ClientPartnerBinding";
+import ClientPaymentHistory from "../Components/ClientPaymentHistory";
+import InvoiceList from "../Components/Invoices/InvoiceList";
+import ClientAdditionalPhones from "../Components/ClientAdditionalPhones";
 
 const OPERATION_LOG_FIELD_LABELS = {
     balance: "Баланс",
@@ -84,6 +87,7 @@ export default function ClientPage() {
     const [needVerification, setNeedVerification] = useState(false)
 
     const [invLegal, setInvLegal] = useState("")
+    const [bin, setBin] = useState("")
 
     const [basis, setBasis] = useState("оферта")
     const [contractNumber, setContractNumber] = useState("")
@@ -344,6 +348,7 @@ export default function ClientPage() {
                     }
                 }
                 setNotes(typeof data?.notes === "string" ? data.notes : "")
+                setBin(typeof data?.bin === "string" ? data.bin : "")
                 setBasis(data?.basis === "договор" ? "договор" : "оферта")
                 setContractNumber(typeof data?.contractNumber === "string" ? data.contractNumber : "")
             })
@@ -844,6 +849,14 @@ export default function ClientPage() {
                         client={client}
                         updateClientData={updateClientData}
                     />
+                    {client?._id && (
+                        <ClientAdditionalPhones
+                            clientId={client._id}
+                            phones={client.additionalPhones || []}
+                            onSaved={getClientData}
+                            onMessage={showPartnerMessage}
+                        />
+                    )}
                     <UpdateClientData
                         title="Email"
                         open={updates.mailOpen}
@@ -1103,6 +1116,9 @@ export default function ClientPage() {
                         </div>
                     </Li>
                 </>}
+
+                <ClientPaymentHistory clientId={id} />
+                <InvoiceList clientId={id} />
 
                 <Div />
                 <Div>Адреса:</Div>
@@ -1635,6 +1651,21 @@ export default function ClientPage() {
                     <div className="flex flex-col gap-y-2">
                     <textarea size={13} style={{ fontSize: '16px' }} value={invLegal} onChange={(e) => {setInvLegal(e.target.value)}} className="bg-black text-white border border-white rounded-lg p-1 text-sm"></textarea>
                         <MyButton click={() => { updateClientData("invoiceLegalData", invLegal) }}>Сохранить юр. данные</MyButton>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
+                        <div>БИН/ИИН покупателя:</div>
+                        <input
+                            style={{ fontSize: "16px" }}
+                            value={bin}
+                            inputMode="numeric"
+                            maxLength={12}
+                            onChange={(e) => setBin(e.target.value.replace(/\D/g, ""))}
+                            className="bg-black text-white border border-white rounded-lg p-1 text-sm w-40"
+                        />
+                        <MyButton click={() => { updateClientData("bin", bin) }}>Сохранить БИН</MyButton>
+                        <div className="text-gray-400 text-sm">По нему оплата счёта сверяется с выпиской ForteBank</div>
                     </div>
                 </Li>
                 <Div />

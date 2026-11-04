@@ -212,6 +212,12 @@ export default function SuperAdmin() {
                         <LinkButton href="/superAdminPartners">Перейти</LinkButton>
                     </div>
                 </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
+                        <div>Счета юрлиц и поступления ForteBank:</div>
+                        <LinkButton href="/superAdminInvoices">Перейти</LinkButton>
+                    </div>
+                </Li>
             </>
             <Div />
             <Div>
@@ -233,6 +239,12 @@ export default function SuperAdmin() {
                 <div className="flex items-center flex-wrap gap-x-3">
                     <div>История по платежам (аквамаркет):</div>
                     <LinkButton href="/aquaMarketPickupPayments">Перейти</LinkButton>
+                </div>
+            </Li>
+            <Li>
+                <div className="flex items-center flex-wrap gap-x-3">
+                    <div>Вывоз из аквамаркетов (выдача курьерам):</div>
+                    <LinkButton href="/aquaMarketGivingAnalytics">Перейти</LinkButton>
                 </div>
             </Li>
 

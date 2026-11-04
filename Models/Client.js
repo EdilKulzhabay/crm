@@ -11,6 +11,11 @@ const ClientSchema = new mongoose.Schema(
         phone: {
             type: String,
         },
+        /** Дополнительные номера (7XXXXXXXXXX): по любому из них клиент входит в приложение кодом из WhatsApp */
+        additionalPhones: {
+            type: [String],
+            default: [],
+        },
         mail: {
             type: String,
         },
@@ -349,6 +354,20 @@ const ClientSchema = new mongoose.Schema(
         invoiceLegalData: {
             type: String,
             default: "",
+        },
+        /**
+         * БИН/ИИН покупателя для счёта (12 цифр). Попадает в счёт и сверяется с БИН плательщика из выписки.
+         * Пусто — берём из invoiceLegalData (utils/invoiceMatching.js#extractBin).
+         */
+        bin: {
+            type: String,
+            default: "",
+            match: /^(\d{12})?$/,
+        },
+        /** Последнее нажатие «Проверить оплату» по счетам — не чаще раза в 15 мин (utils/invoicePaymentCheck.js) */
+        invoicePaymentCheckedAt: {
+            type: Date,
+            default: null,
         },
         /** Основание для счёта/договора: публичная оферта или отдельный договор */
         basis: {

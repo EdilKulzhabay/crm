@@ -1,0 +1,334 @@
+import mongoose from "mongoose";
+import BankTransaction from "../Models/BankTransaction.js";
+import Client from "../Models/Client.js";
+import Invoice from "../Models/Invoice.js";
+import User from "../Models/User.js";
+import { BANK_REF_PREFIX, isBankStatementSyncConfigured, runBankStatementSync } from "../utils/bankStatementSync.js";
+import { canUserAccessClient } from "../utils/crmClientAccess.js";
+import { claimInvoiceCheck, summarizeInvoiceCheck } from "../utils/invoicePaymentCheck.js";
+import { invoiceNumberKey } from "../utils/invoiceMatching.js";
+import { applyInvoicePayment, InvoicePaymentError } from "../utils/invoicePayment.js";
+
+/**
+ * Счета юрлиц и поступления из выписки ForteBusiness.
+ * CRM: суперадмин — все счета и поступления; франчайзи — счета своих клиентов.
+ * Приложение: клиент проверяет оплату своего счёта.
+ */
+
+const PAGE_SIZE = 30;
+const INVOICE_STATUSES = ["issued", "paid", "cancelled"];
+const BANK_TRANSACTION_STATUSES = ["new", "matched", "needs_review", "ignored"];
+/** Выписку из приложения запрашиваем не чаще раза в минуту на всех клиентов (лимиты банка) */
+const MOBILE_SYNC_MIN_INTERVAL_MS = 60_000;
+/** Сколько неоплаченных счетов клиента показываем в итоге проверки */
+const MOBILE_CHECK_MAX_INVOICES = 50;
+
+/** Ограничение «раз в 15 минут» хранится в Client.invoicePaymentCheckedAt — одно на все счета клиента */
+const invoiceCheckRepository = {
+    claim: async (clientId, now, cutoff) => {
+        const previous = await Client.findOneAndUpdate(
+            { _id: clientId, $or: [{ invoicePaymentCheckedAt: null }, { invoicePaymentCheckedAt: { $lte: cutoff } }] },
+            { $set: { invoicePaymentCheckedAt: now } },
+            { new: false, projection: { invoicePaymentCheckedAt: 1 } }
+        ).lean();
+        return previous ? { previousCheckedAt: previous.invoicePaymentCheckedAt ?? null } : null;
+    },
+    getCheckedAt: async (clientId) =>
+        (await Client.findById(clientId).select("invoicePaymentCheckedAt").lean())?.invoicePaymentCheckedAt ?? null,
+    /** Банк не ответил — попытка не засчитывается (только если её не перезаписало другое нажатие) */
+    release: (clientId, claimedAt, previousCheckedAt) =>
+        Client.updateOne(
+            { _id: clientId, invoicePaymentCheckedAt: claimedAt },
+            { $set: { invoicePaymentCheckedAt: previousCheckedAt } }
+        ),
+};
+
+class HttpError extends Error {
+    constructor(status, message) {
+        super(message);
+        this.status = status;
+    }
+}
+
+const PAYMENT_ERROR_STATUS = { NOT_FOUND: 404, CANCELLED: 409, REVIEW: 422, DUPLICATE_REF: 409 };
+
+function sendError(res, error, context) {
+    if (error instanceof HttpError) {
+        return res.status(error.status).json({ success: false, message: error.message });
+    }
+    if (error instanceof InvoicePaymentError) {
+        return res.status(PAYMENT_ERROR_STATUS[error.code] ?? 400).json({ success: false, message: error.message });
+    }
+    console.error(`[InvoiceController] ${context}:`, error?.message || error);
+    return res.status(500).json({ success: false, message: "Ошибка сервера" });
+}
+
+function requireObjectId(value, label) {
+    if (!mongoose.Types.ObjectId.isValid(String(value))) throw new HttpError(400, `Некорректный ${label}`);
+    return String(value);
+}
+
+/** Кто и почему — обязательны для любых ручных действий с деньгами (как в карточке клиента) */
+function requireAuthor(body) {
+    const changedBy = typeof body?.changedBy === "string" ? body.changedBy.trim() : "";
+    const reason = typeof body?.reason === "string" ? body.reason.trim() : "";
+    if (!changedBy || !reason) throw new HttpError(400, "Укажите, кто вносит изменение и по какой причине");
+    return { changedBy, reason };
+}
+
+async function loadCrmUser(req) {
+    if (req.userType !== "user") throw new HttpError(403, "Нет доступа");
+    const user = await User.findById(req.userId).select("role").lean();
+    if (user?.role !== "superAdmin" && user?.role !== "admin") throw new HttpError(403, "Нет доступа");
+    return user;
+}
+
+/** Счёт, к которому у пользователя CRM есть доступ (по франчайзи клиента на момент выставления) */
+async function loadAccessibleInvoice(req, invoiceId) {
+    const id = requireObjectId(invoiceId, "id счёта");
+    const [user, invoice] = await Promise.all([loadCrmUser(req), Invoice.findById(id).lean()]);
+    if (!invoice) throw new HttpError(404, "Счёт не найден");
+    if (!canUserAccessClient(user, invoice)) throw new HttpError(403, "Нет доступа к этому счёту");
+    return invoice;
+}
+
+function serializeInvoice(invoice) {
+    const client = invoice.client;
+    return {
+        _id: String(invoice._id),
+        number: invoice.number,
+        createdAt: invoice.createdAt,
+        client: client?._id
+            ? { _id: String(client._id), name: client.fullName || client.userName || "—" }
+            : { _id: String(client), name: "—" },
+        buyerBin: invoice.buyerBin,
+        qty19: invoice.qty19,
+        qty12: invoice.qty12,
+        total: invoice.total,
+        status: invoice.status,
+        paidAt: invoice.paidAt,
+        paidAmount: invoice.paidAmount,
+        paymentSource: invoice.paymentSource,
+        confirmedBy: invoice.confirmedBy,
+        creditKind: invoice.creditKind,
+        credited: invoice.credited,
+        creditApplied: invoice.creditApplied,
+        cancelReason: invoice.cancelReason,
+    };
+}
+
+/**
+ * POST /getInvoices { status?, clientId?, number?, page? }
+ * «Не доначислено» (paid, но $inc не прошёл) отдаём отдельным счётчиком — это сигнал для проверки.
+ */
+export const getInvoices = async (req, res) => {
+    try {
+        const user = await loadCrmUser(req);
+        const { status, clientId, number, page: rawPage } = req.body || {};
+        const page = Math.max(1, Number.parseInt(rawPage, 10) || 1);
+
+        const filter = user.role === "superAdmin" ? {} : { franchisee: user._id };
+        if (INVOICE_STATUSES.includes(status)) filter.status = status;
+        if (clientId) filter.client = requireObjectId(clientId, "id клиента");
+        if (typeof number === "string" && number.trim()) filter.numberKey = invoiceNumberKey(number);
+
+        const [invoices, total, notCredited] = await Promise.all([
+            Invoice.find(filter)
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * PAGE_SIZE)
+                .limit(PAGE_SIZE)
+                .populate("client", "fullName userName")
+                .lean(),
+            Invoice.countDocuments(filter),
+            Invoice.countDocuments({ ...filter, status: "paid", creditApplied: false }),
+        ]);
+
+        return res.json({
+            success: true,
+            invoices: invoices.map(serializeInvoice),
+            total,
+            pageSize: PAGE_SIZE,
+            notCredited,
+        });
+    } catch (error) {
+        return sendError(res, error, "getInvoices");
+    }
+};
+
+/** POST /confirmInvoicePayment { invoiceId, paidAmount?, changedBy, reason } — менеджер видел оплату */
+export const confirmInvoicePayment = async (req, res) => {
+    try {
+        const { changedBy, reason } = requireAuthor(req.body);
+        const invoice = await loadAccessibleInvoice(req, req.body?.invoiceId);
+        const rawAmount = req.body?.paidAmount;
+        const paidAmount = rawAmount === undefined || rawAmount === "" ? undefined : Number(rawAmount);
+        if (paidAmount !== undefined && !(paidAmount > 0)) throw new HttpError(400, "Некорректная сумма оплаты");
+
+        const result = await applyInvoicePayment({
+            invoiceId: invoice._id,
+            paidAmount,
+            paymentSource: "manual",
+            confirmedBy: changedBy,
+            reason,
+            allowFakt: true,
+        });
+        if (result.status === "already_paid") throw new HttpError(409, `Счёт №${invoice.number} уже оплачен`);
+        return res.json({ success: true, invoice: serializeInvoice(result.invoice) });
+    } catch (error) {
+        return sendError(res, error, "confirmInvoicePayment");
+    }
+};
+
+/** POST /cancelInvoice { invoiceId, changedBy, reason } — только неоплаченный */
+export const cancelInvoice = async (req, res) => {
+    try {
+        const { changedBy, reason } = requireAuthor(req.body);
+        const invoice = await loadAccessibleInvoice(req, req.body?.invoiceId);
+        const updated = await Invoice.findOneAndUpdate(
+            { _id: invoice._id, status: "issued" },
+            { $set: { status: "cancelled", cancelledAt: new Date(), cancelledBy: changedBy, cancelReason: reason } },
+            { new: true }
+        ).lean();
+        if (!updated) throw new HttpError(409, "Отменить можно только неоплаченный счёт");
+        return res.json({ success: true, invoice: serializeInvoice(updated) });
+    } catch (error) {
+        return sendError(res, error, "cancelInvoice");
+    }
+};
+
+/** POST /getBankTransactionsAdmin { status?, page? } — поступления из выписки (суперадмин) */
+export const getBankTransactionsAdmin = async (req, res) => {
+    try {
+        const { status = "needs_review", page: rawPage } = req.body || {};
+        const page = Math.max(1, Number.parseInt(rawPage, 10) || 1);
+        const filter = BANK_TRANSACTION_STATUSES.includes(status) ? { status } : {};
+
+        const [transactions, total, needsReview] = await Promise.all([
+            BankTransaction.find(filter)
+                .sort({ date: -1, createdAt: -1 })
+                .skip((page - 1) * PAGE_SIZE)
+                .limit(PAGE_SIZE)
+                .populate("invoice", "number status total")
+                .lean(),
+            BankTransaction.countDocuments(filter),
+            BankTransaction.countDocuments({ status: "needs_review" }),
+        ]);
+
+        return res.json({
+            success: true,
+            isSyncConfigured: isBankStatementSyncConfigured(),
+            transactions,
+            total,
+            pageSize: PAGE_SIZE,
+            needsReview,
+        });
+    } catch (error) {
+        return sendError(res, error, "getBankTransactionsAdmin");
+    }
+};
+
+/**
+ * POST /resolveBankTransactionAdmin { transactionId, action: "assign"|"ignore", invoiceNumber?, changedBy, reason }
+ * assign — зачесть поступление в счёт вручную (те же правила, что автоматически, но можно и клиенту «по факту»).
+ */
+export const resolveBankTransactionAdmin = async (req, res) => {
+    try {
+        const { changedBy, reason } = requireAuthor(req.body);
+        const { action, invoiceNumber } = req.body || {};
+        const id = requireObjectId(req.body?.transactionId, "id поступления");
+        const tx = await BankTransaction.findById(id).lean();
+        if (!tx) throw new HttpError(404, "Поступление не найдено");
+        if (tx.status === "matched") throw new HttpError(409, "Поступление уже зачтено в счёт");
+
+        if (action === "ignore") {
+            await BankTransaction.updateOne(
+                { _id: tx._id, status: { $ne: "matched" } },
+                { $set: { status: "ignored", reviewReason: reason, resolvedBy: changedBy, resolvedAt: new Date() } }
+            );
+            return res.json({ success: true });
+        }
+        if (action !== "assign") throw new HttpError(400, "Неизвестное действие");
+
+        if (typeof invoiceNumber !== "string" || !invoiceNumber.trim()) throw new HttpError(400, "Укажите номер счёта");
+        const invoice = await Invoice.findOne({ numberKey: invoiceNumberKey(invoiceNumber) }).select("_id number").lean();
+        if (!invoice) throw new HttpError(404, `Счёт №${invoiceNumber.trim()} не найден`);
+
+        const result = await applyInvoicePayment({
+            invoiceId: invoice._id,
+            paidAmount: tx.amount,
+            paymentSource: "bank_statement",
+            paymentRef: BANK_REF_PREFIX + tx.bankRef,
+            confirmedBy: changedBy,
+            reason,
+            allowFakt: true,
+        });
+        if (result.status === "already_paid") throw new HttpError(409, `Счёт №${invoice.number} уже оплачен`);
+
+        await BankTransaction.updateOne(
+            { _id: tx._id },
+            { $set: { status: "matched", invoice: invoice._id, reviewReason: reason, resolvedBy: changedBy, resolvedAt: new Date() } }
+        );
+        return res.json({ success: true, invoice: serializeInvoice(result.invoice) });
+    } catch (error) {
+        return sendError(res, error, "resolveBankTransactionAdmin");
+    }
+};
+
+/** POST /syncBankStatementAdmin — сверить с выпиской сейчас (без ограничения частоты) */
+export const syncBankStatementAdmin = async (req, res) => {
+    try {
+        if (!isBankStatementSyncConfigured()) {
+            throw new HttpError(503, "Интеграция с ForteBusiness не настроена на сервере");
+        }
+        const stats = await runBankStatementSync();
+        return res.json({ success: true, stats });
+    } catch (error) {
+        return sendError(res, error, "syncBankStatementAdmin");
+    }
+};
+
+/**
+ * Читает выписку ForteBank, если клиент не проверял последние 15 минут.
+ * @returns {Promise<{ checked: boolean, nextCheckAt: Date }>}
+ */
+async function checkBankForClient(clientId) {
+    const claim = await claimInvoiceCheck(clientId, invoiceCheckRepository);
+    if (!claim.claimed) return { checked: false, nextCheckAt: claim.nextCheckAt };
+
+    try {
+        const result = await runBankStatementSync({ minIntervalMs: MOBILE_SYNC_MIN_INTERVAL_MS });
+        if (result?.disabled) throw new Error("FORTE_BUSINESS_* не заданы");
+        return { checked: true, nextCheckAt: claim.nextCheckAt };
+    } catch (syncError) {
+        console.error("[checkInvoicePaymentMobile] сверка с выпиской:", syncError?.message || syncError);
+        await invoiceCheckRepository.release(clientId, claim.claimedAt, claim.previousCheckedAt);
+        throw new HttpError(503, "Банк сейчас не отвечает. Попробуйте проверить оплату через пару минут.");
+    }
+}
+
+/**
+ * POST /checkInvoicePaymentMobile { invoiceId? } — кнопка «Проверить оплату» в приложении.
+ * Без invoiceId проверяются все неоплаченные счета клиента. Банк опрашивается не чаще раза в 15 мин на клиента.
+ * Ответ: { success, status: "paid"|"waiting"|"cancelled"|"none", waitingCount, checked, nextCheckAt?, creditKind?, credited? }
+ *   checked: false — 15 минут ещё не прошли, банк не опрашивали.
+ */
+export const checkInvoicePaymentMobile = async (req, res) => {
+    try {
+        if (req.userType !== "client") throw new HttpError(403, "Нет доступа");
+        const invoiceId = req.body?.invoiceId ? requireObjectId(req.body.invoiceId, "id счёта") : null;
+        const filter = invoiceId ? { _id: invoiceId, client: req.userId } : { client: req.userId, status: "issued" };
+
+        const before = await Invoice.find(filter).select("_id status").sort({ createdAt: -1 }).limit(MOBILE_CHECK_MAX_INVOICES).lean();
+        if (invoiceId && before.length === 0) throw new HttpError(404, "Счёт не найден");
+
+        const hasWaiting = before.some((invoice) => invoice.status === "issued");
+        const check = hasWaiting ? await checkBankForClient(req.userId) : { checked: false, nextCheckAt: null };
+
+        const after = await Invoice.find({ _id: { $in: before.map((invoice) => invoice._id) } })
+            .select("status creditKind credited")
+            .lean();
+        return res.json({ success: true, ...summarizeInvoiceCheck(after), ...check });
+    } catch (error) {
+        return sendError(res, error, "checkInvoicePaymentMobile");
+    }
+};

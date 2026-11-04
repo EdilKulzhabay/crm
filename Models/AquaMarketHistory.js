@@ -35,4 +35,7 @@ const AquaMarketHistoryScheme = new mongoose.Schema(
     }
 )
 
+// Аналитика по периоду и типу действия (выдача курьерам, самовывоз)
+AquaMarketHistoryScheme.index({ actionType: 1, createdAt: 1 })
+
 export default mongoose.model("AquaMarketHistory", AquaMarketHistoryScheme)

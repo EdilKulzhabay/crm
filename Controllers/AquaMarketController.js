@@ -6,6 +6,7 @@ import User from "../Models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getTodayAlmaty } from "../utils/dateUtils.js";
+import { parseAlmatyDayRange } from "../utils/almatyDateRange.js";
 
 export const addAquaMarket = async (req, res) => {
     try {
@@ -480,3 +481,120 @@ export const aquaMarketLogin = async (req, res) => {
         })
     }
 }
+
+/** Курьер выносит полные (giving) и сдаёт пустые — при выдаче или отдельной приёмкой (receiving) */
+const GIVING_ANALYTICS_ACTIONS = ["giving", "receiving"];
+
+const sumIfAction = (action, field) => ({
+    $sum: { $cond: [{ $eq: ["$actionType", action] }, { $ifNull: [field, 0] }, 0] },
+});
+
+/**
+ * Агрегация выдачи бутылей курьерам: одна строка на пару «аквамаркет + курьер».
+ * @param {{ start: Date, end: Date }} range
+ */
+export function buildAquaMarketGivingPipeline({ start, end }) {
+    return [
+        {
+            $match: {
+                actionType: { $in: GIVING_ANALYTICS_ACTIONS },
+                createdAt: { $gte: start, $lte: end },
+            },
+        },
+        {
+            $group: {
+                _id: { aquaMarket: "$aquaMarket", courier: "$courierAggregator" },
+                givingCount: { $sum: { $cond: [{ $eq: ["$actionType", "giving"] }, 1, 0] } },
+                fullB12: sumIfAction("giving", "$bottles.b12"),
+                fullB19: sumIfAction("giving", "$bottles.b19"),
+                emptyFromGivingB12: sumIfAction("giving", "$emptyBottles.b12"),
+                emptyFromGivingB19: sumIfAction("giving", "$emptyBottles.b19"),
+                emptyFromReceivingB12: sumIfAction("receiving", "$bottles.b12"),
+                emptyFromReceivingB19: sumIfAction("receiving", "$bottles.b19"),
+            },
+        },
+        { $lookup: { from: "aquamarkets", localField: "_id.aquaMarket", foreignField: "_id", as: "aquaMarket" } },
+        { $lookup: { from: "courieraggregators", localField: "_id.courier", foreignField: "_id", as: "courier" } },
+        {
+            $project: {
+                _id: 0,
+                aquaMarketId: "$_id.aquaMarket",
+                aquaMarketAddress: { $arrayElemAt: ["$aquaMarket.address", 0] },
+                courierId: "$_id.courier",
+                courierName: { $arrayElemAt: ["$courier.fullName", 0] },
+                givingCount: 1,
+                full: { b12: "$fullB12", b19: "$fullB19" },
+                empty: {
+                    b12: { $add: ["$emptyFromGivingB12", "$emptyFromReceivingB12"] },
+                    b19: { $add: ["$emptyFromGivingB19", "$emptyFromReceivingB19"] },
+                },
+            },
+        },
+    ];
+}
+
+const emptyTotals = () => ({ givingCount: 0, full: { b12: 0, b19: 0 }, empty: { b12: 0, b19: 0 } });
+
+const addTotals = (acc, row) => ({
+    givingCount: acc.givingCount + row.givingCount,
+    full: { b12: acc.full.b12 + row.full.b12, b19: acc.full.b19 + row.full.b19 },
+    empty: { b12: acc.empty.b12 + row.empty.b12, b19: acc.empty.b19 + row.empty.b19 },
+});
+
+/**
+ * Сворачивает строки «аквамаркет + курьер» в список аквамаркетов с разбивкой по курьерам.
+ * Аквамаркеты и курьеры — по убыванию вывезенных полных бутылей.
+ */
+export function summarizeAquaMarketGiving(rows) {
+    const byMarket = new Map();
+    for (const row of rows) {
+        const key = String(row.aquaMarketId);
+        const market = byMarket.get(key) || {
+            aquaMarketId: row.aquaMarketId,
+            address: row.aquaMarketAddress || "Аквамаркет удалён",
+            totals: emptyTotals(),
+            couriers: [],
+        };
+        const courier = {
+            courierId: row.courierId,
+            courierName: row.courierName || (row.courierId ? "Курьер удалён" : "Без курьера"),
+            givingCount: row.givingCount,
+            full: row.full,
+            empty: row.empty,
+        };
+        byMarket.set(key, {
+            ...market,
+            totals: addTotals(market.totals, row),
+            couriers: [...market.couriers, courier],
+        });
+    }
+
+    const fullTotal = (item) => item.full.b12 + item.full.b19;
+    const aquaMarkets = [...byMarket.values()]
+        .map((m) => ({ ...m, couriers: [...m.couriers].sort((a, b) => fullTotal(b) - fullTotal(a)) }))
+        .sort((a, b) => fullTotal(b.totals) - fullTotal(a.totals));
+
+    return { aquaMarkets, totals: rows.reduce(addTotals, emptyTotals()) };
+}
+
+/**
+ * POST /getAquaMarketGivingAnalytics { startDate, endDate } — дни Алматы ГГГГ-ММ-ДД, только суперадмин.
+ */
+export const getAquaMarketGivingAnalytics = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.body || {};
+        const range = parseAlmatyDayRange(startDate, endDate);
+        if (!range) {
+            return res.status(400).json({
+                success: false,
+                message: "Укажите период в формате ГГГГ-ММ-ДД (начало не позже конца)",
+            });
+        }
+
+        const rows = await AquaMarketHistory.aggregate(buildAquaMarketGivingPipeline(range));
+        return res.json({ success: true, ...summarizeAquaMarketGiving(rows) });
+    } catch (error) {
+        console.error("[getAquaMarketGivingAnalytics]", error?.message || error);
+        return res.status(500).json({ success: false, message: "Ошибка на стороне сервера" });
+    }
+};

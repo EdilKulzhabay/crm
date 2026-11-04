@@ -60,4 +60,7 @@ const ClientPaymentSchema = new mongoose.Schema(
     }
 );
 
+// История оплат в карточке клиента: последние платежи клиента
+ClientPaymentSchema.index({ client: 1, paidAt: -1 });
+
 export default mongoose.model("ClientPayment", ClientPaymentSchema);

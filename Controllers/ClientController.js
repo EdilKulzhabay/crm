@@ -6,6 +6,12 @@ import ClientOperationLog from "../Models/ClientOperationLog.js";
 import axios from "axios"
 import bcrypt from "bcrypt";
 import mongoose from "mongoose";
+import {
+    ClientPhonesError,
+    findClientByAnyPhone,
+    normalizeAdditionalPhones,
+} from "../utils/clientPhones.js";
+import { ClientAccessError, loadAccessibleClient } from "../utils/crmClientAccess.js";
 
 /** Поля, изменение которых через CRM требует указания "кто" и "зачем" и пишется в журнал операций */
 const MANUAL_LOGGED_FIELDS = ["balance", "paidBootlesFor12", "paidBootlesFor19"];
@@ -235,6 +241,7 @@ export const searchClient = async (req, res) => {
             { fullName: { $regex: regex } },
             { userName: { $regex: regex } },
             { phone: { $regex: regex } },
+            { additionalPhones: { $regex: regex } },
             { mail: { $regex: regex } },
             { invoiceLegalData: { $regex: regex } },
             {
@@ -270,6 +277,7 @@ export const searchClient = async (req, res) => {
                     ...franch,
                     $or: [
                         { phone: { $regex: numbersOnly } },
+                        { additionalPhones: { $regex: numbersOnly } },
                     ],
                 }).populate("franchisee");
 
@@ -421,6 +429,21 @@ export const updateClientData = async (req, res) => {
                 });
             }
             client.contractNumber = value === "договор" ? trimmedContractNumber : "";
+        }
+
+        if (field === "bin" && value && !/^\d{12}$/.test(String(value))) {
+            return res.status(400).json({ success: false, message: "БИН/ИИН — 12 цифр без пробелов" });
+        }
+
+        if (field === "phone" && value) {
+            // Номер входа должен однозначно указывать на один аккаунт (основные и дополнительные номера)
+            const owner = await findClientByAnyPhone(Client, value, { excludeClientId: client._id });
+            if (owner) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Этот номер уже привязан к другому клиенту",
+                });
+            }
         }
 
         const trimmedChangedBy = typeof changedBy === "string" ? changedBy.trim() : "";
@@ -976,3 +999,40 @@ export const transferOrders = async (req, res) => {
         });
     }
 }
+
+/**
+ * POST /updateClientAdditionalPhones { clientId, phones: string[] }
+ * Заменяет список дополнительных номеров клиента. Номер не может принадлежать другому клиенту,
+ * иначе вход по коду не сможет однозначно определить аккаунт.
+ */
+export const updateClientAdditionalPhones = async (req, res) => {
+    try {
+        const { clientId, phones } = req.body || {};
+        const client = await loadAccessibleClient(req, clientId, "phone additionalPhones");
+        const additionalPhones = normalizeAdditionalPhones(phones, client.phone);
+
+        for (const phone of additionalPhones) {
+            const owner = await findClientByAnyPhone(Client, phone, { excludeClientId: client._id });
+            if (owner) {
+                return res.status(409).json({
+                    success: false,
+                    message: `Номер ${phone} уже привязан к другому клиенту`,
+                });
+            }
+        }
+
+        client.additionalPhones = additionalPhones;
+        await client.save();
+
+        return res.json({ success: true, additionalPhones, message: "Номера сохранены" });
+    } catch (error) {
+        if (error instanceof ClientAccessError) {
+            return res.status(error.status).json({ success: false, message: error.message });
+        }
+        if (error instanceof ClientPhonesError) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+        console.error("[updateClientAdditionalPhones]", error?.message || error);
+        return res.status(500).json({ success: false, message: "Что-то пошло не так" });
+    }
+};

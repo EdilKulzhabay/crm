@@ -35,6 +35,7 @@ import {
     PartnerProgramController,
     PartnerAdminController,
     PartnerManagementController,
+    InvoiceController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
@@ -285,6 +286,7 @@ app.post("/deleteClientAdmin", ClientController.deleteClientAdmin);
 app.post("/getClientDataForId", ClientController.getClientDataForId);
 app.post("/deleteClientAdress", ClientController.deleteClientAdress);
 app.post("/updateClientData", ClientController.updateClientData);
+app.post("/updateClientAdditionalPhones", checkAuth, ClientController.updateClientAdditionalPhones);
 app.post("/getClientOperationLog", ClientController.getClientOperationLog);
 app.post("/updateClientOperationLog", ClientController.updateClientOperationLog);
 app.post("/updateClientFranchisee", ClientController.updateClientFranchisee);
@@ -390,7 +392,15 @@ app.post("/addClientAddress", checkAuth, MobileController.addClientAddress);
 app.post("/updateClientAddress", checkAuth, MobileController.updateClientAddress);
 app.post("/getClientAddresses", checkAuth, MobileController.getClientAddresses);
 app.post("/getClientDataMobile", MobileController.getClientDataMobile);
-app.post("/generateInvoicePdfMobile", MobileController.generateInvoicePdfMobile);
+app.post("/generateInvoicePdfMobile", checkAuth, MobileController.generateInvoicePdfMobile);
+// Счета юрлиц и сверка с выпиской ForteBusiness
+app.post("/checkInvoicePaymentMobile", checkAuth, InvoiceController.checkInvoicePaymentMobile);
+app.post("/getInvoices", checkAuth, InvoiceController.getInvoices);
+app.post("/confirmInvoicePayment", checkAuth, InvoiceController.confirmInvoicePayment);
+app.post("/cancelInvoice", checkAuth, InvoiceController.cancelInvoice);
+app.post("/getBankTransactionsAdmin", checkAuth, requireSuperAdmin, InvoiceController.getBankTransactionsAdmin);
+app.post("/resolveBankTransactionAdmin", checkAuth, requireSuperAdmin, InvoiceController.resolveBankTransactionAdmin);
+app.post("/syncBankStatementAdmin", checkAuth, requireSuperAdmin, InvoiceController.syncBankStatementAdmin);
 app.post("/updateClientDataMobile", MobileController.updateClientDataMobile);
 app.post("/sendSupportMessage", MobileController.sendSupportMessage);
 app.post("/getSupportMessages", MobileController.getSupportMessages);
@@ -513,6 +523,7 @@ app.post("/aquaMarketAction", AquaMarketController.aquaMarketAction)
 app.post("/aquaMarketFill", AquaMarketController.aquaMarketFill)
 app.post("/aquaMarketLogin", AquaMarketController.aquaMarketLogin)
 app.post("/getAquaMarketPickupPayments", AquaMarketController.getAquaMarketPickupPayments)
+app.post("/getAquaMarketGivingAnalytics", checkAuth, requireSuperAdmin, AquaMarketController.getAquaMarketGivingAnalytics)
 
 ///////FA MOBILE
 app.post("/franchiseeLogin", FAMobileController.franchiseeLogin)
@@ -546,6 +557,7 @@ app.post(
     checkAuth,
     PaymentController.getClientPaymentsForSuperAdmin
 );
+app.post("/getClientPaymentHistory", checkAuth, PaymentController.getClientPaymentHistory);
 
 
 ///////APIPAY (Kaspi Pay через QR — https://apipay.kz/docs)

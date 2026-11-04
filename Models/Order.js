@@ -94,6 +94,11 @@ const OrderSchema = new mongoose.Schema(
             type: Number,
             default: 0
         },
+        /** Тариф курьера-агрегатора за бутыль на момент доставки (заработок курьера не пересчитывается при смене тарифа) */
+        courierPayoutRates: {
+            price12: { type: Number },
+            price19: { type: Number },
+        },
         aquaMarketAddress: {
             type: String,
             default: ""

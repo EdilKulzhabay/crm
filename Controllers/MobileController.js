@@ -14,10 +14,9 @@ import {
     maskEmailForLog,
     maskPhoneForLog,
     normalizePhoneForWhatsApp,
-    phonesMatch,
-    buildPhoneSuffixRegex,
 } from "../whatsApp/sendRegistrationOtp.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
+import { findClientByAnyPhone } from "../utils/clientPhones.js";
 import Partner from "../Models/Partner.js";
 import { applyPartnerReferralBonus, PARTNER_REFERRAL_CLIENT_BONUS } from "../utils/partnerLedger.js";
 import {
@@ -29,6 +28,8 @@ import {
     nextInvoiceSequentialNumber,
 } from "../utils/invoicePdf.js";
 import { takeNextInvoiceNumberForPdf } from "../utils/invoiceCounter.js";
+import Invoice from "../Models/Invoice.js";
+import { extractBin, invoiceNumberKey, normalizeBin } from "../utils/invoiceMatching.js";
 import { getDateAlmaty, getHourAlmaty } from "../utils/dateUtils.js";
 import { sendCompleteRegistration } from "../utils/metaConversionsApi.js";
 import {
@@ -111,15 +112,9 @@ function isPhoneRecentlyVerified(phoneNorm) {
     return true;
 }
 
-/** Ищет клиента по телефону (номера в БД хранятся в разном форматировании — сверяем по последним 10 цифрам + нормализации) */
-async function findClientByPhone(rawPhone) {
-    const phoneNorm = normalizePhoneForWhatsApp(rawPhone);
-    if (!phoneNorm) return null;
-    const last10 = phoneNorm.slice(-10);
-    const candidates = await Client.find({
-        phone: { $regex: buildPhoneSuffixRegex(last10), $options: "i" },
-    }).limit(200);
-    return candidates.find((c) => phonesMatch(c.phone, phoneNorm)) || null;
+/** Ищет клиента по основному или дополнительному номеру (код входа уходит на введённый номер) */
+function findClientByPhone(rawPhone) {
+    return findClientByAnyPhone(Client, rawPhone);
 }
 
 export const sendMail = async (req, res) => {
@@ -200,17 +195,7 @@ export const sendMail = async (req, res) => {
             }
         }
 
-        const last10 = phoneNorm.slice(-10);
-        const candidates = await Client.find({
-            phone: { $regex: buildPhoneSuffixRegex(last10), $options: "i" },
-        })
-            .select("phone")
-            .limit(200)
-            .lean();
-
-        const phoneTaken = candidates.some((c) =>
-            phonesMatch(c.phone, phoneNorm)
-        );
+        const phoneTaken = Boolean(await findClientByAnyPhone(Client, phoneNorm));
         if (phoneTaken) {
             sendingInProgress.delete(phoneNorm);
             console.log(
@@ -1200,8 +1185,12 @@ export const clientLoginOtp = async (req, res) => {
  */
 export const generateInvoicePdfMobile = async (req, res) => {
     try {
-        const { clientId, qty19: q19raw, qty12: q12raw } = req.body;
-        const client = await Client.findById(clientId);
+        // Клиент только из токена: раньше clientId брался из тела без авторизации
+        if (req.userType !== "client") {
+            return res.status(403).json({ success: false, message: "Нет доступа" });
+        }
+        const { qty19: q19raw, qty12: q12raw } = req.body;
+        const client = await Client.findById(req.userId);
         if (!client) {
             return res.status(404).json({ success: false, message: "Клиент не найден" });
         }
@@ -1253,6 +1242,21 @@ export const generateInvoicePdfMobile = async (req, res) => {
             contractNumber: client.contractNumber,
         });
 
+        // Без записи счёта оплату не сопоставить с выпиской — PDF без неё не отдаём
+        const invoice = await Invoice.create({
+            number: inv,
+            numberKey: invoiceNumberKey(inv),
+            client: client._id,
+            franchisee: client.franchisee ?? null,
+            buyerLegalData: legalText,
+            buyerBin: normalizeBin(client.bin) ?? extractBin(legalText),
+            qty19,
+            qty12,
+            price19,
+            price12,
+            total: qty19 * price19 + qty12 * price12,
+        });
+
         const nextNum = nextInvoiceSequentialNumber(inv);
 
         const safeInv = inv.replace(/[^\w\u0400-\u04FF-]+/g, "_");
@@ -1264,6 +1268,7 @@ export const generateInvoicePdfMobile = async (req, res) => {
             fileName,
             invoiceNumberUsed: inv,
             nextInvoiceSequentialNumber: nextNum,
+            invoiceId: String(invoice._id),
         });
     } catch (error) {
         console.error("generateInvoicePdfMobile", error);

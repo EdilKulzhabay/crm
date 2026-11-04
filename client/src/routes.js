@@ -70,6 +70,7 @@ import AquaMarketLogin from "./Pages/AquaMarket/AquaMarketLogin";
 import AquaMarketHistory from "./Pages/AquaMarket/AquaMarketHistory";
 import AquaMarketSettings from "./Pages/AquaMarket/AquaMarketSettings";
 import AquaMarketPickupPayments from "./Pages/AquaMarket/AquaMarketPickupPayments";
+import AquaMarketGivingAnalytics from "./Pages/AquaMarket/AquaMarketGivingAnalytics";
 import SuperAdminFaq from "./Pages/SuperAdmin/SuperAdminFaq";
 import SuperAdminNotifications from "./Pages/SuperAdmin/SuperAdminNotifications";
 import PaymentSuccess from "./Pages/PaymentSuccess";
@@ -82,6 +83,7 @@ import SuperAdminMobileOrderCutoff from "./Pages/SuperAdmin/SuperAdminMobileOrde
 import SuperAdminAppVersion from "./Pages/SuperAdmin/SuperAdminAppVersion";
 import SuperAdminPartners from "./Pages/SuperAdmin/SuperAdminPartners";
 import SuperAdminPartnerPage from "./Pages/SuperAdmin/SuperAdminPartnerPage";
+import SuperAdminInvoices from "./Pages/SuperAdmin/SuperAdminInvoices";
 import DistributeOrders from "./Pages/DistributeOrders";
 import BusinessCenterCourierAggregatorPage from "./Pages/BusinessCenterCourierAggregatorPage";
 
@@ -152,6 +154,7 @@ export const router = createBrowserRouter([
     { path: "/superAdminAppVersion", element: <SuperAdminAppVersion /> },
     { path: "/superAdminPartners", element: <SuperAdminPartners /> },
     { path: "/superAdminPartner/:id", element: <SuperAdminPartnerPage /> },
+    { path: "/superAdminInvoices", element: <SuperAdminInvoices /> },
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
@@ -184,6 +187,7 @@ export const router = createBrowserRouter([
     { path: "/aquaMarket/history/:aquaMarketId", element: <AquaMarketHistory />},
     { path: "/aquaMarketSettings", element: <AquaMarketSettings />},
     { path: "/aquaMarketPickupPayments", element: <AquaMarketPickupPayments />},
+    { path: "/aquaMarketGivingAnalytics", element: <AquaMarketGivingAnalytics />},
 
     /////PAYMENT
     { path: "/payment", element: <PaymentPage />},
