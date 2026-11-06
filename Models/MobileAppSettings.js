@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 
+export const DEFAULT_MAINTENANCE_MESSAGE = "Ведутся технические работы, попробуйте через 15 мин";
+export const MAINTENANCE_MESSAGE_MAX_LENGTH = 300;
+
 /** Глобальные настройки мобильного приложения (один документ в коллекции) */
 const MobileAppSettingsSchema = new mongoose.Schema(
     {
@@ -20,6 +23,17 @@ const MobileAppSettingsSchema = new mongoose.Schema(
         latestCourierAppVersion: {
             type: String,
             default: "",
+        },
+        /** Технические работы: клиентское приложение показывает модалку поверх всех экранов */
+        maintenanceEnabled: {
+            type: Boolean,
+            default: false,
+        },
+        /** Текст модалки технических работ */
+        maintenanceMessage: {
+            type: String,
+            default: DEFAULT_MAINTENANCE_MESSAGE,
+            maxlength: MAINTENANCE_MESSAGE_MAX_LENGTH,
         },
     },
     { timestamps: true }

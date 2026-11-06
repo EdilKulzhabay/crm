@@ -557,6 +557,9 @@ export const updateCourierOrderStatus = async (req, res) => {
             // Бонус партнёру за бутыли + push «Клиент получил заказ» (сам ловит и логирует свои ошибки)
             const { applyPartnerOrderBonus } = await import("../utils/partnerLedger.js");
             await applyPartnerOrderBonus(order._id);
+            // Купон на мойку за доставленный заказ (сам ловит и логирует свои ошибки)
+            const { issueCarWashCoupon } = await import("../utils/carWashCoupon.js");
+            await issueCarWashCoupon(order._id);
 
             try {
                 const { sendFirstPurchaseIfApplicable } = await import("../utils/metaConversionsApi.js");

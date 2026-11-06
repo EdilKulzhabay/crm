@@ -225,10 +225,17 @@ export default function OrderPage() {
             } else {
                 setOpen(true)
                 setStatus("error")
-                setMessage("Не удалось удалить заказ")
+                setMessage(data.message || "Не удалось удалить заказ")
             }
+        }).catch((e) => {
+            setOpen(true)
+            setStatus("error")
+            setMessage(e?.response?.data?.message || "Не удалось удалить заказ")
         })
     }
+
+    // Назначенный курьеру заказ удалить нельзя (сервер тоже запрещает) — сначала снять с курьера
+    const isAssignedToCourier = Boolean(order?.courierAggregator || order?.courier)
 
     return (
         <div className="relative">
@@ -747,11 +754,17 @@ export default function OrderPage() {
                     <Div>Действия:</Div>
                     <Div>
                         <div className="flex items-center gap-x-3 flex-wrap">
-                            <MyButton click={() => {
-                                setDeleteModal(true)
-                            }}>
-                                Удалить заказ
-                            </MyButton>
+                            {isAssignedToCourier ? (
+                                <span className="text-gray-400">
+                                    Заказ назначен курьеру — удалить нельзя. Сначала снимите заказ с курьера.
+                                </span>
+                            ) : (
+                                <MyButton click={() => {
+                                    setDeleteModal(true)
+                                }}>
+                                    Удалить заказ
+                                </MyButton>
+                            )}
                         </div>
                     </Div>
                 </>}

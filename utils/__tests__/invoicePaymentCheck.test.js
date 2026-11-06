@@ -1,54 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { claimInvoiceCheck, INVOICE_CHECK_COOLDOWN_MS, summarizeInvoiceCheck } from "../invoicePaymentCheck.js";
-
-/** In-memory аналог атомарного findOneAndUpdate по Client.invoicePaymentCheckedAt */
-function createRepo(initialCheckedAt = null) {
-    let checkedAt = initialCheckedAt;
-    return {
-        async claim(_clientId, now, cutoff) {
-            if (checkedAt && checkedAt > cutoff) return null;
-            const previousCheckedAt = checkedAt;
-            checkedAt = now;
-            return { previousCheckedAt };
-        },
-        async getCheckedAt() {
-            return checkedAt;
-        },
-    };
-}
-
-describe("claimInvoiceCheck", () => {
-    test("первая проверка разрешена, следующая — через 15 минут", async () => {
-        const now = new Date("2026-11-03T10:00:00Z");
-        const result = await claimInvoiceCheck("c1", createRepo(), now);
-        assert.equal(result.claimed, true);
-        assert.equal(result.previousCheckedAt, null);
-        assert.equal(result.claimedAt, now);
-        assert.equal(result.nextCheckAt.getTime(), now.getTime() + INVOICE_CHECK_COOLDOWN_MS);
-    });
-
-    test("повторное нажатие раньше 15 минут отклоняется и сообщает время следующей проверки", async () => {
-        const repo = createRepo();
-        await claimInvoiceCheck("c1", repo, new Date("2026-11-03T10:00:00Z"));
-        const result = await claimInvoiceCheck("c1", repo, new Date("2026-11-03T10:14:00Z"));
-        assert.equal(result.claimed, false);
-        assert.equal(result.nextCheckAt.toISOString(), "2026-11-03T10:15:00.000Z");
-    });
-
-    test("через 15 минут проверка снова разрешена", async () => {
-        const repo = createRepo(new Date("2026-11-03T10:00:00Z"));
-        const result = await claimInvoiceCheck("c1", repo, new Date("2026-11-03T10:15:00Z"));
-        assert.equal(result.claimed, true);
-    });
-
-    test("одновременные нажатия: проходит только одно", async () => {
-        const repo = createRepo();
-        const now = new Date("2026-11-03T10:00:00Z");
-        const results = await Promise.all([1, 2, 3, 4, 5].map(() => claimInvoiceCheck("c1", repo, now)));
-        assert.equal(results.filter((r) => r.claimed).length, 1);
-    });
-});
+import { summarizeInvoiceCheck } from "../invoicePaymentCheck.js";
 
 describe("summarizeInvoiceCheck", () => {
     test("нет неоплаченных счетов", () => {

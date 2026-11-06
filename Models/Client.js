@@ -364,11 +364,6 @@ const ClientSchema = new mongoose.Schema(
             default: "",
             match: /^(\d{12})?$/,
         },
-        /** Последнее нажатие «Проверить оплату» по счетам — не чаще раза в 15 мин (utils/invoicePaymentCheck.js) */
-        invoicePaymentCheckedAt: {
-            type: Date,
-            default: null,
-        },
         /** Основание для счёта/договора: публичная оферта или отдельный договор */
         basis: {
             type: String,

@@ -1,47 +1,24 @@
 import mongoose from "mongoose";
 import BankTransaction from "../Models/BankTransaction.js";
-import Client from "../Models/Client.js";
 import Invoice from "../Models/Invoice.js";
 import User from "../Models/User.js";
 import { BANK_REF_PREFIX, isBankStatementSyncConfigured, runBankStatementSync } from "../utils/bankStatementSync.js";
 import { canUserAccessClient } from "../utils/crmClientAccess.js";
-import { claimInvoiceCheck, summarizeInvoiceCheck } from "../utils/invoicePaymentCheck.js";
+import { summarizeInvoiceCheck } from "../utils/invoicePaymentCheck.js";
 import { invoiceNumberKey } from "../utils/invoiceMatching.js";
 import { applyInvoicePayment, InvoicePaymentError } from "../utils/invoicePayment.js";
 
 /**
  * Счета юрлиц и поступления из выписки ForteBusiness.
  * CRM: суперадмин — все счета и поступления; франчайзи — счета своих клиентов.
- * Приложение: клиент проверяет оплату своего счёта.
+ * Приложение: статус оплаты счетов клиента (сверка с банком — по расписанию раз в час).
  */
 
 const PAGE_SIZE = 30;
 const INVOICE_STATUSES = ["issued", "paid", "cancelled"];
 const BANK_TRANSACTION_STATUSES = ["new", "matched", "needs_review", "ignored"];
-/** Выписку из приложения запрашиваем не чаще раза в минуту на всех клиентов (лимиты банка) */
-const MOBILE_SYNC_MIN_INTERVAL_MS = 60_000;
-/** Сколько неоплаченных счетов клиента показываем в итоге проверки */
+/** Сколько неоплаченных счетов клиента показываем в статусе */
 const MOBILE_CHECK_MAX_INVOICES = 50;
-
-/** Ограничение «раз в 15 минут» хранится в Client.invoicePaymentCheckedAt — одно на все счета клиента */
-const invoiceCheckRepository = {
-    claim: async (clientId, now, cutoff) => {
-        const previous = await Client.findOneAndUpdate(
-            { _id: clientId, $or: [{ invoicePaymentCheckedAt: null }, { invoicePaymentCheckedAt: { $lte: cutoff } }] },
-            { $set: { invoicePaymentCheckedAt: now } },
-            { new: false, projection: { invoicePaymentCheckedAt: 1 } }
-        ).lean();
-        return previous ? { previousCheckedAt: previous.invoicePaymentCheckedAt ?? null } : null;
-    },
-    getCheckedAt: async (clientId) =>
-        (await Client.findById(clientId).select("invoicePaymentCheckedAt").lean())?.invoicePaymentCheckedAt ?? null,
-    /** Банк не ответил — попытка не засчитывается (только если её не перезаписало другое нажатие) */
-    release: (clientId, claimedAt, previousCheckedAt) =>
-        Client.updateOne(
-            { _id: clientId, invoicePaymentCheckedAt: claimedAt },
-            { $set: { invoicePaymentCheckedAt: previousCheckedAt } }
-        ),
-};
 
 class HttpError extends Error {
     constructor(status, message) {
@@ -274,13 +251,13 @@ export const resolveBankTransactionAdmin = async (req, res) => {
     }
 };
 
-/** POST /syncBankStatementAdmin — сверить с выпиской сейчас (без ограничения частоты) */
+/** POST /syncBankStatementAdmin — сверить с выпиской сейчас: добирает пропущенное за последние дни (до 31) */
 export const syncBankStatementAdmin = async (req, res) => {
     try {
         if (!isBankStatementSyncConfigured()) {
             throw new HttpError(503, "Интеграция с ForteBusiness не настроена на сервере");
         }
-        const stats = await runBankStatementSync();
+        const stats = await runBankStatementSync({ todayOnly: false });
         return res.json({ success: true, stats });
     } catch (error) {
         return sendError(res, error, "syncBankStatementAdmin");
@@ -288,29 +265,10 @@ export const syncBankStatementAdmin = async (req, res) => {
 };
 
 /**
- * Читает выписку ForteBank, если клиент не проверял последние 15 минут.
- * @returns {Promise<{ checked: boolean, nextCheckAt: Date }>}
- */
-async function checkBankForClient(clientId) {
-    const claim = await claimInvoiceCheck(clientId, invoiceCheckRepository);
-    if (!claim.claimed) return { checked: false, nextCheckAt: claim.nextCheckAt };
-
-    try {
-        const result = await runBankStatementSync({ minIntervalMs: MOBILE_SYNC_MIN_INTERVAL_MS });
-        if (result?.disabled) throw new Error("FORTE_BUSINESS_* не заданы");
-        return { checked: true, nextCheckAt: claim.nextCheckAt };
-    } catch (syncError) {
-        console.error("[checkInvoicePaymentMobile] сверка с выпиской:", syncError?.message || syncError);
-        await invoiceCheckRepository.release(clientId, claim.claimedAt, claim.previousCheckedAt);
-        throw new HttpError(503, "Банк сейчас не отвечает. Попробуйте проверить оплату через пару минут.");
-    }
-}
-
-/**
- * POST /checkInvoicePaymentMobile { invoiceId? } — кнопка «Проверить оплату» в приложении.
- * Без invoiceId проверяются все неоплаченные счета клиента. Банк опрашивается не чаще раза в 15 мин на клиента.
- * Ответ: { success, status: "paid"|"waiting"|"cancelled"|"none", waitingCount, checked, nextCheckAt?, creditKind?, credited? }
- *   checked: false — 15 минут ещё не прошли, банк не опрашивали.
+ * POST /checkInvoicePaymentMobile { invoiceId? } — статус оплаты счетов клиента (только чтение из базы).
+ * Кнопки «Проверить оплату» в приложении больше нет, эндпоинт оставлен для старых версий приложения.
+ * Банк здесь не опрашивается: выписку сверяет расписание раз в час (utils/bankStatementSync.js).
+ * Ответ: { success, status: "paid"|"waiting"|"cancelled"|"none", waitingCount, creditKind?, credited? }
  */
 export const checkInvoicePaymentMobile = async (req, res) => {
     try {
@@ -318,16 +276,13 @@ export const checkInvoicePaymentMobile = async (req, res) => {
         const invoiceId = req.body?.invoiceId ? requireObjectId(req.body.invoiceId, "id счёта") : null;
         const filter = invoiceId ? { _id: invoiceId, client: req.userId } : { client: req.userId, status: "issued" };
 
-        const before = await Invoice.find(filter).select("_id status").sort({ createdAt: -1 }).limit(MOBILE_CHECK_MAX_INVOICES).lean();
-        if (invoiceId && before.length === 0) throw new HttpError(404, "Счёт не найден");
-
-        const hasWaiting = before.some((invoice) => invoice.status === "issued");
-        const check = hasWaiting ? await checkBankForClient(req.userId) : { checked: false, nextCheckAt: null };
-
-        const after = await Invoice.find({ _id: { $in: before.map((invoice) => invoice._id) } })
+        const invoices = await Invoice.find(filter)
             .select("status creditKind credited")
+            .sort({ createdAt: -1 })
+            .limit(MOBILE_CHECK_MAX_INVOICES)
             .lean();
-        return res.json({ success: true, ...summarizeInvoiceCheck(after), ...check });
+        if (invoiceId && invoices.length === 0) throw new HttpError(404, "Счёт не найден");
+        return res.json({ success: true, ...summarizeInvoiceCheck(invoices) });
     } catch (error) {
         return sendError(res, error, "checkInvoicePaymentMobile");
     }

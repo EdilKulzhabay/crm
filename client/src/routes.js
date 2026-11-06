@@ -84,6 +84,9 @@ import SuperAdminAppVersion from "./Pages/SuperAdmin/SuperAdminAppVersion";
 import SuperAdminPartners from "./Pages/SuperAdmin/SuperAdminPartners";
 import SuperAdminPartnerPage from "./Pages/SuperAdmin/SuperAdminPartnerPage";
 import SuperAdminInvoices from "./Pages/SuperAdmin/SuperAdminInvoices";
+import SuperAdminCarWashes from "./Pages/SuperAdmin/SuperAdminCarWashes";
+import CarWashLogin from "./Pages/CarWash/CarWashLogin";
+import CarWashMain from "./Pages/CarWash/CarWashMain";
 import DistributeOrders from "./Pages/DistributeOrders";
 import BusinessCenterCourierAggregatorPage from "./Pages/BusinessCenterCourierAggregatorPage";
 
@@ -155,6 +158,7 @@ export const router = createBrowserRouter([
     { path: "/superAdminPartners", element: <SuperAdminPartners /> },
     { path: "/superAdminPartner/:id", element: <SuperAdminPartnerPage /> },
     { path: "/superAdminInvoices", element: <SuperAdminInvoices /> },
+    { path: "/superAdminCarWashes", element: <SuperAdminCarWashes /> },
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
@@ -188,6 +192,10 @@ export const router = createBrowserRouter([
     { path: "/aquaMarketSettings", element: <AquaMarketSettings />},
     { path: "/aquaMarketPickupPayments", element: <AquaMarketPickupPayments />},
     { path: "/aquaMarketGivingAnalytics", element: <AquaMarketGivingAnalytics />},
+
+    /////CAR WASH (кабинет сотрудника мойки, свой токен — см. carWashApi.js)
+    { path: "/carWashLogin", element: <CarWashLogin />},
+    { path: "/carWash", element: <CarWashMain />},
 
     /////PAYMENT
     { path: "/payment", element: <PaymentPage />},

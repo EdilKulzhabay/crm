@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api";
 import Container from "../Components/Container";
@@ -19,6 +19,9 @@ import ClientPartnerBinding from "../Components/ClientPartnerBinding";
 import ClientPaymentHistory from "../Components/ClientPaymentHistory";
 import InvoiceList from "../Components/Invoices/InvoiceList";
 import ClientAdditionalPhones from "../Components/ClientAdditionalPhones";
+
+/** Сколько записей журнала операций видно без прокрутки */
+const OPERATION_LOG_VISIBLE_ENTRIES = 5;
 
 const OPERATION_LOG_FIELD_LABELS = {
     balance: "Баланс",
@@ -83,6 +86,20 @@ export default function ClientPage() {
     const [editingLogId, setEditingLogId] = useState(null)
     const [editLogChangedBy, setEditLogChangedBy] = useState("")
     const [editLogReason, setEditLogReason] = useState("")
+    const operationLogRef = useRef(null)
+    const [operationLogMaxHeight, setOperationLogMaxHeight] = useState(null)
+
+    // Журнал показывает OPERATION_LOG_VISIBLE_ENTRIES записей, остальное — прокруткой.
+    // Высота записей разная (кто/причина, режим редактирования), поэтому меряем по последней видимой.
+    useLayoutEffect(() => {
+        const list = operationLogRef.current
+        const lastVisible = list?.children[OPERATION_LOG_VISIBLE_ENTRIES - 1]
+        if (!lastVisible || operationLog.length <= OPERATION_LOG_VISIBLE_ENTRIES) {
+            setOperationLogMaxHeight(null)
+            return
+        }
+        setOperationLogMaxHeight(lastVisible.offsetTop + lastVisible.offsetHeight)
+    }, [operationLog, editingLogId])
 
     const [needVerification, setNeedVerification] = useState(false)
 
@@ -1023,7 +1040,12 @@ export default function ClientPage() {
                     </Li>
                     <Li>
                         <div>Журнал операций (баланс / талоны / партнёр):</div>
-                        <div className="flex flex-col gap-y-2 text-sm">
+                        {/* relative — чтобы offsetTop записей считался от списка */}
+                        <div
+                            ref={operationLogRef}
+                            className="relative flex flex-col gap-y-2 text-sm overflow-y-auto pr-2"
+                            style={operationLogMaxHeight ? { maxHeight: operationLogMaxHeight } : undefined}
+                        >
                             {operationLog.length === 0 && (
                                 <div className="text-gray-400">Изменений не было</div>
                             )}

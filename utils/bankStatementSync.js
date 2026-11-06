@@ -1,3 +1,4 @@
+import cron from "node-cron";
 import BankTransaction from "../Models/BankTransaction.js";
 import Invoice from "../Models/Invoice.js";
 import { createForteBusinessClient, isIncomingTransaction, readForteBusinessConfig } from "./forteBusiness.js";
@@ -6,8 +7,15 @@ import { applyInvoicePayment, InvoicePaymentError, SYSTEM_CONFIRMED_BY } from ".
 
 /**
  * Сверка счетов юрлиц с выпиской ForteBusiness: новые поступления → BankTransaction → зачисление по счёту.
- * Запуск только вручную: «Проверить оплату» в приложении (раз в 15 мин на клиента) и кнопка суперадмина в CRM.
+ * Запуск: автоматически раз в час (только выписка за сегодня) и кнопка суперадмина в CRM (с запасом назад).
  */
+
+/**
+ * Каждый час в :55 по Алматы. Последний запуск в 23:55 закрывает сутки:
+ * сверка читает только сегодняшнюю выписку, и после полуночи вчерашний день уже не перечитывается.
+ */
+const SYNC_CRON_EXPRESSION = "55 * * * *";
+const SYNC_TIMEZONE = "Asia/Almaty";
 
 /** Запас назад от последней загруженной операции: выходные + задержка проводки. Повторы безопасны — bankRef уникален */
 const SYNC_OVERLAP_DAYS = 5;
@@ -15,9 +23,14 @@ const SYNC_OVERLAP_DAYS = 5;
 const SYNC_MAX_LOOKBACK_DAYS = 31;
 const DAY_MS = 86_400_000;
 
+/** Ежечасная сверка: только сегодняшний день (дата по Алматы — так её форматирует formatForteDate) */
+export function getTodayPeriod(now) {
+    return { from: new Date(now), to: new Date(now) };
+}
+
 /**
- * Период выписки. Расписания нет, между проверками могут пройти недели,
- * поэтому читаем от последней сохранённой операции (с запасом), но не дальше 31 дня.
+ * Период для ручной сверки из CRM: добирает пропущенное (например, банк не отвечал весь день).
+ * Читаем от последней сохранённой операции (с запасом), но не дальше 31 дня.
  * @param {number} now — мс
  * @param {Date | null} latestStoredDate — дата последней сохранённой операции
  */
@@ -153,10 +166,13 @@ export async function processBankTransaction(tx, deps = defaultSyncDeps) {
 
 /**
  * Загружает выписку и разбирает все неразобранные операции.
+ * @param {{ todayOnly?: boolean }} [options] — false: период getSyncPeriod (ручная сверка из CRM)
  * @returns {Promise<{ fetched: number, inserted: number, matched: number, needs_review: number, ignored: number, failed: number }>}
  */
-export async function syncBankStatement(deps = defaultSyncDeps) {
-    const period = getSyncPeriod(deps.now(), await deps.findLatestTransactionDate());
+export async function syncBankStatement(deps = defaultSyncDeps, { todayOnly = true } = {}) {
+    const period = todayOnly
+        ? getTodayPeriod(deps.now())
+        : getSyncPeriod(deps.now(), await deps.findLatestTransactionDate());
     const incoming = await deps.fetchIncoming(period);
 
     let inserted = 0;
@@ -172,24 +188,36 @@ export async function syncBankStatement(deps = defaultSyncDeps) {
 }
 
 let runningSync = null;
-let lastFinishedAt = 0;
 
 /**
- * Запуск без параллельных копий (CRM, приложение).
- * @param {{ minIntervalMs?: number }} [options] — не запускать, если прошлая сверка была недавно
- * @returns {Promise<object>} статистика, { skipped: true } или { disabled: true }
+ * Запуск без параллельных копий (расписание, CRM).
+ * @param {{ todayOnly?: boolean }} [options]
+ * @returns {Promise<object>} статистика или { disabled: true }
  */
-export function runBankStatementSync({ minIntervalMs = 0 } = {}, deps = defaultSyncDeps) {
+export function runBankStatementSync({ todayOnly = true } = {}, deps = defaultSyncDeps) {
     if (!isBankStatementSyncConfigured()) return Promise.resolve({ disabled: true });
-    if (runningSync) return runningSync;
-    if (minIntervalMs > 0 && deps.now() - lastFinishedAt < minIntervalMs) {
-        return Promise.resolve({ skipped: true });
-    }
-    runningSync = syncBankStatement(deps).finally(() => {
+    runningSync ??= syncBankStatement(deps, { todayOnly }).finally(() => {
         runningSync = null;
-        lastFinishedAt = deps.now();
     });
     return runningSync;
+}
+
+/** Ежечасная сверка с выпиской (только за сегодня). Без FORTE_BUSINESS_* в env не запускается. */
+export function startBankStatementSync() {
+    if (!isBankStatementSyncConfigured()) {
+        console.log("[bankStatementSync] FORTE_BUSINESS_* не заданы — ежечасная сверка выключена");
+        return;
+    }
+    cron.schedule(
+        SYNC_CRON_EXPRESSION,
+        () => {
+            runBankStatementSync()
+                .then((stats) => console.log("[bankStatementSync] сверка за сегодня:", JSON.stringify(stats)))
+                .catch((error) => console.error("[bankStatementSync] ошибка сверки:", error?.message || error));
+        },
+        { timezone: SYNC_TIMEZONE }
+    );
+    console.log("[bankStatementSync] ежечасная сверка с выпиской запущена (в :55, только за сегодня)");
 }
 
 export function isBankStatementSyncConfigured() {

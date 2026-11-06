@@ -36,6 +36,8 @@ import {
     PartnerAdminController,
     PartnerManagementController,
     InvoiceController,
+    CarWashController,
+    CarWashAdminController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
@@ -57,12 +59,14 @@ import checkAuthAggregator from "./utils/checkAuthAggregator.js";
 import checkAuthPartner from "./utils/checkAuthPartner.js";
 import requireVerifiedPartner from "./utils/requireVerifiedPartner.js";
 import requireSuperAdmin from "./utils/requireSuperAdmin.js";
+import checkAuthCarWash from "./utils/checkAuthCarWash.js";
 import { startPartnerLapseCheck } from "./utils/partnerLapseCheck.js";
 import {
     startWhatsAppWebClient,
     shutdownWhatsAppWeb,
 } from "./whatsApp/waWebClient.js";
 import { startCourierIdleOfflineCheck } from "./utils/courierIdleOfflineCheck.js";
+import { startBankStatementSync } from "./utils/bankStatementSync.js";
 import { initCalls } from "./calls/index.js";
 
 // Импортируем функцию оптимизации маршрутов
@@ -303,6 +307,8 @@ app.get("/getMobileOrderCutoffSettings", checkAuth, MobileAppSettingsController.
 app.post("/setMobileOrderCutoffSettings", checkAuth, MobileAppSettingsController.setMobileOrderCutoffSettings);
 app.get("/getAppVersionSettings", checkAuth, MobileAppSettingsController.getAppVersionSettings);
 app.post("/setAppVersionSettings", checkAuth, MobileAppSettingsController.setAppVersionSettings);
+app.get("/getMaintenanceStatusMobile", MobileAppSettingsController.getMaintenanceStatusMobile);
+app.post("/setMaintenanceSettings", checkAuth, MobileAppSettingsController.setMaintenanceSettings);
 
 ///////COURIER
 app.get("/getFreeInfoCourier", checkAuth, CourierController.getFreeInfoCourier);
@@ -451,6 +457,19 @@ app.post("/resolvePartnerWithdrawalAdmin", checkAuth, requireSuperAdmin, Partner
 app.post("/setPartnerVerificationAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerVerificationAdmin);
 app.post("/runPartnerLapseCheckAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.runPartnerLapseCheckAdmin);
 app.post("/sendPartnerNotificationAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.sendPartnerNotificationAdmin);
+
+//////CAR WASH (купон на мойку за доставленный заказ; кабинет мойки в CRM, см. Controllers/CarWashController.js)
+app.post("/carWashLogin", CarWashController.carWashLogin);
+app.post("/getCarWashMe", checkAuthCarWash, CarWashController.getCarWashMe);
+app.post("/redeemCarWashCoupon", checkAuthCarWash, CarWashController.redeemCarWashCoupon);
+app.post("/getCarWashRedemptions", checkAuthCarWash, CarWashController.getCarWashRedemptions);
+app.post("/getCarWashCouponsMobile", checkAuth, checkRole(["client"]), CarWashController.getCarWashCouponsMobile);
+app.post("/getCarWashesAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.getCarWashesAdmin);
+app.post("/saveCarWashAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.saveCarWashAdmin);
+app.post("/setCarWashStatusAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.setCarWashStatusAdmin);
+app.post("/saveCarWashUserAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.saveCarWashUserAdmin);
+app.post("/setCarWashUserStatusAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.setCarWashUserStatusAdmin);
+app.post("/getCarWashCouponsAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.getCarWashCouponsAdmin);
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)
@@ -608,6 +627,7 @@ server.listen(process.env.PORT, () => {
 
     startCourierIdleOfflineCheck();
     startPartnerLapseCheck();
+    startBankStatementSync();
 
     // if (process.env.WHATSAPP_WEB_AUTOSTART !== "false") {
     //     console.log(

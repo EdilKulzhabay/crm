@@ -16,6 +16,9 @@ export default function SuperAdminAppVersion() {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
     const [status, setStatus] = useState("");
+    const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+    const [maintenanceMessage, setMaintenanceMessage] = useState("");
+    const [maintenanceSaving, setMaintenanceSaving] = useState(false);
 
     const load = () => {
         setLoading(true);
@@ -28,6 +31,10 @@ export default function SuperAdminAppVersion() {
                 }
                 if (data?.success && data.latestCourierAppVersion != null) {
                     setCourierValue(String(data.latestCourierAppVersion));
+                }
+                if (data?.success) {
+                    setMaintenanceEnabled(data.maintenanceEnabled === true);
+                    setMaintenanceMessage(String(data.maintenanceMessage || ""));
                 }
             })
             .catch((e) => {
@@ -99,6 +106,29 @@ export default function SuperAdminAppVersion() {
             });
     };
 
+    /** enabled — новое состояние; текст сохраняем вместе с ним */
+    const saveMaintenance = (enabled) => {
+        setMaintenanceSaving(true);
+        api.post(
+            "/setMaintenanceSettings",
+            { enabled, message: maintenanceMessage },
+            { headers: { "Content-Type": "application/json" } }
+        )
+            .then(({ data }) => {
+                setMaintenanceEnabled(data?.maintenanceEnabled === true);
+                setMaintenanceMessage(String(data?.maintenanceMessage || ""));
+                setOpen(true);
+                setStatus("success");
+                setMessage(data?.maintenanceEnabled ? "Технические работы включены" : "Технические работы выключены");
+            })
+            .catch((e) => {
+                setOpen(true);
+                setStatus("error");
+                setMessage(e?.response?.data?.message || "Ошибка сохранения");
+            })
+            .finally(() => setMaintenanceSaving(false));
+    };
+
     const closeSnack = () => setOpen(false);
 
     if (userData?.role !== "superAdmin") {
@@ -149,6 +179,45 @@ export default function SuperAdminAppVersion() {
                     <MyButton click={saveCourier} disabled={loading}>
                         Сохранить
                     </MyButton>
+                </div>
+            </Div>
+            <Div />
+            <Div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <div>Технические работы (клиентское приложение):</div>
+                    <span className={maintenanceEnabled ? "text-red" : "text-green-400"}>
+                        {maintenanceEnabled ? "включены — клиенты видят модалку" : "выключены"}
+                    </span>
+                </div>
+            </Div>
+            <Div />
+            <Div>
+                <div className="flex flex-col gap-y-2 w-full max-w-xl">
+                    <span>Текст модалки (пусто — стандартный)</span>
+                    <MyInput
+                        value={maintenanceMessage}
+                        change={(e) => setMaintenanceMessage(e.target.value)}
+                        color="white"
+                    />
+                    <div className="flex flex-row flex-wrap items-center gap-x-2 gap-y-2">
+                        {maintenanceEnabled ? (
+                            <>
+                                <MyButton click={() => saveMaintenance(false)} disabled={loading || maintenanceSaving}>
+                                    Выключить
+                                </MyButton>
+                                <MyButton click={() => saveMaintenance(true)} disabled={loading || maintenanceSaving}>
+                                    Сохранить текст
+                                </MyButton>
+                            </>
+                        ) : (
+                            <MyButton click={() => saveMaintenance(true)} disabled={loading || maintenanceSaving}>
+                                Включить
+                            </MyButton>
+                        )}
+                    </div>
+                    <span className="text-gray-400 text-sm">
+                        Приложение проверяет статус при запуске, при возврате в приложение и каждые 5 минут.
+                    </span>
                 </div>
             </Div>
             <Div />

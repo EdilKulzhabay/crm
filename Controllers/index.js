@@ -26,3 +26,5 @@ export * as PartnerProgramController from "./PartnerProgramController.js";
 export * as PartnerAdminController from "./PartnerAdminController.js";
 export * as PartnerManagementController from "./PartnerManagementController.js";
 export * as InvoiceController from "./InvoiceController.js";
+export * as CarWashController from "./CarWashController.js";
+export * as CarWashAdminController from "./CarWashAdminController.js";

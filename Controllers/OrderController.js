@@ -9,6 +9,9 @@ import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import { getDateAlmaty } from "../utils/dateUtils.js";
+import { isOrderAssignedToCourier, UNASSIGNED_ORDER_FILTER } from "../utils/orderCourierAssignment.js";
+
+const ORDER_ASSIGNED_DELETE_MESSAGE = "Заказ назначен курьеру — удалить нельзя. Сначала снимите заказ с курьера.";
 // import queueOrTools from "../orToolsQueue.js";
 
 export const addOrder = async (req, res) => {
@@ -508,6 +511,9 @@ export const updateOrder = async (req, res) => {
                 // Бонус партнёру за бутыли + push «Клиент получил заказ» (сам ловит и логирует свои ошибки)
                 const { applyPartnerOrderBonus } = await import("../utils/partnerLedger.js");
                 await applyPartnerOrderBonus(order._id);
+                // Купон на мойку за доставленный заказ (сам ловит и логирует свои ошибки)
+                const { issueCarWashCoupon } = await import("../utils/carWashCoupon.js");
+                await issueCarWashCoupon(order._id);
 
                 try {
                     const { sendFirstPurchaseIfApplicable } = await import("../utils/metaConversionsApi.js");
@@ -1061,72 +1067,50 @@ export const getActiveOrdersKol = async (req, res) => {
     }
 }
 
+/**
+ * POST /deleteOrder { orderId } — только суперадмин.
+ * Заказ, назначенный курьеру (courier или courierAggregator), удалить нельзя — сначала снять с курьера.
+ * Проверка и удаление — одним запросом, чтобы курьера не успели назначить между ними.
+ */
 export const deleteOrder = async (req, res) => {
     try {
-        const id = req.userId;
-        const {orderId} = req.body
-        const user = await User.findById(id)
-        if (user.role === "superAdmin") {
-            const order = await Order.findById(orderId)
-            if (order?.status !== "delivered" && order?.status !== "cancelled") {
-                if (order?.courier) {
-                    const courierId = order.courier
-                    const courier = await Courier.findById(courierId)
-                    if (courier) {
-                        const orders = courier.orders.filter(item => item.order !== orderId);
-                        courier.orders = orders
-                        await courier.save()
-                        const mail = courier.mail
-                        if (mail !== null && mail !== "" && mail.includes("@")) {
-                            let sendText = `По адресу ${order?.address.actual}, `
-                            if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
-                                sendText += `кол. 12,5 л.: ${order?.products.b12}, `
-                            }
-                            if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
-                                sendText += `кол. 18,9 л.: ${order?.products.b19} `
-                            }
-                            SendEmailOrder(mail, "cancelled", sendText)
-                        }
-                    } else {
-                        const courieraggregator = await CourierAggregator.findById(courierId)
-                        if (courieraggregator) {
-                            const orders = courieraggregator.orders.filter(item => item.orderId !== orderId);
-                            if (courieraggregator.order._id === orderId) {
-                                courieraggregator.order = null
-                            }
-                            courieraggregator.orders = orders
-                            await courieraggregator.save()
-                            
-                        }
-                    }
-                }
-                if (order?.franchisee) {
-                    const franchisee = await User.findOne({_id: order.franchisee})
-                    const mail = franchisee.mail
-                    if (mail !== null && mail !== "" && mail.includes("@")) {
-                        let sendText = `По адресу ${order?.address.actual}, `
-                        if (order?.products.b12 !== null &&  Number(order?.products.b12 > 0)) {
-                            sendText += `кол. 12,5 л.: ${order?.products.b12}, `
-                        }
-                        if (order?.products.b19 !== null &&  Number(order?.products.b19 > 0)) {
-                            sendText += `кол. 18,9 л.: ${order?.products.b19} `
-                        }
-                        SendEmailOrder(mail, "cancelled", sendText)
-                    }
-                }
-            }
-            const delRes = await Order.findByIdAndDelete(orderId);
-
-            if (!delRes) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Не удалось удалить заказа",
-                });
-            }
-            return res.json({success: true})
+        const { orderId } = req.body;
+        const user = await User.findById(req.userId).select("role").lean();
+        if (user?.role !== "superAdmin") {
+            return res.status(403).json({ success: false, message: "Удалять заказы может только суперадмин" });
+        }
+        if (!mongoose.isValidObjectId(orderId)) {
+            return res.status(400).json({ success: false, message: "Некорректный id заказа" });
         }
 
-        res.json({success: false})
+        const order = await Order.findById(orderId).select("courier courierAggregator").lean();
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Заказ не найден" });
+        }
+        if (isOrderAssignedToCourier(order)) {
+            return res.status(409).json({ success: false, message: ORDER_ASSIGNED_DELETE_MESSAGE });
+        }
+
+        const deleted = await Order.findOneAndDelete({ _id: orderId, ...UNASSIGNED_ORDER_FILTER });
+        if (!deleted) {
+            return res.status(409).json({ success: false, message: ORDER_ASSIGNED_DELETE_MESSAGE });
+        }
+
+        if (deleted.status !== "delivered" && deleted.status !== "cancelled" && deleted.franchisee) {
+            const franchisee = await User.findById(deleted.franchisee).select("mail").lean();
+            const mail = franchisee?.mail;
+            if (mail && mail.includes("@")) {
+                let sendText = `По адресу ${deleted.address?.actual}, `;
+                if (Number(deleted.products?.b12) > 0) {
+                    sendText += `кол. 12,5 л.: ${deleted.products.b12}, `;
+                }
+                if (Number(deleted.products?.b19) > 0) {
+                    sendText += `кол. 18,9 л.: ${deleted.products.b19} `;
+                }
+                SendEmailOrder(mail, "cancelled", sendText);
+            }
+        }
+        return res.json({ success: true });
     } catch (error) {
         console.log(error);
         res.status(500).json({

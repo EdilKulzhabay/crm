@@ -1,5 +1,8 @@
 import User from "../Models/User.js";
-import MobileAppSettings from "../Models/MobileAppSettings.js";
+import MobileAppSettings, {
+    DEFAULT_MAINTENANCE_MESSAGE,
+    MAINTENANCE_MESSAGE_MAX_LENGTH,
+} from "../Models/MobileAppSettings.js";
 
 const DEFAULT_HOUR = 19;
 
@@ -84,6 +87,7 @@ export const getAppVersionSettings = async (req, res) => {
             success: true,
             latestAppVersion: doc.latestAppVersion || "",
             latestCourierAppVersion: doc.latestCourierAppVersion || "",
+            ...serializeMaintenance(doc),
         });
     } catch (e) {
         console.error("getAppVersionSettings", e);
@@ -141,6 +145,64 @@ export const setAppVersionSettings = async (req, res) => {
         });
     } catch (e) {
         console.error("setAppVersionSettings", e);
+        res.status(500).json({ success: false, message: "Ошибка сервера" });
+    }
+};
+
+function serializeMaintenance(doc) {
+    return {
+        maintenanceEnabled: doc?.maintenanceEnabled === true,
+        maintenanceMessage: doc?.maintenanceMessage || DEFAULT_MAINTENANCE_MESSAGE,
+    };
+}
+
+/**
+ * GET /getMaintenanceStatusMobile — без авторизации: модалку показываем и на экране входа.
+ * Ответ: { success, enabled, message }
+ */
+export const getMaintenanceStatusMobile = async (req, res) => {
+    try {
+        const doc = await MobileAppSettings.findOne().select("maintenanceEnabled maintenanceMessage").lean();
+        const { maintenanceEnabled, maintenanceMessage } = serializeMaintenance(doc);
+        res.json({ success: true, enabled: maintenanceEnabled, message: maintenanceMessage });
+    } catch (e) {
+        console.error("getMaintenanceStatusMobile", e);
+        res.status(500).json({ success: false, message: "Ошибка сервера" });
+    }
+};
+
+/**
+ * POST /setMaintenanceSettings { enabled: boolean, message?: string } — только суперадмин.
+ * Пустой текст — стандартный «Ведутся технические работы, попробуйте через 15 мин».
+ */
+export const setMaintenanceSettings = async (req, res) => {
+    try {
+        const admin = await requireSuperAdmin(req, res);
+        if (!admin) return;
+
+        const { enabled, message } = req.body || {};
+        if (typeof enabled !== "boolean") {
+            return res.status(400).json({ success: false, message: "Укажите, включены ли технические работы" });
+        }
+        if (message !== undefined && typeof message !== "string") {
+            return res.status(400).json({ success: false, message: "Текст сообщения должен быть строкой" });
+        }
+        const trimmed = (message ?? "").trim();
+        if (trimmed.length > MAINTENANCE_MESSAGE_MAX_LENGTH) {
+            return res.status(400).json({
+                success: false,
+                message: `Текст не длиннее ${MAINTENANCE_MESSAGE_MAX_LENGTH} символов`,
+            });
+        }
+
+        const update = { maintenanceEnabled: enabled };
+        if (message !== undefined) update.maintenanceMessage = trimmed || DEFAULT_MAINTENANCE_MESSAGE;
+
+        const doc = await MobileAppSettings.findOneAndUpdate({}, { $set: update }, { new: true, upsert: true });
+        console.log(`[maintenance] ${admin.fullName || admin._id}: ${enabled ? "включены" : "выключены"}`);
+        res.json({ success: true, ...serializeMaintenance(doc) });
+    } catch (e) {
+        console.error("setMaintenanceSettings", e);
         res.status(500).json({ success: false, message: "Ошибка сервера" });
     }
 };

@@ -1,6 +1,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { getSyncPeriod, mapForteTransaction, processBankTransaction, syncBankStatement } from "../bankStatementSync.js";
+import { getSyncPeriod, getTodayPeriod, mapForteTransaction, processBankTransaction, syncBankStatement } from "../bankStatementSync.js";
+import { formatForteDate } from "../forteBusiness.js";
 import { InvoicePaymentError } from "../invoicePayment.js";
 
 const BIN = "123456789012";
@@ -139,5 +140,40 @@ describe("getSyncPeriod", () => {
 
     test("не дальше 31 дня даже после долгого перерыва", () => {
         assert.equal(daysAgo(getSyncPeriod(now, new Date("2026-08-01T00:00:00Z"))), 31);
+    });
+});
+
+describe("ежечасная сверка — только за сегодня", () => {
+    test("период — сегодняшний день по Алматы, в том числе поздно вечером", () => {
+        const lateEvening = Date.parse("2026-11-04T18:55:00Z"); // 23:55 в Алматы (UTC+5)
+        const period = getTodayPeriod(lateEvening);
+        assert.equal(formatForteDate(period.from), "04.11.2026");
+        assert.equal(formatForteDate(period.to), "04.11.2026");
+    });
+
+    test("по умолчанию банк запрашивается только за сегодня", async () => {
+        const deps = createDeps();
+        const periods = [];
+        deps.fetchIncoming = async (period) => {
+            periods.push(period);
+            return [];
+        };
+        deps.findLatestTransactionDate = async () => {
+            throw new Error("для сверки за сегодня не нужен");
+        };
+        await syncBankStatement(deps);
+        assert.equal(formatForteDate(periods[0].from), formatForteDate(new Date(deps.now())));
+        assert.equal(formatForteDate(periods[0].to), formatForteDate(new Date(deps.now())));
+    });
+
+    test("ручная сверка из CRM (todayOnly: false) добирает пропущенные дни", async () => {
+        const deps = createDeps();
+        let period = null;
+        deps.fetchIncoming = async (p) => {
+            period = p;
+            return [];
+        };
+        await syncBankStatement(deps, { todayOnly: false });
+        assert.equal(Math.round((deps.now() - period.from.getTime()) / 86_400_000), 31);
     });
 });
