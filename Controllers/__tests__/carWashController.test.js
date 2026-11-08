@@ -5,6 +5,7 @@ import { createCarWashAdminController } from "../CarWashAdminController.js";
 import { createAttemptLimiter } from "../../utils/attemptLimiter.js";
 import { CarWashCouponError } from "../../utils/carWashCoupon.js";
 import { createCheckAuthCarWash } from "../../utils/checkAuthCarWash.js";
+import { buildCarWashRedemptionMessage } from "../../telegram/sendCarWashRedemption.js";
 
 const USER_ID = "65f000000000000000000001";
 const WASH_ID = "65f0000000000000000000aa";
@@ -72,14 +73,74 @@ describe("CarWashController — вход", () => {
 describe("CarWashController — погашение", () => {
     const req = (code) => ({ body: { code }, carWashUser: activeUser, carWash: activeWash });
 
+    const usedCoupon = { _id: "c1", client: "cl1", code: "AAAA-BBBB-CCCC", discountPercent: 20, usedAt: new Date(), carWashName: "Центр", usedByName: "Айдар" };
+    const flush = () => new Promise((resolve) => setImmediate(resolve));
+
     test("успешное погашение возвращает данные операции", async () => {
         const controller = createCarWashController({
-            redeem: async () => ({ _id: "c1", code: "AAAA-BBBB-CCCC", discountPercent: 20, usedAt: new Date(), carWashName: "Центр", usedByName: "Айдар" }),
+            redeem: async () => usedCoupon,
+            repo: { findClient: async () => null },
+            notifyRedemption: async () => ({ ok: true }),
             logger: silentLogger,
         });
         const res = await call(controller.redeemCarWashCoupon, req("aaaabbbbcccc"));
         assert.equal(res.statusCode, 200);
         assert.equal(res.body.coupon.discountPercent, 20);
+    });
+
+    test("после погашения в Telegram уходят данные мойки и клиента", async () => {
+        const sent = [];
+        const client = { _id: "cl1", userName: "Асель", phone: "+77011112233" };
+        const controller = createCarWashController({
+            redeem: async () => usedCoupon,
+            repo: { findClient: async (id) => (id === "cl1" ? client : null) },
+            notifyRedemption: async (params) => (sent.push(params), { ok: true }),
+            logger: silentLogger,
+        });
+        await call(controller.redeemCarWashCoupon, req("AAAA-BBBB-CCCC"));
+        await flush();
+        assert.equal(sent.length, 1);
+        assert.equal(sent[0].client, client);
+        assert.equal(sent[0].carWash.name, "Центр");
+        assert.equal(sent[0].carWashUser.fullName, "Айдар");
+    });
+
+    test("сбой Telegram не ломает погашение", async () => {
+        const errors = [];
+        const controller = createCarWashController({
+            redeem: async () => usedCoupon,
+            repo: { findClient: async () => { throw new Error("db down"); } },
+            notifyRedemption: async () => ({ ok: true }),
+            logger: { log() {}, error: (...args) => errors.push(args) },
+        });
+        const res = await call(controller.redeemCarWashCoupon, req("AAAA-BBBB-CCCC"));
+        await flush();
+        assert.equal(res.statusCode, 200);
+        assert.equal(errors.length, 1);
+    });
+
+    test("неудачное погашение в Telegram не отправляется", async () => {
+        let sent = 0;
+        const controller = createCarWashController({
+            redeem: async () => { throw new CarWashCouponError("USED", "x"); },
+            notifyRedemption: async () => (sent++, { ok: true }),
+            logger: silentLogger,
+        });
+        await call(controller.redeemCarWashCoupon, req("AAAA-BBBB-CCCC"));
+        await flush();
+        assert.equal(sent, 0);
+    });
+
+    test("текст для Telegram содержит мойку, сотрудника и клиента", () => {
+        const text = buildCarWashRedemptionMessage({
+            coupon: usedCoupon,
+            client: { fullName: "Асель Ж.", phone: "+77011112233" },
+            carWash: activeWash,
+            carWashUser: activeUser,
+        });
+        for (const part of ["AAAA-BBBB-CCCC", "−20%", "Мойка: Центр", "Алматы, Абая 1", "Айдар", "Асель Ж.", "+77011112233"]) {
+            assert.ok(text.includes(part), part);
+        }
     });
 
     test("причина отказа уходит кодом и статусом: USED → 409, EXPIRED → 410", async () => {
@@ -109,6 +170,38 @@ describe("CarWashController — погашение", () => {
         await call(controller.redeemCarWashCoupon, req("A"));
         await call(controller.redeemCarWashCoupon, req("A"));
         assert.equal((await call(controller.redeemCarWashCoupon, req("A"))).statusCode, 429);
+    });
+});
+
+describe("CarWashController — статистика купона", () => {
+    test("событие клиента увеличивает свой счётчик", async () => {
+        const tracked = [];
+        const controller = createCarWashController({
+            repo: { trackEngagement: async (clientId, fields) => tracked.push([clientId, fields.counter]) },
+            logger: silentLogger,
+        });
+        const res = await call(controller.trackCarWashCouponEvent, { userId: "cl1", body: { event: "screenView" } });
+        assert.equal(res.statusCode, 200);
+        assert.deepEqual(tracked, [["cl1", "screenViews"]]);
+    });
+
+    test("неизвестное событие — 400 без записи", async () => {
+        let calls = 0;
+        const controller = createCarWashController({ repo: { trackEngagement: async () => calls++ }, logger: silentLogger });
+        for (const event of ["hack", "__proto__", "toString", undefined]) {
+            const res = await call(controller.trackCarWashCouponEvent, { userId: "cl1", body: { event } });
+            assert.equal(res.statusCode, 400);
+        }
+        assert.equal(calls, 0);
+    });
+
+    test("админ получает переходы и просмотры", async () => {
+        const controller = createCarWashAdminController({
+            repo: { engagementTotals: async () => ({ clickedClients: 3, screenViews: 7 }) },
+            logger: silentLogger,
+        });
+        const res = await call(controller.getCarWashCouponStatsAdmin, { body: {} });
+        assert.deepEqual(res.body.stats, { clickedClients: 3, screenViews: 7 });
     });
 });
 
@@ -189,6 +282,19 @@ describe("CarWashAdminController", () => {
         const ok = await call(controller.saveCarWashAdmin, { body: { name: "Центр", address: "Абая 1" }, userId: "admin" });
         assert.equal(ok.body.carWash.city, "Алматы");
         const bad = await call(controller.saveCarWashAdmin, { body: { name: "Центр" }, userId: "admin" });
+        assert.equal(bad.statusCode, 400);
+    });
+
+    test("ссылка 2ГИС сохраняется, чужая ссылка — 400", async () => {
+        const ok = await call(controller.saveCarWashAdmin, {
+            body: { name: "Центр", address: "Абая 1", mapUrl: "http://go.2gis.com/abc" },
+            userId: "admin",
+        });
+        assert.equal(ok.body.carWash.mapUrl, "https://go.2gis.com/abc");
+        const bad = await call(controller.saveCarWashAdmin, {
+            body: { name: "Центр", address: "Абая 1", mapUrl: "https://evil.com" },
+            userId: "admin",
+        });
         assert.equal(bad.statusCode, 400);
     });
 

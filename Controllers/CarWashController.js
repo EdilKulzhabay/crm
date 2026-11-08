@@ -1,7 +1,10 @@
 import bcrypt from "bcrypt";
 import CarWash from "../Models/CarWash.js";
+import Client from "../Models/Client.js";
 import CarWashCoupon from "../Models/CarWashCoupon.js";
+import CarWashCouponEngagement from "../Models/CarWashCouponEngagement.js";
 import CarWashUser from "../Models/CarWashUser.js";
+import { sendCarWashRedemptionTelegram } from "../telegram/sendCarWashRedemption.js";
 import { createAttemptLimiter } from "../utils/attemptLimiter.js";
 import { CarWashCouponError, redeemCarWashCoupon as redeemCoupon } from "../utils/carWashCoupon.js";
 import { signCarWashToken } from "../utils/carWashToken.js";
@@ -22,7 +25,13 @@ const CAR_WASHES_LIMIT = 100;
 const PHONE_PATTERN = /^7\d{10}$/;
 const INVALID_LOGIN_MESSAGE = "Неверный телефон или пароль";
 const ACCESS_CLOSED_MESSAGE = "Доступ к кабинету закрыт. Обратитесь к администратору.";
-const CAR_WASH_PUBLIC_FIELDS = "name address city phone";
+const CAR_WASH_PUBLIC_FIELDS = "name address city phone mapUrl";
+
+/** Событие статистики из приложения → поля счётчика и даты в CarWashCouponEngagement */
+const ENGAGEMENT_EVENTS = Object.freeze({
+    buttonClick: { counter: "buttonClicks", lastAt: "lastButtonClickAt" },
+    screenView: { counter: "screenViews", lastAt: "lastScreenViewAt" },
+});
 
 /** HTTP-статус по причине отказа погашения */
 const REDEEM_ERROR_STATUS = Object.freeze({ INVALID_CODE: 400, NOT_FOUND: 404, USED: 409, EXPIRED: 410 });
@@ -44,6 +53,7 @@ export const toCarWash = (carWash) => ({
     address: carWash.address,
     city: carWash.city,
     phone: carWash.phone,
+    mapUrl: carWash.mapUrl || "",
 });
 
 const toCarWashUser = (user) => ({ id: String(user._id), fullName: user.fullName, phone: user.phone });
@@ -64,6 +74,14 @@ const defaultRepo = {
             .lean(),
     listActiveCarWashes: () =>
         CarWash.find({ status: "active" }).select(CAR_WASH_PUBLIC_FIELDS).sort({ name: 1 }).limit(CAR_WASHES_LIMIT).lean(),
+    findClient: (clientId) => Client.findById(clientId).select("fullName userName phone mail").lean(),
+    /** Одна запись на клиента (уникальный client): upsert + $inc атомарны */
+    trackEngagement: (clientId, { counter, lastAt }, at) =>
+        CarWashCouponEngagement.updateOne(
+            { client: clientId },
+            { $inc: { [counter]: 1 }, $set: { [lastAt]: at } },
+            { upsert: true }
+        ),
 };
 
 export function createCarWashController({
@@ -73,6 +91,7 @@ export function createCarWashController({
     redeem = redeemCoupon,
     loginLimiter = createAttemptLimiter({ maxFailures: LOGIN_MAX_FAILURES, windowMs: ATTEMPT_WINDOW_MS }),
     redeemLimiter = createAttemptLimiter({ maxFailures: REDEEM_MAX_FAILURES, windowMs: ATTEMPT_WINDOW_MS }),
+    notifyRedemption = sendCarWashRedemptionTelegram,
     now = () => new Date(),
     logger = console,
 } = {}) {
@@ -118,6 +137,17 @@ export function createCarWashController({
         return res.json({ success: true, user: toCarWashUser(req.carWashUser), carWash: toCarWash(req.carWash) });
     }
 
+    /** Telegram-уведомление о погашении: не задерживает ответ сотруднику, ошибки только в лог */
+    function announceRedemption(coupon, carWashUser, carWash) {
+        Promise.resolve()
+            .then(() => repo.findClient(coupon.client))
+            .then((client) => notifyRedemption({ coupon, client, carWash, carWashUser }))
+            .then((result) => {
+                if (!result?.ok) logger.error("[CarWash] Telegram о погашении не отправлен:", result?.error);
+            })
+            .catch((error) => logger.error("[CarWash] Telegram о погашении:", error?.message || error));
+    }
+
     async function redeemCarWashCoupon(req, res) {
         const limiterKey = String(req.carWashUser._id);
         const blockedFor = redeemLimiter.retryAfterSeconds(limiterKey);
@@ -126,6 +156,7 @@ export function createCarWashController({
         try {
             const coupon = await redeem({ rawCode: req.body?.code, user: req.carWashUser, carWash: req.carWash });
             logger.log?.(`[CarWash] купон ${coupon.code} погашен: мойка ${req.carWash._id}, сотрудник ${limiterKey}`);
+            announceRedemption(coupon, req.carWashUser, req.carWash);
             return res.json({ success: true, coupon: toRedemption(coupon) });
         } catch (error) {
             if (error instanceof CarWashCouponError) {
@@ -168,8 +199,34 @@ export function createCarWashController({
         }
     }
 
-    return { carWashLogin, getCarWashMe, redeemCarWashCoupon, getCarWashRedemptions, getCarWashCouponsMobile };
+    /** Приложение: нажатие кнопки купона на главной / открытие экрана с кодом. Клиент — только из токена */
+    async function trackCarWashCouponEvent(req, res) {
+        const fields = Object.hasOwn(ENGAGEMENT_EVENTS, req.body?.event) ? ENGAGEMENT_EVENTS[req.body.event] : null;
+        if (!fields) return fail(res, 400, "Неизвестное событие");
+        try {
+            await repo.trackEngagement(req.userId, fields, now());
+            return res.json({ success: true });
+        } catch (error) {
+            logger.error("[CarWash] trackCarWashCouponEvent:", error?.message || error);
+            return fail(res, 500, "Внутренняя ошибка сервера");
+        }
+    }
+
+    return {
+        carWashLogin,
+        getCarWashMe,
+        redeemCarWashCoupon,
+        getCarWashRedemptions,
+        getCarWashCouponsMobile,
+        trackCarWashCouponEvent,
+    };
 }
 
-export const { carWashLogin, getCarWashMe, redeemCarWashCoupon, getCarWashRedemptions, getCarWashCouponsMobile } =
-    createCarWashController();
+export const {
+    carWashLogin,
+    getCarWashMe,
+    redeemCarWashCoupon,
+    getCarWashRedemptions,
+    getCarWashCouponsMobile,
+    trackCarWashCouponEvent,
+} = createCarWashController();

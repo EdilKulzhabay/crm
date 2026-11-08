@@ -5,12 +5,14 @@ import Div from "../../Components/Div";
 import Info from "../../Components/Info";
 import Li from "../../Components/Li";
 import LinkButton from "../../Components/LinkButton";
+import useCarWashCouponStats from "../../Components/CarWash/useCarWashCouponStats";
 import useFetchUserData from "../../customHooks/useFetchUserData";
 
 export default function SuperAdmin() {
     const [info, setInfo] = useState({});
     const userData = useFetchUserData();
     const [cancelledOrdersCount, setCancelledOrdersCount] = useState(0);
+    const carWashCouponStats = useCarWashCouponStats();
 
     useEffect(() => {
         api.get("/getMainPageInfoSA", {
@@ -222,6 +224,11 @@ export default function SuperAdmin() {
                     <div className="flex items-center flex-wrap gap-x-3">
                         <div>Автомойки (купон на мойку после доставки):</div>
                         <LinkButton href="/superAdminCarWashes">Перейти</LinkButton>
+                        {carWashCouponStats && (
+                            <span className="text-white" title="Клиентов, которые нажали кнопку купона в приложении">
+                                [ {carWashCouponStats.clickedClients} ]
+                            </span>
+                        )}
                     </div>
                 </Li>
             </>

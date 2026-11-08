@@ -2,8 +2,10 @@ import bcrypt from "bcrypt";
 import mongoose from "mongoose";
 import CarWash, { CAR_WASH_STATUSES } from "../Models/CarWash.js";
 import CarWashCoupon from "../Models/CarWashCoupon.js";
+import CarWashCouponEngagement from "../Models/CarWashCouponEngagement.js";
 import CarWashUser, { CAR_WASH_USER_STATUSES } from "../Models/CarWashUser.js";
 import { parsePeriod } from "../utils/partnerAnalytics.js";
+import { normalizeTwoGisUrl } from "../utils/twoGisUrl.js";
 import { normalizePhoneForWhatsApp } from "../whatsApp/normalizePhone.js";
 import { toCarWash } from "./CarWashController.js";
 
@@ -67,6 +69,19 @@ const defaultRepo = {
             .limit(HISTORY_PAGE_SIZE)
             .lean(),
     countCoupons: (filter) => CarWashCoupon.countDocuments(filter),
+    /** Один проход по коллекции (запись на клиента): сколько клиентов нажимали кнопку и всего просмотров экрана */
+    engagementTotals: async () => {
+        const [totals] = await CarWashCouponEngagement.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    clickedClients: { $sum: { $cond: [{ $gt: ["$buttonClicks", 0] }, 1, 0] } },
+                    screenViews: { $sum: "$screenViews" },
+                },
+            },
+        ]);
+        return { clickedClients: totals?.clickedClients ?? 0, screenViews: totals?.screenViews ?? 0 };
+    },
 };
 
 export function createCarWashAdminController({
@@ -88,7 +103,9 @@ export function createCarWashAdminController({
         const phone = readText(body.phone, TEXT_MAX_LENGTH.phone);
         if (name === null || address === null || city === null || phone === null) return { error: "Слишком длинное значение" };
         if (!name || !address) return { error: "Укажите название и адрес мойки" };
-        return { data: { name, address, city: city || DEFAULT_CITY, phone } };
+        const mapUrl = normalizeTwoGisUrl(body.mapUrl);
+        if (mapUrl === null) return { error: "Ссылка должна вести на 2ГИС, например https://2gis.kz/almaty/firm/…" };
+        return { data: { name, address, city: city || DEFAULT_CITY, phone, mapUrl } };
     }
 
     /** @returns {{ data: object } | { error: string }} */
@@ -231,7 +248,17 @@ export function createCarWashAdminController({
         }
     }
 
+    /** Главная суперадмина и страница моек: переходы по кнопке и просмотры экрана купона за всё время */
+    async function getCarWashCouponStatsAdmin(req, res) {
+        try {
+            return res.json({ success: true, stats: await repo.engagementTotals() });
+        } catch (error) {
+            return serverError(res, "getCarWashCouponStatsAdmin", error);
+        }
+    }
+
     return {
+        getCarWashCouponStatsAdmin,
         getCarWashesAdmin,
         saveCarWashAdmin,
         setCarWashStatusAdmin,
@@ -242,6 +269,7 @@ export function createCarWashAdminController({
 }
 
 export const {
+    getCarWashCouponStatsAdmin,
     getCarWashesAdmin,
     saveCarWashAdmin,
     setCarWashStatusAdmin,

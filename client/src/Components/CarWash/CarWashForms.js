@@ -19,6 +19,7 @@ export function CarWashForm({ carWash, onSave, onCancel }) {
         address: carWash?.address ?? "",
         city: carWash?.city ?? "Алматы",
         phone: carWash?.phone ?? "",
+        mapUrl: carWash?.mapUrl ?? "",
     });
     const update = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -28,6 +29,10 @@ export function CarWashForm({ carWash, onSave, onCancel }) {
             <Field label="Адрес" value={form.address} onChange={update("address")} />
             <Field label="Город" value={form.city} onChange={update("city")} />
             <Field label="Телефон точки" value={form.phone} onChange={update("phone")} />
+            <Field label="Ссылка 2ГИС" value={form.mapUrl} onChange={update("mapUrl")} />
+            <span className="text-sm opacity-70">
+                В 2ГИС откройте мойку → «Поделиться» → скопируйте ссылку. В приложении адрес станет этой ссылкой.
+            </span>
             <div className="flex gap-x-4">
                 <MyButton click={() => onSave({ ...(carWash && { carWashId: carWash.id }), ...form })}>Сохранить</MyButton>
                 <MyButton click={onCancel}>Отмена</MyButton>

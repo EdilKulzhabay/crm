@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../../api";
 import CarWashHistory from "../../Components/CarWash/CarWashHistory";
 import { CarWashForm, CarWashUserForm } from "../../Components/CarWash/CarWashForms";
+import useCarWashCouponStats from "../../Components/CarWash/useCarWashCouponStats";
 import Container from "../../Components/Container";
 import Div from "../../Components/Div";
 import LinkButton from "../../Components/LinkButton";
@@ -25,6 +26,7 @@ export default function SuperAdminCarWashes() {
     const [editing, setEditing] = useState(null);
     const [error, setError] = useState("");
     const [notice, setNotice] = useState("");
+    const couponStats = useCarWashCouponStats();
 
     const showError = useCallback((message) => setError(message), []);
 
@@ -61,6 +63,13 @@ export default function SuperAdminCarWashes() {
     return (
         <Container role={userData?.role}>
             <Div>Автомойки (купон на мойку после доставки)</Div>
+            {couponStats && (
+                <Div>
+                    <div>
+                        Просмотры страницы с кодом в приложении: <span className="text-white">[ {couponStats.screenViews} ]</span>
+                    </div>
+                </Div>
+            )}
             <Div>
                 <span className="text-sm opacity-70">
                     Купон выдаётся за каждый доставленный заказ, пока есть хотя бы одна активная мойка. Вход сотрудников —{" "}
@@ -107,6 +116,13 @@ function CarWashCard({ carWash, editing, onEdit, onSubmit }) {
                     {carWash.name} — {carWash.city}, {carWash.address}
                     {carWash.phone && `, ${carWash.phone}`} ({STATUS_LABELS[carWash.status]})
                 </span>
+                {carWash.mapUrl ? (
+                    <a href={carWash.mapUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:text-blue-500">
+                        [ 2ГИС ]
+                    </a>
+                ) : (
+                    <span className="text-sm opacity-70">нет ссылки 2ГИС</span>
+                )}
             </Div>
             <Div>
                 <MyButton click={() => onEdit({ type: "carWash", carWash })}>Изменить</MyButton>

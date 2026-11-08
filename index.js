@@ -464,6 +464,8 @@ app.post("/getCarWashMe", checkAuthCarWash, CarWashController.getCarWashMe);
 app.post("/redeemCarWashCoupon", checkAuthCarWash, CarWashController.redeemCarWashCoupon);
 app.post("/getCarWashRedemptions", checkAuthCarWash, CarWashController.getCarWashRedemptions);
 app.post("/getCarWashCouponsMobile", checkAuth, checkRole(["client"]), CarWashController.getCarWashCouponsMobile);
+app.post("/trackCarWashCouponEvent", checkAuth, checkRole(["client"]), CarWashController.trackCarWashCouponEvent);
+app.post("/getCarWashCouponStatsAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.getCarWashCouponStatsAdmin);
 app.post("/getCarWashesAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.getCarWashesAdmin);
 app.post("/saveCarWashAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.saveCarWashAdmin);
 app.post("/setCarWashStatusAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.setCarWashStatusAdmin);

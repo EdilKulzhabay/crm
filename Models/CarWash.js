@@ -39,6 +39,12 @@ const CarWashSchema = new mongoose.Schema(
             trim: true,
             default: "",
         },
+        /** Ссылка на точку в 2ГИС: в приложении адрес мойки открывает её. Проверка — utils/twoGisUrl.js */
+        mapUrl: {
+            type: String,
+            trim: true,
+            default: "",
+        },
         status: {
             type: String,
             enum: CAR_WASH_STATUSES,
