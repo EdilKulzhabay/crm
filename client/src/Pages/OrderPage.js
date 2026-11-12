@@ -235,7 +235,9 @@ export default function OrderPage() {
     }
 
     // Назначенный курьеру заказ удалить нельзя (сервер тоже запрещает) — сначала снять с курьера
-    const isAssignedToCourier = Boolean(order?.courierAggregator || order?.courier)
+    /** Удалять нельзя, пока заказ у курьера; доставленные и отменённые — можно (как utils/orderCourierAssignment.js на сервере) */
+    const isDeletionBlocked =
+        Boolean(order?.courierAggregator || order?.courier) && !["delivered", "cancelled"].includes(order?.status)
 
     return (
         <div className="relative">
@@ -754,7 +756,7 @@ export default function OrderPage() {
                     <Div>Действия:</Div>
                     <Div>
                         <div className="flex items-center gap-x-3 flex-wrap">
-                            {isAssignedToCourier ? (
+                            {isDeletionBlocked ? (
                                 <span className="text-gray-400">
                                     Заказ назначен курьеру — удалить нельзя. Сначала снимите заказ с курьера.
                                 </span>

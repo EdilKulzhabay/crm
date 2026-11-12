@@ -9,7 +9,7 @@ import { pushNotification } from "../pushNotification.js";
 import getLocationsLogicQueue from "../utils/getLocationsLogicQueue.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import { getDateAlmaty } from "../utils/dateUtils.js";
-import { isOrderAssignedToCourier, UNASSIGNED_ORDER_FILTER } from "../utils/orderCourierAssignment.js";
+import { DELETABLE_ORDER_FILTER, isOrderDeletionBlocked } from "../utils/orderCourierAssignment.js";
 
 const ORDER_ASSIGNED_DELETE_MESSAGE = "Заказ назначен курьеру — удалить нельзя. Сначала снимите заказ с курьера.";
 // import queueOrTools from "../orToolsQueue.js";
@@ -1083,15 +1083,16 @@ export const deleteOrder = async (req, res) => {
             return res.status(400).json({ success: false, message: "Некорректный id заказа" });
         }
 
-        const order = await Order.findById(orderId).select("courier courierAggregator").lean();
+        const order = await Order.findById(orderId).select("status courier courierAggregator").lean();
         if (!order) {
             return res.status(404).json({ success: false, message: "Заказ не найден" });
         }
-        if (isOrderAssignedToCourier(order)) {
+        if (isOrderDeletionBlocked(order)) {
             return res.status(409).json({ success: false, message: ORDER_ASSIGNED_DELETE_MESSAGE });
         }
 
-        const deleted = await Order.findOneAndDelete({ _id: orderId, ...UNASSIGNED_ORDER_FILTER });
+        // Условие повторяется в запросе: курьера могли назначить между проверкой и удалением
+        const deleted = await Order.findOneAndDelete({ _id: orderId, ...DELETABLE_ORDER_FILTER });
         if (!deleted) {
             return res.status(409).json({ success: false, message: ORDER_ASSIGNED_DELETE_MESSAGE });
         }
