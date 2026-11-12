@@ -227,7 +227,11 @@ export const pushNotificationClientSupport = async (
         }
 
         // ПРОВЕРКА НА ДУБЛИКАТЫ: Создаем уникальный ключ для уведомления
-        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, newMessage);
+        // Ключ по id сообщения: два одинаковых текста подряд («Я на месте») — разные сообщения,
+        // второе не должно глушиться как дубликат
+        const notificationKey = createNotificationKey(messageTitle, messageBody, validTokens, newStatus, {
+            _id: newMessage?._id || newMessage?.orderId,
+        });
         const now = Date.now();
         
         // Проверяем, не было ли уже отправлено такое же уведомление недавно

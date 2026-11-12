@@ -38,6 +38,8 @@ import {
     InvoiceController,
     CarWashController,
     CarWashAdminController,
+    DeliveryPartnerController,
+    DeliveryPartnerAdminController,
 } from "./Controllers/index.js";
 import checkAuth from "./utils/checkAuth.js";
 import checkAdsApiKey from "./utils/checkAdsApiKey.js";
@@ -60,6 +62,7 @@ import checkAuthPartner from "./utils/checkAuthPartner.js";
 import requireVerifiedPartner from "./utils/requireVerifiedPartner.js";
 import requireSuperAdmin from "./utils/requireSuperAdmin.js";
 import checkAuthCarWash from "./utils/checkAuthCarWash.js";
+import checkAuthDeliveryPartner from "./utils/checkAuthDeliveryPartner.js";
 import { startPartnerLapseCheck } from "./utils/partnerLapseCheck.js";
 import {
     startWhatsAppWebClient,
@@ -427,7 +430,7 @@ app.post("/updateOrderDataMobile", MobileController.updateOrderDataMobile)
 app.post("/updateOrderCommentMobile", MobileController.updateOrderCommentMobile)
 app.post("/submitOrderReviewMobile", MobileController.submitOrderReviewMobile)
 app.post("/getLastOrderMobile", MobileController.getLastOrderMobile)
-app.post("/requestMasterCallMobile", MobileController.requestMasterCallMobile)
+app.post("/requestMasterCallMobile", checkAuth, checkRole(["client"]), MobileController.requestMasterCallMobile)
 app.post("/codeConfirmForgotPassword", MobileController.codeConfirmForgotPassword)
 app.post("/sendMailForgotPassword", MobileController.sendMailForgotPassword)
 
@@ -472,6 +475,16 @@ app.post("/setCarWashStatusAdmin", checkAuth, requireSuperAdmin, CarWashAdminCon
 app.post("/saveCarWashUserAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.saveCarWashUserAdmin);
 app.post("/setCarWashUserStatusAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.setCarWashUserStatusAdmin);
 app.post("/getCarWashCouponsAdmin", checkAuth, requireSuperAdmin, CarWashAdminController.getCarWashCouponsAdmin);
+
+//////DELIVERY PARTNER (партнёры по доставке: кабинет в CRM с заказами своих курьеров, см. Controllers/DeliveryPartnerController.js)
+app.post("/deliveryPartnerLogin", DeliveryPartnerController.deliveryPartnerLogin);
+app.post("/getDeliveryPartnerMe", checkAuthDeliveryPartner, DeliveryPartnerController.getDeliveryPartnerMe);
+app.post("/getDeliveryPartnerOrders", checkAuthDeliveryPartner, DeliveryPartnerController.getDeliveryPartnerOrders);
+app.post("/getDeliveryPartnersAdmin", checkAuth, requireSuperAdmin, DeliveryPartnerAdminController.getDeliveryPartnersAdmin);
+app.post("/saveDeliveryPartnerAdmin", checkAuth, requireSuperAdmin, DeliveryPartnerAdminController.saveDeliveryPartnerAdmin);
+app.post("/setDeliveryPartnerStatusAdmin", checkAuth, requireSuperAdmin, DeliveryPartnerAdminController.setDeliveryPartnerStatusAdmin);
+app.post("/searchCouriersForDeliveryPartnerAdmin", checkAuth, requireSuperAdmin, DeliveryPartnerAdminController.searchCouriersForDeliveryPartnerAdmin);
+app.post("/setCourierDeliveryPartnerAdmin", checkAuth, requireSuperAdmin, DeliveryPartnerAdminController.setCourierDeliveryPartnerAdmin);
 ////////ANALYTICS
 app.post("/getAnalyticsData", AnalyticsController.getAnalyticsData)
 app.post("/getChartByOp", AnalyticsController.getChartByOp)

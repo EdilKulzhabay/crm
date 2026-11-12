@@ -14,12 +14,36 @@ export function maskEmailForLog(email) {
     return `${m[0]}***${m.slice(at)}`;
 }
 
+/** E.164 без «+»: код страны не с нуля, всего 8–15 цифр */
+const INTERNATIONAL_DIGITS = /^[1-9]\d{7,14}$/;
+const KZ_PHONE_LENGTH = 11;
+
 /**
- * Нормализация номера для WhatsApp (Meta): только цифры, формат 7XXXXXXXXXX (11 цифр для KZ/RU).
+ * Номер, на который можно отправить код входа/регистрации:
+ * +7 — ровно 11 цифр (Казахстан/Россия), другие страны — по формату E.164.
+ * @param {string | null} phoneNorm результат normalizePhoneForWhatsApp
+ */
+export function isValidAuthPhone(phoneNorm) {
+    if (!phoneNorm) return false;
+    if (phoneNorm.startsWith("7")) return phoneNorm.length === KZ_PHONE_LENGTH;
+    return INTERNATIONAL_DIGITS.test(phoneNorm);
+}
+
+/**
+ * Нормализация номера для WhatsApp (Meta): только цифры, формат 7XXXXXXXXXX (11 цифр для KZ/RU);
+ * номер другой страны с «+» — цифры в международном формате (например 447946000958).
  */
 export function normalizePhoneForWhatsApp(raw) {
     if (raw == null || raw === "") return null;
-    let d = String(raw).replace(/\D/g, "");
+    const text = String(raw).trim();
+    let d = text.replace(/\D/g, "");
+    // Номер другой страны в международном формате («+44 20 7946 0958»): казахстанские
+    // правила (8→7, 10 цифр → +7) к нему не применяем, иначе испортим код страны.
+    // «+8 7XX…» из 11 цифр — опечатка казахстанского номера, её оставляем старым правилам.
+    const isKzTypo = d.length === 11 && d.startsWith("8");
+    if (text.startsWith("+") && !d.startsWith("7") && !isKzTypo) {
+        return INTERNATIONAL_DIGITS.test(d) ? d : null;
+    }
     if (d.length === 11 && d.startsWith("8")) {
         d = "7" + d.slice(1);
     }

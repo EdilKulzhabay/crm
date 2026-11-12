@@ -222,6 +222,12 @@ export default function SuperAdmin() {
                 </Li>
                 <Li>
                     <div className="flex items-center flex-wrap gap-x-3">
+                        <div>Партнёры по доставке (кабинет с заказами своих курьеров):</div>
+                        <LinkButton href="/superAdminDeliveryPartners">Перейти</LinkButton>
+                    </div>
+                </Li>
+                <Li>
+                    <div className="flex items-center flex-wrap gap-x-3">
                         <div>Автомойки (купон на мойку после доставки):</div>
                         <LinkButton href="/superAdminCarWashes">Перейти</LinkButton>
                         {carWashCouponStats && (

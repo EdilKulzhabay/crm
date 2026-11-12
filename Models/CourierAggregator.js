@@ -7,6 +7,17 @@ const CourierAggregatorSchema = new mongoose.Schema(
             ref: "User",
             default: null
         },
+        /** Партнёр по доставке, чей это курьер (кабинет /deliveryPartner). Не больше одного */
+        deliveryPartner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "DeliveryPartner",
+            default: null
+        },
+        /** Когда курьер привязан к текущему партнёру: партнёр видит заказы курьера только с этого дня */
+        deliveryPartnerLinkedAt: {
+            type: Date,
+            default: null
+        },
         fullName: {
             type: String,
             default: ""
@@ -415,5 +426,7 @@ const CourierAggregatorSchema = new mongoose.Schema(
         timestamps: true,
     }
 )
+
+CourierAggregatorSchema.index({ deliveryPartner: 1 });
 
 export default mongoose.model("CourierAggregator", CourierAggregatorSchema)

@@ -220,7 +220,7 @@ describe("CarWashController — купоны клиента", () => {
         let requestedClient;
         const controller = createCarWashController({
             repo: {
-                listClientCoupons: async (clientId) => ((requestedClient = clientId), [{ _id: "c1", code: "AAAA-BBBB-CCCC", discountPercent: 20, expiresAt: new Date() }]),
+                listClientCoupons: async (clientId) => ((requestedClient = clientId), [{ _id: "c1", code: "AAAA-BBBB-CCCC", discountPercent: 20, expiresAt: new Date(), order: "order1" }]),
                 listActiveCarWashes: async () => [activeWash],
             },
             logger: silentLogger,
@@ -228,6 +228,7 @@ describe("CarWashController — купоны клиента", () => {
         const res = await call(controller.getCarWashCouponsMobile, { userId: "client1", body: { clientId: "someoneElse" } });
         assert.equal(requestedClient, "client1");
         assert.equal(res.body.coupons[0].code, "AAAA-BBBB-CCCC");
+        assert.equal(res.body.coupons[0].orderId, "order1");
         assert.equal(res.body.carWashes[0].name, "Центр");
     });
 });

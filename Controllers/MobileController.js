@@ -9,6 +9,7 @@ import User from "../Models/User.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import SupportContacts from "../Models/SupportContacts.js";
 import { sendMasterCallTelegram } from "../telegram/sendMasterCall.js";
+import { createAttemptLimiter } from "../utils/attemptLimiter.js";
 import { sendSupportTelegram } from "../telegram/sendSupport.js";
 import {
     maskEmailForLog,
@@ -17,6 +18,7 @@ import {
 } from "../whatsApp/sendRegistrationOtp.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
 import { findClientByAnyPhone } from "../utils/clientPhones.js";
+import { isValidAuthPhone } from "../whatsApp/normalizePhone.js";
 import Partner from "../Models/Partner.js";
 import { applyPartnerReferralBonus, PARTNER_REFERRAL_CLIENT_BONUS } from "../utils/partnerLedger.js";
 import {
@@ -30,6 +32,7 @@ import {
 import { takeNextInvoiceNumberForPdf } from "../utils/invoiceCounter.js";
 import Invoice from "../Models/Invoice.js";
 import { extractBin, invoiceNumberKey, normalizeBin } from "../utils/invoiceMatching.js";
+import { RENTAL_PRICES } from "../utils/invoiceRental.js";
 import { getDateAlmaty, getHourAlmaty } from "../utils/dateUtils.js";
 import { sendCompleteRegistration } from "../utils/metaConversionsApi.js";
 import {
@@ -143,7 +146,7 @@ export const sendMail = async (req, res) => {
 
     console.log(`[Reg OTP] sendMail: запрос кода, phone=${pm}, mail=${em}`);
 
-    if (!phoneNorm || phoneNorm.length < 11) {
+    if (!isValidAuthPhone(phoneNorm)) {
         console.warn(`[Reg OTP] sendMail: отклонено — некорректный телефон, phone=${pm}`);
         return res.status(400).json({
             success: false,
@@ -255,7 +258,7 @@ async function sendForgotPasswordCodeByPhone(req, res, phone) {
     const phoneNorm = normalizePhoneForWhatsApp(phone);
     const pm = maskPhoneForLog(phoneNorm || phone);
 
-    if (!phoneNorm || phoneNorm.length < 11) {
+    if (!isValidAuthPhone(phoneNorm)) {
         return res.status(400).json({
             success: false,
             message: "Некорректный номер телефона",
@@ -739,7 +742,7 @@ export const clientRegister = async (req, res) => {
         const { userName, phone, mail, referralCode: referralCodeRaw, fbclid } = req.body;
 
         const phoneNorm = normalizePhoneForWhatsApp(phone);
-        if (!phoneNorm || phoneNorm.length < 11) {
+        if (!isValidAuthPhone(phoneNorm)) {
             return res.status(400).json({
                 success: false,
                 message: "Некорректный номер телефона",
@@ -1050,7 +1053,7 @@ export const sendLoginOtp = async (req, res) => {
     const phoneNorm = normalizePhoneForWhatsApp(phone);
     const pm = maskPhoneForLog(phoneNorm || phone);
 
-    if (!phoneNorm || phoneNorm.length < 11) {
+    if (!isValidAuthPhone(phoneNorm)) {
         return res.status(400).json({
             success: false,
             message: "Некорректный номер телефона",
@@ -1189,7 +1192,7 @@ export const generateInvoicePdfMobile = async (req, res) => {
         if (req.userType !== "client") {
             return res.status(403).json({ success: false, message: "Нет доступа" });
         }
-        const { qty19: q19raw, qty12: q12raw } = req.body;
+        const { qty19: q19raw, qty12: q12raw, rent19: r19raw, rent12: r12raw } = req.body;
         const client = await Client.findById(req.userId);
         if (!client) {
             return res.status(404).json({ success: false, message: "Клиент не найден" });
@@ -1204,14 +1207,20 @@ export const generateInvoicePdfMobile = async (req, res) => {
             });
         }
 
-        const qty19 = Math.max(0, Math.floor(Number(q19raw)));
-        const qty12 = Math.max(0, Math.floor(Number(q12raw)));
-        if (qty19 === 0 && qty12 === 0) {
+        // Старые версии приложения аренду не присылают — NaN превращаем в 0
+        const toQty = (raw) => Math.max(0, Math.floor(Number(raw) || 0));
+        const qty19 = toQty(q19raw);
+        const qty12 = toQty(q12raw);
+        const rent19 = toQty(r19raw);
+        const rent12 = toQty(r12raw);
+        if (qty19 === 0 && qty12 === 0 && rent19 === 0 && rent12 === 0) {
             return res.status(400).json({
                 success: false,
-                message: "Укажите количество бутылей 19 л и/или 12 л",
+                message: "Укажите количество воды или тары для аренды",
             });
         }
+        const rentPrice19 = RENTAL_PRICES.rent19;
+        const rentPrice12 = RENTAL_PRICES.rent12;
 
         const price19 = Number(client.price19) || 0;
         const price12 = Number(client.price12) || 0;
@@ -1238,9 +1247,14 @@ export const generateInvoicePdfMobile = async (req, res) => {
             qty12,
             price19,
             price12,
+            rent19,
+            rent12,
+            rentPrice19,
+            rentPrice12,
             basis: client.basis,
             contractNumber: client.contractNumber,
         });
+        const total = qty19 * price19 + qty12 * price12 + rent19 * rentPrice19 + rent12 * rentPrice12;
 
         // Без записи счёта оплату не сопоставить с выпиской — PDF без неё не отдаём
         const invoice = await Invoice.create({
@@ -1254,7 +1268,11 @@ export const generateInvoicePdfMobile = async (req, res) => {
             qty12,
             price19,
             price12,
-            total: qty19 * price19 + qty12 * price12,
+            rent19,
+            rent12,
+            rentPrice19,
+            rentPrice12,
+            total,
         });
 
         const nextNum = nextInvoiceSequentialNumber(inv);
@@ -1269,6 +1287,7 @@ export const generateInvoicePdfMobile = async (req, res) => {
             invoiceNumberUsed: inv,
             nextInvoiceSequentialNumber: nextNum,
             invoiceId: String(invoice._id),
+            total,
         });
     } catch (error) {
         console.error("generateInvoicePdfMobile", error);
@@ -1949,9 +1968,7 @@ export const getClientOrdersMobile = async (req, res) => {
 
         const orders = await Order.find({client: client._id})
             .sort({ createdAt: -1 })
-            .populate("courierAggregator", "userName _id point phone")
-
-        console.log("orders: ", orders);
+            .populate("courierAggregator", "fullName _id point phone carNumber carData")
 
         res.json({ orders });
     } catch (error) {
@@ -2330,30 +2347,47 @@ export const getLastOrderMobile = async (req, res) => {
     }
 }
 
+/** Не больше 3 заявок «Вызов мастера» за 10 минут на клиента — каждая уходит в Telegram партнёра */
+const MASTER_CALL_MAX_REQUESTS = 3;
+const MASTER_CALL_WINDOW_MS = 10 * 60 * 1000;
+const masterCallLimiter = createAttemptLimiter({
+    maxFailures: MASTER_CALL_MAX_REQUESTS,
+    windowMs: MASTER_CALL_WINDOW_MS,
+});
+
+/**
+ * Заявка «Вызов мастера». Клиент — только из токена; имя, телефон и почта — из профиля.
+ * Тело запроса не используется: раньше клиента искали по номеру из поля ввода,
+ * и номер в другом формате давал «Клиент не найден», а без авторизации
+ * в Telegram можно было отправить чужой номер.
+ */
 export const requestMasterCallMobile = async (req, res) => {
     try {
-        const { fullName, phone, mail } = req.body;
-
-        if (!phone) {
-            return res.status(400).json({
+        const clientId = String(req.userId);
+        if (masterCallLimiter.retryAfterSeconds(clientId) > 0) {
+            return res.status(429).json({
                 success: false,
-                message:
-                    "Укажите телефон в профиле, чтобы мы могли с вами связаться",
+                message: "Заявка уже отправлена. Сотрудник скоро перезвонит.",
             });
         }
 
-        const client = await Client.findOne({ phone });
+        const client = await Client.findById(clientId).select("fullName userName phone mail").lean();
         if (!client) {
+            return res.status(404).json({ success: false, message: "Клиент не найден" });
+        }
+
+        const phone = String(client.phone || "").trim();
+        if (!phone) {
             return res.status(400).json({
                 success: false,
-                message: "Клиент не найден",
+                message: "Укажите телефон в профиле, чтобы мы могли с вами связаться",
             });
         }
 
         const tgResult = await sendMasterCallTelegram({
-            fullName: fullName || client.fullName,
+            fullName: client.userName || client.fullName,
             phone,
-            mail: mail || client.mail,
+            mail: client.mail,
         });
 
         if (!tgResult.ok) {
@@ -2369,9 +2403,11 @@ export const requestMasterCallMobile = async (req, res) => {
             });
         }
 
+        masterCallLimiter.registerFailure(clientId);
         res.json({
             success: true,
             message: "Заявка отправлена",
+            phone,
         });
     } catch (error) {
         console.log(error);

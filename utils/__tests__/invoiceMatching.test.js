@@ -58,6 +58,18 @@ describe("evaluateInvoicePayment", () => {
         assert.deepEqual(result.credited, { b19: 20, b12: 0, balance: 500 });
     });
 
+    test("balance client does not get container rental on the balance", () => {
+        const rented = invoice({ total: 37000, rent19: 2, rentPrice19: 3500 });
+        const result = evaluateInvoicePayment({ invoice: rented, amount: 37000, paymentMethod: "balance" });
+        assert.deepEqual(result.credited, { b19: 0, b12: 0, balance: 30000 });
+    });
+
+    test("coupon client gets only water bottles for an invoice with rental", () => {
+        const rented = invoice({ total: 37000, rent19: 2, rentPrice19: 3500 });
+        const result = evaluateInvoicePayment({ invoice: rented, amount: 37000, paymentMethod: "coupon" });
+        assert.deepEqual(result.credited, { b19: 20, b12: 0, balance: 0 });
+    });
+
     test("balance client gets the whole paid amount in tenge", () => {
         const result = evaluateInvoicePayment({ invoice: invoice(), amount: 30500, paymentMethod: "balance" });
         assert.deepEqual(result, { ok: true, creditKind: "balance", credited: { b19: 0, b12: 0, balance: 30500 } });

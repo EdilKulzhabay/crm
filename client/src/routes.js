@@ -87,6 +87,9 @@ import SuperAdminInvoices from "./Pages/SuperAdmin/SuperAdminInvoices";
 import SuperAdminCarWashes from "./Pages/SuperAdmin/SuperAdminCarWashes";
 import CarWashLogin from "./Pages/CarWash/CarWashLogin";
 import CarWashMain from "./Pages/CarWash/CarWashMain";
+import SuperAdminDeliveryPartners from "./Pages/SuperAdmin/SuperAdminDeliveryPartners";
+import DeliveryPartnerLogin from "./Pages/DeliveryPartner/DeliveryPartnerLogin";
+import DeliveryPartnerMain from "./Pages/DeliveryPartner/DeliveryPartnerMain";
 import DistributeOrders from "./Pages/DistributeOrders";
 import BusinessCenterCourierAggregatorPage from "./Pages/BusinessCenterCourierAggregatorPage";
 
@@ -159,6 +162,7 @@ export const router = createBrowserRouter([
     { path: "/superAdminPartner/:id", element: <SuperAdminPartnerPage /> },
     { path: "/superAdminInvoices", element: <SuperAdminInvoices /> },
     { path: "/superAdminCarWashes", element: <SuperAdminCarWashes /> },
+    { path: "/superAdminDeliveryPartners", element: <SuperAdminDeliveryPartners /> },
     ////ADMINLINKS
     { path: "/admin", element: <AdminMain /> },
     { path: "/adminSettings", element: <AdminSettings /> },
@@ -196,6 +200,9 @@ export const router = createBrowserRouter([
     /////CAR WASH (кабинет сотрудника мойки, свой токен — см. carWashApi.js)
     { path: "/carWashLogin", element: <CarWashLogin />},
     { path: "/carWash", element: <CarWashMain />},
+    /////DELIVERY PARTNER (кабинет партнёра по доставке, свой токен — см. deliveryPartnerApi.js)
+    { path: "/deliveryPartnerLogin", element: <DeliveryPartnerLogin />},
+    { path: "/deliveryPartner", element: <DeliveryPartnerMain />},
 
     /////PAYMENT
     { path: "/payment", element: <PaymentPage />},

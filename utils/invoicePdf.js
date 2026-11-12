@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import { sumToWordsRuTenge } from "./sumToWordsRu.js";
+import { RENTAL_ITEMS } from "./invoiceRental.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FONT_PATH = path.join(__dirname, "../node_modules/dejavu-fonts-ttf/ttf/DejaVuSans.ttf");
@@ -316,6 +317,10 @@ function drawExecutorBuyerContractBlock(doc, left, y, pageW, buyer, contractText
  * @param {number} params.qty12
  * @param {number} params.price19
  * @param {number} params.price12
+ * @param {number} [params.rent19] — аренда возвратной тары 18,9 л, шт.
+ * @param {number} [params.rent12] — аренда возвратной тары 12,5 л, шт.
+ * @param {number} [params.rentPrice19]
+ * @param {number} [params.rentPrice12]
  */
 export function buildInvoicePdfBuffer(params) {
     const {
@@ -326,6 +331,10 @@ export function buildInvoicePdfBuffer(params) {
         qty12,
         price19,
         price12,
+        rent19 = 0,
+        rent12 = 0,
+        rentPrice19 = 0,
+        rentPrice12 = 0,
         basis,
         contractNumber,
     } = params;
@@ -348,8 +357,13 @@ export function buildInvoicePdfBuffer(params) {
 
     const line19 = qty19 > 0 ? qty19 * price19 : 0;
     const line12 = qty12 > 0 ? qty12 * price12 : 0;
-    const total = line19 + line12;
-    const rowCount = (qty19 > 0 ? 1 : 0) + (qty12 > 0 ? 1 : 0);
+    const rentalRows = [
+        { qty: rent19, price: rentPrice19, item: RENTAL_ITEMS.rent19 },
+        { qty: rent12, price: rentPrice12, item: RENTAL_ITEMS.rent12 },
+    ].filter((row) => row.qty > 0);
+    const rentalTotal = rentalRows.reduce((sum, row) => sum + row.qty * row.price, 0);
+    const total = line19 + line12 + rentalTotal;
+    const rowCount = (qty19 > 0 ? 1 : 0) + (qty12 > 0 ? 1 : 0) + rentalRows.length;
     const words = sumToWordsRuTenge(total);
 
     return new Promise((resolve, reject) => {
@@ -433,6 +447,19 @@ export function buildInvoicePdfBuffer(params) {
                 formatMoney(price12),
                 formatMoney(line12),
             ]);
+            n++;
+        }
+        for (const row of rentalRows) {
+            tableRows.push([
+                String(n),
+                "",
+                row.item.name,
+                String(row.qty),
+                row.item.unit,
+                formatMoney(row.price),
+                formatMoney(row.qty * row.price),
+            ]);
+            n++;
         }
 
         const itemsBottom = drawGridTable(doc, left, y, colW, tableRows, {

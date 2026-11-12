@@ -22,6 +22,12 @@ const InvoiceSchema = new mongoose.Schema(
         qty12: { type: Number, default: 0 },
         price19: { type: Number, default: 0 },
         price12: { type: Number, default: 0 },
+        /** Аренда возвратной тары: количество и цена на момент выставления (utils/invoiceRental.js) */
+        rent19: { type: Number, default: 0 },
+        rent12: { type: Number, default: 0 },
+        rentPrice19: { type: Number, default: 0 },
+        rentPrice12: { type: Number, default: 0 },
+        /** Вода + аренда */
         total: { type: Number, required: true },
         status: { type: String, enum: ["issued", "paid", "cancelled"], default: "issued" },
 

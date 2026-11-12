@@ -1,5 +1,7 @@
 import Order from "../Models/Order.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
+import Client from "../Models/Client.js";
+import { collectOrderPushTokens } from "../utils/clientPushTokens.js";
 import { pushOrderChatMessageToCourier } from "../pushNotification.js";
 import { pushNotificationClientSupport } from "../pushNotificationClient.js";
 
@@ -83,12 +85,18 @@ export const sendMessageAsCourier = async (req, res) => {
         order.chatMessages.push(newMessage);
         await order.save();
 
-        if (order.notificationToken) {
+        // Токен в заказе — снимок на момент создания: после переустановки, обновления токена
+        // или для заказа из CRM его нет/он устарел. Шлём и на актуальные устройства клиента.
+        const client = order.client
+            ? await Client.findById(order.client).select("notificationPushToken notificationPushTokens").lean()
+            : null;
+        const tokens = collectOrderPushTokens(order, client);
+        if (tokens.length > 0) {
             const lastMessage = order.chatMessages[order.chatMessages.length - 1];
             pushNotificationClientSupport(
                 "Сообщение от курьера",
                 text,
-                [order.notificationToken],
+                tokens,
                 "newOrderChatMessage",
                 { ...lastMessage.toObject(), orderId: order._id.toString() },
                 { clientId: order.client }

@@ -23,7 +23,12 @@ const STATUS_FILTERS = [
 ];
 
 function InvoiceRow({ invoice, showClient, onConfirm, onCancel }) {
-    const items = [invoice.qty19 > 0 && `19 л × ${invoice.qty19}`, invoice.qty12 > 0 && `12 л × ${invoice.qty12}`]
+    const items = [
+        invoice.qty19 > 0 && `19 л × ${invoice.qty19}`,
+        invoice.qty12 > 0 && `12 л × ${invoice.qty12}`,
+        invoice.rent19 > 0 && `аренда тары 19 л × ${invoice.rent19}`,
+        invoice.rent12 > 0 && `аренда тары 12 л × ${invoice.rent12}`,
+    ]
         .filter(Boolean)
         .join(", ");
     return (

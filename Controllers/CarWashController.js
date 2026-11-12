@@ -68,7 +68,7 @@ const defaultRepo = {
     /** Индекс CarWashCoupon { client: 1, status: 1, expiresAt: -1 } */
     listClientCoupons: (clientId, now) =>
         CarWashCoupon.find({ client: clientId, status: "active", expiresAt: { $gt: now } })
-            .select("code discountPercent expiresAt")
+            .select("code discountPercent expiresAt order")
             .sort({ expiresAt: 1 })
             .limit(CLIENT_COUPONS_LIMIT)
             .lean(),
@@ -190,6 +190,8 @@ export function createCarWashController({
                     code: coupon.code,
                     discountPercent: coupon.discountPercent,
                     expiresAt: coupon.expiresAt,
+                    // Заказ, за который выдан купон: приложение показывает купон в его деталях
+                    orderId: coupon.order ? String(coupon.order) : null,
                 })),
                 carWashes: carWashes.map(toCarWash),
             });

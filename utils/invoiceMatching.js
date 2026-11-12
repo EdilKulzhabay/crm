@@ -4,9 +4,12 @@
  *
  * Правила (согласованы 02.11.2026):
  * - coupon: бутыли из счёта; balance: вся сумма в тенге; переплата — остаток на баланс;
+ * - аренда тары в счёте только фиксируется: её сумма не зачисляется ни бутылями, ни на баланс;
  * - недоплата и клиенты «по факту» (fakt) автоматически не зачисляются — только ручная проверка;
  * - автоматически закрываем счёт, только если БИН плательщика совпадает с БИН покупателя.
  */
+
+import { invoiceRentalTotal } from "./invoiceRental.js";
 
 const BIN_LENGTH = 12;
 const LABELED_BIN_PATTERN = /(?:БИН|ИИН|BIN|IIN)[^\d]{0,10}(\d{12})(?!\d)/iu;
@@ -84,7 +87,8 @@ export function evaluateInvoicePayment({ invoice, amount, paymentMethod, allowFa
         };
     }
     if (paymentMethod === "balance") {
-        return { ok: true, creditKind: INVOICE_CREDIT_KINDS.BALANCE, credited: { b19: 0, b12: 0, balance: paid / 100 } };
+        const rental = toTiyn(invoiceRentalTotal(invoice));
+        return { ok: true, creditKind: INVOICE_CREDIT_KINDS.BALANCE, credited: { b19: 0, b12: 0, balance: (paid - rental) / 100 } };
     }
     if (paymentMethod === "fakt" && allowFakt) {
         return { ok: true, creditKind: INVOICE_CREDIT_KINDS.NONE, credited: { b19: 0, b12: 0, balance: 0 } };

@@ -1,4 +1,5 @@
 import CourierAggregator from "../Models/CourierAggregator.js";
+import { collectOrderPushTokens } from "../utils/clientPushTokens.js";
 import CourierRestrictions from "../Models/CourierRestrictions.js";
 import Order from "../Models/Order.js";
 import AquaMarket from "../Models/AquaMarket.js";
@@ -549,6 +550,12 @@ export const updateCourierAggregatorData = async (req, res) => {
     try {
         const {id, changeField, changeData} = req.body
 
+        // Привязку к партнёру по доставке меняет только суперадмин (/setCourierDeliveryPartnerAdmin):
+        // общий $set по changeField ниже иначе открыл бы курьеру/кому угодно чужой кабинет партнёра
+        if (typeof changeField !== "string" || changeField.startsWith("deliveryPartner")) {
+            return res.status(403).json({ success: false, message: "Это поле нельзя изменить" })
+        }
+
         const courier = await CourierAggregator.findById(id)
 
         if (!courier) {
@@ -1014,12 +1021,7 @@ export const completeOrderCourierAggregator = async (req, res) => {
                 .populate("client", "notificationPushToken notificationPushTokens")
                 .populate("courierAggregator");
             
-            const tokens = sendOrder?.notificationToken
-                ? [sendOrder.notificationToken]
-                : (sendOrder?.client?.notificationPushTokens?.length
-                    ? sendOrder.client.notificationPushTokens
-                    : (sendOrder?.client?.notificationPushToken ? [sendOrder.client.notificationPushToken] : []));
-            const validTokens = tokens.filter(t => t && t.trim().length > 0);
+            const validTokens = collectOrderPushTokens(sendOrder, sendOrder?.client);
 
             if (validTokens.length > 0) {
                 const data = { orderId: sendOrder._id };
@@ -1206,12 +1208,7 @@ export const cancelOrderCourierAggregator = async (req, res) => {
                 .populate("client", "notificationPushToken notificationPushTokens")
                 .populate("courierAggregator");
             
-            const tokens = sendOrder?.notificationToken
-                ? [sendOrder.notificationToken]
-                : (sendOrder?.client?.notificationPushTokens?.length
-                    ? sendOrder.client.notificationPushTokens
-                    : (sendOrder?.client?.notificationPushToken ? [sendOrder.client.notificationPushToken] : []));
-            const validTokens = tokens.filter(t => t && t.trim().length > 0);
+            const validTokens = collectOrderPushTokens(sendOrder, sendOrder?.client);
 
             if (validTokens.length > 0) {
                 const data = { orderId: sendOrder._id };
@@ -2132,12 +2129,7 @@ export const assignOrderToCourier = async (req, res) => {
                     .populate("client", "notificationPushToken notificationPushTokens")
                     .populate("courierAggregator");
                 
-                const tokens = sendOrder?.notificationToken
-                    ? [sendOrder.notificationToken]
-                    : (sendOrder?.client?.notificationPushTokens?.length
-                        ? sendOrder.client.notificationPushTokens
-                        : (sendOrder?.client?.notificationPushToken ? [sendOrder.client.notificationPushToken] : []));
-                const validTokens = tokens.filter(t => t && t.trim().length > 0);
+                const validTokens = collectOrderPushTokens(sendOrder, sendOrder?.client);
 
                 if (validTokens.length > 0) {
                     const data = { orderId: sendOrder._id };
@@ -2701,30 +2693,32 @@ export const resendNotificationToCourier = async (req, res) => {
 
 export const needToGiveTheOrderToCourier = async (req, res) => {
     try {
-        const { fullName } = req.body;
-
-        const mailOptions = {
-            from: "info@tibetskaya.kz",
-            to: process.env.SENDINFOTOEMAIL,
-            subject: `Нужно дать заказ курьеру ${fullName}`,
-            text: `Нужно дать заказ курьеру ${fullName}`,
-        };
-    
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-                res.status(500).json({
-                    success: false,
-                    message: "Ошибка при отправке письма"
-                })
-            } else {
-                console.log("Email sent: " + info.response);
-                res.status(200).json({
-                    success: true,
-                    message: "Письмо успешно отправлено"
-                })
-            }
-        });
+        // Письмо больше не нужно (и SMTP mail.ru недоступен на тарифе). Эндпоинт оставлен,
+        // чтобы приложение курьера по-прежнему получало успешный ответ.
+        // const { fullName } = req.body;
+        //
+        // const mailOptions = {
+        //     from: "info@tibetskaya.kz",
+        //     to: process.env.SENDINFOTOEMAIL,
+        //     subject: `Нужно дать заказ курьеру ${fullName}`,
+        //     text: `Нужно дать заказ курьеру ${fullName}`,
+        // };
+        //
+        // transporter.sendMail(mailOptions, function (error, info) {
+        //     if (error) {
+        //         console.log(error);
+        //         res.status(500).json({
+        //             success: false,
+        //             message: "Ошибка при отправке письма"
+        //         })
+        //     } else {
+        //         console.log("Email sent: " + info.response);
+        //         res.status(200).json({
+        //             success: true,
+        //             message: "Письмо успешно отправлено"
+        //         })
+        //     }
+        // });
 
         res.status(200).json({
             success: true,

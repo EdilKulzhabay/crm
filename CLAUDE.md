@@ -59,10 +59,11 @@ pushNotificationClient.js # Пуши для клиентов
 | `ApiPayController` | Интеграция ApiPay |
 | `PartnerController` | Авторизация приложения партнёров (tibetskaya_partner) |
 | `PartnerManagementController` | CRM-страница «Партнёры»: список с аналитикой, блокировка, заявки на вывод (только суперадмин) |
+| `DeliveryPartnerController` / `DeliveryPartnerAdminController` | Кабинет партнёра по доставке (заказы его курьеров) / управление партнёрами и привязка курьеров (суперадмин) |
 
 ## Модели (Mongoose)
 
-`Client`, `Order`, `Courier`, `CourierAggregator`, `User`, `Department`, `DepartmentHistory`, `Subscription`, `Notification`, `ClientNotificationLog`, `AquaMarket`, `AquaMarketHistory`, `PromoCode`, `Accessories`, `MobileAppSettings`, `Faq`, `InvoiceGlobalCounter`, `ClientPayment`, `ApiPayInvoice`, `Pickup`, `Queue`, `SupportContacts`, `CourierRestrictions`, `Partner`, `CarWash`, `CarWashUser`, `CarWashCoupon`, `CarWashCouponEngagement` (купон на мойку, см. раздел ниже)
+`Client`, `Order`, `Courier`, `CourierAggregator`, `User`, `Department`, `DepartmentHistory`, `Subscription`, `Notification`, `ClientNotificationLog`, `AquaMarket`, `AquaMarketHistory`, `PromoCode`, `Accessories`, `MobileAppSettings`, `Faq`, `InvoiceGlobalCounter`, `ClientPayment`, `ApiPayInvoice`, `Pickup`, `Queue`, `SupportContacts`, `CourierRestrictions`, `Partner`, `CarWash`, `CarWashUser`, `CarWashCoupon`, `CarWashCouponEngagement` (купон на мойку, см. раздел ниже), `DeliveryPartner` (партнёр по доставке, см. раздел ниже)
 
 ## Бэкенд — технологии
 
@@ -187,7 +188,8 @@ WebRTC P2P, сигналинг через Socket.io namespace `/calls`, TURN —
 
 ## Счета юрлиц и сверка с выпиской ForteBusiness
 
-- Счёт: клиентское приложение → `POST /generateInvoicePdfMobile` (`checkAuth`, клиент только из токена) → PDF + документ `Invoice` (снимок количества, цен, `buyerBin` = `Client.bin` или 12 цифр из `invoiceLegalData`). В PDF строка «Назначение платежа: Оплата по счёту № N». В ответе `invoiceId`.
+- Счёт: клиентское приложение → `POST /generateInvoicePdfMobile` (`checkAuth`, клиент только из токена) → PDF + документ `Invoice` (снимок количества, цен, `buyerBin` = `Client.bin` или 12 цифр из `invoiceLegalData`). В PDF строка «Назначение платежа: Оплата по счёту № N». В ответе `invoiceId` и `total`.
+- Аренда возвратной тары: в запросе `rent19` / `rent12` (шт., необязательно — старые версии приложения не присылают). Цена одна для всех — `utils/invoiceRental.js#RENTAL_PRICES` (18,9 л — 3500 ₸, 12,5 л — 2500 ₸; в приложении та же константа `RENTAL_PRICES` в `BusinessInvoice.tsx`). В `Invoice` снимок `rent19/rent12/rentPrice19/rentPrice12`, `total` = вода + аренда. При оплате аренда только фиксируется: `coupon` получает бутыли воды, `balance` — оплату минус сумму аренды.
 - Зачисление — только `utils/invoicePayment.js#applyInvoicePayment`: атомарно `issued → paid`, затем `$inc` клиенту, затем `creditApplied: true` (без транзакций; `paid` + `creditApplied: false` = сбой между шагами, CRM показывает). `coupon` → `paidBootlesFor19/12` из счёта (+ переплата на `balance`), `balance` → вся сумма в тенге. Недоплата и `fakt` автоматически не зачисляются (`REVIEW`); менеджер может подтвердить `fakt` без зачисления. Пишет `ClientOperationLog`, `ClientPayment` (`sessionOrderId: INV-<номер>`, в истории «Оплата по счёту»), push `balanceTopUpSuccess`.
 - Выписка: `utils/forteBusiness.js` (fincore, только чтение). Шлюз требует заголовок `X-Gravitee-Api-Key`, токен 10 мин, даты `dd.mm.yyyy`, страницы с 0. `utils/bankStatementSync.js`: cron каждый час в :55 по Алматы (`startBankStatementSync` в `server.listen`), читает выписку только за сегодня (`getTodayPeriod`; запуск в 23:55 закрывает сутки). Кнопка суперадмина «Сверить с выпиской сейчас» добирает пропущенное: от последней сохранённой операции минус 5 дней, не дальше 31 дня (`getSyncPeriod`, `todayOnly: false`), операции в `BankTransaction` (уникальный `bankRef`), правила сопоставления — `utils/invoiceMatching.js` (номер счёта из назначения + совпадение БИН; без номера — единственный неоплаченный счёт этого БИН на ту же сумму). Одна операция закрывает максимум один счёт (`Invoice.paymentRef` уникален, `forte:<id>`).
 - CRM: карточка клиента — поле «БИН/ИИН покупателя» и список счетов (кнопки «Оплачен» / «Отменить», суперадмин и франчайзи своих клиентов); суперадмин → «Счета юрлиц и поступления ForteBank» (`/superAdminInvoices`): разбор «Требует проверки», «Сверить с выпиской сейчас».
@@ -207,3 +209,16 @@ WebRTC P2P, сигналинг через Socket.io namespace `/calls`, TURN —
 - Клиентское приложение: `/getCarWashCouponsMobile` (`checkAuth` + `checkRole(["client"])`, клиент из токена) → `{ coupons: действующие, carWashes: активные }`.
 - CRM, суперадмин → «Автомойки» (`/superAdminCarWashes`): мойки, сотрудники (создание, пароль, блокировка), история погашений с фильтром по мойке и периоду. Эндпоинты `/getCarWashesAdmin`, `/saveCarWashAdmin`, `/setCarWashStatusAdmin`, `/saveCarWashUserAdmin`, `/setCarWashUserStatusAdmin`, `/getCarWashCouponsAdmin` (`requireSuperAdmin`).
 - Тесты: `npm run test:partner` (`utils/__tests__/carWashCoupon.test.js`, `Controllers/__tests__/carWashController.test.js`).
+
+## Партнёры по доставке (`DeliveryPartnerController`, `DeliveryPartnerAdminController`)
+
+- Не путать с `Partner` (реферальные партнёры). Партнёр по доставке — компания, чьи курьеры-агрегаторы возят заказы; видит в кабинете CRM только заказы своих курьеров.
+- Модель `DeliveryPartner` (название, телефон-логин `phoneNormalized`, bcrypt-пароль `select: false`, `active`/`blocked`). Не удаляется, а блокируется. Курьер: `CourierAggregator.deliveryPartner` (не больше одного партнёра) и `deliveryPartnerLinkedAt`.
+- Партнёр видит заказ курьера только с дня привязки (`deliveryPartnerLinkedAt` по Алматы против `Order.date.d`): смена партнёра ставит новую дату, повторная привязка к тому же — нет. Отвязанный курьер пропадает из кабинета вместе с заказами. Заказы, с которых курьера сняли (`courierAggregator = null`), партнёр не видит.
+- Данные клиента партнёру не отдаются: только дата/время, статус, курьер, `address.actual`, бутыли, сумма, время доставки (`utils/deliveryPartnerOrders.js#toPartnerOrder`, projection `PARTNER_ORDER_FIELDS`).
+- Кабинет: `/deliveryPartnerLogin` → `/deliveryPartner` (`client/src/Pages/DeliveryPartner/*`, свой axios `client/src/deliveryPartnerApi.js`, токен `deliveryPartnerToken` в localStorage). Вкладки «В работе» (`awaitingOrder`/`onTheWay`, обновление раз в минуту) и «История» (период до 93 дней, итоги по доставленным, фильтр по курьеру, «Скачать Excel» — до 5000 строк).
+- Токен подписан ключом, производным от `SecretKey` (`utils/deliveryPartnerToken.js`), не проходит `checkAuth`/`checkAuthAggregator`/`checkAuthCarWash` и наоборот; middleware `utils/checkAuthDeliveryPartner.js` (401 — нет сессии, 403 — заблокирован). Вход: 5 неверных попыток за 15 мин на телефон.
+- Эндпоинты кабинета: `/deliveryPartnerLogin {phone, password}`, `/getDeliveryPartnerMe` (профиль + курьеры), `/getDeliveryPartnerOrders {scope: active|history, startDate, endDate, courierId?, page?, export?}`.
+- CRM, суперадмин → «Партнёры по доставке» (`/superAdminDeliveryPartners`): `/getDeliveryPartnersAdmin`, `/saveDeliveryPartnerAdmin`, `/setDeliveryPartnerStatusAdmin`, `/searchCouriersForDeliveryPartnerAdmin {query}`, `/setCourierDeliveryPartnerAdmin {courierId, deliveryPartnerId|null}` (`requireSuperAdmin`). `/updateCourierAggregatorData` поля `deliveryPartner*` менять не даёт.
+- Индексы: `Order { courierAggregator: 1, "date.d": -1 }`, `CourierAggregator { deliveryPartner: 1 }`.
+- Тесты: `npm run test:partner` (`Controllers/__tests__/deliveryPartnerController.test.js`).

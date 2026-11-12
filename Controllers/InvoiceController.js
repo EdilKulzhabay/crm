@@ -81,6 +81,8 @@ function serializeInvoice(invoice) {
         buyerBin: invoice.buyerBin,
         qty19: invoice.qty19,
         qty12: invoice.qty12,
+        rent19: invoice.rent19 || 0,
+        rent12: invoice.rent12 || 0,
         total: invoice.total,
         status: invoice.status,
         paidAt: invoice.paidAt,

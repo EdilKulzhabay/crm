@@ -1,15 +1,18 @@
 import "dotenv/config";
 import axios from "axios";
 import crypto from "crypto";
-import { normalizePhoneForWhatsApp, maskPhoneForLog } from "../whatsApp/normalizePhone.js";
+import { isValidAuthPhone, normalizePhoneForWhatsApp, maskPhoneForLog } from "../whatsApp/normalizePhone.js";
 
 const EDNA_SCHEDULE_URL = "https://app.edna.io/api/cascade/schedule";
 const DEFAULT_CASCADE_ID = 3073;
 const DEFAULT_MESSAGE_MATCHER_ID = 58286;
 
-/** edna.io ждёт локальный формат KZ-номера с ведущей "8" (пример: "87784260990"). */
-function toEdnaAddress(phoneNorm7) {
-    return `8${phoneNorm7.slice(1)}`;
+/**
+ * edna.io ждёт локальный формат KZ-номера с ведущей "8" (пример: "87784260990").
+ * Номера других стран передаём в международном формате без «+» (пример: "447946000958").
+ */
+function toEdnaAddress(phoneNorm) {
+    return phoneNorm.startsWith("7") ? `8${phoneNorm.slice(1)}` : phoneNorm;
 }
 
 /**
@@ -26,7 +29,7 @@ export async function sendWhatsAppOtp(rawPhone, code) {
     const phoneNorm = normalizePhoneForWhatsApp(rawPhone);
     const masked = maskPhoneForLog(phoneNorm || rawPhone);
 
-    if (!phoneNorm || phoneNorm.length !== 11) {
+    if (!isValidAuthPhone(phoneNorm)) {
         console.warn(`[edna] sendWhatsAppOtp: INVALID_PHONE phone=${masked}`);
         return { ok: false, error: "INVALID_PHONE" };
     }
