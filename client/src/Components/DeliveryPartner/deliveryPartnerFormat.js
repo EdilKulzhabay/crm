@@ -8,19 +8,14 @@ export const ORDER_STATUS_LABELS = Object.freeze({
 });
 
 const TIME_ZONE = "Asia/Almaty";
-const DAYS_IN_WEEK = 7;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export const statusLabel = (status) => ORDER_STATUS_LABELS[status] ?? status ?? "—";
 
 /** YYYY-MM-DD по Алматы — как Order.date.d */
 export const almatyDay = (date = new Date()) => date.toLocaleDateString("en-CA", { timeZone: TIME_ZONE });
 
-/** Период по умолчанию — последние 7 дней, включая сегодня */
-export const defaultPeriod = () => ({
-    startDate: almatyDay(new Date(Date.now() - (DAYS_IN_WEEK - 1) * DAY_MS)),
-    endDate: almatyDay(),
-});
+/** Без дат — все заказы за всё время */
+export const EMPTY_PERIOD = Object.freeze({ startDate: "", endDate: "" });
 
 export const formatMoney = (value) => `${Number(value || 0).toLocaleString("ru-RU")} ₸`;
 
@@ -46,5 +41,6 @@ export function downloadOrdersExcel(orders, { startDate, endDate }) {
     }));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "Заказы");
-    XLSX.writeFile(workbook, `Заказы ${startDate} — ${endDate}.xlsx`);
+    const periodName = startDate || endDate ? `${startDate || "…"} — ${endDate || almatyDay()}` : `все на ${almatyDay()}`;
+    XLSX.writeFile(workbook, `Заказы ${periodName}.xlsx`);
 }

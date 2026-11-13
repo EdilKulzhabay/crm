@@ -23,7 +23,7 @@ import { normalizePhoneForWhatsApp } from "../whatsApp/normalizePhone.js";
 const LOGIN_MAX_FAILURES = 5;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const PAGE_SIZE = 100;
-/** Выгрузка в Excel: все заказы периода, но не больше этого числа строк */
+/** Выгрузка в Excel: все заказы (периода, если задан), но не больше этого числа строк */
 const EXPORT_LIMIT = 5000;
 const COURIERS_LIMIT = 500;
 const PHONE_PATTERN = /^7\d{10}$/;
@@ -116,8 +116,8 @@ export function createDeliveryPartnerController({
     }
 
     /**
-     * { scope: "active" | "history", startDate, endDate (YYYY-MM-DD, для history), courierId?, page?, export? }
-     * history — заказы за период + итоги; active — назначенные курьерам и ещё не доставленные.
+     * { scope: "active" | "history", startDate?, endDate? (YYYY-MM-DD, для history), courierId?, page?, export? }
+     * history — все заказы (или за период, если задан) + итоги; active — назначенные курьерам и ещё не доставленные.
      * export: true — все заказы без страниц (до EXPORT_LIMIT), для Excel.
      */
     async function getDeliveryPartnerOrders(req, res) {

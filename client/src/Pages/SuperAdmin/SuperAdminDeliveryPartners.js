@@ -60,7 +60,7 @@ export default function SuperAdminDeliveryPartners() {
             <Div>Партнёры по доставке</Div>
             <Div>
                 <span className="text-sm opacity-70">
-                    Партнёр видит заказы своих курьеров (без данных клиента) с дня привязки курьера. Вход —{" "}
+                    Партнёр видит все заказы своих курьеров (без данных клиента). Вход —{" "}
                     {window.location.origin}/deliveryPartnerLogin
                 </span>
             </Div>

@@ -32,21 +32,27 @@ const call = async (handler, req) => {
 };
 
 const activePartner = { _id: PARTNER_ID, name: "Быстрая доставка", phone: "+7 700 000 00 01", status: "active", password: "hash" };
-// Привязан 10.11.2026 в 20:00 UTC = 11.11.2026 по Алматы
 const courierA = { _id: COURIER_A, fullName: "Айдар", deliveryPartnerLinkedAt: new Date("2026-11-10T20:00:00Z") };
 const courierB = { _id: COURIER_B, fullName: "Ерлан", deliveryPartnerLinkedAt: null };
 
 describe("deliveryPartnerOrders — запрос и фильтр", () => {
-    test("history требует период не длиннее 93 дней", () => {
-        assert.equal(parsePartnerOrdersQuery({ scope: "history" }, [courierA]).error, "Укажите период");
-        assert.match(
-            parsePartnerOrdersQuery({ scope: "history", startDate: "2026-01-01", endDate: "2026-06-01" }, [courierA]).error,
-            /не больше 93/
-        );
+    test("history без периода — все заказы; некорректные даты — ошибка", () => {
+        const all = buildPartnerOrdersFilter(parsePartnerOrdersQuery({ scope: "history" }, [courierA]));
+        assert.equal(all["date.d"], undefined);
+        assert.equal(parsePartnerOrdersQuery({ scope: "history", startDate: "13.11.2026" }, [courierA]).error, "Некорректная дата");
         assert.equal(
             parsePartnerOrdersQuery({ scope: "history", startDate: "2026-11-12", endDate: "2026-11-01" }, [courierA]).error,
             "Начало периода позже конца"
         );
+    });
+
+    test("длинный период не ограничен, можно задать только одну границу", () => {
+        const long = buildPartnerOrdersFilter(
+            parsePartnerOrdersQuery({ scope: "history", startDate: "2020-01-01", endDate: "2026-11-13" }, [courierA])
+        );
+        assert.deepEqual(long["date.d"], { $gte: "2020-01-01", $lte: "2026-11-13" });
+        const fromOnly = buildPartnerOrdersFilter(parsePartnerOrdersQuery({ scope: "history", startDate: "2026-01-01" }, [courierA]));
+        assert.deepEqual(fromOnly["date.d"], { $gte: "2026-01-01" });
     });
 
     test("чужой курьер в фильтре — ошибка, а не пустой список по всем", () => {
@@ -54,13 +60,11 @@ describe("deliveryPartnerOrders — запрос и фильтр", () => {
         assert.equal(query.error, "Курьер не найден");
     });
 
-    test("заказы курьера видны только с дня привязки", () => {
+    test("заказы курьера видны и до дня привязки", () => {
         const query = parsePartnerOrdersQuery({ scope: "history", startDate: "2026-11-01", endDate: "2026-11-12" }, [courierA, courierB]);
         const filter = buildPartnerOrdersFilter(query);
-        assert.equal(filter.$or.length, 2);
-        assert.deepEqual(filter.$or[0]["date.d"], { $gte: "2026-11-11", $lte: "2026-11-12" });
-        assert.deepEqual(filter.$or[1]["date.d"], { $gte: "2026-11-01", $lte: "2026-11-12" });
-        assert.equal(String(filter.$or[0].courierAggregator), COURIER_A);
+        assert.deepEqual(filter.courierAggregator.$in.map(String), [COURIER_A, COURIER_B]);
+        assert.deepEqual(filter["date.d"], { $gte: "2026-11-01", $lte: "2026-11-12" });
     });
 
     test("active — только незавершённые статусы, без периода", () => {
@@ -144,7 +148,7 @@ describe("DeliveryPartnerController", () => {
             body: { scope: "active" },
         });
         assert.equal(requestedPartner, PARTNER_ID);
-        assert.equal(String(usedFilter.courierAggregator), COURIER_A);
+        assert.deepEqual(usedFilter.courierAggregator.$in.map(String), [COURIER_A]);
         assert.equal(res.body.orders[0].courierName, "Айдар");
         assert.equal(res.body.summary, undefined);
     });

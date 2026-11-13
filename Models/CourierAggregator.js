@@ -13,7 +13,7 @@ const CourierAggregatorSchema = new mongoose.Schema(
             ref: "DeliveryPartner",
             default: null
         },
-        /** Когда курьер привязан к текущему партнёру: партнёр видит заказы курьера только с этого дня */
+        /** Когда курьер привязан к текущему партнёру (для CRM; заказы партнёр видит за всё время) */
         deliveryPartnerLinkedAt: {
             type: Date,
             default: null

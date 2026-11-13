@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import deliveryPartnerApi, { clearDeliveryPartnerToken, getDeliveryPartnerToken } from "../../deliveryPartnerApi";
 import { OrdersList, OrdersSummary } from "../../Components/DeliveryPartner/DeliveryPartnerOrders";
-import { defaultPeriod, downloadOrdersExcel } from "../../Components/DeliveryPartner/deliveryPartnerFormat";
+import { downloadOrdersExcel, EMPTY_PERIOD } from "../../Components/DeliveryPartner/deliveryPartnerFormat";
 import LogoText from "../../icons/LogoText";
 
 const TABS = Object.freeze([
@@ -22,7 +22,7 @@ export default function DeliveryPartnerMain() {
     const [profile, setProfile] = useState(null);
     const [tab, setTab] = useState("active");
     const [courierId, setCourierId] = useState("");
-    const [period, setPeriod] = useState(defaultPeriod);
+    const [period, setPeriod] = useState(EMPTY_PERIOD);
     const [result, setResult] = useState({ orders: [], hasMore: false, summary: null });
     const [page, setPage] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +45,10 @@ export default function DeliveryPartnerMain() {
         (extra = {}) => ({
             scope: tab,
             ...(courierId && { courierId }),
-            ...(tab === "history" && period),
+            ...(tab === "history" && {
+                ...(period.startDate && { startDate: period.startDate }),
+                ...(period.endDate && { endDate: period.endDate }),
+            }),
             ...extra,
         }),
         [tab, courierId, period]
@@ -159,7 +162,7 @@ export default function DeliveryPartnerMain() {
                 {tab === "history" && result.summary && <OrdersSummary summary={result.summary} />}
                 <OrdersList
                     orders={result.orders}
-                    emptyText={isLoading ? "Загружаем…" : tab === "active" ? "Сейчас заказов в работе нет" : "За период заказов нет"}
+                    emptyText={isLoading ? "Загружаем…" : tab === "active" ? "Сейчас заказов в работе нет" : "Заказов нет"}
                 />
                 {result.hasMore && (
                     <button
@@ -203,6 +206,11 @@ function Filters({ tab, couriers, courierId, onCourierChange, period, onPeriodCh
                         По
                         <input type="date" value={period.endDate} onChange={updatePeriod("endDate")} className={inputClass} />
                     </label>
+                    {(period.startDate || period.endDate) && (
+                        <button onClick={() => onPeriodChange(EMPTY_PERIOD)} className="px-4 py-2 rounded-lg bg-white text-sm">
+                            Сбросить период
+                        </button>
+                    )}
                     <button
                         onClick={onExport}
                         disabled={isExporting}

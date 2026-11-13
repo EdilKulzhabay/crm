@@ -170,7 +170,7 @@ export function createDeliveryPartnerAdminController({
 
     /**
      * { courierId, deliveryPartnerId | null } — привязать курьера к партнёру (перепривязать от другого) или отвязать.
-     * Дата привязки ставится заново только при смене партнёра: новый партнёр не видит заказы курьера до неё.
+     * Дата привязки (показывается в CRM) ставится заново только при смене партнёра.
      */
     async function setCourierDeliveryPartnerAdmin(req, res) {
         const { courierId, deliveryPartnerId } = req.body ?? {};
