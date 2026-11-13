@@ -92,3 +92,73 @@ function StatusBadge({ status }) {
         </span>
     );
 }
+
+/** Сколько номеров страниц показывать вокруг текущей */
+const PAGE_WINDOW = 2;
+
+/** Номера страниц (с 0) вокруг текущей: первая и последняя всегда видны, разрывы — null («…») */
+const visiblePages = (page, pageCount) => {
+    const from = Math.max(0, page - PAGE_WINDOW);
+    const to = Math.min(pageCount - 1, page + PAGE_WINDOW);
+    const middle = Array.from({ length: to - from + 1 }, (_, i) => from + i);
+    return [
+        ...(from > 0 ? [0] : []),
+        ...(from > 1 ? [null] : []),
+        ...middle,
+        ...(to < pageCount - 2 ? [null] : []),
+        ...(to < pageCount - 1 ? [pageCount - 1] : []),
+    ];
+};
+
+/** Постраничная навигация «Истории»; total — число заказов по фильтру (итоги сервера) */
+export function OrdersPagination({ page, total, pageSize, isLoading, onPageChange }) {
+    const pageCount = pageSize > 0 ? Math.ceil(total / pageSize) : 0;
+    if (pageCount <= 1) return null;
+
+    const buttonClass = "min-w-[40px] h-10 px-3 rounded-lg text-sm disabled:opacity-40";
+    const firstShown = page * pageSize + 1;
+    const lastShown = Math.min(total, (page + 1) * pageSize);
+
+    return (
+        <nav aria-label="Страницы заказов" className="flex flex-col items-center gap-y-2">
+            <div className="flex flex-wrap justify-center gap-1">
+                <button
+                    onClick={() => onPageChange(page - 1)}
+                    disabled={isLoading || page === 0}
+                    aria-label="Предыдущая страница"
+                    className={`${buttonClass} bg-white`}
+                >
+                    ←
+                </button>
+                {visiblePages(page, pageCount).map((item, index) =>
+                    item === null ? (
+                        <span key={`gap-${index}`} className="h-10 px-1 flex items-center text-[#606B85]">
+                            …
+                        </span>
+                    ) : (
+                        <button
+                            key={item}
+                            onClick={() => onPageChange(item)}
+                            disabled={isLoading}
+                            aria-current={item === page ? "page" : undefined}
+                            className={`${buttonClass} ${item === page ? "bg-[#D12A2A] text-white" : "bg-white"}`}
+                        >
+                            {item + 1}
+                        </button>
+                    )
+                )}
+                <button
+                    onClick={() => onPageChange(page + 1)}
+                    disabled={isLoading || page >= pageCount - 1}
+                    aria-label="Следующая страница"
+                    className={`${buttonClass} bg-white`}
+                >
+                    →
+                </button>
+            </div>
+            <div className="text-xs text-[#606B85]">
+                {firstShown}–{lastShown} из {total}
+            </div>
+        </nav>
+    );
+}

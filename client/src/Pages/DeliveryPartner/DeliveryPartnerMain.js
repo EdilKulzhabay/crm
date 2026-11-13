@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import deliveryPartnerApi, { clearDeliveryPartnerToken, getDeliveryPartnerToken } from "../../deliveryPartnerApi";
-import { OrdersList, OrdersSummary } from "../../Components/DeliveryPartner/DeliveryPartnerOrders";
-import { downloadOrdersExcel, EMPTY_PERIOD } from "../../Components/DeliveryPartner/deliveryPartnerFormat";
+import { OrdersList, OrdersPagination, OrdersSummary } from "../../Components/DeliveryPartner/DeliveryPartnerOrders";
+import { downloadOrdersExcel, EMPTY_PERIOD, todayPeriod } from "../../Components/DeliveryPartner/deliveryPartnerFormat";
 import LogoText from "../../icons/LogoText";
 
 const TABS = Object.freeze([
@@ -22,8 +22,8 @@ export default function DeliveryPartnerMain() {
     const [profile, setProfile] = useState(null);
     const [tab, setTab] = useState("active");
     const [courierId, setCourierId] = useState("");
-    const [period, setPeriod] = useState(EMPTY_PERIOD);
-    const [result, setResult] = useState({ orders: [], hasMore: false, summary: null });
+    const [period, setPeriod] = useState(todayPeriod);
+    const [result, setResult] = useState({ orders: [], hasMore: false, summary: null, pageSize: 0 });
     const [page, setPage] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
@@ -54,7 +54,10 @@ export default function DeliveryPartnerMain() {
         [tab, courierId, period]
     );
 
-    /** Загружает страницу; page > 0 — дописывает к списку («Показать ещё») */
+    /**
+     * Загружает страницу. «История» — постраничная навигация (страница заменяет список),
+     * «В работе» — «Показать ещё» (page > 0 дописывает к списку).
+     */
     const load = useCallback(
         async (nextPage = 0) => {
             const id = ++requestId.current;
@@ -64,10 +67,12 @@ export default function DeliveryPartnerMain() {
                 const { data } = await deliveryPartnerApi.post("/getDeliveryPartnerOrders", query({ page: nextPage }));
                 if (id !== requestId.current) return;
                 setPage(nextPage);
+                const isAppend = tab === "active" && nextPage > 0;
                 setResult((prev) => ({
-                    orders: nextPage > 0 ? [...prev.orders, ...data.orders] : data.orders,
+                    orders: isAppend ? [...prev.orders, ...data.orders] : data.orders,
                     hasMore: data.hasMore,
                     summary: data.summary ?? null,
+                    pageSize: data.pageSize,
                 }));
             } catch (e) {
                 if (id === requestId.current) setError(errorText(e, "Не удалось загрузить заказы"));
@@ -75,8 +80,13 @@ export default function DeliveryPartnerMain() {
                 if (id === requestId.current) setIsLoading(false);
             }
         },
-        [query]
+        [query, tab]
     );
+
+    const goToPage = (nextPage) => {
+        load(nextPage);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
 
     useEffect(() => {
         if (!getDeliveryPartnerToken()) return undefined;
@@ -164,7 +174,16 @@ export default function DeliveryPartnerMain() {
                     orders={result.orders}
                     emptyText={isLoading ? "Загружаем…" : tab === "active" ? "Сейчас заказов в работе нет" : "Заказов нет"}
                 />
-                {result.hasMore && (
+                {tab === "history" && result.summary && (
+                    <OrdersPagination
+                        page={page}
+                        total={result.summary.orders}
+                        pageSize={result.pageSize}
+                        isLoading={isLoading}
+                        onPageChange={goToPage}
+                    />
+                )}
+                {tab === "active" && result.hasMore && (
                     <button
                         onClick={() => load(page + 1)}
                         disabled={isLoading}
@@ -181,6 +200,8 @@ export default function DeliveryPartnerMain() {
 function Filters({ tab, couriers, courierId, onCourierChange, period, onPeriodChange, onExport, isExporting }) {
     const updatePeriod = (field) => (e) => onPeriodChange((prev) => ({ ...prev, [field]: e.target.value }));
     const inputClass = "p-2 rounded-lg bg-white outline-none text-sm";
+    const today = todayPeriod();
+    const isToday = period.startDate === today.startDate && period.endDate === today.endDate;
 
     return (
         <div className="flex flex-wrap items-end gap-3">
@@ -206,9 +227,14 @@ function Filters({ tab, couriers, courierId, onCourierChange, period, onPeriodCh
                         По
                         <input type="date" value={period.endDate} onChange={updatePeriod("endDate")} className={inputClass} />
                     </label>
+                    {!isToday && (
+                        <button onClick={() => onPeriodChange(todayPeriod())} className="px-4 py-2 rounded-lg bg-white text-sm">
+                            Сегодня
+                        </button>
+                    )}
                     {(period.startDate || period.endDate) && (
                         <button onClick={() => onPeriodChange(EMPTY_PERIOD)} className="px-4 py-2 rounded-lg bg-white text-sm">
-                            Сбросить период
+                            Все заказы
                         </button>
                     )}
                     <button

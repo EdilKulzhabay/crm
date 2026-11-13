@@ -17,6 +17,9 @@ export const almatyDay = (date = new Date()) => date.toLocaleDateString("en-CA",
 /** Без дат — все заказы за всё время */
 export const EMPTY_PERIOD = Object.freeze({ startDate: "", endDate: "" });
 
+/** Период «сегодня» по Алматы — по умолчанию в «Истории» */
+export const todayPeriod = () => ({ startDate: almatyDay(), endDate: almatyDay() });
+
 export const formatMoney = (value) => `${Number(value || 0).toLocaleString("ru-RU")} ₸`;
 
 export const formatDateTime = (value) =>
