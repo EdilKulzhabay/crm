@@ -1,5 +1,6 @@
 import Client from "../Models/Client.js";
 import Order from "../Models/Order.js"
+import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -10,6 +11,7 @@ import CourierAggregator from "../Models/CourierAggregator.js";
 import SupportContacts from "../Models/SupportContacts.js";
 import { sendMasterCallTelegram } from "../telegram/sendMasterCall.js";
 import { createAttemptLimiter } from "../utils/attemptLimiter.js";
+import { findDuplicateClientOrder, withClientOrderLock } from "../utils/clientOrderDuplicate.js";
 import { sendSupportTelegram } from "../telegram/sendSupport.js";
 import {
     maskEmailForLog,
@@ -1653,7 +1655,12 @@ const AVR_BLOCKED_CODE = "AVR_BLOCKED";
 const AVR_BLOCKED_MESSAGE =
     "Доступ к приложению временно приостановлен. Чтобы продолжить пользоваться приложением, подтвердите акт выполненных работ (АВР) на портале ИС ЭСФ.";
 
-export async function createClientOrderCore({
+/** Заказы одного клиента — по очереди, иначе два одновременных запроса оба проходят проверку на дубль */
+export function createClientOrderCore(params) {
+    return withClientOrderLock(params?.clientId, () => createClientOrderCoreUnlocked(params));
+}
+
+async function createClientOrderCoreUnlocked({
     clientId,
     address,
     products,
@@ -1703,21 +1710,21 @@ export async function createClientOrderCore({
 
     const todayStr = getDateAlmaty();
 
-    const findOrder = await Order.findOne({
-        client: client._id,
-        "date.d": date?.d,
-        "address.actual": address.actual,
-        status: { $ne: "cancelled" }
-    });
-
-    if (findOrder) {
-        return { success: false, message: "Заказ на эту дату уже существует" };
-    }
-
     const resolvedD =
         typeof date?.d === "string" && String(date.d).trim().length >= 10
             ? String(date.d).trim().slice(0, 10)
             : todayStr;
+
+    const duplicate = await findDuplicateClientOrder({
+        OrderModel: Order,
+        ApiPayInvoiceModel: ApiPayInvoice,
+        clientId: client._id,
+        dates: [resolvedD, date?.d],
+        actual: address?.actual,
+    });
+    if (duplicate) {
+        return { success: false, code: duplicate.code, message: duplicate.message };
+    }
 
     if (resolvedD === todayStr) {
         const cutoff = await getOrderSameDayUntilHourValue();

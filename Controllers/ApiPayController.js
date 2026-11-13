@@ -20,6 +20,7 @@ import Courier from "../Models/Courier.js";
 import CourierAggregator from "../Models/CourierAggregator.js";
 import User from "../Models/User.js";
 import { createClientOrderCore } from "./MobileController.js";
+import { ORDER_EXISTS_CODES } from "../utils/clientOrderDuplicate.js";
 import {
     createQrInvoice as apipayCreateQrInvoice,
     getInvoice as apipayGetInvoice,
@@ -728,7 +729,7 @@ async function markOrderPaidByKaspi(doc, inv) {
  * даже если клиент не вернулся в приложение (например, оплатил Kaspi QR и закрыл его).
  * Идемпотентно: claim через pendingOrderApplied гарантирует ровно одну попытку создания
  * на счёт. Если клиент всё же вернулся в приложение и заказ уже был создан "живьём" —
- * createClientOrderCore вернёт "Заказ на эту дату уже существует", что тут не является ошибкой.
+ * createClientOrderCore вернёт код ORDER_EXISTS_CODES — здесь это не ошибка.
  */
 async function completePendingOrderAfterTopUp(doc) {
     const claimed = await ApiPayInvoice.findOneAndUpdate(
@@ -748,7 +749,7 @@ async function completePendingOrderAfterTopUp(doc) {
                 apipayInvoiceId: doc.apipayInvoiceId,
                 orderId: result.order?._id?.toString(),
             });
-        } else if (result.message === "Заказ на эту дату уже существует") {
+        } else if (result.code === ORDER_EXISTS_CODES.createdAfterPayment || result.code === ORDER_EXISTS_CODES.duplicate) {
             console.log("[ApiPay] pending order already existed (client returned to app in time):", {
                 apipayInvoiceId: doc.apipayInvoiceId,
             });
