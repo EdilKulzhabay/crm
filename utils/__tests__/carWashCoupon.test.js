@@ -1,6 +1,8 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import {
+    buildCarWashCouponPushText,
+    clientAppSupportsCarWashCoupon,
     CAR_WASH_COUPON_TTL_MS,
     CarWashCouponError,
     generateCarWashCouponCode,
@@ -87,6 +89,29 @@ describe("issueCarWashCoupon", () => {
         const result = await issueCarWashCoupon("order1", { repo, logger: { error: (...args) => errors.push(args) } });
         assert.equal(result, null);
         assert.equal(errors.length, 1);
+    });
+});
+
+describe("clientAppSupportsCarWashCoupon", () => {
+    test("2.2.0 и новее — купон есть", () => {
+        for (const version of ["2.2.0", "2.2.1", "2.10.0", "3.0.0", " 2.2.0 "]) {
+            assert.equal(clientAppSupportsCarWashCoupon(version), true, version);
+        }
+    });
+
+    test("старые версии и неизвестная версия — купона нет", () => {
+        for (const version of ["2.1.9", "2.1.0", "1.9.9", "", null, undefined, "abc"]) {
+            assert.equal(clientAppSupportsCarWashCoupon(version), false, String(version));
+        }
+    });
+});
+
+describe("buildCarWashCouponPushText", () => {
+    test("текст для пуша «Доставлено»: скидка купона, мойка и срок", () => {
+        assert.equal(
+            buildCarWashCouponPushText({ discountPercent: 20 }),
+            "Ваш купон на скидку 20% на автомойку Auto Master Spa уже в приложении. Действует 72 часа с момента доставки"
+        );
     });
 });
 

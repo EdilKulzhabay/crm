@@ -10,7 +10,6 @@ import {
  * Основной номер (Client.phone) остаётся как есть — на него завязаны счета, звонки и CRM.
  */
 
-export const MAX_ADDITIONAL_PHONES = 5;
 const KZ_PHONE_LENGTH = 11;
 const PHONE_LOOKUP_LIMIT = 200;
 
@@ -36,9 +35,6 @@ export function normalizeAdditionalPhones(rawPhones, primaryPhone) {
             throw new ClientPhonesError(`Некорректный номер телефона: ${String(raw ?? "")}`);
         }
         if (phone !== primary) unique.add(phone);
-    }
-    if (unique.size > MAX_ADDITIONAL_PHONES) {
-        throw new ClientPhonesError(`Можно добавить не больше ${MAX_ADDITIONAL_PHONES} дополнительных номеров`);
     }
     return [...unique];
 }

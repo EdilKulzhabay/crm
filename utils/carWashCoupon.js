@@ -6,6 +6,41 @@ import { normalizeReferralCodeInput } from "./referralCode.js";
 
 export const CAR_WASH_COUPON_DISCOUNT_PERCENT = 20;
 export const CAR_WASH_COUPON_TTL_MS = 72 * 60 * 60 * 1000;
+/** Партнёрская мойка в тексте пуша «Доставлено» */
+export const CAR_WASH_PARTNER_NAME = "Auto Master Spa";
+
+const MS_PER_HOUR = 60 * 60 * 1000;
+
+/** С этой версии клиентского приложения есть купон на мойку: текст в пуше и тихий пуш о погашении */
+export const CAR_WASH_COUPON_MIN_APP_VERSION = "2.2.0";
+
+const parseVersion = (version) => {
+    const match = /^(\d+)\.(\d+)\.(\d+)/.exec(String(version ?? "").trim());
+    return match ? match.slice(1).map(Number) : null;
+};
+
+/**
+ * Поддерживает ли приложение клиента купон. Client.appVersion пишет само приложение
+ * (HomeScreen → updateData); нет версии или версия старше 2.2.0 — купона в приложении нет.
+ */
+export function clientAppSupportsCarWashCoupon(appVersion) {
+    const current = parseVersion(appVersion);
+    const minimal = parseVersion(CAR_WASH_COUPON_MIN_APP_VERSION);
+    if (!current) return false;
+    for (let i = 0; i < minimal.length; i++) {
+        if (current[i] !== minimal[i]) return current[i] > minimal[i];
+    }
+    return true;
+}
+
+/** Дописывается к пушу клиенту о доставке, если за заказ выдан купон */
+export function buildCarWashCouponPushText(coupon) {
+    const hours = Math.round(CAR_WASH_COUPON_TTL_MS / MS_PER_HOUR);
+    return (
+        `Ваш купон на скидку ${coupon.discountPercent}% на автомойку ${CAR_WASH_PARTNER_NAME} уже в приложении. ` +
+        `Действует ${hours} часа с момента доставки`
+    );
+}
 
 const CODE_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const CODE_GROUP_LENGTH = 4;

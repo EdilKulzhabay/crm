@@ -2,7 +2,6 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import {
     ClientPhonesError,
-    MAX_ADDITIONAL_PHONES,
     clientHasPhone,
     findClientByAnyPhone,
     normalizeAdditionalPhones,
@@ -26,10 +25,10 @@ describe("normalizeAdditionalPhones", () => {
         assert.throws(() => normalizeAdditionalPhones("77011112233", "77000000000"), ClientPhonesError);
     });
 
-    test("rejects more than the allowed number of phones", () => {
-        const phones = Array.from({ length: MAX_ADDITIONAL_PHONES + 1 }, (_, i) => `7701111220${i}`);
+    test("accepts any number of additional phones", () => {
+        const phones = Array.from({ length: 20 }, (_, i) => `770111122${String(i).padStart(2, "0")}`);
 
-        assert.throws(() => normalizeAdditionalPhones(phones, "77000000000"), ClientPhonesError);
+        assert.equal(normalizeAdditionalPhones(phones, "77000000000").length, 20);
     });
 
     test("accepts an empty list (removes all additional phones)", () => {

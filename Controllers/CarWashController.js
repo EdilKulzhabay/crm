@@ -6,7 +6,12 @@ import CarWashCouponEngagement from "../Models/CarWashCouponEngagement.js";
 import CarWashUser from "../Models/CarWashUser.js";
 import { sendCarWashRedemptionTelegram } from "../telegram/sendCarWashRedemption.js";
 import { createAttemptLimiter } from "../utils/attemptLimiter.js";
-import { CarWashCouponError, redeemCarWashCoupon as redeemCoupon } from "../utils/carWashCoupon.js";
+import {
+    CarWashCouponError,
+    clientAppSupportsCarWashCoupon,
+    redeemCarWashCoupon as redeemCoupon,
+} from "../utils/carWashCoupon.js";
+import { collectOrderPushTokens } from "../utils/clientPushTokens.js";
 import { signCarWashToken } from "../utils/carWashToken.js";
 import { normalizePhoneForWhatsApp } from "../whatsApp/normalizePhone.js";
 
@@ -74,7 +79,10 @@ const defaultRepo = {
             .lean(),
     listActiveCarWashes: () =>
         CarWash.find({ status: "active" }).select(CAR_WASH_PUBLIC_FIELDS).sort({ name: 1 }).limit(CAR_WASHES_LIMIT).lean(),
-    findClient: (clientId) => Client.findById(clientId).select("fullName userName phone mail").lean(),
+    findClient: (clientId) =>
+        Client.findById(clientId)
+            .select("fullName userName phone mail notificationPushToken notificationPushTokens appVersion")
+            .lean(),
     /** Одна запись на клиента (уникальный client): upsert + $inc атомарны */
     trackEngagement: (clientId, { counter, lastAt }, at) =>
         CarWashCouponEngagement.updateOne(
@@ -84,6 +92,19 @@ const defaultRepo = {
         ),
 };
 
+/**
+ * Data-only пуш клиенту: приложение сразу убирает погашенный купон.
+ * pushNotificationClient импортируется лениво — он читает ключ Firebase при загрузке модуля.
+ */
+async function pushCouponUsedToClient({ coupon, client }) {
+    // Старые версии не знают этот пуш и показали бы пустой баннер «Новое уведомление»
+    if (!clientAppSupportsCarWashCoupon(client?.appVersion)) return { successCount: 0, errorCount: 0 };
+    const tokens = collectOrderPushTokens(null, client);
+    if (tokens.length === 0) return { successCount: 0, errorCount: 0 };
+    const { pushClientCarWashCouponUsed } = await import("../pushNotificationClient.js");
+    return pushClientCarWashCouponUsed(tokens, { couponId: String(coupon._id) });
+}
+
 export function createCarWashController({
     repo = defaultRepo,
     comparePassword = bcrypt.compare,
@@ -92,6 +113,7 @@ export function createCarWashController({
     loginLimiter = createAttemptLimiter({ maxFailures: LOGIN_MAX_FAILURES, windowMs: ATTEMPT_WINDOW_MS }),
     redeemLimiter = createAttemptLimiter({ maxFailures: REDEEM_MAX_FAILURES, windowMs: ATTEMPT_WINDOW_MS }),
     notifyRedemption = sendCarWashRedemptionTelegram,
+    notifyClientCouponUsed = pushCouponUsedToClient,
     now = () => new Date(),
     logger = console,
 } = {}) {
@@ -137,15 +159,36 @@ export function createCarWashController({
         return res.json({ success: true, user: toCarWashUser(req.carWashUser), carWash: toCarWash(req.carWash) });
     }
 
-    /** Telegram-уведомление о погашении: не задерживает ответ сотруднику, ошибки только в лог */
+    /** Telegram о погашении */
+    async function sendRedemptionTelegram(coupon, client, carWash, carWashUser) {
+        try {
+            const result = await notifyRedemption({ coupon, client, carWash, carWashUser });
+            if (!result?.ok) logger.error("[CarWash] Telegram о погашении не отправлен:", result?.error);
+        } catch (error) {
+            logger.error("[CarWash] Telegram о погашении:", error?.message || error);
+        }
+    }
+
+    /** Тихий пуш клиенту — купон исчезает из приложения */
+    async function sendCouponUsedPush(coupon, client) {
+        try {
+            await notifyClientCouponUsed({ coupon, client });
+        } catch (error) {
+            logger.error("[CarWash] пуш клиенту о погашении:", error?.message || error);
+        }
+    }
+
+    /** Уведомления о погашении: не задерживают ответ сотруднику, ошибки только в лог */
     function announceRedemption(coupon, carWashUser, carWash) {
         Promise.resolve()
             .then(() => repo.findClient(coupon.client))
-            .then((client) => notifyRedemption({ coupon, client, carWash, carWashUser }))
-            .then((result) => {
-                if (!result?.ok) logger.error("[CarWash] Telegram о погашении не отправлен:", result?.error);
-            })
-            .catch((error) => logger.error("[CarWash] Telegram о погашении:", error?.message || error));
+            .then((client) =>
+                Promise.all([
+                    sendRedemptionTelegram(coupon, client, carWash, carWashUser),
+                    sendCouponUsedPush(coupon, client),
+                ])
+            )
+            .catch((error) => logger.error("[CarWash] уведомления о погашении:", error?.message || error));
     }
 
     async function redeemCarWashCoupon(req, res) {

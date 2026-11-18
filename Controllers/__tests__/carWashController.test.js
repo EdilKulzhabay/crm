@@ -105,6 +105,52 @@ describe("CarWashController — погашение", () => {
         assert.equal(sent[0].carWashUser.fullName, "Айдар");
     });
 
+    test("после погашения клиенту уходит тихий пуш с id купона", async () => {
+        const pushed = [];
+        const client = { _id: "cl1", notificationPushTokens: ["token-1"] };
+        const controller = createCarWashController({
+            redeem: async () => usedCoupon,
+            repo: { findClient: async () => client },
+            notifyRedemption: async () => ({ ok: true }),
+            notifyClientCouponUsed: async (params) => pushed.push(params),
+            logger: silentLogger,
+        });
+        await call(controller.redeemCarWashCoupon, req("AAAA-BBBB-CCCC"));
+        await flush();
+        assert.equal(pushed.length, 1);
+        assert.equal(pushed[0].coupon, usedCoupon);
+        assert.equal(pushed[0].client, client);
+    });
+
+    test("сбой пуша клиенту не мешает Telegram и погашению", async () => {
+        let sent = 0;
+        const errors = [];
+        const controller = createCarWashController({
+            redeem: async () => usedCoupon,
+            repo: { findClient: async () => ({ _id: "cl1" }) },
+            notifyRedemption: async () => (sent++, { ok: true }),
+            notifyClientCouponUsed: async () => { throw new Error("fcm down"); },
+            logger: { log() {}, error: (...args) => errors.push(args) },
+        });
+        const res = await call(controller.redeemCarWashCoupon, req("AAAA-BBBB-CCCC"));
+        await flush();
+        assert.equal(res.statusCode, 200);
+        assert.equal(sent, 1);
+        assert.equal(errors.length, 1);
+    });
+
+    test("неудачное погашение — пуш клиенту не отправляется", async () => {
+        let pushed = 0;
+        const controller = createCarWashController({
+            redeem: async () => { throw new CarWashCouponError("USED", "x"); },
+            notifyClientCouponUsed: async () => pushed++,
+            logger: silentLogger,
+        });
+        await call(controller.redeemCarWashCoupon, req("AAAA-BBBB-CCCC"));
+        await flush();
+        assert.equal(pushed, 0);
+    });
+
     test("сбой Telegram не ломает погашение", async () => {
         const errors = [];
         const controller = createCarWashController({

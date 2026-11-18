@@ -1016,19 +1016,30 @@ export const completeOrderCourierAggregator = async (req, res) => {
             income: incomeAfter,
         })
 
+        // Купон на мойку за доставленный заказ — до пуша, чтобы упомянуть его в тексте
+        // (сам ловит и логирует свои ошибки, при сбое вернёт null)
+        const { issueCarWashCoupon, buildCarWashCouponPushText, clientAppSupportsCarWashCoupon } = await import(
+            "../utils/carWashCoupon.js"
+        );
+        const carWashCoupon = await issueCarWashCoupon(order._id);
+
         try {
             const sendOrder = await Order.findById(order._id)
-                .populate("client", "notificationPushToken notificationPushTokens")
+                .populate("client", "notificationPushToken notificationPushTokens appVersion")
                 .populate("courierAggregator");
             
             const validTokens = collectOrderPushTokens(sendOrder, sendOrder?.client);
 
             if (validTokens.length > 0) {
                 const data = { orderId: sendOrder._id };
+                const deliveredText = "Статус заказа изменен на \"Доставлено\"";
                 const { pushNotificationClient } = await import("../pushNotificationClient.js");
                 await pushNotificationClient(
                     "Изменение статуса заказа",
-                    "Статус заказа изменен на \"Доставлено\"",
+                    // Старым версиям — прежний текст: купона в их приложении нет
+                    carWashCoupon && clientAppSupportsCarWashCoupon(sendOrder.client?.appVersion)
+                        ? `${deliveredText}. ${buildCarWashCouponPushText(carWashCoupon)}`
+                        : deliveredText,
                     validTokens,
                     "delivered",
                     data,
@@ -1051,9 +1062,6 @@ export const completeOrderCourierAggregator = async (req, res) => {
         // Бонус партнёру за бутыли + push «Клиент получил заказ» (сам ловит и логирует свои ошибки)
         const { applyPartnerOrderBonus } = await import("../utils/partnerLedger.js");
         await applyPartnerOrderBonus(order._id);
-        // Купон на мойку за доставленный заказ (сам ловит и логирует свои ошибки)
-        const { issueCarWashCoupon } = await import("../utils/carWashCoupon.js");
-        await issueCarWashCoupon(order._id);
 
         try {
             // order — снимок ДО завершения (findOneAndUpdate({new:false})), sum в нём ещё

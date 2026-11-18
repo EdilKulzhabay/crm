@@ -488,3 +488,37 @@ export const testPushNotificationClient = async (sendToken) => {
         throw error;
     }
 }
+
+/**
+ * Data-only пуш «купон на мойку погашен»: без баннера, приложение убирает купон с экрана.
+ * Отправляется на каждый токен отдельно; сбой одного токена не мешает остальным.
+ *
+ * @param {string[]} notificationTokens
+ * @param {{ couponId: string }} payload
+ * @returns {Promise<{ successCount: number, errorCount: number }>}
+ */
+export async function pushClientCarWashCouponUsed(notificationTokens, { couponId }) {
+    const validTokens = (notificationTokens || []).filter((t) => t && typeof t === "string");
+    const data = { newStatus: "carWashCouponUsed", couponId: String(couponId) };
+
+    let successCount = 0;
+    let errorCount = 0;
+    for (const token of validTokens) {
+        try {
+            await admin.app("client-app").messaging().send({
+                token,
+                data,
+                android: { priority: "high" },
+                apns: {
+                    headers: { "apns-priority": "5", "apns-push-type": "background" },
+                    payload: { aps: { "content-available": 1 } },
+                },
+            });
+            successCount++;
+        } catch (tokenError) {
+            errorCount++;
+            logTokenSendError(token, tokenError);
+        }
+    }
+    return { successCount, errorCount };
+}
