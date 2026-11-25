@@ -551,9 +551,18 @@ export const paymentErrorPage = (req, res) => {
     res.send(html);
 };
 
+/** Оплаты по счетам юрлиц (applyInvoicePayment) — sessionOrderId «INV-<номер>»; префиксный regex использует индекс */
+const INVOICE_PAYMENT_ORDER_PATTERN = new RegExp(`^${INVOICE_PAYMENT_ORDER_PREFIX}`);
+/** online — пополнения картой и Kaspi (без оплат по счетам), invoice — только оплаты по счетам */
+const PAYMENT_SOURCE_FILTERS = Object.freeze({
+    online: { $not: INVOICE_PAYMENT_ORDER_PATTERN },
+    invoice: INVOICE_PAYMENT_ORDER_PATTERN,
+});
+
 /**
  * POST /getClientPaymentsForSuperAdmin
- * Body: { startDate?, endDate?, searchClient?, paymentStatus? } — paymentStatus: success | fail (опционально)
+ * Body: { startDate?, endDate?, searchClient?, paymentStatus?, source? } — paymentStatus: success | fail (опционально),
+ * source: online (по умолчанию) | invoice
  */
 export const getClientPaymentsForSuperAdmin = async (req, res) => {
     try {
@@ -565,8 +574,11 @@ export const getClientPaymentsForSuperAdmin = async (req, res) => {
             });
         }
 
-        const { startDate, endDate, searchClient, paymentStatus } = req.body || {};
-        const filter = {};
+        const { startDate, endDate, searchClient, paymentStatus, source = "online" } = req.body || {};
+        if (!Object.hasOwn(PAYMENT_SOURCE_FILTERS, source)) {
+            return res.status(400).json({ success: false, message: "Некорректный источник платежей" });
+        }
+        const filter = { sessionOrderId: PAYMENT_SOURCE_FILTERS[source] };
 
         if (startDate && endDate && String(startDate).length === 10 && String(endDate).length === 10) {
             // Даты из CRM — календарные дни Алматы; без явного смещения они

@@ -1,20 +1,22 @@
 import Client from "../Models/Client.js";
 import Order from "../Models/Order.js";
-import Partner from "../Models/Partner.js";
+import Partner, { DEFAULT_PARTNER_RATES, partnerRates } from "../Models/Partner.js";
 import PartnerTransaction from "../Models/PartnerTransaction.js";
 import { sendPartnerPush } from "./partnerPush.js";
 
-/** Бонус партнёру за клиента, зарегистрированного по его коду */
-export const PARTNER_REFERRAL_BONUS = 200;
-/** Бонус партнёру за каждую бутыль доставленного заказа его клиента: 18,9 л (b19) и 12,5 л (b12) */
-export const PARTNER_BOTTLE_BONUS_B19 = 200;
-export const PARTNER_BOTTLE_BONUS_B12 = 100;
+/**
+ * Ставки по умолчанию: за клиента по коду и за каждую бутыль доставленного заказа его клиента — 18,9 л (b19)
+ * и 12,5 л (b12). У каждого партнёра свои (Partner.registrationBonus / bottleBonus19 / bottleBonus12, partnerRates).
+ */
+export const PARTNER_REFERRAL_BONUS = DEFAULT_PARTNER_RATES.registrationBonus;
+export const PARTNER_BOTTLE_BONUS_B19 = DEFAULT_PARTNER_RATES.bottleBonus19;
+export const PARTNER_BOTTLE_BONUS_B12 = DEFAULT_PARTNER_RATES.bottleBonus12;
 /** Вывод: минимальная сумма запроса и комиссия (удерживается из суммы, к переводу — сумма минус комиссия) */
 export const PARTNER_MIN_WITHDRAWAL = 5000;
 export const PARTNER_WITHDRAWAL_FEE_RATE = 0.025;
 export const PARTNER_WITHDRAWAL_MIN_FEE = 200;
-/** Бонус клиенту, зарегистрировавшемуся по коду партнёра (зачисляется на Client.balance при создании) */
-export const PARTNER_REFERRAL_CLIENT_BONUS = 200;
+/** Бонус клиенту по коду партнёра по умолчанию; у каждого партнёра свой (Partner.clientSignupBonus, partnerRates) */
+export const PARTNER_REFERRAL_CLIENT_BONUS = DEFAULT_PARTNER_RATES.clientSignupBonus;
 
 const MONGO_DUPLICATE_KEY = 11000;
 const isDuplicateKey = (error) => error?.code === MONGO_DUPLICATE_KEY;
@@ -48,14 +50,21 @@ export const defaultLedgerRepository = {
     deleteTransaction: (id) => PartnerTransaction.deleteOne({ _id: id }),
     findWithdrawalByRequestId: (partnerId, requestId) =>
         PartnerTransaction.findOne({ partner: partnerId, type: "withdrawal", requestId }).lean(),
-    /** Заказ с актуальными количествами на момент доставки и партнёр его клиента */
+    /** Заказ с актуальными количествами на момент доставки, партнёр его клиента и ставки партнёра на сейчас */
     findDeliveredOrderWithPartner: async (orderId) => {
         const order = await Order.findById(orderId).select("client products status").lean();
         if (!order || order.status !== "delivered" || !order.client) return null;
         const client = await Client.findById(order.client).select("userName referredByPartner").lean();
         if (!client?.referredByPartner) return null;
-        return { order, client };
+        const partner = await Partner.findById(client.referredByPartner).select("bottleBonus19 bottleBonus12").lean();
+        return { order, client, rates: partnerRates(partner) };
     },
+    /** Индивидуальная ставка партнёра за регистрацию клиента */
+    findRegistrationBonus: async (partnerId) =>
+        partnerRates(await Partner.findById(partnerId).select("registrationBonus").lean()).registrationBonus,
+    /** Сколько получает клиент, пришедший по коду этого партнёра */
+    findClientSignupBonus: async (partnerId) =>
+        partnerRates(await Partner.findById(partnerId).select("clientSignupBonus").lean()).clientSignupBonus,
     hasReferralBonus: async (clientId) => Boolean(await PartnerTransaction.exists({ client: clientId, type: "referral_bonus" })),
     /**
      * Бонус клиенту за код партнёра — атомарно и один раз за всё время. Клиенту, пришедшему по коду
@@ -81,55 +90,59 @@ export const defaultLedgerRepository = {
 };
 
 /**
- * Начисляет партнёру бонус за зарегистрированного клиента. Идемпотентно: уникальный индекс
- * (client, partner, type) не даст начислить одному партнёру дважды. Сначала журнал, потом баланс — при сбое между шагами
- * в журнале остаётся запись без пополнения (видно при сверке), но не пополнение без записи.
- * @returns {Promise<boolean>} true — начислено сейчас, false — уже было начислено
+ * Начисляет партнёру бонус за зарегистрированного клиента по его ставке (Partner.registrationBonus — на момент
+ * регистрации, сумма фиксируется в журнале). Идемпотентно: уникальный индекс (client, partner, type) не даст начислить
+ * одному партнёру дважды. Сначала журнал, потом баланс — при сбое между шагами в журнале остаётся запись без пополнения
+ * (видно при сверке), но не пополнение без записи. Ставка 0 — бонус не начисляется и не записывается.
+ * @returns {Promise<number>} начисленная сейчас сумма; 0 — уже было начислено или ставка 0
  */
 export async function applyPartnerReferralBonus({ partnerId, clientId, clientName }, repo = defaultLedgerRepository) {
+    const amount = await repo.findRegistrationBonus(partnerId);
+    if (amount <= 0) return 0;
     let transaction;
     try {
         transaction = await repo.createTransaction({
             partner: partnerId,
             type: "referral_bonus",
-            amount: PARTNER_REFERRAL_BONUS,
+            amount,
             status: "completed",
             client: clientId,
             clientName: shortClientName(clientName),
         });
     } catch (error) {
-        if (isDuplicateKey(error)) return false;
+        if (isDuplicateKey(error)) return 0;
         throw error;
     }
     try {
-        await repo.addBalance(partnerId, PARTNER_REFERRAL_BONUS);
+        await repo.addBalance(partnerId, amount);
     } catch (error) {
         // Не оставляем запись о начислении, которого не было
         await repo.deleteTransaction(transaction._id).catch(() => undefined);
         throw error;
     }
     void repo.notify(partnerId, {
-        title: `Новый клиент: +${PARTNER_REFERRAL_BONUS} ₸`,
+        title: `Новый клиент: +${amount} ₸`,
         body: `${shortClientName(clientName)} зарегистрировался по вашему коду. Бонус уже на балансе.`,
         data: { type: "referral_bonus" },
     });
-    return true;
+    return amount;
 }
 
 /**
  * Привязка клиента к партнёру в CRM — с теми же начислениями, что и регистрация по коду:
- * партнёру PARTNER_REFERRAL_BONUS (один раз на пару клиент–партнёр, с записью в журнале и push),
- * клиенту PARTNER_REFERRAL_CLIENT_BONUS (один раз за всё время). Прошлые доставки не пересчитываются.
+ * партнёру его ставку registrationBonus (один раз на пару клиент–партнёр, с записью в журнале и push),
+ * клиенту ставку партнёра clientSignupBonus (один раз за всё время). Прошлые доставки не пересчитываются.
  * @returns {Promise<{ partnerBonus: number, clientBonus: number, clientBalance: number | null }>} clientBalance — после бонуса
  */
 export async function applyPartnerBindingBonuses({ partnerId, clientId, clientName }, repo = defaultLedgerRepository) {
     // Клиенты, зарегистрированные по коду до появления partnerSignupBonusPaid, видны только по журналу
     const hadReferralBonus = await repo.hasReferralBonus(clientId);
-    const isPartnerCredited = await applyPartnerReferralBonus({ partnerId, clientId, clientName }, repo);
-    const credited = hadReferralBonus ? null : await repo.creditClientSignupBonus(clientId, PARTNER_REFERRAL_CLIENT_BONUS);
+    const partnerBonus = await applyPartnerReferralBonus({ partnerId, clientId, clientName }, repo);
+    const clientAmount = hadReferralBonus ? 0 : await repo.findClientSignupBonus(partnerId);
+    const credited = hadReferralBonus ? null : await repo.creditClientSignupBonus(clientId, clientAmount);
     return {
-        partnerBonus: isPartnerCredited ? PARTNER_REFERRAL_BONUS : 0,
-        clientBonus: credited ? PARTNER_REFERRAL_CLIENT_BONUS : 0,
+        partnerBonus,
+        clientBonus: credited ? clientAmount : 0,
         clientBalance: credited?.balance ?? null,
     };
 }
@@ -144,9 +157,9 @@ export function orderBottles(products) {
     return bottleCount(products?.b12) + bottleCount(products?.b19);
 }
 
-/** Бонус за заказ: 12,5 л и 18,9 л оплачиваются по разным ставкам */
-export function orderBottleBonus(products) {
-    return bottleCount(products?.b12) * PARTNER_BOTTLE_BONUS_B12 + bottleCount(products?.b19) * PARTNER_BOTTLE_BONUS_B19;
+/** Бонус за заказ: 12,5 л и 18,9 л оплачиваются по ставкам партнёра (partnerRates) */
+export function orderBottleBonus(products, rates = DEFAULT_PARTNER_RATES) {
+    return bottleCount(products?.b12) * rates.bottleBonus12 + bottleCount(products?.b19) * rates.bottleBonus19;
 }
 
 /** Комиссия за вывод: 2,5% от суммы, но не меньше 200 ₸; целые тенге, округление вверх */
@@ -155,7 +168,8 @@ export function withdrawalFee(amount) {
 }
 
 /**
- * Начисляет партнёру бонус за бутыли доставленного заказа его клиента (orderBottleBonus).
+ * Начисляет партнёру бонус за бутыли доставленного заказа его клиента (orderBottleBonus) по ставкам партнёра
+ * на момент доставки; сумма фиксируется в журнале. Ставки 0 — бонус не начисляется.
  * Вызывается во всех местах, где заказ становится «доставлен» (CRM, курьер, курьер-агрегатор).
  * Количества перечитываются из БД: курьер мог изменить их при доставке.
  * Идемпотентно: уникальный индекс (order, type) — повторная доставка того же заказа не начислит второй раз.
@@ -166,10 +180,10 @@ export async function applyPartnerOrderBonus(orderId, repo = defaultLedgerReposi
     try {
         const found = await repo.findDeliveredOrderWithPartner(orderId);
         if (!found) return 0;
-        const { order, client } = found;
+        const { order, client, rates = DEFAULT_PARTNER_RATES } = found;
         const bottles = orderBottles(order.products);
-        if (bottles === 0) return 0;
-        const amount = orderBottleBonus(order.products);
+        const amount = orderBottleBonus(order.products, rates);
+        if (bottles === 0 || amount <= 0) return 0;
         const clientName = shortClientName(client.userName);
 
         let transaction;

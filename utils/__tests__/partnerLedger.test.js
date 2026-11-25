@@ -21,8 +21,8 @@ const PARTNER_ID = "p1";
 const CARD = { accountNumber: "KZ123456789012345678", IIN: "900101300123", fullName: "Алия Ахметова" };
 
 /** In-memory репозиторий с уникальными ограничениями как у PartnerTransaction */
-const createRepo = (initialBalance = 0) => {
-    const state = { balance: initialBalance, transactions: [], failAddBalance: false, failCreate: null, pushes: [],
+const createRepo = (initialBalance = 0, registrationBonus = PARTNER_REFERRAL_BONUS) => {
+    const state = { balance: initialBalance, registrationBonus, clientSignupBonus: PARTNER_REFERRAL_CLIENT_BONUS, transactions: [], failAddBalance: false, failCreate: null, pushes: [],
         clientBalance: 0, clientBonusPaid: new Set(), clientsReferredByClient: new Set() };
     const duplicate = () => Object.assign(new Error("E11000"), { code: 11000 });
     return {
@@ -58,6 +58,8 @@ const createRepo = (initialBalance = 0) => {
         findWithdrawalByRequestId: async (_partner, requestId) =>
             state.transactions.find((t) => t.type === "withdrawal" && t.requestId === requestId) ?? null,
         notify: async (partnerId, message) => state.pushes.push({ partnerId, ...message }),
+        findRegistrationBonus: async () => state.registrationBonus,
+        findClientSignupBonus: async () => state.clientSignupBonus,
         hasReferralBonus: async (clientId) =>
             state.transactions.some((t) => t.type === "referral_bonus" && t.client === clientId),
         creditClientSignupBonus: async (clientId, amount) => {
@@ -75,14 +77,37 @@ describe("applyPartnerReferralBonus", () => {
     test("credits the partner once per client", async () => {
         const repo = createRepo();
 
-        assert.equal(await applyPartnerReferralBonus({ partnerId: PARTNER_ID, clientId: "c1", clientName: "Марат Касымов" }, repo), true);
-        assert.equal(await applyPartnerReferralBonus({ partnerId: PARTNER_ID, clientId: "c1", clientName: "Марат Касымов" }, repo), false);
+        assert.equal(
+            await applyPartnerReferralBonus({ partnerId: PARTNER_ID, clientId: "c1", clientName: "Марат Касымов" }, repo),
+            PARTNER_REFERRAL_BONUS
+        );
+        assert.equal(await applyPartnerReferralBonus({ partnerId: PARTNER_ID, clientId: "c1", clientName: "Марат Касымов" }, repo), 0);
 
         assert.equal(repo.state.balance, PARTNER_REFERRAL_BONUS);
         assert.equal(repo.state.transactions.length, 1);
         assert.equal(repo.state.transactions[0].clientName, "Марат К.");
         assert.equal(repo.state.pushes.length, 1);
         assert.match(repo.state.pushes[0].body, /Марат К\./);
+    });
+
+    test("credits the partner's individual rate", async () => {
+        const repo = createRepo(0, 750);
+
+        assert.equal(await applyPartnerReferralBonus({ partnerId: PARTNER_ID, clientId: "c1", clientName: "Марат" }, repo), 750);
+
+        assert.equal(repo.state.balance, 750);
+        assert.equal(repo.state.transactions[0].amount, 750);
+        assert.match(repo.state.pushes[0].title, /\+750 ₸/);
+    });
+
+    test("a zero rate credits nothing and writes no journal entry", async () => {
+        const repo = createRepo(0, 0);
+
+        assert.equal(await applyPartnerReferralBonus({ partnerId: PARTNER_ID, clientId: "c1", clientName: "Марат" }, repo), 0);
+
+        assert.equal(repo.state.balance, 0);
+        assert.equal(repo.state.transactions.length, 0);
+        assert.equal(repo.state.pushes.length, 0);
     });
 
     test("removes the journal entry when the balance update fails", async () => {
@@ -198,6 +223,22 @@ describe("applyPartnerOrderBonus", () => {
         assert.match(repo.state.pushes[0].body, /Абай С\.: 3 бут\./);
     });
 
+    test("pays by the partner's individual bottle rates", async () => {
+        const repo = repoWith({ ...found({ b12: 2, b19: 1 }), rates: { registrationBonus: 200, bottleBonus19: 350, bottleBonus12: 50 } });
+
+        assert.equal(await applyPartnerOrderBonus("o1", repo, silent), 450);
+        assert.equal(repo.state.transactions[0].amount, 450);
+        assert.match(repo.state.pushes[0].title, /\+450 ₸/);
+    });
+
+    test("zero bottle rates credit nothing", async () => {
+        const repo = repoWith({ ...found({ b12: 2, b19: 1 }), rates: { registrationBonus: 200, bottleBonus19: 0, bottleBonus12: 0 } });
+
+        assert.equal(await applyPartnerOrderBonus("o1", repo, silent), 0);
+        assert.equal(repo.state.transactions.length, 0);
+        assert.equal(repo.state.pushes.length, 0);
+    });
+
     test("delivering the same order twice pays once", async () => {
         const repo = repoWith(found({ b19: 2 }));
         const original = repo.createTransaction;
@@ -232,6 +273,7 @@ describe("applyPartnerOrderBonus", () => {
         assert.equal(orderBottles(undefined), 0);
         assert.equal(orderBottleBonus({ b12: 3, b19: 0 }), 300);
         assert.equal(orderBottleBonus({ b12: -1, b19: "x" }), 0);
+        assert.equal(orderBottleBonus({ b12: 1, b19: 1 }, { bottleBonus12: 70, bottleBonus19: 300 }), 370);
     });
 
     test("withdrawal fee is 2.5% but at least 200 ₸, rounded up", () => {
@@ -258,6 +300,25 @@ describe("applyPartnerBindingBonuses", () => {
         assert.equal(result.clientBalance, PARTNER_REFERRAL_CLIENT_BONUS);
         assert.equal(repo.state.transactions[0].type, "referral_bonus");
         assert.equal(repo.state.pushes.length, 1);
+    });
+
+    test("reports the partner's individual rate", async () => {
+        const repo = createRepo(0, 500);
+
+        const result = await bind(repo, PARTNER_ID);
+
+        assert.deepEqual(bonusesOf(result), { partnerBonus: 500, clientBonus: PARTNER_REFERRAL_CLIENT_BONUS });
+        assert.equal(repo.state.balance, 500);
+    });
+
+    test("credits the client the partner's individual client bonus", async () => {
+        const repo = createRepo();
+        repo.state.clientSignupBonus = 750;
+
+        const result = await bind(repo, PARTNER_ID);
+
+        assert.deepEqual(bonusesOf(result), { partnerBonus: PARTNER_REFERRAL_BONUS, clientBonus: 750 });
+        assert.equal(repo.state.clientBalance, 750);
     });
 
     test("rebinding to the same partner credits nothing", async () => {

@@ -456,6 +456,8 @@ app.post("/setClientPartner", checkAuth, requireSuperAdmin, PartnerAdminControll
 app.post("/getPartnersAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.getPartnersAdmin);
 app.post("/getPartnerDetailsAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.getPartnerDetailsAdmin);
 app.post("/setPartnerStatusAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerStatusAdmin);
+app.post("/setPartnerRatesAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerRatesAdmin);
+app.post("/setPartnerReferralCodeAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerReferralCodeAdmin);
 app.post("/resolvePartnerWithdrawalAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.resolvePartnerWithdrawalAdmin);
 app.post("/setPartnerVerificationAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.setPartnerVerificationAdmin);
 app.post("/runPartnerLapseCheckAdmin", checkAuth, requireSuperAdmin, PartnerManagementController.runPartnerLapseCheckAdmin);

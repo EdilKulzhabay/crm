@@ -1,4 +1,4 @@
-import Partner, { partnerVerificationStatus } from "../Models/Partner.js";
+import Partner, { partnerRates, partnerVerificationStatus } from "../Models/Partner.js";
 import { sendWhatsAppOtp } from "../utils/edna.js";
 import { createPhoneOtpStore, OTP_VERIFY_RESULT } from "../utils/phoneOtpStore.js";
 import { signPartnerToken } from "../utils/partnerToken.js";
@@ -72,6 +72,8 @@ export function serializePartner(partner) {
         referralCode: partner.referralCode,
         status: partner.status,
         balance: partner.balance ?? 0,
+        /** registrationBonus, bottleBonus19, bottleBonus12 — ставки партнёра для текстов в приложении */
+        ...partnerRates(partner),
         cardData: {
             accountNumber: partner.cardData?.accountNumber ?? "",
             IIN: partner.cardData?.IIN ?? "",

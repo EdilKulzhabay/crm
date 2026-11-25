@@ -10,6 +10,8 @@ import MySnackBar from "../../Components/MySnackBar";
 import PartnerClients from "../../Components/Partners/PartnerClients";
 import { PartnerMonthly, PartnerTransactions } from "../../Components/Partners/PartnerHistory";
 import PartnerPeriodFilter from "../../Components/Partners/PartnerPeriodFilter";
+import PartnerRates from "../../Components/Partners/PartnerRates";
+import PartnerReferralCode from "../../Components/Partners/PartnerReferralCode";
 import PartnerStats from "../../Components/Partners/PartnerStats";
 import PartnerVerification from "../../Components/Partners/PartnerVerification";
 import PartnerWithdrawals from "../../Components/Partners/PartnerWithdrawals";
@@ -98,7 +100,7 @@ export default function SuperAdminPartnerPage() {
             <Div />
             <Div>Партнёр: {partner.userName}</Div>
             <Li>Телефон: {partner.phone}</Li>
-            <Li>Код приглашения: {partner.referralCode}</Li>
+            <PartnerReferralCode partnerId={id} referralCode={partner.referralCode} onChanged={load} onMessage={showMessage} />
             <Li>
                 <div className="flex flex-wrap items-center gap-x-3">
                     <span className={isBlocked ? "text-red" : "text-green-400"}>
@@ -116,6 +118,7 @@ export default function SuperAdminPartnerPage() {
                 onChanged={load}
                 onMessage={showMessage}
             />
+            <PartnerRates partnerId={id} rates={partner.rates} onChanged={load} onMessage={showMessage} />
             <Li>Зарегистрирован: {formatDate(partner.createdAt)}</Li>
             <Li>Последний вход: {formatDateTime(partner.lastLoginAt)} · устройств с уведомлениями: {partner.devices}</Li>
             <Li>

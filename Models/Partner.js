@@ -11,6 +11,37 @@ export const ADMIN_SETTABLE_PARTNER_STATUSES = Object.freeze(["active", "blocked
 /** Проверка партнёра суперадмином в CRM; до verified приложение показывает только экран ожидания */
 export const PARTNER_VERIFICATION_STATUSES = Object.freeze(["waiting", "verified", "denied"]);
 
+/**
+ * Индивидуальные ставки партнёра, целые тенге; задаются суперадмином в CRM (страница партнёра):
+ * registrationBonus — за клиента, зарегистрированного по коду; bottleBonus19 / bottleBonus12 — за каждую бутыль
+ * 18,9 л / 12,5 л доставленного заказа его клиента; clientSignupBonus — не партнёру, а клиенту: зачисляется
+ * на Client.balance при регистрации по коду этого партнёра (или привязке в CRM).
+ */
+export const PARTNER_RATE_FIELDS = Object.freeze(["registrationBonus", "bottleBonus19", "bottleBonus12", "clientSignupBonus"]);
+export const DEFAULT_PARTNER_RATES = Object.freeze({
+    registrationBonus: 200,
+    bottleBonus19: 200,
+    bottleBonus12: 100,
+    clientSignupBonus: 200,
+});
+export const MAX_PARTNER_RATE = 100000;
+/** У партнёров, созданных до введения ставок, полей нет — действуют ставки по умолчанию */
+export const partnerRates = (partner) =>
+    Object.fromEntries(
+        PARTNER_RATE_FIELDS.map((field) => [
+            field,
+            Number.isSafeInteger(partner?.[field]) ? partner[field] : DEFAULT_PARTNER_RATES[field],
+        ])
+    );
+
+const rateField = (field) => ({
+    type: Number,
+    default: DEFAULT_PARTNER_RATES[field],
+    min: 0,
+    max: MAX_PARTNER_RATE,
+    validate: { validator: Number.isInteger, message: "Ставка — целое число тенге" },
+});
+
 /** Статус проверки; у партнёров, созданных до введения проверки, поля нет — они тоже на проверке */
 export const partnerVerificationStatus = (partner) => partner?.verification?.status ?? "waiting";
 
@@ -19,7 +50,7 @@ export const partnerVerificationStatus = (partner) => partner?.verification?.sta
  *
  * Отдельная коллекция, а не роль в Client: у партнёра своя авторизация и права.
  * Программа: клиент регистрируется в клиентском приложении с кодом партнёра (referralCode) —
- * клиенту и партнёру начисляется по 200 ₸. balance — текущий остаток; каждое изменение
+ * клиенту — clientSignupBonus, партнёру — registrationBonus, затем bottleBonus19/12 за бутыли его заказов (см. partnerRates). balance — текущий остаток; каждое изменение
  * записывается в PartnerTransaction (журнал), см. utils/partnerLedger.js.
  */
 const PartnerSchema = new mongoose.Schema(
@@ -46,7 +77,10 @@ const PartnerSchema = new mongoose.Schema(
             unique: true,
             match: /^7\d{10}$/,
         },
-        /** Код приглашения вида XXXX-XXXX-XXXX, уникален и среди партнёров, и среди клиентов */
+        /**
+         * Код приглашения вида XXXX-XXXX-XXXX, уникален и среди партнёров, и среди клиентов.
+         * Суперадмин может сменить его в CRM — старый код сразу перестаёт работать, привязанные клиенты остаются.
+         */
         referralCode: {
             type: String,
             required: true,
@@ -63,6 +97,11 @@ const PartnerSchema = new mongoose.Schema(
             default: 0,
             min: 0,
         },
+        /** Ставки партнёра; читать через partnerRates (у старых партнёров полей нет) */
+        registrationBonus: rateField("registrationBonus"),
+        bottleBonus19: rateField("bottleBonus19"),
+        bottleBonus12: rateField("bottleBonus12"),
+        clientSignupBonus: rateField("clientSignupBonus"),
         /** Реквизиты для вывода — те же поля, что у курьеров (CourierAggregator.cardData) */
         cardData: {
             accountNumber: { type: String, default: "" },

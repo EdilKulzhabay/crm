@@ -44,7 +44,14 @@ const formatPaidAt = (iso) => {
     }
 };
 
-export default function SuperAdminPayments() {
+/** Онлайн-пополнения (карта, Kaspi) и оплаты по счетам юрлиц — одна страница с разным источником */
+const PAGE_BY_SOURCE = Object.freeze({
+    online: { title: "Онлайн-платежи", excelPrefix: "payments" },
+    invoice: { title: "Оплаты по счетам юрлиц", excelPrefix: "invoice_payments" },
+});
+
+export default function SuperAdminPayments({ source = "online" }) {
+    const page = PAGE_BY_SOURCE[source];
     const userData = useFetchUserData();
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState("");
@@ -93,6 +100,7 @@ export default function SuperAdminPayments() {
                 endDate,
                 searchClient: String(search).trim(),
                 paymentStatus: ps === "all" ? undefined : ps,
+                source,
             },
             { headers: { "Content-Type": "application/json" } }
         )
@@ -118,7 +126,7 @@ export default function SuperAdminPayments() {
                 setStatus("error");
                 setMessage("Ошибка запроса");
             });
-    }, [dates, searchClient, paymentStatusFilter]);
+    }, [dates, searchClient, paymentStatusFilter, source]);
 
     useEffect(() => {
         loadPayments();
@@ -156,14 +164,14 @@ export default function SuperAdminPayments() {
         const worksheet = XLSX.utils.json_to_sheet(mappedData);
         XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
 
-        const fileName = `payments_${dates.startDate}_${dates.endDate}.xlsx`;
+        const fileName = `${page.excelPrefix}_${dates.startDate}_${dates.endDate}.xlsx`;
         XLSX.writeFile(workbook, fileName);
     };
 
     return (
         <div className="relative">
             <Container role={userData?.role}>
-                <Div>Онлайн-платежи</Div>
+                <Div>{page.title}</Div>
                 <Div />
                 <Div>Сводная информация (по выбранным фильтрам):</Div>
                 <Li>Всего записей: {summary.totalCount}</Li>
@@ -292,8 +300,13 @@ export default function SuperAdminPayments() {
                                     : "—"}
                             </Li2>
                             <Li2>
-                                Сессия: {item.sessionOrderId || "—"} | инвойс:{" "}
-                                {item.providerInvoiceId || "—"}
+                                {source === "invoice" ? (
+                                    <>Счёт: {item.sessionOrderId || "—"}</>
+                                ) : (
+                                    <>
+                                        Сессия: {item.sessionOrderId || "—"} | инвойс: {item.providerInvoiceId || "—"}
+                                    </>
+                                )}
                             </Li2>
                             <Li2>
                                 <LinkButton href={`/clientPage/${item?.client?._id}`}>Просмотр</LinkButton>

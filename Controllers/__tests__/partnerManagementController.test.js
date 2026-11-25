@@ -20,7 +20,7 @@ describe("PartnerManagementController", () => {
     let calls;
 
     beforeEach(() => {
-        calls = { filters: [], periods: [], statuses: [], verifications: [], pushes: [] };
+        calls = { filters: [], periods: [], statuses: [], verifications: [], pushes: [], rates: [], codes: [] };
         const partner = { _id: PARTNER_ID, userName: "Алия", status: "active", balance: 300, expoPushTokens: ["t"] };
         controller = createPartnerManagementController({
             repo: {
@@ -40,6 +40,10 @@ describe("PartnerManagementController", () => {
                 setPartnerVerification: async (id, verification) =>
                     (calls.verifications.push(verification), id === PARTNER_ID ? { verification } : null),
                 notify: async (id, message) => (calls.pushes.push(message), { sent: 1 }),
+                setRates: async (id, rates) => (calls.rates.push(rates), id === PARTNER_ID ? { ...partner, ...rates } : null),
+                isReferralCodeTaken: async (code) => code === "TAKE-NTAK-ENAA",
+                setReferralCode: async (id, referralCode) =>
+                    (calls.codes.push(referralCode), id === PARTNER_ID ? { ...partner, referralCode } : null),
                 setPartnerStatus: async (id, status) => (calls.statuses.push(status), id === PARTNER_ID ? { status } : null),
             },
             runLapseCheck: async () => 3,
@@ -110,6 +114,86 @@ describe("PartnerManagementController", () => {
         assert.equal(blocked.body.status, "blocked");
         assert.equal(invalid.statusCode, 400);
         assert.deepEqual(calls.statuses, ["blocked"]);
+    });
+
+    const RATES = { registrationBonus: 500, bottleBonus19: 250, bottleBonus12: 0, clientSignupBonus: 300 };
+
+    test("sets individual partner rates", async () => {
+        const res = await call("setPartnerRatesAdmin", { partnerId: PARTNER_ID, ...RATES });
+
+        assert.equal(res.statusCode, 200);
+        assert.deepEqual(res.body.rates, RATES);
+        assert.deepEqual(calls.rates, [RATES]);
+    });
+
+    test("rates must be whole non-negative amounts, all of them, with an author", async () => {
+        const invalid = [-1, 1.5, "500", 100001, null, undefined];
+        const responses = await Promise.all(
+            invalid.map((bottleBonus19) => call("setPartnerRatesAdmin", { partnerId: PARTNER_ID, ...RATES, bottleBonus19 }))
+        );
+        const noAuthor = await call("setPartnerRatesAdmin", { partnerId: PARTNER_ID, ...RATES, changedBy: "" });
+        const unknown = await call("setPartnerRatesAdmin", { partnerId: "d".repeat(24), ...RATES });
+        const { clientSignupBonus: _omitted, ...withoutClientBonus } = RATES;
+        const missingClientBonus = await call("setPartnerRatesAdmin", { partnerId: PARTNER_ID, ...withoutClientBonus });
+
+        assert.equal(missingClientBonus.statusCode, 400);
+        assert.deepEqual(responses.map((r) => r.statusCode), invalid.map(() => 400));
+        assert.deepEqual([noAuthor.statusCode, unknown.statusCode], [400, 404]);
+        assert.deepEqual(calls.rates, [RATES]);
+    });
+
+    test("details show default rates for partners created before they existed", async () => {
+        const res = await call("getPartnerDetailsAdmin", { partnerId: PARTNER_ID });
+
+        assert.deepEqual(res.body.partner.rates, {
+            registrationBonus: 200,
+            bottleBonus19: 200,
+            bottleBonus12: 100,
+            clientSignupBonus: 200,
+        });
+    });
+
+    test("changes the referral code, normalizing the input", async () => {
+        const res = await call("setPartnerReferralCodeAdmin", { partnerId: PARTNER_ID, referralCode: "abcd efgh-ijkl" });
+
+        assert.equal(res.statusCode, 200);
+        assert.equal(res.body.referralCode, "ABCD-EFGH-IJKL");
+        assert.deepEqual(calls.codes, ["ABCD-EFGH-IJKL"]);
+    });
+
+    test("rejects malformed, taken or unauthored referral codes", async () => {
+        const malformed = await Promise.all(
+            ["ABCD-EFGH", "ABCD-EFGH-IJK1", "", null, 123].map((referralCode) =>
+                call("setPartnerReferralCodeAdmin", { partnerId: PARTNER_ID, referralCode })
+            )
+        );
+        const taken = await call("setPartnerReferralCodeAdmin", { partnerId: PARTNER_ID, referralCode: "TAKENTAKENAA" });
+        const noAuthor = await call("setPartnerReferralCodeAdmin", { partnerId: PARTNER_ID, referralCode: "ABCDEFGHIJKL", reason: "" });
+        const unknown = await call("setPartnerReferralCodeAdmin", { partnerId: "d".repeat(24), referralCode: "ABCDEFGHIJKL" });
+
+        assert.deepEqual(malformed.map((r) => r.statusCode), [400, 400, 400, 400, 400]);
+        assert.deepEqual([taken.statusCode, noAuthor.statusCode, unknown.statusCode], [409, 400, 404]);
+        assert.deepEqual(calls.codes, ["ABCD-EFGH-IJKL"]);
+    });
+
+    test("a concurrent duplicate code is reported as taken", async () => {
+        const racing = createPartnerManagementController({
+            repo: {
+                isReferralCodeTaken: async () => false,
+                setReferralCode: async () => {
+                    throw Object.assign(new Error("E11000"), { code: 11000 });
+                },
+            },
+            logger: silentLogger,
+        });
+        const res = createRes();
+
+        await racing.setPartnerReferralCodeAdmin(
+            { body: { ...AUTHOR, partnerId: PARTNER_ID, referralCode: "ABCDEFGHIJKL" }, userId: "admin" },
+            res
+        );
+
+        assert.equal(res.statusCode, 409);
     });
 
     test("waiting filter includes partners registered before verification existed", async () => {

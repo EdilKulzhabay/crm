@@ -21,8 +21,8 @@ import {
 import { sendWhatsAppOtp } from "../utils/edna.js";
 import { findClientByAnyPhone } from "../utils/clientPhones.js";
 import { isValidAuthPhone } from "../whatsApp/normalizePhone.js";
-import Partner from "../Models/Partner.js";
-import { applyPartnerReferralBonus, PARTNER_REFERRAL_CLIENT_BONUS } from "../utils/partnerLedger.js";
+import Partner, { partnerRates } from "../Models/Partner.js";
+import { applyPartnerReferralBonus } from "../utils/partnerLedger.js";
 import {
     generateUniqueReferralCode,
     normalizeReferralCodeInput,
@@ -793,7 +793,7 @@ export const clientRegister = async (req, res) => {
                 // Код партнёра (приложение tibetskaya_partner): формат тот же, что у клиентских кодов
                 // Код работает только у активного партнёра, одобренного в CRM
                 const partner = await Partner.findOne({ referralCode: normalized, status: "active", "verification.status": "verified" })
-                    .select("_id phoneNormalized")
+                    .select("_id phoneNormalized clientSignupBonus")
                     .lean();
                 if (!partner) {
                     return res.status(400).json({
@@ -808,7 +808,8 @@ export const clientRegister = async (req, res) => {
                     });
                 }
                 referredByPartnerId = partner._id;
-                signupBalance = PARTNER_REFERRAL_CLIENT_BONUS;
+                // Индивидуальная ставка партнёра (задаётся в CRM), у старых партнёров — по умолчанию
+                signupBalance = partnerRates(partner).clientSignupBonus;
             }
         }
 

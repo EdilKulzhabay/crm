@@ -1,4 +1,4 @@
-import { partnerVerificationStatus } from "../Models/Partner.js";
+import { partnerRates, partnerVerificationStatus } from "../Models/Partner.js";
 import { shiftDay } from "./partnerClientActivity.js";
 
 /**
@@ -80,6 +80,7 @@ export function buildPartnerRow(partner, { periodTotals, pendingTotals, clientTo
         verificationStatus: partnerVerificationStatus(partner),
         verificationMessage: partner.verification?.message ?? "",
         balance: Number(partner.balance) || 0,
+        rates: partnerRates(partner),
         createdAt: partner.createdAt ?? null,
         lastLoginAt: partner.lastLoginAt ?? null,
         clients: Number(clientTotals?.clients) || 0,

@@ -93,6 +93,10 @@ describe("PartnerController", () => {
                     referralCode: "ABCD-EFGH-IJKL",
                     status: "active",
                     balance: 0,
+                    registrationBonus: 200,
+                    bottleBonus19: 200,
+                    bottleBonus12: 100,
+                    clientSignupBonus: 200,
                     cardData: { accountNumber: "", IIN: "", fullName: "" },
                     // Новый партнёр сразу на проверке
                     verification: { status: "waiting", message: "" },

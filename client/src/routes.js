@@ -154,6 +154,7 @@ export const router = createBrowserRouter([
     { path: "/superAdminFaq", element: <SuperAdminFaq /> },
     { path: "/superAdminNotifications", element: <SuperAdminNotifications /> },
     { path: "/superAdminPayments", element: <SuperAdminPayments /> },
+    { path: "/superAdminInvoicePayments", element: <SuperAdminPayments key="invoice" source="invoice" /> },
     { path: "/superAdminCourierQrPayments", element: <SuperAdminCourierQrPayments /> },
     { path: "/superAdminInvoiceCounter", element: <SuperAdminInvoiceCounter /> },
     { path: "/superAdminMobileOrderCutoff", element: <SuperAdminMobileOrderCutoff /> },

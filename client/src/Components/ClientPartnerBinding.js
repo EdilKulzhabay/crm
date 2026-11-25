@@ -23,7 +23,8 @@ const bindingMessage = ({ partnerBonus = 0, clientBonus = 0, isFailed = false } 
 /**
  * Партнёр клиента (приложение «Тибетская Партнёр»): показать, привязать, отвязать.
  * Только для суперадмина — сервер проверяет роль сам (utils/requireSuperAdmin.js).
- * Привязка — как регистрация по коду: партнёру +200 ₸ (новому — и при смене), клиенту +200 ₸ один раз.
+ * Привязка — как регистрация по коду: партнёру его ставка за регистрацию (новому — и при смене),
+ * клиенту бонус по ставке партнёра один раз.
  */
 export default function ClientPartnerBinding({ clientId, onMessage, onClientUpdated }) {
     const [partner, setPartner] = useState(null);
@@ -141,7 +142,7 @@ export default function ClientPartnerBinding({ clientId, onMessage, onClientUpda
                     ))}
                     {query.trim().length >= SEARCH_MIN_LENGTH && results.length === 0 && <div>Партнёры не найдены</div>}
                     <div className="text-sm opacity-70">
-                        Как регистрация по коду: партнёру +200 ₸, клиенту +200 ₸ (один раз). Прошлые заказы не учитываются.
+                        Как регистрация по коду: бонусы партнёру и клиенту (один раз) по ставкам партнёра. Прошлые заказы не учитываются.
                     </div>
                 </div>
             </Li>

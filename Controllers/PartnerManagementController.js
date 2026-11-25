@@ -1,12 +1,20 @@
 import mongoose from "mongoose";
 import Client from "../Models/Client.js";
-import Partner, { ADMIN_SETTABLE_PARTNER_STATUSES, PARTNER_STATUSES, PARTNER_VERIFICATION_STATUSES } from "../Models/Partner.js";
+import Partner, {
+    ADMIN_SETTABLE_PARTNER_STATUSES,
+    MAX_PARTNER_RATE,
+    PARTNER_RATE_FIELDS,
+    PARTNER_STATUSES,
+    partnerRates,
+    PARTNER_VERIFICATION_STATUSES,
+} from "../Models/Partner.js";
 import PartnerTransaction from "../Models/PartnerTransaction.js";
 import { buildPartnerSearchFilter } from "./PartnerAdminController.js";
 import { CHANGE_AUTHOR_REQUIRED_MESSAGE, readChangeAuthor } from "../utils/changeAuthor.js";
 import { getTodayAlmaty } from "../utils/dateUtils.js";
 import { loadClientsRhythm } from "../utils/partnerClientActivity.js";
 import { PartnerLedgerError, resolvePartnerWithdrawal } from "../utils/partnerLedger.js";
+import { normalizeReferralCodeInput } from "../utils/referralCode.js";
 import { runPartnerLapseCheck } from "../utils/partnerLapseCheck.js";
 import { sendPartnerPush } from "../utils/partnerPush.js";
 import {
@@ -29,7 +37,8 @@ const PARTNERS_LIMIT = 500;
 const CLIENTS_LIMIT = 500;
 const TRANSACTIONS_LIMIT = 200;
 const SEARCH_MIN_LENGTH = 2;
-const PARTNER_LIST_FIELDS = "userName phone referralCode status verification balance createdAt lastLoginAt";
+const PARTNER_LIST_FIELDS = "userName phone referralCode status verification balance registrationBonus bottleBonus19 bottleBonus12 clientSignupBonus createdAt lastLoginAt";
+const MONGO_DUPLICATE_KEY = 11000;
 const VERIFICATION_MESSAGE_MAX = 500;
 /** Лимиты push-уведомления от администратора: заголовок и текст видны целиком на экране блокировки */
 const PUSH_TITLE_MAX = 100;
@@ -95,6 +104,21 @@ const defaultRepo = {
     setPartnerVerification: (partnerId, verification) =>
         Partner.findByIdAndUpdate(partnerId, { verification }, { new: true, runValidators: true }).select(PARTNER_LIST_FIELDS).lean(),
     notify: (partnerId, message) => sendPartnerPush(partnerId, message),
+    /** Новые ставки действуют для следующих регистраций и доставок; начисленное не пересчитывается */
+    setRates: (partnerId, rates) =>
+        Partner.findByIdAndUpdate(partnerId, rates, { new: true, runValidators: true })
+            .select(PARTNER_LIST_FIELDS)
+            .lean(),
+    /** Код должен быть свободен и у клиентов, и у других партнёров — регистрация ищет его в обеих коллекциях */
+    isReferralCodeTaken: async (code, partnerId) => {
+        const [clientHasCode, otherPartnerHasCode] = await Promise.all([
+            Client.exists({ referralCode: code }),
+            Partner.exists({ referralCode: code, _id: { $ne: partnerId } }),
+        ]);
+        return Boolean(clientHasCode || otherPartnerHasCode);
+    },
+    setReferralCode: (partnerId, referralCode) =>
+        Partner.findByIdAndUpdate(partnerId, { referralCode }, { new: true }).select(PARTNER_LIST_FIELDS).lean(),
     setPartnerStatus: (partnerId, status) =>
         Partner.findByIdAndUpdate(partnerId, { status }, { new: true }).select(PARTNER_LIST_FIELDS).lean(),
 };
@@ -242,6 +266,56 @@ export function createPartnerManagementController({
         }
     }
 
+    /**
+     * Индивидуальные ставки партнёра: за регистрацию клиента, за бутыль 18,9 / 12,5 л и бонус клиенту при регистрации
+     * по его коду (целые тенге, 0 — не начислять). Передаются все — так одно подтверждение в CRM меняет согласованный набор.
+     */
+    async function setPartnerRatesAdmin(req, res) {
+        const { partnerId } = req.body ?? {};
+        if (!isId(partnerId)) return fail(res, 400, "Некорректный партнёр");
+        const isValidRate = (value) => Number.isSafeInteger(value) && value >= 0 && value <= MAX_PARTNER_RATE;
+        if (!PARTNER_RATE_FIELDS.every((field) => isValidRate(req.body[field]))) {
+            return fail(res, 400, `Ставки — целые числа от 0 до ${MAX_PARTNER_RATE} ₸`);
+        }
+        const rates = Object.fromEntries(PARTNER_RATE_FIELDS.map((field) => [field, req.body[field]]));
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
+        try {
+            const partner = await repo.setRates(partnerId, rates);
+            if (!partner) return fail(res, 404, "Партнёр не найден");
+            logger.log(`[Partner management] ставки партнёра ${partnerId} → ${JSON.stringify(rates)} (${describeAuthor(req, author)})`);
+            return res.status(200).json({ success: true, rates: partnerRates(partner) });
+        } catch (error) {
+            logger.error("[Partner management] setPartnerRatesAdmin:", error?.message || error);
+            return fail(res, 500, "Не удалось изменить ставки");
+        }
+    }
+
+    /**
+     * Смена кода приглашения. Формат тот же, что принимает регистрация клиента (12 латинских букв, ввод нормализуется
+     * в XXXX-XXXX-XXXX). Старый код сразу перестаёт работать; уже привязанные клиенты (referredByPartner) остаются.
+     */
+    async function setPartnerReferralCodeAdmin(req, res) {
+        const { partnerId } = req.body ?? {};
+        if (!isId(partnerId)) return fail(res, 400, "Некорректный партнёр");
+        const referralCode = normalizeReferralCodeInput(req.body?.referralCode);
+        if (!referralCode) return fail(res, 400, "Код — 12 латинских букв (формат XXXX-XXXX-XXXX)");
+        const author = readChangeAuthor(req.body);
+        if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
+        try {
+            if (await repo.isReferralCodeTaken(referralCode, partnerId)) return fail(res, 409, "Такой код уже занят");
+            const partner = await repo.setReferralCode(partnerId, referralCode);
+            if (!partner) return fail(res, 404, "Партнёр не найден");
+            logger.log(`[Partner management] код партнёра ${partnerId} → ${referralCode} (${describeAuthor(req, author)})`);
+            return res.status(200).json({ success: true, referralCode: partner.referralCode });
+        } catch (error) {
+            // Гонка с другим партнёром за тот же код — уникальный индекс Partner.referralCode
+            if (error?.code === MONGO_DUPLICATE_KEY) return fail(res, 409, "Такой код уже занят");
+            logger.error("[Partner management] setPartnerReferralCodeAdmin:", error?.message || error);
+            return fail(res, 500, "Не удалось изменить код");
+        }
+    }
+
     /** Одобрить (verified) или отклонить (denied, с причиной) партнёра; партнёр получает push */
     async function setPartnerVerificationAdmin(req, res) {
         const { partnerId, status } = req.body ?? {};
@@ -340,6 +414,8 @@ export function createPartnerManagementController({
         getPartnersAdmin,
         getPartnerDetailsAdmin,
         setPartnerStatusAdmin,
+        setPartnerRatesAdmin,
+        setPartnerReferralCodeAdmin,
         setPartnerVerificationAdmin,
         resolvePartnerWithdrawalAdmin,
         runPartnerLapseCheckAdmin,
@@ -351,6 +427,8 @@ export const {
     getPartnersAdmin,
     getPartnerDetailsAdmin,
     setPartnerStatusAdmin,
+    setPartnerRatesAdmin,
+    setPartnerReferralCodeAdmin,
     setPartnerVerificationAdmin,
     resolvePartnerWithdrawalAdmin,
     runPartnerLapseCheckAdmin,
