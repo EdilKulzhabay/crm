@@ -2,7 +2,7 @@ import crypto from "crypto";
 import CarWash from "../Models/CarWash.js";
 import CarWashCoupon from "../Models/CarWashCoupon.js";
 import Order from "../Models/Order.js";
-import { normalizeReferralCodeInput } from "./referralCode.js";
+import { normalizeLetterCodeInput } from "./referralCode.js";
 
 export const CAR_WASH_COUPON_DISCOUNT_PERCENT = 20;
 export const CAR_WASH_COUPON_TTL_MS = 72 * 60 * 60 * 1000;
@@ -70,8 +70,8 @@ export function generateCarWashCouponCode(randomInt = crypto.randomInt) {
     return Array.from({ length: CODE_GROUPS }, group).join("-");
 }
 
-/** Тот же формат, что у реферального кода: регистр, пробелы и дефисы при вводе не важны */
-export const normalizeCarWashCouponCode = normalizeReferralCodeInput;
+/** 12 латинских букв: регистр, пробелы и дефисы при вводе не важны */
+export const normalizeCarWashCouponCode = normalizeLetterCodeInput;
 
 export const defaultCouponRepository = {
     findDeliveredOrder: (orderId) => Order.findById(orderId).select("client status").lean(),

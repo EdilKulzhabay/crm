@@ -6,9 +6,10 @@ import MyButton from "../MyButton";
 import MyInput from "../MyInput";
 
 /** Тот же формат, что принимает регистрация клиента (crm/utils/referralCode.js#normalizeReferralCodeInput) */
-const CODE_LETTERS = 12;
-const toLetters = (value) => value.replace(/[^A-Za-z]/g, "").toUpperCase().slice(0, CODE_LETTERS);
-const formatCode = (letters) => letters.match(/.{1,4}/g)?.join("-") ?? "";
+const CODE_LENGTH = 12;
+/** Латинские буквы и цифры, в верхнем регистре */
+const toCodeChars = (value) => value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, CODE_LENGTH);
+const formatCode = (chars) => chars.match(/.{1,4}/g)?.join("-") ?? "";
 
 /**
  * Код приглашения партнёра. Новый код начинает работать сразу, старый — перестаёт;
@@ -23,8 +24,8 @@ export default function PartnerReferralCode({ partnerId, referralCode, onChanged
     const nextCode = formatCode(draft ?? "");
 
     const requestSave = () => {
-        if (draft.length !== CODE_LETTERS) {
-            onMessage(`Код — ${CODE_LETTERS} латинских букв`, "error");
+        if (draft.length !== CODE_LENGTH) {
+            onMessage(`Код — ${CODE_LENGTH} латинских букв или цифр`, "error");
             return;
         }
         if (nextCode === referralCode) {
@@ -62,12 +63,12 @@ export default function PartnerReferralCode({ partnerId, referralCode, onChanged
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span>Код приглашения:</span>
                     {isEditing ? (
-                        <MyInput value={nextCode} change={(e) => setDraft(toLetters(e.target.value))} color="white" />
+                        <MyInput value={nextCode} change={(e) => setDraft(toCodeChars(e.target.value))} color="white" />
                     ) : (
                         <span>{referralCode}</span>
                     )}
                     {!isEditing && (
-                        <button className="text-green-400 hover:text-blue-500" onClick={() => setDraft(toLetters(referralCode))}>
+                        <button className="text-green-400 hover:text-blue-500" onClick={() => setDraft(toCodeChars(referralCode))}>
                             [ Изменить ]
                         </button>
                     )}

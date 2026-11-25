@@ -292,14 +292,14 @@ export function createPartnerManagementController({
     }
 
     /**
-     * Смена кода приглашения. Формат тот же, что принимает регистрация клиента (12 латинских букв, ввод нормализуется
+     * Смена кода приглашения. Формат тот же, что принимает регистрация клиента (12 латинских букв и/или цифр, ввод нормализуется
      * в XXXX-XXXX-XXXX). Старый код сразу перестаёт работать; уже привязанные клиенты (referredByPartner) остаются.
      */
     async function setPartnerReferralCodeAdmin(req, res) {
         const { partnerId } = req.body ?? {};
         if (!isId(partnerId)) return fail(res, 400, "Некорректный партнёр");
         const referralCode = normalizeReferralCodeInput(req.body?.referralCode);
-        if (!referralCode) return fail(res, 400, "Код — 12 латинских букв (формат XXXX-XXXX-XXXX)");
+        if (!referralCode) return fail(res, 400, "Код — 12 латинских букв или цифр (формат XXXX-XXXX-XXXX)");
         const author = readChangeAuthor(req.body);
         if (!author) return fail(res, 400, CHANGE_AUTHOR_REQUIRED_MESSAGE);
         try {

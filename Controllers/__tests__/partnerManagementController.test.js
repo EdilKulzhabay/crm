@@ -161,9 +161,16 @@ describe("PartnerManagementController", () => {
         assert.deepEqual(calls.codes, ["ABCD-EFGH-IJKL"]);
     });
 
+    test("referral codes may contain digits", async () => {
+        const res = await call("setPartnerReferralCodeAdmin", { partnerId: PARTNER_ID, referralCode: "tib1-2025-ab3c" });
+
+        assert.equal(res.statusCode, 200);
+        assert.equal(res.body.referralCode, "TIB1-2025-AB3C");
+    });
+
     test("rejects malformed, taken or unauthored referral codes", async () => {
         const malformed = await Promise.all(
-            ["ABCD-EFGH", "ABCD-EFGH-IJK1", "", null, 123].map((referralCode) =>
+            ["ABCD-EFGH", "ABCD-EFGH-IJK", "ABCD-ЕFGH-IJKL", "", null, 123].map((referralCode) =>
                 call("setPartnerReferralCodeAdmin", { partnerId: PARTNER_ID, referralCode })
             )
         );
@@ -171,7 +178,7 @@ describe("PartnerManagementController", () => {
         const noAuthor = await call("setPartnerReferralCodeAdmin", { partnerId: PARTNER_ID, referralCode: "ABCDEFGHIJKL", reason: "" });
         const unknown = await call("setPartnerReferralCodeAdmin", { partnerId: "d".repeat(24), referralCode: "ABCDEFGHIJKL" });
 
-        assert.deepEqual(malformed.map((r) => r.statusCode), [400, 400, 400, 400, 400]);
+        assert.deepEqual(malformed.map((r) => r.statusCode), [400, 400, 400, 400, 400, 400]);
         assert.deepEqual([taken.statusCode, noAuthor.statusCode, unknown.statusCode], [409, 400, 404]);
         assert.deepEqual(calls.codes, ["ABCD-EFGH-IJKL"]);
     });

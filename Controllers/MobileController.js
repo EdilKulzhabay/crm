@@ -776,7 +776,7 @@ export const clientRegister = async (req, res) => {
             if (!normalized) {
                 return res.status(400).json({
                     success: false,
-                    message: "Неверный формат реферального кода (нужно 12 латинских букв)",
+                    message: "Неверный формат реферального кода (нужно 12 латинских букв или цифр)",
                 });
             }
             const referrer = await Client.findOne({ referralCode: normalized });

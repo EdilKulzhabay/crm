@@ -11,18 +11,38 @@ function randomPart(len) {
     return s;
 }
 
+const CODE_LENGTH = 12;
+/** Код в тексте: три группы по 4 латинские буквы/цифры через дефис, не внутри более длинного слова */
+const CODE_IN_TEXT = /(?<![A-Z0-9])[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}(?![A-Z0-9])/;
+
+const formatCode = (chars) => `${chars.slice(0, 4)}-${chars.slice(4, 8)}-${chars.slice(8, 12)}`;
+
 /**
- * Нормализация ввода: только латиница A–Z, 12 букв → формат XXXX-XXXX-XXXX
+ * Реферальный код (клиента или партнёра): 12 латинских букв и/или цифр → XXXX-XXXX-XXXX.
+ * Приложения разрешают вставить пересланное приглашение целиком, а в нём есть и другие цифры
+ * («1.», ссылки) — поэтому сначала ищем код в формате с дефисами, иначе берём все буквы и цифры ввода.
+ * Сгенерированные коды по-прежнему только из букв; цифры появляются, когда код задаёт суперадмин.
  */
 export function normalizeReferralCodeInput(raw) {
     if (!raw || typeof raw !== "string") {
         return null;
     }
-    const letters = raw.replace(/[^A-Za-z]/g, "").toUpperCase();
-    if (letters.length !== 12) {
+    const upper = raw.toUpperCase();
+    const found = upper.match(CODE_IN_TEXT);
+    if (found) {
+        return found[0];
+    }
+    const chars = upper.replace(/[^A-Z0-9]/g, "");
+    return chars.length === CODE_LENGTH ? formatCode(chars) : null;
+}
+
+/** Код только из латинских букв (купоны на мойку): 12 букв → XXXX-XXXX-XXXX */
+export function normalizeLetterCodeInput(raw) {
+    if (!raw || typeof raw !== "string") {
         return null;
     }
-    return `${letters.slice(0, 4)}-${letters.slice(4, 8)}-${letters.slice(8, 12)}`;
+    const letters = raw.replace(/[^A-Za-z]/g, "").toUpperCase();
+    return letters.length === CODE_LENGTH ? formatCode(letters) : null;
 }
 
 function randomReferralCode() {
