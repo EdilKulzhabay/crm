@@ -149,6 +149,14 @@ PORT=               # Порт сервера
 - `pdfTitle.png` / `pdfEnd.png` — шапка/подвал для генерируемых PDF
 - Технические работы в клиентском приложении: `MobileAppSettings.maintenanceEnabled` / `maintenanceMessage`; CRM суперадмин → «Версия приложения» (`/setMaintenanceSettings`); приложение читает открытый `GET /getMaintenanceStatusMobile` при запуске, возврате в приложение и каждые 5 мин (пока модалка открыта — каждую минуту), модалка `src/components/MaintenanceModal.tsx` не закрывается вручную.
 
+## Сессии клиентского приложения (`utils/clientSessions.js`, `utils/checkAuth.js`)
+
+- Вход/регистрация (`clientRegister`, `clientLogin`, вход по OTP) → `issueClientSession`: access (`SecretKey`) и refresh (`SecretKeyRefresh`) по 30 дней, у каждого токена свой `jti`. Сессия на устройство в `Client.refreshSessions` (только SHA-256 хэш, до 10 устройств — вытесняется давно не использованная), `refreshSessionsVersion` — оптимистичная блокировка.
+- `POST /refreshToken {refreshToken}` → новая пара, refresh одноразовый. Повтор со старым токеном принимается 2 мин после ротации (потерянный ответ), окно не продлевается. Отказ — 401 `code: REFRESH_INVALID`; не-`active` клиенту не выдаётся. Устаревший одиночный `Client.refreshToken` (до сессий) принимается один раз и становится сессией.
+- `POST /logOutClient {refreshToken}` отзывает только сессию этого токена (клиента не удаляет). Удаление аккаунта очищает все сессии.
+- `checkAuth`: ошибки авторизации — по-прежнему 403 «Нет доступа» (на 403 CRM уводит на вход), плюс `code`: `TOKEN_MISSING` / `TOKEN_EXPIRED` / `TOKEN_INVALID` / `USER_NOT_FOUND`. Сбой базы при поиске пользователя — 500. Причины отказа — в лог (`console.warn`).
+- Тесты: `npm run test:partner` (`clientSessions*.test.js`, `checkAuth.test.js`).
+
 ## VoIP-звонки клиент ↔ курьер (`calls/`)
 
 WebRTC P2P, сигналинг через Socket.io namespace `/calls`, TURN — coturn на этом же сервере (`deploy/coturn/turnserver.conf.example`).

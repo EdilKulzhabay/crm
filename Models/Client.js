@@ -142,8 +142,27 @@ const ClientSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
+        /** Устаревший одиночный refresh-токен (до сессий по устройствам), принимается один раз */
         refreshToken: {
             type: String,
+        },
+        /** Сессии приложения по устройствам — utils/clientSessions.js (только хэши токенов) */
+        refreshSessions: {
+            type: [
+                {
+                    _id: false,
+                    hash: { type: String, required: true },
+                    previousHash: String,
+                    rotatedAt: Date,
+                    createdAt: Date,
+                    lastUsedAt: Date,
+                },
+            ],
+            default: undefined,
+        },
+        /** Версия refreshSessions для оптимистичной блокировки параллельных обновлений */
+        refreshSessionsVersion: {
+            type: Number,
         },
         opForm: {
             type: String

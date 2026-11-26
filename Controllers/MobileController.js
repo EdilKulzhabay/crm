@@ -3,7 +3,6 @@ import Order from "../Models/Order.js"
 import ApiPayInvoice from "../Models/ApiPayInvoice.js";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import {Expo} from "expo-server-sdk";
 import "dotenv/config";
 import User from "../Models/User.js";
@@ -44,6 +43,7 @@ import {
 import { getLatestAppVersionValue } from "../utils/mobileAppVersion.js";
 import { recalculateCourierAggregatorRating } from "../utils/courierRating.js";
 import { parseDeviceId } from "../calls/callPolicy.js";
+import { issueClientSession, refreshClientSession, revokeClientSession, RefreshRejectedError } from "../utils/clientSessions.js";
 
 /** Строка для счёта; старые документы могли хранить вложенный объект */
 function normalizeInvoiceLegalData(raw) {
@@ -688,25 +688,7 @@ export const createTestAccount = async (req, res) => {
 
         const client = await doc.save();
 
-        const accessToken = jwt.sign(
-            { client: client._id },
-            process.env.SecretKey,
-            {
-                expiresIn: "30d", // Время жизни access токена (например, 15 минут)
-            }
-        );
-
-        const refreshToken = jwt.sign(
-            { client: client._id },
-            process.env.SecretKeyRefresh,
-            {
-                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
-            }
-        );
-
-        await Client.findByIdAndUpdate(client._id, {
-            refreshToken: refreshToken,
-        });
+        const { accessToken, refreshToken } = await issueClientSession(client._id);
 
         const clientData = await withOrderSameDayUntilHour({
             fullName: client._doc.fullName,
@@ -868,25 +850,7 @@ export const clientRegister = async (req, res) => {
             console.error("Meta CAPI CompleteRegistration (не критично):", metaErr);
         }
 
-        const accessToken = jwt.sign(
-            { client: client._id },
-            process.env.SecretKey,
-            {
-                expiresIn: "30d", // Время жизни access токена (например, 15 минут)
-            }
-        );
-
-        const refreshToken = jwt.sign(
-            { client: client._id },
-            process.env.SecretKeyRefresh,
-            {
-                expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
-            }
-        );
-
-        await Client.findByIdAndUpdate(client._id, {
-            refreshToken: refreshToken,
-        });
+        const { accessToken, refreshToken } = await issueClientSession(client._id);
 
         const clientData = await withOrderSameDayUntilHour({
             _id: client._id,
@@ -970,23 +934,7 @@ async function buildClientLoginResponse(candidate) {
         invoiceLegalData: normalizeInvoiceLegalData(c.invoiceLegalData),
     });
 
-    const accessToken = jwt.sign(
-        { client: candidate._id },
-        process.env.SecretKey,
-        {
-            expiresIn: "30d", // Время жизни access токена (например, 15 минут)
-        }
-    );
-
-    const refreshToken = jwt.sign(
-        { client: candidate._id },
-        process.env.SecretKeyRefresh,
-        {
-            expiresIn: "30d", // Время жизни refresh токена (например, 30 дней)
-        }
-    );
-
-    await Client.findByIdAndUpdate(candidate._id, { refreshToken });
+    const { accessToken, refreshToken } = await issueClientSession(candidate._id);
 
     return { accessToken, refreshToken, clientData };
 }
@@ -1390,59 +1338,36 @@ export const updateClientDataMobile = async (req, res) => {
 export const refreshToken = async (req, res) => {
     const { refreshToken } = req.body;
 
-    if (!refreshToken) {
-        return res.status(403).json({ success: false, message: "Требуется refresh токен" });
+    if (!refreshToken || typeof refreshToken !== "string") {
+        return res.status(401).json({ success: false, code: "REFRESH_INVALID", message: "Требуется refresh токен" });
     }
 
     try {
-        const decoded = jwt.verify(refreshToken, process.env.SecretKeyRefresh);
-
-        // Проверка, что refresh токен совпадает с хранимым в базе данных
-        const candidate = await Client.findById(decoded.client._id || decoded.client);
-
-        if (!candidate || candidate.refreshToken !== refreshToken) {
-            return res.status(403).json({ success: false, message: "Неверный refresh токен" });
-        }
-
-        // Генерация нового access токена
-        const newAccessToken = jwt.sign(
-            { client: decoded.client },
-            process.env.SecretKey,
-            {
-                expiresIn: "30d",
-            }
-        );
-
-        const newRefreshToken = jwt.sign(
-            { client: decoded.client },
-            process.env.SecretKeyRefresh,
-            {
-                expiresIn: "30d",
-            }
-        );
-
-        await Client.findByIdAndUpdate(decoded.client._id || decoded.client, {
-            refreshToken: newRefreshToken,
-        });
-
-        res.json({
-            accessToken: newAccessToken,
-            refreshToken: newRefreshToken,
-        });
+        const tokens = await refreshClientSession(refreshToken);
+        res.json({ success: true, ...tokens });
     } catch (error) {
-        return res.status(403).json({ success: false, message: "Неверный refresh токен" });
+        if (error instanceof RefreshRejectedError) {
+            console.warn("refreshToken: отклонён, причина:", error.reason);
+            return res.status(401).json({ success: false, code: "REFRESH_INVALID", message: "Сессия истекла, войдите снова" });
+        }
+        console.error("refreshToken: ошибка обновления сессии:", error);
+        res.status(500).json({ success: false, message: "Что-то пошло не так" });
     }
 };
 
+/** Выход на устройстве: отзывает только сессию этого refresh-токена, клиента не трогает */
 export const logOutClient = async (req, res) => {
     const { refreshToken } = req.body;
+    if (!refreshToken || typeof refreshToken !== "string") {
+        return res.status(400).json({ success: false, message: "Требуется refresh токен" });
+    }
 
     try {
-        await Client.findOneAndDelete({ refreshToken }, { refreshToken: null });
-
+        await revokeClientSession(refreshToken);
         res.status(200).json({ success: true, message: "Вы вышли из системы" });
     } catch (error) {
-        return res.status(403).json({ success: false, message: "Неверный refresh токен" });
+        console.error("logOutClient: ошибка отзыва сессии:", error);
+        res.status(500).json({ success: false, message: "Что-то пошло не так" });
     }
 };
 
@@ -2043,10 +1968,11 @@ export const deleteClientMobile = async (req, res) => {
 
         // Мягкое удаление — так же, как в CRM (см. ClientController.deleteClient):
         // сохраняем запись, но клиент больше не сможет пройти clientLogin, т.к. там
-        // проверяется candidate.status !== "active". Также сбрасываем refreshToken,
+        // проверяется candidate.status !== "active". Также сбрасываем refreshToken и сессии устройств,
         // чтобы уже выданный на устройстве токен нельзя было обновить.
         client.status = "deleted";
         client.refreshToken = null;
+        client.refreshSessions = [];
         await client.save();
 
         res.json({
